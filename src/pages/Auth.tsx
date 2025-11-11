@@ -1,29 +1,60 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Book, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { signIn, signUp, user } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      navigate("/library");
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
-      toast.error("Por favor, preencha todos os campos");
+      toast.error("Preencha todos os campos");
       return;
     }
 
-    // Simulação de autenticação
-    toast.success(isLogin ? "Login realizado com sucesso!" : "Conta criada com sucesso!");
-    navigate("/library");
+    if (!isLogin && !fullName) {
+      toast.error("Preencha seu nome completo");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const { error } = await signIn(email, password);
+        if (error) {
+          toast.error(error.message || "Erro ao fazer login");
+        }
+      } else {
+        const { error } = await signUp(email, password, fullName);
+        if (error) {
+          toast.error(error.message || "Erro ao criar conta");
+        }
+      }
+    } catch (error) {
+      toast.error("Erro inesperado. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -118,6 +149,21 @@ const Auth = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Nome Completo</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="Seu nome completo"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="glass border-primary/20 focus:border-primary"
+                  required={!isLogin}
+                />
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
               <Input
@@ -127,6 +173,7 @@ const Auth = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="glass border-primary/20 focus:border-primary"
+                required
               />
             </div>
 
@@ -139,14 +186,17 @@ const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="glass border-primary/20 focus:border-primary"
+                required
+                minLength={6}
               />
             </div>
 
             <Button
               type="submit"
+              disabled={loading}
               className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-safira"
             >
-              {isLogin ? "Entrar" : "Criar Conta"}
+              {loading ? "Processando..." : (isLogin ? "Entrar" : "Criar Conta")}
             </Button>
           </form>
         </motion.div>

@@ -1,76 +1,59 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, User, LogOut } from "lucide-react";
+import { Search, User, CreditCard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
 import BookCard from "@/components/BookCard";
+import UploadPDF from "@/components/UploadPDF";
+import SubscriptionDialog from "@/components/SubscriptionDialog";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-// Mock data para os livros
-const mockBooks = [
-  {
-    id: "1",
-    title: "O Poder do Agora",
-    author: "Eckhart Tolle",
-    coverColor: "from-blue-500 to-blue-700",
-    progress: 45,
-  },
-  {
-    id: "2",
-    title: "Sapiens",
-    author: "Yuval Noah Harari",
-    coverColor: "from-amber-500 to-amber-700",
-    progress: 78,
-  },
-  {
-    id: "3",
-    title: "Atomic Habits",
-    author: "James Clear",
-    coverColor: "from-purple-500 to-purple-700",
-    progress: 23,
-  },
-  {
-    id: "4",
-    title: "Deep Work",
-    author: "Cal Newport",
-    coverColor: "from-green-500 to-green-700",
-    progress: 90,
-  },
-  {
-    id: "5",
-    title: "The Psychology of Money",
-    author: "Morgan Housel",
-    coverColor: "from-red-500 to-red-700",
-    progress: 12,
-  },
-  {
-    id: "6",
-    title: "Thinking, Fast and Slow",
-    author: "Daniel Kahneman",
-    coverColor: "from-cyan-500 to-cyan-700",
-    progress: 56,
-  },
-];
 
 const Library = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [books, setBooks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
+  const { user, signOut, subscriptionTier, checkSubscription } = useAuth();
   const navigate = useNavigate();
 
-  const filteredBooks = mockBooks.filter(
+  useEffect(() => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    loadBooks();
+    checkSubscription();
+  }, [user, navigate]);
+
+  const loadBooks = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("books")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setBooks(data || []);
+    } catch (error) {
+      console.error("Error loading books:", error);
+      toast.error("Erro ao carregar livros");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredBooks = books.filter(
     (book) =>
       book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchQuery.toLowerCase())
+      (book.author && book.author.toLowerCase().includes(searchQuery.toLowerCase()))
   );
-
-  const handleAddBook = () => {
-    toast.success("Em breve você poderá adicionar seus próprios PDFs!");
-  };
-
-  const handleLogout = () => {
-    toast.success("Até logo!");
-    navigate("/");
-  };
 
   return (
     <div className="min-h-screen p-6">
@@ -86,10 +69,21 @@ const Library = () => {
               Minha Biblioteca
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {mockBooks.length} livros na sua coleção
+              {books.length} livros na sua coleção • Plano {subscriptionTier === "free" ? "Gratuito" : subscriptionTier === "pro" ? "Pro" : "Premium"}
             </p>
           </div>
           <div className="flex gap-2">
+            {subscriptionTier === "free" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="aura-soft transition-aura border-accent hover:bg-accent/10"
+                onClick={() => setSubscriptionDialogOpen(true)}
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                Assinar
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -102,9 +96,9 @@ const Library = () => {
               variant="ghost"
               size="icon"
               className="aura-soft transition-aura"
-              onClick={handleLogout}
+              onClick={signOut}
             >
-              <LogOut className="w-5 h-5" />
+              Sair
             </Button>
           </div>
         </div>
@@ -122,32 +116,52 @@ const Library = () => {
       </motion.header>
 
       {/* Books grid */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"
-      >
-        {filteredBooks.map((book, index) => (
-          <BookCard key={book.id} book={book} index={index} />
-        ))}
-      </motion.div>
+      {loading ? (
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : filteredBooks.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-20"
+        >
+          <p className="text-muted-foreground text-lg mb-4">
+            {searchQuery ? "Nenhum livro encontrado" : "Sua biblioteca está vazia"}
+          </p>
+          {!searchQuery && (
+            <p className="text-sm text-muted-foreground">
+              Clique no botão abaixo para adicionar seu primeiro PDF
+            </p>
+          )}
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"
+        >
+          {filteredBooks.map((book, index) => (
+            <BookCard key={book.id} book={book} index={index} />
+          ))}
+        </motion.div>
+      )}
 
-      {/* Add book button */}
+      {/* Upload button */}
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.4, type: "spring" }}
         className="fixed bottom-8 right-8"
       >
-        <Button
-          size="lg"
-          className="rounded-full w-16 h-16 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-amber shadow-2xl"
-          onClick={handleAddBook}
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
+        <UploadPDF onUploadComplete={loadBooks} />
       </motion.div>
+
+      <SubscriptionDialog
+        open={subscriptionDialogOpen}
+        onOpenChange={setSubscriptionDialogOpen}
+      />
     </div>
   );
 };
