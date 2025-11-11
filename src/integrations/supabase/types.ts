@@ -14,7 +14,170 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      books: {
+        Row: {
+          author: string | null
+          cover_color: string | null
+          created_at: string | null
+          current_page: number | null
+          extracted_text: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          progress: number | null
+          title: string
+          total_pages: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          author?: string | null
+          cover_color?: string | null
+          created_at?: string | null
+          current_page?: number | null
+          extracted_text?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          progress?: number | null
+          title: string
+          total_pages?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          author?: string | null
+          cover_color?: string | null
+          created_at?: string | null
+          current_page?: number | null
+          extracted_text?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          progress?: number | null
+          title?: string
+          total_pages?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      highlights: {
+        Row: {
+          book_id: string
+          color: string | null
+          created_at: string | null
+          id: string
+          page_number: number
+          position_data: Json | null
+          text: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          page_number: number
+          position_data?: Json | null
+          text: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          page_number?: number
+          position_data?: Json | null
+          text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "highlights_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          stripe_customer_id: string | null
+          subscription_status: string | null
+          subscription_tier: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          stripe_customer_id?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          stripe_customer_id?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          status: string
+          stripe_price_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          status: string
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          status?: string
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
