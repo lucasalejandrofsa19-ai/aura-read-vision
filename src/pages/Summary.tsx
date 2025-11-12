@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const mockHighlights = [
   {
@@ -36,6 +37,7 @@ const mockHighlights = [
 const Summary = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { session } = useAuth();
   const [book, setBook] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -68,12 +70,20 @@ const Summary = () => {
   const generateSummary = async () => {
     if (!id) return;
     
+    if (!session) {
+      toast.error('Please log in to generate summaries');
+      return;
+    }
+    
     try {
       setGenerating(true);
       toast.info('Generating AI summary...');
 
       const { data, error } = await supabase.functions.invoke('generate-summary', {
-        body: { bookId: id }
+        body: { bookId: id },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;
