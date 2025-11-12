@@ -183,7 +183,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_book_limit: { Args: { user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
