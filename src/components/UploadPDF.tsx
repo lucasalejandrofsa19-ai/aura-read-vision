@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { pdfUploadSchema, bookTitleSchema, validateData } from "@/lib/validations";
 
 interface UploadPDFProps {
   onUploadComplete: () => void;
@@ -18,15 +19,15 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps) => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
-    // Check file type
-    if (file.type !== "application/pdf") {
-      toast.error("Por favor, selecione um arquivo PDF");
-      return;
-    }
+    // Validate file with zod schema
+    const fileValidation = validateData(pdfUploadSchema, {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+    });
 
-    // Check file size (50MB limit)
-    if (file.size > 52428800) {
-      toast.error("Arquivo muito grande. Limite de 50MB");
+    if (!fileValidation.success) {
+      toast.error(fileValidation.errors[0]);
       return;
     }
 
@@ -54,6 +55,15 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps) => {
 
       if (uploadError) throw uploadError;
 
+      // Validate and sanitize book title
+      const bookTitle = file.name.replace(".pdf", "");
+      const titleValidation = validateData(bookTitleSchema, bookTitle);
+      
+      if (!titleValidation.success) {
+        toast.error("Nome do arquivo inválido");
+        return;
+      }
+
       // Generate random cover color
       const colors = [
         "from-blue-500 to-blue-700",
@@ -70,7 +80,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps) => {
         .from("books")
         .insert({
           user_id: user.id,
-          title: file.name.replace(".pdf", ""),
+          title: titleValidation.data,
           file_path: fileName,
           file_size: file.size,
           cover_color: randomColor,
@@ -80,15 +90,21 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps) => {
 
       if (insertError) throw insertError;
 
-      // Process PDF in background (extract text)
-      supabase.functions
-        .invoke("process-pdf", {
-          body: {
-            bookId: bookData.id,
-            filePath: fileName,
-          },
-        })
-        .catch((error) => console.error("PDF processing error:", error));
+      // Process PDF in background (extract text) with auth header
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        supabase.functions
+          .invoke("process-pdf", {
+            body: {
+              bookId: bookData.id,
+              filePath: fileName,
+            },
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          })
+          .catch((error) => console.error("PDF processing error:", error));
+      }
 
       toast.success("PDF adicionado com sucesso!");
       onUploadComplete();
