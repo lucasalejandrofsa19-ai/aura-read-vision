@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { authLoginSchema, authSignupSchema, validateData } from "@/lib/validations";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,13 +27,13 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
-      toast.error("Preencha todos os campos");
-      return;
-    }
+    // Validate input based on login/signup mode
+    const validation = isLogin
+      ? validateData(authLoginSchema, { email, password })
+      : validateData(authSignupSchema, { email, password, fullName });
 
-    if (!isLogin && !fullName) {
-      toast.error("Preencha seu nome completo");
+    if (!validation.success) {
+      toast.error(validation.errors[0]);
       return;
     }
 
@@ -40,12 +41,12 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await signIn(email, password);
+        const { error } = await signIn(email.trim(), password);
         if (error) {
           toast.error(error.message || "Erro ao fazer login");
         }
       } else {
-        const { error } = await signUp(email, password, fullName);
+        const { error } = await signUp(email.trim(), password, fullName.trim());
         if (error) {
           toast.error(error.message || "Erro ao criar conta");
         }
