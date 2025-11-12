@@ -15,7 +15,7 @@ const SUBSCRIPTION_PLANS = {
   pro: {
     name: "Pro",
     price: "R$ 19,90",
-    priceId: "price_pro_monthly",
+    priceId: "price_1SSeWJFGn21ViXD31bV8SnrT",
     features: [
       "Até 100 PDFs",
       "Marca-texto ilimitado",
@@ -27,7 +27,7 @@ const SUBSCRIPTION_PLANS = {
   premium: {
     name: "Premium",
     price: "R$ 39,90",
-    priceId: "price_premium_monthly",
+    priceId: "price_1SSeZkFGn21ViXD3ajyV2R0i",
     features: [
       "PDFs ilimitados",
       "Marca-texto ilimitado",
