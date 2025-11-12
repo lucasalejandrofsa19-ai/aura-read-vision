@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { pdfUploadSchema, bookTitleSchema, validateData } from "@/lib/validations";
+import { captureError } from "@/lib/sentry";
 
 interface UploadPDFProps {
   onUploadComplete: () => void;
@@ -103,7 +104,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps) => {
               Authorization: `Bearer ${session.access_token}`,
             },
           })
-          .catch((error) => console.error("PDF processing error:", error));
+          .catch((error) => captureError(error, "PDF processing"));
       }
 
       toast.success("PDF adicionado com sucesso!");
@@ -114,7 +115,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps) => {
         fileInputRef.current.value = "";
       }
     } catch (error) {
-      console.error("Upload error:", error);
+      captureError(error, "PDF upload");
       toast.error("Erro ao fazer upload do PDF");
     } finally {
       setUploading(false);
