@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowLeft,
   Highlighter,
@@ -70,6 +71,33 @@ const Reader = () => {
   const [backgroundColor, setBackgroundColor] = useState("bg-background");
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [selectedText, setSelectedText] = useState("");
+  const [book, setBook] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadBook();
+  }, [id]);
+
+  const loadBook = async () => {
+    if (!id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("books")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      setBook(data);
+    } catch (error) {
+      console.error("Error loading book:", error);
+      toast.error("Erro ao carregar livro");
+      navigate("/library");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const backgrounds = [
     { name: "Grafite", class: "bg-background", color: "Escuro" },
@@ -96,6 +124,18 @@ const Reader = () => {
     toast.success(isBookmarked ? "Marcador removido" : "Página marcada!");
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!book) return null;
+
+  const content = book.extracted_text || mockContent;
+
   return (
     <div className={`min-h-screen ${backgroundColor} transition-colors duration-500`}>
       {/* Toolbar */}
@@ -115,8 +155,8 @@ const Reader = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="font-semibold">O Poder do Agora</h1>
-              <p className="text-xs text-muted-foreground">Eckhart Tolle</p>
+              <h1 className="font-semibold">{book.title}</h1>
+              <p className="text-xs text-muted-foreground">{book.author || "Autor Desconhecido"}</p>
             </div>
           </div>
 
@@ -189,7 +229,7 @@ const Reader = () => {
         className="max-w-3xl mx-auto px-6 py-12"
       >
         <div className="prose prose-lg prose-invert max-w-none select-text">
-          {mockContent.split('\n').map((line, index) => {
+          {content.split('\n').map((line, index) => {
             if (line.startsWith('# ')) {
               return (
                 <h1 key={index} className="text-4xl font-bold mb-6 text-foreground">

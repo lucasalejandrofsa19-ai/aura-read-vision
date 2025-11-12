@@ -1,22 +1,58 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Book {
   id: string;
   title: string;
   author: string;
-  coverColor: string;
+  cover_color: string;
   progress: number;
+  file_path: string;
 }
 
 interface BookCardProps {
   book: Book;
   index: number;
+  onDelete?: () => void;
 }
 
-const BookCard = ({ book, index }: BookCardProps) => {
+const BookCard = ({ book, index, onDelete }: BookCardProps) => {
   const navigate = useNavigate();
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!confirm("Deseja realmente deletar este livro?")) return;
+
+    try {
+      // Delete file from storage
+      if (book.file_path) {
+        const { error: storageError } = await supabase.storage
+          .from("pdfs")
+          .remove([book.file_path]);
+        
+        if (storageError) console.error("Error deleting file:", storageError);
+      }
+
+      // Delete book record
+      const { error } = await supabase
+        .from("books")
+        .delete()
+        .eq("id", book.id);
+
+      if (error) throw error;
+
+      toast.success("Livro deletado com sucesso!");
+      onDelete?.();
+    } catch (error) {
+      console.error("Error deleting book:", error);
+      toast.error("Erro ao deletar livro");
+    }
+  };
 
   return (
     <motion.div
@@ -28,11 +64,21 @@ const BookCard = ({ book, index }: BookCardProps) => {
       className="glass rounded-xl overflow-hidden cursor-pointer group transition-aura hover:aura-safira"
     >
       {/* Book cover */}
-      <div className={`relative h-64 bg-gradient-to-br ${book.coverColor} p-6 flex flex-col justify-between`}>
+      <div className={`relative h-64 bg-gradient-to-br ${book.cover_color || 'from-blue-500 to-blue-700'} p-6 flex flex-col justify-between`}>
         <div className="flex justify-between items-start">
           <BookOpen className="w-8 h-8 text-white/80" />
-          <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-            <span className="text-white text-xs font-bold">{book.progress}%</span>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleDelete}
+              className="w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <span className="text-white text-xs font-bold">{book.progress}%</span>
+            </div>
           </div>
         </div>
         

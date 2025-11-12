@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, User, Book, Clock, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
 
 const stats = [
   {
@@ -33,6 +34,11 @@ const recentActivity = [
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const getInitials = (email: string) => {
+    return email.substring(0, 2).toUpperCase();
+  };
 
   return (
     <div className="min-h-screen p-6">
@@ -60,14 +66,14 @@ const Profile = () => {
         <div className="flex items-center gap-6">
           <Avatar className="w-24 h-24 border-2 border-primary aura-safira">
             <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-2xl">
-              JD
+              {user?.email ? getInitials(user.email) : "US"}
             </AvatarFallback>
           </Avatar>
           <div>
-            <h2 className="text-2xl font-bold">João da Silva</h2>
-            <p className="text-muted-foreground">joao@email.com</p>
+            <h2 className="text-2xl font-bold">{user?.user_metadata?.full_name || "Usuário"}</h2>
+            <p className="text-muted-foreground">{user?.email}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Membro desde Janeiro 2024
+              Membro desde {user?.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : 'Recentemente'}
             </p>
           </div>
         </div>
