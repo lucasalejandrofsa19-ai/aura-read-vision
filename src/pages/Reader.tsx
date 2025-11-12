@@ -47,13 +47,14 @@ const Reader = () => {
       if (error) throw error;
       setBook(data);
 
-      // Get public URL for the PDF
+      // Get signed URL for the PDF (expires in 1 hour)
       if (data.file_path) {
-        const { data: urlData } = supabase.storage
+        const { data: urlData, error: urlError } = await supabase.storage
           .from("pdfs")
-          .getPublicUrl(data.file_path);
+          .createSignedUrl(data.file_path, 3600); // 1 hour expiry
         
-        setPdfUrl(urlData.publicUrl);
+        if (urlError) throw urlError;
+        setPdfUrl(urlData.signedUrl);
       }
     } catch (error) {
       console.error("Error loading book:", error);
