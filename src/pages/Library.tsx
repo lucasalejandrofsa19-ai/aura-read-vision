@@ -10,7 +10,6 @@ import UploadPDF from "@/components/UploadPDF";
 import SubscriptionDialog from "@/components/SubscriptionDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { captureError } from "@/lib/sentry";
 
 const Library = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,7 +42,7 @@ const Library = () => {
       if (error) throw error;
       setBooks(data || []);
     } catch (error) {
-      captureError(error, "Loading books");
+      console.error("Error loading books:", error);
       toast.error("Erro ao carregar livros");
     } finally {
       setLoading(false);

@@ -4,7 +4,6 @@ import { BookOpen, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { captureError } from "@/lib/sentry";
 
 interface Book {
   id: string;
@@ -36,7 +35,7 @@ const BookCard = ({ book, index, onDelete }: BookCardProps) => {
           .from("pdfs")
           .remove([book.file_path]);
         
-        if (storageError) captureError(storageError, "Storage file deletion");
+        if (storageError) console.error("Error deleting file:", storageError);
       }
 
       // Delete book record
@@ -50,7 +49,7 @@ const BookCard = ({ book, index, onDelete }: BookCardProps) => {
       toast.success("Livro deletado com sucesso!");
       onDelete?.();
     } catch (error) {
-      captureError(error, "Book deletion");
+      console.error("Error deleting book:", error);
       toast.error("Erro ao deletar livro");
     }
   };

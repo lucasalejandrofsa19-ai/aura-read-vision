@@ -8,6 +8,3 @@ verify_jwt = true
 
 [functions.check-subscription]
 verify_jwt = true
-
-[functions.generate-summary]
-verify_jwt = true

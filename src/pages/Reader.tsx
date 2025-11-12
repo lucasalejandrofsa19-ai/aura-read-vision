@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { PDFViewer } from "@/components/PDFViewer";
-import { captureError } from "@/lib/sentry";
 
 
 const Reader = () => {
@@ -48,17 +47,16 @@ const Reader = () => {
       if (error) throw error;
       setBook(data);
 
-      // Get signed URL for the PDF (expires in 1 hour)
+      // Get public URL for the PDF
       if (data.file_path) {
-        const { data: urlData, error: urlError } = await supabase.storage
+        const { data: urlData } = supabase.storage
           .from("pdfs")
-          .createSignedUrl(data.file_path, 3600); // 1 hour expiry
+          .getPublicUrl(data.file_path);
         
-        if (urlError) throw urlError;
-        setPdfUrl(urlData.signedUrl);
+        setPdfUrl(urlData.publicUrl);
       }
     } catch (error) {
-      captureError(error, "Loading book");
+      console.error("Error loading book:", error);
       toast.error("Erro ao carregar livro");
       navigate("/library");
     } finally {

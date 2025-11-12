@@ -25,7 +25,6 @@ export type Database = {
           file_size: number | null
           id: string
           progress: number | null
-          summary: string | null
           title: string
           total_pages: number | null
           updated_at: string | null
@@ -41,7 +40,6 @@ export type Database = {
           file_size?: number | null
           id?: string
           progress?: number | null
-          summary?: string | null
           title: string
           total_pages?: number | null
           updated_at?: string | null
@@ -57,7 +55,6 @@ export type Database = {
           file_size?: number | null
           id?: string
           progress?: number | null
-          summary?: string | null
           title?: string
           total_pages?: number | null
           updated_at?: string | null
@@ -186,7 +183,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_book_limit: { Args: { user_id: string }; Returns: boolean }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
