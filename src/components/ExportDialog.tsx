@@ -13,6 +13,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useExport, type ExportFormat } from "@/hooks/useExport";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import type { Highlight } from "@/hooks/useHighlights";
 import type { Note } from "@/hooks/useNotes";
 
@@ -33,8 +35,14 @@ export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps
   const [isExporting, setIsExporting] = useState(false);
 
   const { exportData } = useExport();
+  const { subscriptionTier } = useAuth();
 
   const handleExport = async () => {
+    if (subscriptionTier !== 'premium' && subscriptionTier !== 'pro') {
+      toast.error("Recurso de exportação disponível apenas para assinantes Premium");
+      return;
+    }
+
     setIsExporting(true);
     try {
       await exportData(format, bookTitle, highlights, notes, {
