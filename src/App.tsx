@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { SentryUserContext } from "./components/SentryUserContext";
 import * as Sentry from "@sentry/react";
 import Index from "./pages/Index";
@@ -26,19 +27,21 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <SentryUserContext>
-            <SentryRoutes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/reader/:id" element={<Reader />} />
-            <Route path="/summary/:id" element={<Summary />} />
-            <Route path="/share/:id" element={<Share />} />
-            <Route path="/profile" element={<Profile />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-            </SentryRoutes>
-          </SentryUserContext>
+          <ThemeProvider>
+            <SentryUserContext>
+              <SentryRoutes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/library" element={<Library />} />
+              <Route path="/reader/:id" element={<Reader />} />
+              <Route path="/summary/:id" element={<Summary />} />
+              <Route path="/share/:id" element={<Share />} />
+              <Route path="/profile" element={<Profile />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+              </SentryRoutes>
+            </SentryUserContext>
+          </ThemeProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
