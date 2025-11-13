@@ -32,6 +32,7 @@ import { useHighlights } from "@/hooks/useHighlights";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { useNotes } from "@/hooks/useNotes";
+import { useAuth } from "@/contexts/AuthContext";
 import { captureError } from "@/lib/sentry";
 
 
@@ -63,6 +64,7 @@ const Reader = () => {
   } = useNotes(id || "");
 
   const { enterFullscreen } = useFullscreen();
+  const { subscriptionTier } = useAuth();
   
   const {
     speak,
@@ -231,13 +233,18 @@ const Reader = () => {
   };
 
   const handleReadAloud = () => {
+    if (subscriptionTier !== 'premium' && subscriptionTier !== 'pro') {
+      toast.error("Recurso disponível apenas para assinantes Premium");
+      return;
+    }
+
     if (!book?.extracted_text) {
       toast.error("Nenhum texto extraído disponível para leitura");
       return;
     }
     
     // Read a portion of text (you could enhance this to read the current page)
-    const textToRead = book.extracted_text.substring(0, 1000);
+    const textToRead = book.extracted_text.substring(0, 2000);
     speak(textToRead);
   };
 

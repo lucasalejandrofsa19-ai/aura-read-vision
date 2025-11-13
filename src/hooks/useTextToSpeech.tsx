@@ -48,37 +48,69 @@ export const useTextToSpeech = () => {
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utteranceRef.current = utterance;
-
-    // Configure utterance
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
+    // Split text into smaller chunks (max 200 characters per chunk)
+    const maxLength = 200;
+    const chunks: string[] = [];
+    let currentChunk = '';
+    
+    // Split by sentences to maintain natural breaks
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    
+    for (const sentence of sentences) {
+      if ((currentChunk + sentence).length <= maxLength) {
+        currentChunk += sentence;
+      } else {
+        if (currentChunk) chunks.push(currentChunk);
+        currentChunk = sentence;
+      }
     }
-    utterance.rate = rate;
-    utterance.pitch = pitch;
-    utterance.lang = 'pt-BR';
+    if (currentChunk) chunks.push(currentChunk);
 
-    // Event listeners
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-      setIsPaused(false);
+    let currentIndex = 0;
+
+    const speakChunk = () => {
+      if (currentIndex >= chunks.length) {
+        setIsSpeaking(false);
+        setIsPaused(false);
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(chunks[currentIndex]);
+      utteranceRef.current = utterance;
+
+      // Configure utterance
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
+      utterance.rate = rate;
+      utterance.pitch = pitch;
+      utterance.lang = 'pt-BR';
+
+      // Event listeners
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+        setIsPaused(false);
+      };
+
+      utterance.onend = () => {
+        currentIndex++;
+        // Small delay between chunks for better flow
+        setTimeout(() => speakChunk(), 100);
+      };
+
+      utterance.onerror = (event) => {
+        console.error('Speech synthesis error:', event);
+        setIsSpeaking(false);
+        setIsPaused(false);
+        toast.error("Erro ao reproduzir áudio");
+      };
+
+      // Start speaking this chunk
+      window.speechSynthesis.speak(utterance);
     };
 
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      setIsPaused(false);
-    };
-
-    utterance.onerror = (event) => {
-      console.error('Speech synthesis error:', event);
-      setIsSpeaking(false);
-      setIsPaused(false);
-      toast.error("Erro ao reproduzir áudio");
-    };
-
-    // Start speaking
-    window.speechSynthesis.speak(utterance);
+    // Start speaking first chunk
+    speakChunk();
   };
 
   const pause = () => {
