@@ -7,9 +7,9 @@ All colors MUST be HSL.
 */
 
 @layer base {
-  :root {
-    /* AURA READ Design System - Futuristic Minimalist Editorial */
-    
+  /* Theme: Safira (Default) */
+  :root,
+  .theme-safira {
     /* Base colors - Safira (Sapphire Blue) */
     --background: 220 15% 8%;
     --foreground: 210 20% 98%;
@@ -63,6 +63,135 @@ All colors MUST be HSL.
     /* Glass effect */
     --glass-bg: hsl(220 12% 12% / 0.7);
     --glass-border: hsl(210 100% 60% / 0.1);
+  }
+
+  /* Theme: Sepia (Vintage Reading) */
+  .theme-sepia {
+    --background: 35 30% 85%;
+    --foreground: 30 20% 20%;
+
+    --primary: 30 60% 45%;
+    --primary-foreground: 35 30% 95%;
+    --primary-glow: 30 60% 55%;
+    
+    --accent: 20 70% 50%;
+    --accent-foreground: 35 30% 95%;
+    --accent-glow: 20 70% 60%;
+    
+    --secondary: 35 25% 75%;
+    --secondary-foreground: 30 20% 25%;
+    
+    --paper: 40 35% 90%;
+    --paper-foreground: 30 20% 20%;
+
+    --card: 35 30% 88%;
+    --card-foreground: 30 20% 20%;
+
+    --muted: 35 20% 70%;
+    --muted-foreground: 30 15% 40%;
+
+    --popover: 35 30% 90%;
+    --popover-foreground: 30 20% 20%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 35 30% 95%;
+
+    --border: 35 20% 65%;
+    --input: 35 20% 65%;
+    --ring: 30 60% 45%;
+
+    --glow-safira: 0 0 30px hsl(30 60% 45% / 0.3);
+    --glow-amber: 0 0 30px hsl(20 70% 50% / 0.3);
+    --glow-soft: 0 0 20px hsl(30 60% 45% / 0.2);
+    
+    --glass-bg: hsl(35 30% 88% / 0.7);
+    --glass-border: hsl(30 60% 45% / 0.1);
+  }
+
+  /* Theme: Noturno (Pure Black Night) */
+  .theme-noturno {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 85%;
+
+    --primary: 210 100% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 210 100% 65%;
+    
+    --accent: 180 100% 45%;
+    --accent-foreground: 0 0% 100%;
+    --accent-glow: 180 100% 55%;
+    
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 90%;
+    
+    --paper: 0 0% 15%;
+    --paper-foreground: 0 0% 85%;
+
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 85%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
+
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 90%;
+
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 210 100% 55%;
+
+    --glow-safira: 0 0 30px hsl(210 100% 55% / 0.4);
+    --glow-amber: 0 0 30px hsl(180 100% 45% / 0.4);
+    --glow-soft: 0 0 20px hsl(210 100% 55% / 0.3);
+    
+    --glass-bg: hsl(0 0% 5% / 0.8);
+    --glass-border: hsl(210 100% 55% / 0.15);
+  }
+
+  /* Theme: Alto Contraste (Accessibility) */
+  .theme-contraste {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+
+    --primary: 210 100% 40%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 210 100% 50%;
+    
+    --accent: 280 100% 35%;
+    --accent-foreground: 0 0% 100%;
+    --accent-glow: 280 100% 45%;
+    
+    --secondary: 0 0% 90%;
+    --secondary-foreground: 0 0% 0%;
+    
+    --paper: 0 0% 95%;
+    --paper-foreground: 0 0% 0%;
+
+    --card: 0 0% 98%;
+    --card-foreground: 0 0% 0%;
+
+    --muted: 0 0% 85%;
+    --muted-foreground: 0 0% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    --destructive: 0 100% 40%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 30%;
+    --input: 0 0% 30%;
+    --ring: 210 100% 40%;
+
+    --glow-safira: 0 0 20px hsl(210 100% 40% / 0.5);
+    --glow-amber: 0 0 20px hsl(280 100% 35% / 0.5);
+    --glow-soft: 0 0 15px hsl(210 100% 40% / 0.4);
+    
+    --glass-bg: hsl(0 0% 98% / 0.9);
+    --glass-border: hsl(210 100% 40% / 0.2);
   }
 }
 

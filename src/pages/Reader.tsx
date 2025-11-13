@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowLeft,
   Bookmark,
-  Palette,
   FileText,
   Share2,
   BookmarkCheck,
@@ -23,6 +22,7 @@ import { PDFViewer } from "@/components/PDFViewer";
 import { HighlightToolbar } from "@/components/HighlightToolbar";
 import { HighlightsList } from "@/components/HighlightsList";
 import { PresentationMode } from "@/components/PresentationMode";
+import { ThemeSelector } from "@/components/ThemeSelector";
 import { useHighlights } from "@/hooks/useHighlights";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { captureError } from "@/lib/sentry";
@@ -31,7 +31,6 @@ import { captureError } from "@/lib/sentry";
 const Reader = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [backgroundColor, setBackgroundColor] = useState("bg-background");
   const [bookmarkedPage, setBookmarkedPage] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [book, setBook] = useState<any>(null);
@@ -103,13 +102,6 @@ const Reader = () => {
       captureError(error, { context: "save_current_page" });
     }
   };
-
-  const backgrounds = [
-    { name: "Grafite", class: "bg-background", color: "Escuro" },
-    { name: "Papel Velho", class: "bg-paper", color: "Claro" },
-    { name: "Safira", class: "bg-card", color: "Azul" },
-    { name: "Âmbar", class: "bg-amber-950", color: "Âmbar" },
-  ];
 
   const handleBookmark = () => {
     if (bookmarkedPage === currentPage) {
@@ -194,7 +186,7 @@ const Reader = () => {
   }
 
   return (
-    <div className={`min-h-screen ${backgroundColor} transition-colors duration-500`}>
+    <div className="min-h-screen bg-background transition-colors duration-500">
       {/* Toolbar */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -240,26 +232,7 @@ const Reader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="aura-soft transition-aura">
-                  <Palette className="w-5 h-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="glass">
-                {backgrounds.map((bg) => (
-                  <DropdownMenuItem
-                    key={bg.name}
-                    onClick={() => setBackgroundColor(bg.class)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={`w-6 h-6 rounded ${bg.class} border border-border`} />
-                      <span>{bg.name}</span>
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ThemeSelector />
 
             <Button
               variant="ghost"
