@@ -3,6 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { captureError } from "@/lib/sentry";
 
 interface AuthContextType {
   user: User | null;
@@ -38,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSubscriptionTier(data.tier || "free");
       }
     } catch (error) {
-      console.error("Error checking subscription:", error);
+      captureError(error, { context: "check_subscription" });
     }
   };
 

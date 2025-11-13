@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { PDFViewer } from "@/components/PDFViewer";
+import { captureError } from "@/lib/sentry";
 
 
 const Reader = () => {
@@ -56,7 +57,7 @@ const Reader = () => {
         setPdfUrl(urlData.publicUrl);
       }
     } catch (error) {
-      console.error("Error loading book:", error);
+      captureError(error, { context: "load_book" });
       toast.error("Erro ao carregar livro");
       navigate("/library");
     } finally {

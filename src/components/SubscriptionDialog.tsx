@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { captureError } from "@/lib/sentry";
 
 interface SubscriptionDialogProps {
   open: boolean;
@@ -65,7 +66,7 @@ const SubscriptionDialog = ({ open, onOpenChange }: SubscriptionDialogProps) => 
         window.open(data.url, "_blank");
       }
     } catch (error) {
-      console.error("Subscription error:", error);
+      captureError(error, { context: "subscription_checkout" });
       toast.error("Erro ao iniciar assinatura");
     } finally {
       setLoading(null);

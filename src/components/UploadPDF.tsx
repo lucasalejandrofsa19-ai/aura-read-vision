@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { captureError } from "@/lib/sentry";
 
 interface UploadPDFProps {
   onUploadComplete: () => void;
@@ -88,7 +89,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps) => {
             filePath: fileName,
           },
         })
-        .catch((error) => console.error("PDF processing error:", error));
+        .catch((error) => captureError(error, { context: "pdf_processing" }));
 
       toast.success("PDF adicionado com sucesso!");
       onUploadComplete();
@@ -98,7 +99,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps) => {
         fileInputRef.current.value = "";
       }
     } catch (error) {
-      console.error("Upload error:", error);
+      captureError(error, { context: "pdf_upload" });
       toast.error("Erro ao fazer upload do PDF");
     } finally {
       setUploading(false);
