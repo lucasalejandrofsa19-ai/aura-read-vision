@@ -70,6 +70,35 @@ const Reader = () => {
     loadBook();
   }, [id]);
 
+  // Realtime sync for reading position
+  useEffect(() => {
+    if (!id) return;
+
+    const channel = supabase
+      .channel(`book-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'books',
+          filter: `id=eq.${id}`,
+        },
+        (payload) => {
+          const newPage = payload.new.current_page;
+          if (newPage && newPage !== currentPage) {
+            setCurrentPage(newPage);
+            toast.success(`Posição sincronizada: página ${newPage}`);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, currentPage]);
+
   const loadBook = async () => {
     if (!id) return;
 
