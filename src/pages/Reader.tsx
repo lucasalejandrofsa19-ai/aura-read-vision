@@ -10,6 +10,10 @@ import {
   BookmarkCheck,
   Maximize,
   Eye,
+  Volume2,
+  FileDown,
+  StickyNote,
+  Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +32,7 @@ import { ThemeSelector } from "@/components/ThemeSelector";
 import { TextToSpeechControls } from "@/components/TextToSpeechControls";
 import { NotesPanel } from "@/components/NotesPanel";
 import { ExportDialog } from "@/components/ExportDialog";
+import { PremiumActionButton } from "@/components/PremiumActionButton";
 import { useHighlights } from "@/hooks/useHighlights";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
@@ -48,6 +53,8 @@ const Reader = () => {
   const [highlightColor, setHighlightColor] = useState("#fef08a");
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [isFocusedMode, setIsFocusedMode] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showNotesPanel, setShowNotesPanel] = useState(false);
 
   const {
     highlights,
@@ -428,6 +435,41 @@ const Reader = () => {
           </div>
         </div>
       </motion.header>
+
+      {/* Hidden components for dialogs */}
+      <ExportDialog
+        bookTitle={book.title}
+        highlights={highlights}
+        notes={notes}
+      />
+
+      <NotesPanel
+        notes={notes}
+        currentPage={currentPage}
+        onAddNote={addNote}
+        onUpdateNote={updateNote}
+        onDeleteNote={deleteNote}
+        onNavigateToPage={handleNavigateToHighlight}
+      />
+
+      {isSpeaking && (
+        <TextToSpeechControls
+          isSpeaking={isSpeaking}
+          isPaused={isPaused}
+          onSpeak={handleReadAloud}
+          onStop={stop}
+          onTogglePause={togglePause}
+          voices={voices}
+          selectedVoice={selectedVoice}
+          onVoiceChange={setSelectedVoice}
+          rate={rate}
+          onRateChange={setRate}
+          pitch={pitch}
+          onPitchChange={setPitch}
+        />
+      )}
+
+      <ThemeSelector />
 
       {/* Content */}
       <motion.main

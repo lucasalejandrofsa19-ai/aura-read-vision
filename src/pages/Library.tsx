@@ -79,10 +79,10 @@ const Library = () => {
                 variant="outline"
                 size="sm"
                 className="aura-soft transition-aura border-accent hover:bg-accent/10"
-                onClick={() => setSubscriptionDialogOpen(true)}
+                onClick={() => navigate("/pricing")}
               >
                 <CreditCard className="w-4 h-4 mr-2" />
-                Assinar
+                Assinar Premium
               </Button>
             )}
             <Button

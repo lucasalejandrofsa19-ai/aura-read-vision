@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Camera, Save } from "lucide-react";
+import { ArrowLeft, Camera, Save, Crown, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,7 @@ import { captureError } from "@/lib/sentry";
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, subscriptionTier } = useAuth();
   const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -147,8 +147,9 @@ const Profile = () => {
         </motion.div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile">Perfil</TabsTrigger>
+            <TabsTrigger value="subscription">Assinatura</TabsTrigger>
             <TabsTrigger value="highlights">Destaques</TabsTrigger>
           </TabsList>
 
@@ -241,6 +242,91 @@ const Profile = () => {
                 <div className="space-y-2">
                   <Label>Tema Atual: <span className="font-semibold capitalize">{theme}</span></Label>
                   <ThemeSelector />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="subscription" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
+                  Plano e Assinatura
+                </CardTitle>
+                <CardDescription>
+                  Gerencie sua assinatura e veja os benefícios do seu plano
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Current Plan */}
+                <div className="flex items-start justify-between p-4 rounded-lg border bg-card">
+                  <div className="flex items-start gap-4">
+                    <div className={`p-3 rounded-full ${
+                      subscriptionTier === "premium" ? "bg-gradient-to-br from-purple-500 to-purple-700" :
+                      subscriptionTier === "pro" ? "bg-gradient-to-br from-blue-500 to-blue-700" :
+                      "bg-gradient-to-br from-slate-500 to-slate-700"
+                    }`}>
+                      <Crown className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">
+                        Plano {subscriptionTier === "free" ? "Gratuito" : subscriptionTier === "pro" ? "Pro" : "Premium"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {subscriptionTier === "premium" && "Acesso completo a todos os recursos premium"}
+                        {subscriptionTier === "pro" && "Recursos avançados de leitura"}
+                        {subscriptionTier === "free" && "Recursos básicos de leitura"}
+                      </p>
+                      <div className="flex flex-col gap-1 text-sm">
+                        {subscriptionTier === "free" && (
+                          <>
+                            <span className="text-muted-foreground">• Até 5 PDFs</span>
+                            <span className="text-muted-foreground">• Destaques básicos</span>
+                          </>
+                        )}
+                        {subscriptionTier === "pro" && (
+                          <>
+                            <span className="text-muted-foreground">• Até 100 PDFs</span>
+                            <span className="text-muted-foreground">• Exportação de anotações</span>
+                            <span className="text-muted-foreground">• Modo de apresentação</span>
+                          </>
+                        )}
+                        {subscriptionTier === "premium" && (
+                          <>
+                            <span className="text-muted-foreground">• PDFs ilimitados</span>
+                            <span className="text-muted-foreground">• Leitura em voz alta</span>
+                            <span className="text-muted-foreground">• Modo de leitura focada</span>
+                            <span className="text-muted-foreground">• Suporte prioritário</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                  {subscriptionTier === "free" && (
+                    <Button
+                      onClick={() => navigate("/pricing")}
+                      className="flex-1 bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                    >
+                      <Crown className="w-4 h-4 mr-2" />
+                      Ver Planos Premium
+                    </Button>
+                  )}
+                  {(subscriptionTier === "pro" || subscriptionTier === "premium") && (
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={() => navigate("/pricing")}
+                        className="flex-1"
+                      >
+                        Ver Outros Planos
+                      </Button>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
