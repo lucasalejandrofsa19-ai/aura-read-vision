@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { PDFSearchBar } from "@/components/PDFSearchBar";
+import type { TextItem } from "pdfjs-dist/types/src/display/api";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -29,6 +31,13 @@ export const PDFViewer = ({
   const [autoFit, setAutoFit] = useState<boolean>(true);
   const pageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Search states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<number[]>([]);
+  const [currentResultIndex, setCurrentResultIndex] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
+  const [pageTexts, setPageTexts] = useState<Map<number, string>>(new Map());
 
   useEffect(() => {
     setPageNumber(initialPage);
@@ -50,18 +59,97 @@ export const PDFViewer = ({
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
+    setPageTexts(new Map());
+  };
+
+  const extractTextFromPage = async (pageNum: number, pdfDoc: any) => {
+    try {
+      const page = await pdfDoc.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const text = textContent.items
+        .map((item: TextItem) => ('str' in item ? item.str : ''))
+        .join(' ')
+        .toLowerCase();
+      return text;
+    } catch (error) {
+      console.error(`Error extracting text from page ${pageNum}:`, error);
+      return '';
+    }
+  };
+
+  const handleSearch = async (term: string) => {
+    if (!term || term.length < 2) {
+      setSearchResults([]);
+      setSearchTerm("");
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchTerm(term.toLowerCase());
+    const results: number[] = [];
+
+    try {
+      const loadingTask = pdfjs.getDocument(fileUrl);
+      const pdfDoc = await loadingTask.promise;
+
+      for (let i = 1; i <= numPages; i++) {
+        let text = pageTexts.get(i);
+        if (!text) {
+          text = await extractTextFromPage(i, pdfDoc);
+          setPageTexts(prev => new Map(prev).set(i, text));
+        }
+
+        if (text.includes(term.toLowerCase())) {
+          results.push(i);
+        }
+      }
+
+      setSearchResults(results);
+      setCurrentResultIndex(0);
+      
+      if (results.length > 0) {
+        changePage(results[0]);
+      }
+    } catch (error) {
+      console.error("Error searching PDF:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleNextResult = () => {
+    if (searchResults.length === 0) return;
+    const nextIndex = (currentResultIndex + 1) % searchResults.length;
+    setCurrentResultIndex(nextIndex);
+    changePage(searchResults[nextIndex]);
+  };
+
+  const handlePrevResult = () => {
+    if (searchResults.length === 0) return;
+    const prevIndex = currentResultIndex === 0 ? searchResults.length - 1 : currentResultIndex - 1;
+    setCurrentResultIndex(prevIndex);
+    changePage(searchResults[prevIndex]);
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setSearchResults([]);
+    setCurrentResultIndex(0);
+  };
+
+  const changePage = (page: number) => {
+    setPageNumber(page);
+    onPageChange?.(page);
   };
 
   const goToPrevPage = () => {
     const newPage = Math.max(pageNumber - 1, 1);
-    setPageNumber(newPage);
-    onPageChange?.(newPage);
+    changePage(newPage);
   };
 
   const goToNextPage = () => {
     const newPage = Math.min(pageNumber + 1, numPages);
-    setPageNumber(newPage);
-    onPageChange?.(newPage);
+    changePage(newPage);
   };
 
   const zoomIn = () => {
@@ -136,6 +224,19 @@ export const PDFViewer = ({
         >
           <Maximize2 className="w-4 h-4" />
         </Button>
+        
+        <div className="h-6 w-px bg-border mx-2" />
+        
+        <PDFSearchBar
+          onSearch={handleSearch}
+          onNextResult={handleNextResult}
+          onPrevResult={handlePrevResult}
+          onClear={handleClearSearch}
+          currentResultIndex={currentResultIndex}
+          totalResults={searchResults.length}
+          isSearching={isSearching}
+        />
+        
         <div className="h-6 w-px bg-border mx-2" />
         <Button
           variant="ghost"
@@ -180,12 +281,31 @@ export const PDFViewer = ({
           }
         >
           <div className="relative">
-            <Page
-              pageNumber={pageNumber}
-              scale={scale}
-              renderTextLayer={true}
-              renderAnnotationLayer={true}
-            />
+          <Page
+            pageNumber={pageNumber}
+            scale={scale}
+            renderTextLayer={true}
+            renderAnnotationLayer={true}
+            loading={
+              <div className="flex items-center justify-center p-12">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            }
+            customTextRenderer={(textItem) => {
+              const text = 'str' in textItem ? textItem.str : '';
+              if (searchTerm && text.toLowerCase().includes(searchTerm)) {
+                return text
+                  .split(new RegExp(`(${searchTerm})`, 'gi'))
+                  .map((part, i) => 
+                    part.toLowerCase() === searchTerm 
+                      ? `<mark style="background-color: #fef08a; color: #000; padding: 2px 0;">${part}</mark>`
+                      : part
+                  )
+                  .join('');
+              }
+              return text;
+            }}
+          />
             {/* Highlight overlays */}
             {highlightedAreas.map((area, index) => (
               <div
