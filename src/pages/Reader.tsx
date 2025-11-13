@@ -24,9 +24,11 @@ import { HighlightsList } from "@/components/HighlightsList";
 import { PresentationMode } from "@/components/PresentationMode";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { TextToSpeechControls } from "@/components/TextToSpeechControls";
+import { NotesPanel } from "@/components/NotesPanel";
 import { useHighlights } from "@/hooks/useHighlights";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { useNotes } from "@/hooks/useNotes";
 import { captureError } from "@/lib/sentry";
 
 
@@ -48,6 +50,13 @@ const Reader = () => {
     deleteHighlight,
     getHighlightsForPage,
   } = useHighlights(id || "");
+
+  const {
+    notes,
+    addNote,
+    updateNote,
+    deleteNote,
+  } = useNotes(id || "");
 
   const { enterFullscreen } = useFullscreen();
   
@@ -329,6 +338,15 @@ const Reader = () => {
             />
 
             <ThemeSelector />
+
+            <NotesPanel
+              notes={notes}
+              currentPage={currentPage}
+              onAddNote={addNote}
+              onUpdateNote={updateNote}
+              onDeleteNote={deleteNote}
+              onNavigateToPage={handleNavigateToHighlight}
+            />
 
             <Button
               variant="ghost"
