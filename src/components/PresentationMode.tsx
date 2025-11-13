@@ -1,0 +1,319 @@
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Document, Page, pdfjs } from "react-pdf";
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  Info,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+interface PresentationModeProps {
+  fileUrl: string;
+  initialPage?: number;
+  bookTitle: string;
+  onClose: () => void;
+  onPageChange?: (page: number) => void;
+}
+
+export const PresentationMode = ({
+  fileUrl,
+  initialPage = 1,
+  bookTitle,
+  onClose,
+  onPageChange,
+}: PresentationModeProps) => {
+  const [numPages, setNumPages] = useState<number>(0);
+  const [pageNumber, setPageNumber] = useState<number>(initialPage);
+  const [scale, setScale] = useState<number>(1.2);
+  const [showControls, setShowControls] = useState(true);
+  const [showInfo, setShowInfo] = useState(false);
+  const hideControlsTimeout = useState<NodeJS.Timeout | null>(null)[1];
+
+  const goToPrevPage = useCallback(() => {
+    if (pageNumber > 1) {
+      const newPage = pageNumber - 1;
+      setPageNumber(newPage);
+      onPageChange?.(newPage);
+    }
+  }, [pageNumber, onPageChange]);
+
+  const goToNextPage = useCallback(() => {
+    if (pageNumber < numPages) {
+      const newPage = pageNumber + 1;
+      setPageNumber(newPage);
+      onPageChange?.(newPage);
+    }
+  }, [pageNumber, numPages, onPageChange]);
+
+  const zoomIn = () => {
+    setScale((prev) => Math.min(prev + 0.2, 3.0));
+  };
+
+  const zoomOut = () => {
+    setScale((prev) => Math.max(prev - 0.2, 0.5));
+  };
+
+  // Swipe gestures
+  useSwipeGesture({
+    onSwipeLeft: goToNextPage,
+    onSwipeRight: goToPrevPage,
+    threshold: 75,
+  });
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case "ArrowLeft":
+        case "PageUp":
+          e.preventDefault();
+          goToPrevPage();
+          break;
+        case "ArrowRight":
+        case "PageDown":
+        case " ":
+          e.preventDefault();
+          goToNextPage();
+          break;
+        case "Escape":
+          e.preventDefault();
+          onClose();
+          break;
+        case "+":
+        case "=":
+          e.preventDefault();
+          zoomIn();
+          break;
+        case "-":
+          e.preventDefault();
+          zoomOut();
+          break;
+        case "i":
+        case "I":
+          e.preventDefault();
+          setShowInfo((prev) => !prev);
+          break;
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [goToPrevPage, goToNextPage, onClose]);
+
+  // Auto-hide controls
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+
+    const resetTimeout = () => {
+      setShowControls(true);
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        setShowControls(false);
+      }, 3000);
+    };
+
+    const handleMouseMove = () => resetTimeout();
+    const handleTouchStart = () => resetTimeout();
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("touchstart", handleTouchStart);
+    resetTimeout();
+
+    return () => {
+      clearTimeout(timeout);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("touchstart", handleTouchStart);
+    };
+  }, []);
+
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center">
+      {/* Top Controls */}
+      <AnimatePresence>
+        {showControls && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4"
+          >
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <h1 className="text-white font-semibold text-lg truncate max-w-md">
+                  {bookTitle}
+                </h1>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowInfo(!showInfo)}
+                  className="text-white hover:bg-white/20"
+                >
+                  <Info className="w-5 h-5" />
+                </Button>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="text-white hover:bg-white/20"
+              >
+                <X className="w-6 h-6" />
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Info Panel */}
+      <AnimatePresence>
+        {showInfo && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="fixed top-20 right-4 z-50 glass-dark p-4 rounded-lg max-w-xs"
+          >
+            <h3 className="text-white font-semibold mb-2">Atalhos</h3>
+            <div className="space-y-1 text-sm text-white/80">
+              <p>← → : Navegar páginas</p>
+              <p>Espaço : Próxima página</p>
+              <p>+ / - : Zoom</p>
+              <p>I : Mostrar/ocultar info</p>
+              <p>ESC : Sair</p>
+              <p className="pt-2 border-t border-white/20">
+                Deslize para navegar
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* PDF Document */}
+      <div className="w-full h-full flex items-center justify-center overflow-auto">
+        <Document
+          file={fileUrl}
+          onLoadSuccess={onDocumentLoadSuccess}
+          loading={
+            <div className="flex items-center justify-center p-12">
+              <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin" />
+            </div>
+          }
+          error={
+            <div className="p-12 text-center">
+              <p className="text-white">Erro ao carregar o PDF</p>
+            </div>
+          }
+        >
+          <Page
+            pageNumber={pageNumber}
+            scale={scale}
+            renderTextLayer={true}
+            renderAnnotationLayer={false}
+            className="shadow-2xl"
+          />
+        </Document>
+      </div>
+
+      {/* Navigation Arrows - Left */}
+      <AnimatePresence>
+        {showControls && pageNumber > 1 && (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="fixed left-4 top-1/2 -translate-y-1/2 z-50"
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={goToPrevPage}
+              className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
+            >
+              <ChevronLeft className="w-8 h-8" />
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Navigation Arrows - Right */}
+      <AnimatePresence>
+        {showControls && pageNumber < numPages && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="fixed right-4 top-1/2 -translate-y-1/2 z-50"
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={goToNextPage}
+              className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
+            >
+              <ChevronRight className="w-8 h-8" />
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Bottom Controls */}
+      <AnimatePresence>
+        {showControls && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4"
+          >
+            <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={zoomOut}
+                disabled={scale <= 0.5}
+                className="text-white hover:bg-white/20"
+              >
+                <ZoomOut className="w-5 h-5" />
+              </Button>
+
+              <div className="glass-dark px-4 py-2 rounded-full text-white font-medium">
+                <span className="text-lg">{Math.round(scale * 100)}%</span>
+              </div>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={zoomIn}
+                disabled={scale >= 3.0}
+                className="text-white hover:bg-white/20"
+              >
+                <ZoomIn className="w-5 h-5" />
+              </Button>
+
+              <div className="h-8 w-px bg-white/20 mx-2" />
+
+              <div className="glass-dark px-6 py-2 rounded-full text-white font-medium">
+                <span className="text-lg">
+                  {pageNumber} / {numPages}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};

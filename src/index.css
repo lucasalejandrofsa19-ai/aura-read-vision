@@ -127,6 +127,14 @@ All colors MUST be HSL.
     box-shadow: var(--glow-soft);
   }
   
+  /* Glass dark for presentation mode */
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
   /* Smooth transitions */
   .transition-aura {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

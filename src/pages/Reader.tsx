@@ -9,6 +9,7 @@ import {
   FileText,
   Share2,
   BookmarkCheck,
+  Maximize,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +22,9 @@ import { toast } from "sonner";
 import { PDFViewer } from "@/components/PDFViewer";
 import { HighlightToolbar } from "@/components/HighlightToolbar";
 import { HighlightsList } from "@/components/HighlightsList";
+import { PresentationMode } from "@/components/PresentationMode";
 import { useHighlights } from "@/hooks/useHighlights";
+import { useFullscreen } from "@/hooks/useFullscreen";
 import { captureError } from "@/lib/sentry";
 
 
@@ -36,6 +39,7 @@ const Reader = () => {
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [selectedText, setSelectedText] = useState("");
   const [highlightColor, setHighlightColor] = useState("#fef08a");
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
 
   const {
     highlights,
@@ -43,6 +47,8 @@ const Reader = () => {
     deleteHighlight,
     getHighlightsForPage,
   } = useHighlights(id || "");
+
+  const { enterFullscreen } = useFullscreen();
 
   useEffect(() => {
     loadBook();
@@ -151,6 +157,19 @@ const Reader = () => {
     saveCurrentPage(pageNumber);
   };
 
+  const handleEnterPresentationMode = async () => {
+    await enterFullscreen();
+    setIsPresentationMode(true);
+    toast.success("Modo apresentação ativado");
+  };
+
+  const handleExitPresentationMode = () => {
+    setIsPresentationMode(false);
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -160,6 +179,19 @@ const Reader = () => {
   }
 
   if (!book) return null;
+
+  // Presentation Mode
+  if (isPresentationMode && pdfUrl) {
+    return (
+      <PresentationMode
+        fileUrl={pdfUrl}
+        initialPage={currentPage}
+        bookTitle={book.title}
+        onClose={handleExitPresentationMode}
+        onPageChange={handlePageChange}
+      />
+    );
+  }
 
   return (
     <div className={`min-h-screen ${backgroundColor} transition-colors duration-500`}>
@@ -245,6 +277,16 @@ const Reader = () => {
               className="aura-soft transition-aura"
             >
               <Share2 className="w-5 h-5" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleEnterPresentationMode}
+              className="aura-soft transition-aura"
+              title="Modo Apresentação (F11)"
+            >
+              <Maximize className="w-5 h-5" />
             </Button>
           </div>
         </div>
