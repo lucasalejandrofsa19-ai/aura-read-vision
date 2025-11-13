@@ -80,11 +80,11 @@ const Index = () => {
           </motion.div>
 
           {/* Title */}
-          <h1 className="text-6xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent px-4">
             AURA READ
           </h1>
           
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl">
+          <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl px-4">
             Sua biblioteca pessoal interativa com leitura futurista e inteligente
           </p>
 
@@ -110,7 +110,7 @@ const Index = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.6 }}
-          className="grid md:grid-cols-3 gap-6 mt-24 max-w-5xl"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-24 max-w-5xl px-4 w-full"
         >
           {features.map((feature, index) => (
             <motion.div
