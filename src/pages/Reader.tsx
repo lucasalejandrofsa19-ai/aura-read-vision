@@ -19,6 +19,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { PDFViewer } from "@/components/PDFViewer";
+import { HighlightToolbar } from "@/components/HighlightToolbar";
+import { HighlightsList } from "@/components/HighlightsList";
+import { useHighlights } from "@/hooks/useHighlights";
 import { captureError } from "@/lib/sentry";
 
 
@@ -31,6 +34,15 @@ const Reader = () => {
   const [book, setBook] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string>("");
+  const [selectedText, setSelectedText] = useState("");
+  const [highlightColor, setHighlightColor] = useState("#fef08a");
+
+  const {
+    highlights,
+    addHighlight,
+    deleteHighlight,
+    getHighlightsForPage,
+  } = useHighlights(id || "");
 
   useEffect(() => {
     loadBook();
@@ -116,6 +128,27 @@ const Reader = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     saveCurrentPage(page);
+    setSelectedText(""); // Clear selection when changing pages
+  };
+
+  const handleTextSelect = (text: string) => {
+    setSelectedText(text);
+  };
+
+  const handleAddHighlight = async () => {
+    if (!selectedText) {
+      toast.error("Selecione um texto primeiro");
+      return;
+    }
+
+    await addHighlight(currentPage, selectedText, highlightColor);
+    setSelectedText("");
+    window.getSelection()?.removeAllRanges();
+  };
+
+  const handleNavigateToHighlight = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    saveCurrentPage(pageNumber);
   };
 
   if (loading) {
@@ -222,13 +255,30 @@ const Reader = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="max-w-5xl mx-auto px-6 py-12"
+        className="max-w-5xl mx-auto px-6 py-12 space-y-6"
       >
+        {/* Highlights List */}
+        <HighlightsList
+          highlights={highlights}
+          onDelete={deleteHighlight}
+          onNavigate={handleNavigateToHighlight}
+        />
+
+        {/* Highlight Toolbar */}
+        <HighlightToolbar
+          selectedColor={highlightColor}
+          onColorChange={setHighlightColor}
+          onHighlight={handleAddHighlight}
+          isHighlightMode={!!selectedText}
+          selectedText={selectedText}
+        />
+
         {pdfUrl ? (
           <PDFViewer 
             fileUrl={pdfUrl} 
             initialPage={currentPage}
             onPageChange={handlePageChange}
+            onTextSelect={handleTextSelect}
           />
         ) : (
           <div className="text-center py-12">
