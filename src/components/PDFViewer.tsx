@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -26,7 +26,9 @@ export const PDFViewer = ({
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
   const [scale, setScale] = useState<number>(1.0);
+  const [autoFit, setAutoFit] = useState<boolean>(true);
   const pageRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setPageNumber(initialPage);
@@ -63,15 +65,45 @@ export const PDFViewer = ({
   };
 
   const zoomIn = () => {
+    setAutoFit(false);
     setScale((prev) => Math.min(prev + 0.2, 3.0));
   };
 
   const zoomOut = () => {
+    setAutoFit(false);
     setScale((prev) => Math.max(prev - 0.2, 0.5));
   };
 
+  const fitToWidth = () => {
+    setAutoFit(true);
+    if (containerRef.current) {
+      // Calculate scale to fit width (accounting for padding)
+      const containerWidth = containerRef.current.clientWidth - 40;
+      const pageWidth = 595; // Standard PDF page width in points
+      const newScale = containerWidth / pageWidth;
+      setScale(Math.max(0.5, Math.min(newScale, 3.0)));
+    }
+  };
+
+  useEffect(() => {
+    if (autoFit) {
+      fitToWidth();
+    }
+  }, [autoFit, pageNumber]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (autoFit) {
+        fitToWidth();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [autoFit]);
+
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div ref={containerRef} className="flex flex-col items-center gap-4">
       {/* Controls */}
       <div className="glass sticky top-20 z-40 rounded-lg p-2 flex items-center gap-2">
         <Button
@@ -94,6 +126,15 @@ export const PDFViewer = ({
           className="aura-soft"
         >
           <ZoomIn className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={fitToWidth}
+          className={`aura-soft ${autoFit ? 'text-primary' : ''}`}
+          title="Ajustar à largura"
+        >
+          <Maximize2 className="w-4 h-4" />
         </Button>
         <div className="h-6 w-px bg-border mx-2" />
         <Button

@@ -23,8 +23,10 @@ import { HighlightToolbar } from "@/components/HighlightToolbar";
 import { HighlightsList } from "@/components/HighlightsList";
 import { PresentationMode } from "@/components/PresentationMode";
 import { ThemeSelector } from "@/components/ThemeSelector";
+import { TextToSpeechControls } from "@/components/TextToSpeechControls";
 import { useHighlights } from "@/hooks/useHighlights";
 import { useFullscreen } from "@/hooks/useFullscreen";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { captureError } from "@/lib/sentry";
 
 
@@ -48,6 +50,21 @@ const Reader = () => {
   } = useHighlights(id || "");
 
   const { enterFullscreen } = useFullscreen();
+  
+  const {
+    speak,
+    stop,
+    togglePause,
+    isSpeaking,
+    isPaused,
+    voices,
+    selectedVoice,
+    setSelectedVoice,
+    rate,
+    setRate,
+    pitch,
+    setPitch,
+  } = useTextToSpeech();
 
   useEffect(() => {
     loadBook();
@@ -162,6 +179,41 @@ const Reader = () => {
     }
   };
 
+  const handleReadAloud = () => {
+    if (!book?.extracted_text) {
+      toast.error("Nenhum texto extraído disponível para leitura");
+      return;
+    }
+    
+    // Read a portion of text (you could enhance this to read the current page)
+    const textToRead = book.extracted_text.substring(0, 1000);
+    speak(textToRead);
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ctrl+Shift+R to read aloud
+      if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+        e.preventDefault();
+        handleReadAloud();
+      }
+      // Space to pause/resume
+      if (e.code === 'Space' && isSpeaking) {
+        e.preventDefault();
+        togglePause();
+      }
+      // Escape to stop
+      if (e.key === 'Escape' && isSpeaking) {
+        e.preventDefault();
+        stop();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isSpeaking, book]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -231,6 +283,21 @@ const Reader = () => {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <TextToSpeechControls
+              isSpeaking={isSpeaking}
+              isPaused={isPaused}
+              onSpeak={handleReadAloud}
+              onStop={stop}
+              onTogglePause={togglePause}
+              voices={voices}
+              selectedVoice={selectedVoice}
+              onVoiceChange={setSelectedVoice}
+              rate={rate}
+              onRateChange={setRate}
+              pitch={pitch}
+              onPitchChange={setPitch}
+            />
 
             <ThemeSelector />
 
