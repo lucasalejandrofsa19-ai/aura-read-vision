@@ -27,6 +27,7 @@ import { FocusedReaderMode } from "@/components/FocusedReaderMode";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { TextToSpeechControls } from "@/components/TextToSpeechControls";
 import { NotesPanel } from "@/components/NotesPanel";
+import { ExportDialog } from "@/components/ExportDialog";
 import { useHighlights } from "@/hooks/useHighlights";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
@@ -364,6 +365,12 @@ const Reader = () => {
             />
 
             <ThemeSelector />
+
+            <ExportDialog
+              bookTitle={book.title}
+              highlights={highlights}
+              notes={notes}
+            />
 
             <NotesPanel
               notes={notes}

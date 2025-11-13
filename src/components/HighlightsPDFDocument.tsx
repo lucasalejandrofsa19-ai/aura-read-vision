@@ -1,81 +1,264 @@
+import React from "react";
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import { Highlight } from "@/hooks/useHighlights";
+import type { Highlight } from "@/hooks/useHighlights";
+import type { Note } from "@/hooks/useNotes";
+
+interface HighlightsPDFDocumentProps {
+  bookTitle: string;
+  highlights: Highlight[];
+  notes?: Note[];
+  options?: {
+    includeHighlights?: boolean;
+    includeNotes?: boolean;
+    groupByPage?: boolean;
+    includeTimestamps?: boolean;
+    includeColors?: boolean;
+  };
+}
+
+export const HighlightsPDFDocument = ({
+  bookTitle,
+  highlights,
+  notes = [],
+  options = {
+    includeHighlights: true,
+    includeNotes: true,
+    groupByPage: true,
+    includeTimestamps: true,
+    includeColors: true,
+  },
+}: HighlightsPDFDocumentProps) => {
+  const {
+    includeHighlights = true,
+    includeNotes = true,
+    groupByPage = true,
+    includeTimestamps = true,
+    includeColors = true,
+  } = options;
+
+  const filteredHighlights = includeHighlights ? highlights : [];
+  const filteredNotes = includeNotes ? notes : [];
+
+  const pages = new Set<number>();
+  if (groupByPage) {
+    filteredHighlights.forEach((h) => pages.add(h.page_number));
+    filteredNotes.forEach((n) => pages.add(n.page_number));
+  }
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{bookTitle}</Text>
+          <Text style={styles.subtitle}>
+            Destaques e Anotações Exportados
+          </Text>
+          <Text style={styles.date}>
+            {new Date().toLocaleDateString("pt-BR", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </Text>
+        </View>
+
+        {groupByPage ? (
+          Array.from(pages)
+            .sort((a, b) => a - b)
+            .map((pageNum) => (
+              <View key={pageNum} style={styles.pageSection}>
+                <Text style={styles.pageTitle}>Página {pageNum}</Text>
+
+                {includeHighlights && (
+                  <>
+                    {filteredHighlights
+                      .filter((h) => h.page_number === pageNum)
+                      .map((highlight, idx) => (
+                        <View key={`h-${idx}`} style={styles.highlightBox}>
+                          <Text style={styles.highlightText}>
+                            "{highlight.text}"
+                          </Text>
+                          {includeColors && highlight.color && (
+                            <Text style={styles.colorTag}>
+                              Cor: {highlight.color}
+                            </Text>
+                          )}
+                          {includeTimestamps && (
+                            <Text style={styles.timestamp}>
+                              {new Date(highlight.created_at).toLocaleString(
+                                "pt-BR"
+                              )}
+                            </Text>
+                          )}
+                        </View>
+                      ))}
+                  </>
+                )}
+
+                {includeNotes && (
+                  <>
+                    {filteredNotes
+                      .filter((n) => n.page_number === pageNum)
+                      .map((note, idx) => (
+                        <View key={`n-${idx}`} style={styles.noteBox}>
+                          <Text style={styles.noteLabel}>📝 Anotação:</Text>
+                          <Text style={styles.noteText}>{note.note_text}</Text>
+                          {includeTimestamps && (
+                            <Text style={styles.timestamp}>
+                              {new Date(note.created_at).toLocaleString(
+                                "pt-BR"
+                              )}
+                            </Text>
+                          )}
+                        </View>
+                      ))}
+                  </>
+                )}
+              </View>
+            ))
+        ) : (
+          <>
+            {includeHighlights && filteredHighlights.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Destaques</Text>
+                {filteredHighlights.map((highlight, idx) => (
+                  <View key={idx} style={styles.highlightBox}>
+                    <Text style={styles.pageRef}>
+                      Página {highlight.page_number}
+                    </Text>
+                    <Text style={styles.highlightText}>
+                      "{highlight.text}"
+                    </Text>
+                    {includeColors && highlight.color && (
+                      <Text style={styles.colorTag}>
+                        Cor: {highlight.color}
+                      </Text>
+                    )}
+                    {includeTimestamps && (
+                      <Text style={styles.timestamp}>
+                        {new Date(highlight.created_at).toLocaleString(
+                          "pt-BR"
+                        )}
+                      </Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {includeNotes && filteredNotes.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Anotações</Text>
+                {filteredNotes.map((note, idx) => (
+                  <View key={idx} style={styles.noteBox}>
+                    <Text style={styles.pageRef}>
+                      Página {note.page_number}
+                    </Text>
+                    <Text style={styles.noteLabel}>📝 Anotação:</Text>
+                    <Text style={styles.noteText}>{note.note_text}</Text>
+                    {includeTimestamps && (
+                      <Text style={styles.timestamp}>
+                        {new Date(note.created_at).toLocaleString("pt-BR")}
+                      </Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            )}
+          </>
+        )}
+      </Page>
+    </Document>
+  );
+};
 
 const styles = StyleSheet.create({
   page: {
-    padding: 30,
+    padding: 40,
+    fontFamily: "Helvetica",
     backgroundColor: "#ffffff",
+  },
+  header: {
+    marginBottom: 30,
+    borderBottom: "2 solid #000000",
+    paddingBottom: 10,
   },
   title: {
     fontSize: 24,
-    marginBottom: 20,
     fontWeight: "bold",
+    marginBottom: 5,
   },
-  bookTitle: {
-    fontSize: 18,
-    marginBottom: 30,
+  subtitle: {
+    fontSize: 14,
     color: "#666666",
-  },
-  highlight: {
-    marginBottom: 20,
-    padding: 15,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 5,
-  },
-  highlightHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  pageNumber: {
-    fontSize: 12,
-    color: "#666666",
+    marginBottom: 5,
   },
   date: {
     fontSize: 10,
     color: "#999999",
   },
-  text: {
-    fontSize: 12,
-    lineHeight: 1.5,
+  pageSection: {
+    marginBottom: 20,
   },
-  footer: {
-    position: "absolute",
-    bottom: 30,
-    left: 30,
-    right: 30,
-    textAlign: "center",
+  pageTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+    color: "#333333",
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+    color: "#333333",
+  },
+  highlightBox: {
+    marginBottom: 15,
+    padding: 12,
+    backgroundColor: "#fffbeb",
+    borderLeft: "4 solid #fbbf24",
+    borderRadius: 4,
+  },
+  noteBox: {
+    marginBottom: 15,
+    padding: 12,
+    backgroundColor: "#f0f9ff",
+    borderLeft: "4 solid #3b82f6",
+    borderRadius: 4,
+  },
+  pageRef: {
     fontSize: 10,
+    fontWeight: "bold",
+    marginBottom: 5,
+    color: "#666666",
+  },
+  noteLabel: {
+    fontSize: 10,
+    fontWeight: "bold",
+    marginBottom: 5,
+    color: "#3b82f6",
+  },
+  highlightText: {
+    fontSize: 11,
+    fontStyle: "italic",
+    marginBottom: 5,
+    lineHeight: 1.4,
+  },
+  noteText: {
+    fontSize: 11,
+    marginBottom: 5,
+    lineHeight: 1.4,
+  },
+  colorTag: {
+    fontSize: 9,
+    color: "#666666",
+    marginBottom: 3,
+  },
+  timestamp: {
+    fontSize: 8,
     color: "#999999",
   },
 });
-
-interface HighlightsPDFDocumentProps {
-  highlights: Highlight[];
-  bookTitle: string;
-}
-
-export const HighlightsPDFDocument = ({ highlights, bookTitle }: HighlightsPDFDocumentProps) => (
-  <Document>
-    <Page size="A4" style={styles.page}>
-      <Text style={styles.title}>Destaques</Text>
-      <Text style={styles.bookTitle}>{bookTitle}</Text>
-      
-      {highlights.map((highlight, index) => (
-        <View key={highlight.id} style={styles.highlight}>
-          <View style={styles.highlightHeader}>
-            <Text style={styles.pageNumber}>Página {highlight.page_number}</Text>
-            <Text style={styles.date}>
-              {new Date(highlight.created_at).toLocaleDateString("pt-BR")}
-            </Text>
-          </View>
-          <Text style={styles.text}>{highlight.text}</Text>
-        </View>
-      ))}
-      
-      <Text style={styles.footer}>
-        Gerado em {new Date().toLocaleDateString("pt-BR")} - {highlights.length} destaque(s)
-      </Text>
-    </Page>
-  </Document>
-);
