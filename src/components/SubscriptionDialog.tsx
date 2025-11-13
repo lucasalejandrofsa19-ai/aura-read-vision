@@ -19,10 +19,10 @@ const SUBSCRIPTION_PLANS = {
     priceId: "price_1SSeWJFGn21ViXD31bV8SnrT",
     features: [
       "Até 100 PDFs",
-      "Marca-texto ilimitado",
-      "Resumos automáticos",
-      "Compartilhamento",
-      "Sem anúncios",
+      "Todos os recursos básicos",
+      "Exportação de anotações (PDF, Word, Markdown)",
+      "Modo de apresentação",
+      "Busca avançada",
     ],
   },
   premium: {
@@ -31,11 +31,11 @@ const SUBSCRIPTION_PLANS = {
     priceId: "price_1SSeZkFGn21ViXD3ajyV2R0i",
     features: [
       "PDFs ilimitados",
-      "Marca-texto ilimitado",
-      "Resumos com IA",
-      "Compartilhamento ilimitado",
-      "Prioridade no suporte",
-      "Recursos exclusivos",
+      "Todos os recursos Pro",
+      "Leitura em voz alta com vozes premium",
+      "Modo de leitura focada com temas",
+      "Exportação para Notion",
+      "Suporte prioritário",
     ],
   },
 };
