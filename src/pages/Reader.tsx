@@ -9,6 +9,7 @@ import {
   Share2,
   BookmarkCheck,
   Maximize,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +23,7 @@ import { PDFViewer } from "@/components/PDFViewer";
 import { HighlightToolbar } from "@/components/HighlightToolbar";
 import { HighlightsList } from "@/components/HighlightsList";
 import { PresentationMode } from "@/components/PresentationMode";
+import { FocusedReaderMode } from "@/components/FocusedReaderMode";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { TextToSpeechControls } from "@/components/TextToSpeechControls";
 import { NotesPanel } from "@/components/NotesPanel";
@@ -43,6 +45,7 @@ const Reader = () => {
   const [selectedText, setSelectedText] = useState("");
   const [highlightColor, setHighlightColor] = useState("#fef08a");
   const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [isFocusedMode, setIsFocusedMode] = useState(false);
 
   const {
     highlights,
@@ -217,6 +220,15 @@ const Reader = () => {
     }
   };
 
+  const handleEnterFocusedMode = () => {
+    setIsFocusedMode(true);
+    toast.success("Modo leitura focada ativado");
+  };
+
+  const handleExitFocusedMode = () => {
+    setIsFocusedMode(false);
+  };
+
   const handleReadAloud = () => {
     if (!book?.extracted_text) {
       toast.error("Nenhum texto extraído disponível para leitura");
@@ -261,6 +273,20 @@ const Reader = () => {
   }
 
   if (!book) return null;
+
+  // Focused Reading Mode
+  if (isFocusedMode && pdfUrl) {
+    return (
+      <FocusedReaderMode
+        fileUrl={pdfUrl}
+        initialPage={currentPage}
+        totalPages={book.total_pages || 1}
+        bookTitle={book.title}
+        onClose={handleExitFocusedMode}
+        onPageChange={handlePageChange}
+      />
+    );
+  }
 
   // Presentation Mode
   if (isPresentationMode && pdfUrl) {
@@ -364,6 +390,16 @@ const Reader = () => {
               className="aura-soft transition-aura"
             >
               <Share2 className="w-5 h-5" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleEnterFocusedMode}
+              className="aura-soft transition-aura"
+              title="Modo Leitura Focada"
+            >
+              <Eye className="w-5 h-5" />
             </Button>
 
             <Button

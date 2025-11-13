@@ -3,9 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
-import type { Tables } from "@/integrations/supabase/types";
 
-export type Note = Tables<"notes">;
+export interface Note {
+  id: string;
+  user_id: string;
+  book_id: string;
+  page_number: number;
+  note_text: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export const useNotes = (bookId: string) => {
   const { user } = useAuth();
@@ -20,7 +27,7 @@ export const useNotes = (bookId: string) => {
 
     try {
       const { data, error } = await supabase
-        .from("notes")
+        .from("notes" as any)
         .select("*")
         .eq("book_id", bookId)
         .eq("user_id", user.id)
@@ -28,7 +35,7 @@ export const useNotes = (bookId: string) => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setNotes(data || []);
+      setNotes((data as unknown as Note[]) || []);
     } catch (error) {
       captureError(error, { context: "load_notes" });
       toast.error("Erro ao carregar anotações");
@@ -54,7 +61,7 @@ export const useNotes = (bookId: string) => {
 
     try {
       const { data, error } = await supabase
-        .from("notes")
+        .from("notes" as any)
         .insert({
           user_id: user.id,
           book_id: bookId,
@@ -66,9 +73,9 @@ export const useNotes = (bookId: string) => {
 
       if (error) throw error;
 
-      setNotes((prev) => [...prev, data]);
+      setNotes((prev) => [...prev, data as unknown as Note]);
       toast.success("Anotação adicionada!");
-      return data;
+      return data as unknown as Note;
     } catch (error) {
       captureError(error, { context: "add_note" });
       toast.error("Erro ao adicionar anotação");
@@ -83,7 +90,7 @@ export const useNotes = (bookId: string) => {
 
     try {
       const { data, error } = await supabase
-        .from("notes")
+        .from("notes" as any)
         .update({ note_text: noteText.trim() })
         .eq("id", noteId)
         .select()
@@ -92,7 +99,7 @@ export const useNotes = (bookId: string) => {
       if (error) throw error;
 
       setNotes((prev) =>
-        prev.map((note) => (note.id === noteId ? data : note))
+        prev.map((note) => (note.id === noteId ? data as unknown as Note : note))
       );
       toast.success("Anotação atualizada!");
     } catch (error) {
@@ -104,7 +111,7 @@ export const useNotes = (bookId: string) => {
   const deleteNote = async (noteId: string) => {
     try {
       const { error } = await supabase
-        .from("notes")
+        .from("notes" as any)
         .delete()
         .eq("id", noteId);
 
