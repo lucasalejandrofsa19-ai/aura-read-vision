@@ -26,7 +26,8 @@ const Reader = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [backgroundColor, setBackgroundColor] = useState("bg-background");
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarkedPage, setBookmarkedPage] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [book, setBook] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string>("");
@@ -47,6 +48,11 @@ const Reader = () => {
 
       if (error) throw error;
       setBook(data);
+      
+      // Set current page from database
+      if (data.current_page) {
+        setCurrentPage(data.current_page);
+      }
 
       // Get public URL for the PDF
       if (data.file_path) {
@@ -65,6 +71,21 @@ const Reader = () => {
     }
   };
 
+  const saveCurrentPage = async (page: number) => {
+    if (!id) return;
+    
+    try {
+      const { error } = await supabase
+        .from("books")
+        .update({ current_page: page })
+        .eq("id", id);
+      
+      if (error) throw error;
+    } catch (error) {
+      captureError(error, { context: "save_current_page" });
+    }
+  };
+
   const backgrounds = [
     { name: "Grafite", class: "bg-background", color: "Escuro" },
     { name: "Papel Velho", class: "bg-paper", color: "Claro" },
@@ -73,8 +94,28 @@ const Reader = () => {
   ];
 
   const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-    toast.success(isBookmarked ? "Marcador removido" : "Página marcada!");
+    if (bookmarkedPage === currentPage) {
+      // Remove bookmark
+      setBookmarkedPage(null);
+      toast.success("Marcador removido");
+    } else {
+      // Set bookmark to current page
+      setBookmarkedPage(currentPage);
+      toast.success(`Página ${currentPage} marcada!`);
+    }
+  };
+
+  const goToBookmark = () => {
+    if (bookmarkedPage) {
+      setCurrentPage(bookmarkedPage);
+      saveCurrentPage(bookmarkedPage);
+      toast.success(`Indo para página marcada: ${bookmarkedPage}`);
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    saveCurrentPage(page);
   };
 
   if (loading) {
@@ -112,14 +153,27 @@ const Reader = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleBookmark}
-              className={`transition-aura ${isBookmarked ? "text-accent aura-amber" : "aura-soft"}`}
-            >
-              {isBookmarked ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`transition-aura ${bookmarkedPage ? "text-accent aura-amber" : "aura-soft"}`}
+                >
+                  {bookmarkedPage ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="glass">
+                <DropdownMenuItem onClick={handleBookmark}>
+                  {bookmarkedPage === currentPage ? "Remover marcador" : "Marcar página atual"}
+                </DropdownMenuItem>
+                {bookmarkedPage && bookmarkedPage !== currentPage && (
+                  <DropdownMenuItem onClick={goToBookmark}>
+                    Ir para página {bookmarkedPage}
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -171,7 +225,11 @@ const Reader = () => {
         className="max-w-5xl mx-auto px-6 py-12"
       >
         {pdfUrl ? (
-          <PDFViewer fileUrl={pdfUrl} />
+          <PDFViewer 
+            fileUrl={pdfUrl} 
+            initialPage={currentPage}
+            onPageChange={handlePageChange}
+          />
         ) : (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Nenhum arquivo PDF disponível</p>
