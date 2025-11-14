@@ -214,16 +214,25 @@ All colors MUST be HSL.
     min-height: -webkit-fill-available;
     overflow-x: hidden;
     position: relative;
+    width: 100%;
+    max-width: 100vw;
     /* iOS specific fixes */
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
+    /* Prevent text size adjustment on mobile */
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
   
   #root {
     min-height: 100vh;
+    min-height: 100dvh;
     min-height: -webkit-fill-available;
     width: 100%;
+    max-width: 100vw;
     overflow-x: hidden;
+    position: relative;
   }
   
   /* Mobile safe area support */
