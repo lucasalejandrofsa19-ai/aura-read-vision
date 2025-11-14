@@ -340,7 +340,85 @@ const Reader = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Mobile: Compact menu */}
+          <div className="flex md:hidden items-center gap-1">
+            <NotesPanel
+              notes={notes}
+              currentPage={currentPage}
+              onAddNote={addNote}
+              onUpdateNote={updateNote}
+              onDeleteNote={deleteNote}
+              onNavigateToPage={handleNavigateToHighlight}
+            />
+
+            <div className="[&>*]:scale-90">
+              <ExportDialog
+                bookTitle={book.title}
+                highlights={highlights}
+                notes={notes}
+              />
+            </div>
+
+            <TextToSpeechControls
+              isSpeaking={isSpeaking}
+              isPaused={isPaused}
+              onSpeak={handleReadAloud}
+              onStop={stop}
+              onTogglePause={togglePause}
+              voices={voices}
+              selectedVoice={selectedVoice}
+              onVoiceChange={setSelectedVoice}
+              rate={rate}
+              onRateChange={setRate}
+              pitch={pitch}
+              onPitchChange={setPitch}
+            />
+
+            <ThemeSelector />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="aura-soft transition-aura"
+                >
+                  <Palette className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={handleBookmark}>
+                  <Bookmark className="w-4 h-4 mr-2" />
+                  {bookmarkedPage === currentPage ? "Remover marcador" : "Marcar página"}
+                </DropdownMenuItem>
+                {bookmarkedPage && bookmarkedPage !== currentPage && (
+                  <DropdownMenuItem onClick={goToBookmark}>
+                    <BookmarkCheck className="w-4 h-4 mr-2" />
+                    Ir para página {bookmarkedPage}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={handleEnterFocusedMode}>
+                  <Eye className="w-4 h-4 mr-2" />
+                  Modo Leitura Focada
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleEnterPresentationMode}>
+                  <Maximize className="w-4 h-4 mr-2" />
+                  Modo Apresentação
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/summary/" + id)}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Resumo
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/share/" + id)}>
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Compartilhar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Desktop: All buttons visible */}
+          <div className="hidden md:flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -435,41 +513,6 @@ const Reader = () => {
           </div>
         </div>
       </motion.header>
-
-      {/* Hidden components for dialogs */}
-      <ExportDialog
-        bookTitle={book.title}
-        highlights={highlights}
-        notes={notes}
-      />
-
-      <NotesPanel
-        notes={notes}
-        currentPage={currentPage}
-        onAddNote={addNote}
-        onUpdateNote={updateNote}
-        onDeleteNote={deleteNote}
-        onNavigateToPage={handleNavigateToHighlight}
-      />
-
-      {isSpeaking && (
-        <TextToSpeechControls
-          isSpeaking={isSpeaking}
-          isPaused={isPaused}
-          onSpeak={handleReadAloud}
-          onStop={stop}
-          onTogglePause={togglePause}
-          voices={voices}
-          selectedVoice={selectedVoice}
-          onVoiceChange={setSelectedVoice}
-          rate={rate}
-          onRateChange={setRate}
-          pitch={pitch}
-          onPitchChange={setPitch}
-        />
-      )}
-
-      <ThemeSelector />
 
       {/* Content */}
       <motion.main
