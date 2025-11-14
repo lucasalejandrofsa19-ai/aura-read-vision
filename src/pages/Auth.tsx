@@ -139,16 +139,6 @@ const Auth = () => {
           }}
         />
       </div>
-            scale: [1.2, 1, 1.2],
-            opacity: [0.5, 0.3, 0.5],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
