@@ -15,6 +15,7 @@ import Summary from "./pages/Summary";
 import Share from "./pages/Share";
 import Profile from "./pages/Profile";
 import Pricing from "./pages/Pricing";
+import Download from "./pages/Download";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
               <Route path="/share/:id" element={<Share />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/download" element={<Download />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
               </SentryRoutes>
