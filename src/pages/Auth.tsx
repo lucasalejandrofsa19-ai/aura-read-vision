@@ -2,20 +2,74 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Book, Sparkles } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+
+// Login validation schema
+const loginSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "E-mail é obrigatório")
+    .email("E-mail inválido")
+    .max(255, "E-mail deve ter no máximo 255 caracteres"),
+  password: z
+    .string()
+    .min(6, "Senha deve ter no mínimo 6 caracteres")
+    .max(100, "Senha deve ter no máximo 100 caracteres"),
+});
+
+// Signup validation schema
+const signupSchema = loginSchema.extend({
+  fullName: z
+    .string()
+    .trim()
+    .min(2, "Nome deve ter no mínimo 2 caracteres")
+    .max(100, "Nome deve ter no máximo 100 caracteres")
+    .regex(/^[a-zA-ZÀ-ÿ\s]+$/, "Nome deve conter apenas letras"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+type SignupFormData = z.infer<typeof signupSchema>;
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { signIn, signUp, user } = useAuth();
+
+  const loginForm = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const signupForm = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      fullName: "",
+    },
+  });
+
+  const currentForm = isLogin ? loginForm : signupForm;
 
   useEffect(() => {
     if (user) {
@@ -23,32 +77,32 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email || !password) {
-      toast.error("Preencha todos os campos");
-      return;
-    }
+  // Reset form when switching between login and signup
+  useEffect(() => {
+    loginForm.reset();
+    signupForm.reset();
+  }, [isLogin]);
 
-    if (!isLogin && !fullName) {
-      toast.error("Preencha seu nome completo");
-      return;
-    }
-
+  const onSubmitLogin = async (data: LoginFormData) => {
     setLoading(true);
-
     try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) {
-          toast.error(error.message || "Erro ao fazer login");
-        }
-      } else {
-        const { error } = await signUp(email, password, fullName);
-        if (error) {
-          toast.error(error.message || "Erro ao criar conta");
-        }
+      const { error } = await signIn(data.email, data.password);
+      if (error) {
+        toast.error(error.message || "Erro ao fazer login");
+      }
+    } catch (error) {
+      toast.error("Erro inesperado. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onSubmitSignup = async (data: SignupFormData) => {
+    setLoading(true);
+    try {
+      const { error } = await signUp(data.email, data.password, data.fullName);
+      if (error) {
+        toast.error(error.message || "Erro ao criar conta");
       }
     } catch (error) {
       toast.error("Erro inesperado. Tente novamente.");
@@ -148,57 +202,78 @@ const Auth = () => {
             </Button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nome Completo</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Seu nome completo"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="glass border-primary/20 focus:border-primary"
-                  required={!isLogin}
-                />
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="glass border-primary/20 focus:border-primary"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="glass border-primary/20 focus:border-primary"
-                required
-                minLength={6}
-              />
-            </div>
-
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-safira"
+          <Form {...currentForm}>
+            <form 
+              onSubmit={currentForm.handleSubmit(isLogin ? onSubmitLogin : onSubmitSignup)} 
+              className="space-y-4"
             >
-              {loading ? "Processando..." : (isLogin ? "Entrar" : "Criar Conta")}
-            </Button>
-          </form>
+              {!isLogin && (
+                <FormField
+                  control={signupForm.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome Completo</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Seu nome completo"
+                          className="glass border-primary/20 focus:border-primary"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              
+              <FormField
+                control={currentForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>E-mail</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="seu@email.com"
+                        className="glass border-primary/20 focus:border-primary"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={currentForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        className="glass border-primary/20 focus:border-primary"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-safira"
+              >
+                {loading ? "Processando..." : (isLogin ? "Entrar" : "Criar Conta")}
+              </Button>
+            </form>
+          </Form>
         </motion.div>
       </motion.div>
     </div>
