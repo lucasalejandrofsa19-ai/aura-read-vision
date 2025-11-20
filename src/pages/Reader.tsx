@@ -14,6 +14,7 @@ import {
   FileDown,
   StickyNote,
   Palette,
+  MoreVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -335,14 +336,93 @@ const Reader = () => {
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <div>
+            <div className="flex-1">
               <h1 className="font-semibold">{book.title}</h1>
               <p className="text-xs text-muted-foreground">{book.author || "Autor Desconhecido"}</p>
             </div>
           </div>
 
-          {/* Linha 2: Todos os ícones de função em fila */}
-          <div className="flex items-center gap-2 flex-wrap ml-14">
+          {/* Mobile: Ícones essenciais + Menu "Mais opções" */}
+          <div className="flex md:hidden items-center gap-2 ml-14 flex-wrap">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`transition-aura ${bookmarkedPage ? "text-accent aura-amber" : "aura-soft"}`}
+                  title="Marcador"
+                >
+                  {bookmarkedPage ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="glass">
+                <DropdownMenuItem onClick={handleBookmark}>
+                  {bookmarkedPage === currentPage ? "Remover marcador" : "Marcar página atual"}
+                </DropdownMenuItem>
+                {bookmarkedPage && bookmarkedPage !== currentPage && (
+                  <DropdownMenuItem onClick={goToBookmark}>
+                    Ir para página {bookmarkedPage}
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <NotesPanel
+              notes={notes}
+              currentPage={currentPage}
+              onAddNote={addNote}
+              onUpdateNote={updateNote}
+              onDeleteNote={deleteNote}
+              onNavigateToPage={handleNavigateToHighlight}
+            />
+
+            <ExportDialog
+              bookTitle={book.title}
+              highlights={highlights}
+              notes={notes}
+            />
+
+            {/* Dropdown "Mais opções" para funções secundárias */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="aura-soft transition-aura"
+                  title="Mais opções"
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="glass w-56">
+                <DropdownMenuItem onClick={handleReadAloud}>
+                  <Volume2 className="w-4 h-4 mr-2" />
+                  Ler em voz alta
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleEnterFocusedMode}>
+                  <Eye className="w-4 h-4 mr-2" />
+                  Modo Leitura Focada
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleEnterPresentationMode}>
+                  <Maximize className="w-4 h-4 mr-2" />
+                  Modo Apresentação
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/summary/" + id)}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Ver Resumo
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/share/" + id)}>
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Compartilhar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <ThemeSelector />
+          </div>
+
+          {/* Desktop: Linha 2 com todos os ícones de função em fila */}
+          <div className="hidden md:flex items-center gap-2 flex-wrap ml-14">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
