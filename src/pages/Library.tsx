@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import BookCard from "@/components/BookCard";
 import UploadPDF from "@/components/UploadPDF";
+import { UploadPremiumBook } from "@/components/UploadPremiumBook";
 import SubscriptionDialog from "@/components/SubscriptionDialog";
 import { PWAInstallDialog } from "@/components/PWAInstallDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,10 +18,11 @@ import { captureError } from "@/lib/sentry";
 const Library = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [books, setBooks] = useState<any[]>([]);
+  const [premiumBooks, setPremiumBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
   const { user, signOut, subscriptionTier, checkSubscription } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, hasPremiumAccess } = useUserRole();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,6 +32,7 @@ const Library = () => {
     }
 
     loadBooks();
+    loadPremiumBooks();
     checkSubscription();
   }, [user, navigate]);
 
@@ -50,6 +53,22 @@ const Library = () => {
       toast.error("Erro ao carregar livros");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPremiumBooks = async () => {
+    if (!user || !hasPremiumAccess) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("premium_books")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setPremiumBooks(data || []);
+    } catch (error) {
+      console.error("Error loading premium books:", error);
     }
   };
 
@@ -97,15 +116,18 @@ const Library = () => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             {isAdmin && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="aura-soft transition-aura border-primary hover:bg-primary/10"
-                onClick={() => navigate("/admin")}
-              >
-                <Shield className="w-4 h-4 mr-2" />
-                Painel Admin
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="aura-soft transition-aura border-primary hover:bg-primary/10"
+                  onClick={() => navigate("/admin")}
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  Painel Admin
+                </Button>
+                <UploadPremiumBook />
+              </>
             )}
             {subscriptionTier === "free" && (
               <Button
@@ -151,32 +173,76 @@ const Library = () => {
         <div className="flex justify-center items-center min-h-[400px]">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
-      ) : filteredBooks.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-20"
-        >
-          <p className="text-muted-foreground text-lg mb-4">
-            {searchQuery ? "Nenhum livro encontrado" : "Sua biblioteca está vazia"}
-          </p>
-          {!searchQuery && (
-            <p className="text-sm text-muted-foreground">
-              Clique no botão abaixo para adicionar seu primeiro PDF
-            </p>
-          )}
-        </motion.div>
       ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"
-        >
-          {filteredBooks.map((book, index) => (
-            <BookCard key={book.id} book={book} index={index} onDelete={loadBooks} />
-          ))}
-        </motion.div>
+        <>
+          {/* Premium Books Section */}
+          {hasPremiumAccess && premiumBooks.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">Biblioteca Premium</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Livros exclusivos para assinantes premium
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {premiumBooks.map((book, index) => (
+                  <BookCard 
+                    key={book.id} 
+                    book={{ ...book, isPremium: true }} 
+                    index={index} 
+                    onDelete={loadPremiumBooks}
+                    isPremiumBook={true}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* User Books Section */}
+          {filteredBooks.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20"
+            >
+              <p className="text-muted-foreground text-lg mb-4">
+                {searchQuery ? "Nenhum livro encontrado" : "Sua biblioteca está vazia"}
+              </p>
+              {!searchQuery && (
+                <p className="text-sm text-muted-foreground">
+                  Clique no botão abaixo para adicionar seu primeiro PDF
+                </p>
+              )}
+            </motion.div>
+          ) : (
+            <>
+              {(hasPremiumAccess && premiumBooks.length > 0) && (
+                <div className="flex items-center gap-3 mb-4">
+                  <h2 className="text-2xl font-bold">Meus Livros</h2>
+                </div>
+              )}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"
+              >
+                {filteredBooks.map((book, index) => (
+                  <BookCard key={book.id} book={book} index={index} onDelete={loadBooks} />
+                ))}
+              </motion.div>
+            </>
+          )}
+        </>
       )}
 
       {/* Upload button */}
