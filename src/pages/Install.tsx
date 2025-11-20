@@ -1,15 +1,17 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Smartphone, Monitor, CheckCircle, Download } from "lucide-react";
+import { ArrowLeft, Smartphone, Monitor, CheckCircle, Download, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { usePWAInstallPrompt } from "@/hooks/usePWAInstallPrompt";
 import installIOS from "@/assets/install-ios.png";
 import installAndroid from "@/assets/install-android.png";
 import installDesktop from "@/assets/install-desktop.png";
 
 const Install = () => {
   const navigate = useNavigate();
+  const { isInstallable, isInstalled, installPrompt } = usePWAInstallPrompt();
 
   return (
     <div className="min-h-screen bg-background">
@@ -59,6 +61,46 @@ const Install = () => {
                 diretamente no seu dispositivo. Aproveite todos os benefícios de
                 um aplicativo nativo sem precisar baixar nada da loja.
               </p>
+
+              {/* Botão de instalação automática */}
+              {isInstallable && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-6"
+                >
+                  <Button
+                    onClick={installPrompt}
+                    size="lg"
+                    className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity group w-full sm:w-auto"
+                  >
+                    <Zap className="w-5 h-5 mr-2 group-hover:animate-pulse" />
+                    Instalar Agora (1 Clique)
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ⚡ Instalação rápida disponível no seu navegador
+                  </p>
+                </motion.div>
+              )}
+
+              {isInstalled && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-6 p-4 bg-primary/10 rounded-lg border border-primary/20"
+                >
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-primary" />
+                    <div>
+                      <p className="font-semibold text-primary">App já instalado! ✅</p>
+                      <p className="text-sm text-muted-foreground">
+                        Você já tem o AURA READ instalado no seu dispositivo
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
               <div className="grid sm:grid-cols-2 gap-4 mt-6">
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
