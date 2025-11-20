@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
-import { Shield, Users, ArrowLeft, Crown, Star } from "lucide-react";
+import { Shield, Users, ArrowLeft, Crown, Star, TrendingUp } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const AdminPanel = () => {
@@ -192,6 +192,14 @@ const AdminPanel = () => {
               </p>
             </div>
           </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/admin/analytics")}
+            className="ml-auto"
+          >
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Analytics
+          </Button>
         </div>
       </motion.header>
 
