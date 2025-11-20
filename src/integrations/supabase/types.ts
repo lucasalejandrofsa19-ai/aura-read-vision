@@ -106,6 +106,36 @@ export type Database = {
           },
         ]
       }
+      notes: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          note_text: string
+          page_number: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          note_text: string
+          page_number: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          note_text?: string
+          page_number?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
