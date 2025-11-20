@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useExport, type ExportFormat } from "@/hooks/useExport";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Highlight } from "@/hooks/useHighlights";
 import type { Note } from "@/hooks/useNotes";
@@ -38,13 +39,19 @@ export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps
   const { subscriptionTier } = useAuth();
 
   const handleExport = async () => {
-    if (subscriptionTier !== 'premium' && subscriptionTier !== 'pro') {
-      toast.error("Recurso de exportação disponível apenas para assinantes Premium");
-      return;
-    }
-
     setIsExporting(true);
     try {
+      // Server-side premium verification
+      const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
+        'verify-premium-access'
+      );
+
+      if (verifyError || !verifyData?.hasPremiumAccess) {
+        toast.error("Recurso de exportação disponível apenas para assinantes Premium");
+        setIsExporting(false);
+        return;
+      }
+
       await exportData(format, bookTitle, highlights, notes, {
         includeHighlights,
         includeNotes,
@@ -53,6 +60,9 @@ export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps
         includeColors,
       });
       setOpen(false);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Erro ao exportar dados");
     } finally {
       setIsExporting(false);
     }
