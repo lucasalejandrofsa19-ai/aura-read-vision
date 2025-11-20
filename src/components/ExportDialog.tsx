@@ -13,8 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useExport, type ExportFormat } from "@/hooks/useExport";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { usePremiumAccessCache } from "@/hooks/usePremiumAccessCache";
 import { toast } from "sonner";
 import type { Highlight } from "@/hooks/useHighlights";
 import type { Note } from "@/hooks/useNotes";
@@ -36,17 +35,15 @@ export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps
   const [isExporting, setIsExporting] = useState(false);
 
   const { exportData } = useExport();
-  const { subscriptionTier } = useAuth();
+  const { verifyPremiumAccess } = usePremiumAccessCache();
 
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      // Server-side premium verification
-      const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
-        'verify-premium-access'
-      );
+      // Server-side premium verification with cache
+      const { hasPremiumAccess } = await verifyPremiumAccess();
 
-      if (verifyError || !verifyData?.hasPremiumAccess) {
+      if (!hasPremiumAccess) {
         toast.error("Recurso de exportação disponível apenas para assinantes Premium");
         setIsExporting(false);
         return;

@@ -39,6 +39,7 @@ import { useFullscreen } from "@/hooks/useFullscreen";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { useNotes } from "@/hooks/useNotes";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePremiumAccessCache } from "@/hooks/usePremiumAccessCache";
 import { captureError } from "@/lib/sentry";
 
 
@@ -73,6 +74,7 @@ const Reader = () => {
 
   const { enterFullscreen } = useFullscreen();
   const { subscriptionTier } = useAuth();
+  const { verifyPremiumAccess } = usePremiumAccessCache();
   
   const {
     speak,
@@ -242,12 +244,10 @@ const Reader = () => {
 
   const handleReadAloud = async () => {
     try {
-      // Server-side premium verification
-      const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
-        'verify-premium-access'
-      );
+      // Server-side premium verification with cache
+      const { hasPremiumAccess } = await verifyPremiumAccess();
 
-      if (verifyError || !verifyData?.hasPremiumAccess) {
+      if (!hasPremiumAccess) {
         toast.error("Recurso disponível apenas para assinantes Premium");
         return;
       }
