@@ -128,7 +128,7 @@ const AdminPanel = () => {
     }
   };
 
-  const removeRole = async (userId: string, role: string) => {
+  const removeRole = async (userId: string, role: "admin" | "premium" | "free") => {
     try {
       const { error } = await supabase
         .from("user_roles")
@@ -307,7 +307,7 @@ const AdminPanel = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         {user.roles.length > 0 ? (
-                          user.roles.map((role: string) => (
+                          user.roles.map((role: "admin" | "premium" | "free") => (
                             <div
                               key={role}
                               className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20"
