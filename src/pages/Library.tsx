@@ -92,17 +92,24 @@ const Library = () => {
 
         {/* Premium button and book count */}
         <div className="flex items-center justify-between mb-4">
-          {subscriptionTier === "free" && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="aura-soft transition-aura border-accent hover:bg-accent/10"
-              onClick={() => navigate("/pricing")}
-            >
-              <CreditCard className="w-4 h-4 mr-2" />
-              Assinar Premium
-            </Button>
-          )}
+          <div className="flex items-center gap-4">
+            {subscriptionTier === "free" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="aura-soft transition-aura border-accent hover:bg-accent/10"
+                onClick={() => navigate("/pricing")}
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                Assinar Premium
+              </Button>
+            )}
+            <img 
+              src="/icon-512.png" 
+              alt="AURA READ" 
+              className="w-10 h-10 rounded-lg shadow-md"
+            />
+          </div>
           <p className="text-sm text-muted-foreground ml-auto">
             {books.length} livros na sua coleção • Plano {subscriptionTier === "free" ? "Gratuito" : subscriptionTier === "pro" ? "Pro" : "Premium"}
           </p>
