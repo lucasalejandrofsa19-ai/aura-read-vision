@@ -136,6 +136,48 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_books: {
+        Row: {
+          author: string | null
+          cover_color: string | null
+          created_at: string | null
+          extracted_text: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          summary: string | null
+          title: string
+          total_pages: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          author?: string | null
+          cover_color?: string | null
+          created_at?: string | null
+          extracted_text?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          summary?: string | null
+          title: string
+          total_pages?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          author?: string | null
+          cover_color?: string | null
+          created_at?: string | null
+          extracted_text?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          summary?: string | null
+          title?: string
+          total_pages?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

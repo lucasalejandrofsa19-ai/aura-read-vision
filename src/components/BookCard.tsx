@@ -19,9 +19,10 @@ interface BookCardProps {
   book: Book;
   index: number;
   onDelete?: () => void;
+  isPremiumBook?: boolean;
 }
 
-const BookCard = ({ book, index, onDelete }: BookCardProps) => {
+const BookCard = ({ book, index, onDelete, isPremiumBook = false }: BookCardProps) => {
   const navigate = useNavigate();
 
   const handleDelete = async (e: React.MouseEvent) => {
@@ -32,16 +33,18 @@ const BookCard = ({ book, index, onDelete }: BookCardProps) => {
     try {
       // Delete file from storage
       if (book.file_path) {
+        const bucket = isPremiumBook ? "premium-pdfs" : "pdfs";
         const { error: storageError } = await supabase.storage
-          .from("pdfs")
+          .from(bucket)
           .remove([book.file_path]);
         
         if (storageError) captureError(storageError, { context: "delete_storage_file" });
       }
 
       // Delete book record
+      const table = isPremiumBook ? "premium_books" : "books";
       const { error } = await supabase
-        .from("books")
+        .from(table)
         .delete()
         .eq("id", book.id);
 
