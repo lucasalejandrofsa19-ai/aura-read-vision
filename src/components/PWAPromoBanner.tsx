@@ -2,11 +2,37 @@ import { motion } from "framer-motion";
 import { Smartphone, Zap, WifiOff, Bell, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const PWAPromoBanner = () => {
   const navigate = useNavigate();
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Detectar se o app está rodando em modo standalone (instalado)
+    const isStandalone = () => {
+      // iOS Safari
+      const nav = window.navigator as Navigator & { standalone?: boolean };
+      if (nav.standalone) {
+        return true;
+      }
+      
+      // Chrome/Edge/Firefox em desktop e mobile
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        return true;
+      }
+      
+      // Fallback: verificar se está em fullscreen mode
+      if (window.matchMedia('(display-mode: fullscreen)').matches) {
+        return true;
+      }
+      
+      return false;
+    };
+
+    // Só mostrar o banner se o PWA NÃO estiver instalado
+    setIsVisible(!isStandalone());
+  }, []);
 
   if (!isVisible) return null;
 
