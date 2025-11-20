@@ -240,20 +240,30 @@ const Reader = () => {
     setIsFocusedMode(false);
   };
 
-  const handleReadAloud = () => {
-    if (subscriptionTier !== 'premium' && subscriptionTier !== 'pro') {
-      toast.error("Recurso disponível apenas para assinantes Premium");
-      return;
-    }
+  const handleReadAloud = async () => {
+    try {
+      // Server-side premium verification
+      const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
+        'verify-premium-access'
+      );
 
-    if (!book?.extracted_text) {
-      toast.error("Nenhum texto extraído disponível para leitura");
-      return;
+      if (verifyError || !verifyData?.hasPremiumAccess) {
+        toast.error("Recurso disponível apenas para assinantes Premium");
+        return;
+      }
+
+      if (!book?.extracted_text) {
+        toast.error("Nenhum texto extraído disponível para leitura");
+        return;
+      }
+      
+      // Read a portion of text (you could enhance this to read the current page)
+      const textToRead = book.extracted_text.substring(0, 2000);
+      speak(textToRead);
+    } catch (error) {
+      console.error('Read aloud error:', error);
+      toast.error("Erro ao verificar acesso premium");
     }
-    
-    // Read a portion of text (you could enhance this to read the current page)
-    const textToRead = book.extracted_text.substring(0, 2000);
-    speak(textToRead);
   };
 
   // Keyboard shortcuts
