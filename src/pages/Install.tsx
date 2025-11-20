@@ -130,7 +130,13 @@ const Install = () => {
 
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <div className="flex items-start gap-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
+                    className="flex items-start gap-4"
+                  >
                     <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center flex-shrink-0 font-bold">
                       1
                     </div>
@@ -141,9 +147,15 @@ const Install = () => {
                         Outros navegadores não suportam a instalação de PWAs no iOS.
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="flex items-start gap-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                    className="flex items-start gap-4"
+                  >
                     <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center flex-shrink-0 font-bold">
                       2
                     </div>
@@ -161,9 +173,15 @@ const Install = () => {
                         className="w-full rounded-lg border border-border/50 shadow-lg"
                       />
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="flex items-start gap-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="flex items-start gap-4"
+                  >
                     <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center flex-shrink-0 font-bold">
                       3
                     </div>
@@ -177,9 +195,15 @@ const Install = () => {
                         do app se desejar.
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="flex items-start gap-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                    className="flex items-start gap-4"
+                  >
                     <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center flex-shrink-0 font-bold">
                       4
                     </div>
@@ -190,7 +214,7 @@ const Install = () => {
                         AURA READ aparecerá na sua tela inicial!
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
               </div>
             </Card>
@@ -208,7 +232,13 @@ const Install = () => {
 
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <div className="flex items-start gap-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
+                    className="flex items-start gap-4"
+                  >
                     <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center flex-shrink-0 font-bold">
                       1
                     </div>
@@ -219,9 +249,15 @@ const Install = () => {
                         dispositivo Android.
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="flex items-start gap-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                    className="flex items-start gap-4"
+                  >
                     <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center flex-shrink-0 font-bold">
                       2
                     </div>
@@ -237,9 +273,15 @@ const Install = () => {
                         className="w-full rounded-lg border border-border/50 shadow-lg"
                       />
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="flex items-start gap-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="flex items-start gap-4"
+                  >
                     <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center flex-shrink-0 font-bold">
                       3
                     </div>
@@ -250,9 +292,15 @@ const Install = () => {
                         tela inicial". O Chrome mostrará um banner de confirmação.
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="flex items-start gap-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                    className="flex items-start gap-4"
+                  >
                     <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center flex-shrink-0 font-bold">
                       4
                     </div>
@@ -263,17 +311,23 @@ const Install = () => {
                         será adicionado à sua tela inicial e gaveta de aplicativos!
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
 
-                <div className="p-4 bg-muted/50 rounded-lg">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="p-4 bg-muted/50 rounded-lg"
+                >
                   <p className="text-sm font-medium mb-2">💡 Dica:</p>
                   <p className="text-sm text-muted-foreground">
                     Alguns dispositivos Android também mostram um banner automático
                     "Adicionar à tela inicial" quando você visita o AURA READ. Você
                     pode tocar neste banner como atalho para instalação.
                   </p>
-                </div>
+                </motion.div>
               </div>
             </Card>
           </TabsContent>
@@ -293,7 +347,13 @@ const Install = () => {
                 <div className="space-y-4">
                   <h4 className="font-semibold text-lg">Chrome / Edge / Brave</h4>
                   
-                  <div className="flex items-start gap-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
+                    className="flex items-start gap-4"
+                  >
                     <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center flex-shrink-0 font-bold">
                       1
                     </div>
@@ -311,9 +371,15 @@ const Install = () => {
                         className="w-full rounded-lg border border-border/50 shadow-lg"
                       />
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="flex items-start gap-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                    className="flex items-start gap-4"
+                  >
                     <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center flex-shrink-0 font-bold">
                       2
                     </div>
@@ -325,9 +391,15 @@ const Install = () => {
                         seu computador.
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="flex items-start gap-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="flex items-start gap-4"
+                  >
                     <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center flex-shrink-0 font-bold">
                       3
                     </div>
@@ -342,10 +414,16 @@ const Install = () => {
                         <li>• Linux: Menu de aplicativos do sistema</li>
                       </ul>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
 
-                <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="p-4 bg-muted/50 rounded-lg space-y-2"
+                >
                   <p className="text-sm font-medium">📝 Método alternativo:</p>
                   <p className="text-sm text-muted-foreground">
                     Você também pode instalar através do menu do navegador:
@@ -354,7 +432,7 @@ const Install = () => {
                     <li>• Chrome/Edge: Menu (⋮) → "Instalar AURA READ..."</li>
                     <li>• Brave: Menu (☰) → "Instalar AURA READ..."</li>
                   </ul>
-                </div>
+                </motion.div>
               </div>
             </Card>
           </TabsContent>
@@ -365,7 +443,12 @@ const Install = () => {
           <h3 className="text-xl font-bold mb-6">Perguntas Frequentes</h3>
           
           <div className="space-y-6">
-            <div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
               <p className="font-medium mb-2">
                 O app instalado ocupa muito espaço no meu dispositivo?
               </p>
@@ -374,9 +457,14 @@ const Install = () => {
                 alguns KB) comparado a aplicativos tradicionais. Os dados são
                 armazenados no cache do navegador de forma eficiente.
               </p>
-            </div>
+            </motion.div>
 
-            <div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
               <p className="font-medium mb-2">
                 Preciso atualizar o app manualmente?
               </p>
@@ -385,9 +473,14 @@ const Install = () => {
                 versão disponível. Você sempre terá a versão mais recente sem
                 precisar fazer nada.
               </p>
-            </div>
+            </motion.div>
 
-            <div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
               <p className="font-medium mb-2">
                 Posso desinstalar o app quando quiser?
               </p>
@@ -397,9 +490,14 @@ const Install = () => {
                 pressione e segure o ícone e selecione "Remover". No desktop, use
                 as configurações do sistema operacional.
               </p>
-            </div>
+            </motion.div>
 
-            <div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
               <p className="font-medium mb-2">
                 Meus dados ficam salvos mesmo depois de desinstalar?
               </p>
@@ -408,7 +506,7 @@ const Install = () => {
                 você reinstalar ou acessar de outro dispositivo, todos os seus
                 dados estarão lá.
               </p>
-            </div>
+            </motion.div>
           </div>
         </Card>
 
