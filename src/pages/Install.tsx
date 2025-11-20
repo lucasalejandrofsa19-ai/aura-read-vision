@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Smartphone, Monitor, CheckCircle, Download, Zap } from "lucide-react";
+import { ArrowLeft, Smartphone, Monitor, CheckCircle, Download, Zap, Sparkles, Rocket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePWAInstallPrompt } from "@/hooks/usePWAInstallPrompt";
+import { useABTest } from "@/hooks/useABTest";
 import installIOS from "@/assets/install-ios.png";
 import installAndroid from "@/assets/install-android.png";
 import installDesktop from "@/assets/install-desktop.png";
@@ -12,6 +13,62 @@ import installDesktop from "@/assets/install-desktop.png";
 const Install = () => {
   const navigate = useNavigate();
   const { isInstallable, isInstalled, installPrompt } = usePWAInstallPrompt();
+  
+  // Teste A/B do botão de instalação
+  const { selectedVariant, trackConversion } = useABTest("pwa_install_button", [
+    { id: "variant_a", name: "Gradient Lightning" },
+    { id: "variant_b", name: "Outline Classic" },
+    { id: "variant_c", name: "Solid Free" },
+    { id: "variant_d", name: "Urgency Speed" },
+  ]);
+
+  const handleInstallClick = () => {
+    trackConversion();
+    installPrompt();
+  };
+
+  // Configurações das variantes
+  const getButtonVariant = () => {
+    switch (selectedVariant) {
+      case "variant_a":
+        return {
+          text: "Instalar Agora (1 Clique)",
+          icon: Zap,
+          className: "bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity",
+          iconAnimation: "group-hover:animate-pulse"
+        };
+      case "variant_b":
+        return {
+          text: "Adicionar à Tela Inicial",
+          icon: Download,
+          className: "border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors",
+          iconAnimation: "group-hover:translate-y-1 transition-transform"
+        };
+      case "variant_c":
+        return {
+          text: "Baixar App Grátis",
+          icon: Sparkles,
+          className: "bg-primary hover:bg-primary/90 transition-colors",
+          iconAnimation: "group-hover:rotate-12 transition-transform"
+        };
+      case "variant_d":
+        return {
+          text: "Instalar em 1 Segundo ⚡",
+          icon: Rocket,
+          className: "bg-gradient-to-r from-accent to-primary hover:scale-105 transition-transform",
+          iconAnimation: "group-hover:translate-x-1 transition-transform"
+        };
+      default:
+        return {
+          text: "Instalar Agora",
+          icon: Download,
+          className: "bg-primary hover:bg-primary/90",
+          iconAnimation: ""
+        };
+    }
+  };
+
+  const buttonConfig = getButtonVariant();
 
   return (
     <div className="min-h-screen bg-background">
@@ -62,7 +119,7 @@ const Install = () => {
                 um aplicativo nativo sem precisar baixar nada da loja.
               </p>
 
-              {/* Botão de instalação automática */}
+              {/* Botão de instalação automática com teste A/B */}
               {isInstallable && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -70,12 +127,12 @@ const Install = () => {
                   className="mb-6"
                 >
                   <Button
-                    onClick={installPrompt}
+                    onClick={handleInstallClick}
                     size="lg"
-                    className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity group w-full sm:w-auto"
+                    className={`${buttonConfig.className} group w-full sm:w-auto`}
                   >
-                    <Zap className="w-5 h-5 mr-2 group-hover:animate-pulse" />
-                    Instalar Agora (1 Clique)
+                    <buttonConfig.icon className={`w-5 h-5 mr-2 ${buttonConfig.iconAnimation}`} />
+                    {buttonConfig.text}
                   </Button>
                   <p className="text-xs text-muted-foreground mt-2">
                     ⚡ Instalação rápida disponível no seu navegador
