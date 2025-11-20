@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Book, Sparkles, ArrowRight, Highlighter, BookmarkCheck, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import PWAPromoBanner from "@/components/PWAPromoBanner";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -105,12 +106,15 @@ const Index = () => {
           </motion.div>
         </motion.div>
 
+        {/* PWA Promo Banner */}
+        <PWAPromoBanner />
+
         {/* Features */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.6 }}
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-24 max-w-5xl px-4 w-full"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-16 max-w-5xl px-4 w-full"
         >
           {features.map((feature, index) => (
             <motion.div
