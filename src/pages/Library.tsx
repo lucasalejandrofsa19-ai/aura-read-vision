@@ -69,22 +69,8 @@ const Library = () => {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Minha Biblioteca
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {books.length} livros na sua coleção • Plano {subscriptionTier === "free" ? "Gratuito" : subscriptionTier === "pro" ? "Pro" : "Premium"}
-            </p>
           </div>
           <div className="flex gap-2">
-            {subscriptionTier === "free" && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="aura-soft transition-aura border-accent hover:bg-accent/10"
-                onClick={() => navigate("/pricing")}
-              >
-                <CreditCard className="w-4 h-4 mr-2" />
-                Assinar Premium
-              </Button>
-            )}
             <Button
               variant="ghost"
               size="icon"
@@ -102,6 +88,24 @@ const Library = () => {
               Sair
             </Button>
           </div>
+        </div>
+
+        {/* Premium button and book count */}
+        <div className="flex items-center justify-between mb-4">
+          {subscriptionTier === "free" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="aura-soft transition-aura border-accent hover:bg-accent/10"
+              onClick={() => navigate("/pricing")}
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
+              Assinar Premium
+            </Button>
+          )}
+          <p className="text-sm text-muted-foreground ml-auto">
+            {books.length} livros na sua coleção • Plano {subscriptionTier === "free" ? "Gratuito" : subscriptionTier === "pro" ? "Pro" : "Premium"}
+          </p>
         </div>
 
         {/* Search bar */}
