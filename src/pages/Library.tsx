@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import BookCard from "@/components/BookCard";
 import UploadPDF from "@/components/UploadPDF";
 import SubscriptionDialog from "@/components/SubscriptionDialog";
+import { PWAInstallDialog } from "@/components/PWAInstallDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
@@ -104,11 +105,16 @@ const Library = () => {
                 Assinar Premium
               </Button>
             )}
-            <img 
-              src="/icon-512.png" 
-              alt="AURA READ" 
-              className="w-10 h-10 rounded-lg shadow-md"
-            />
+            <PWAInstallDialog>
+              <button className="hover-scale transition-all duration-300 hover:shadow-lg active:scale-95">
+                <img 
+                  src="/icon-512.png" 
+                  alt="AURA READ - Clique para ver opções de instalação" 
+                  className="w-10 h-10 rounded-lg shadow-md cursor-pointer"
+                  title="Instalar AURA READ"
+                />
+              </button>
+            </PWAInstallDialog>
           </div>
           <p className="text-sm text-muted-foreground ml-auto">
             {books.length} livros na sua coleção • Plano {subscriptionTier === "free" ? "Gratuito" : subscriptionTier === "pro" ? "Pro" : "Premium"}
