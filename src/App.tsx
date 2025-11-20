@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SentryUserContext } from "./components/SentryUserContext";
+import { usePWAInstallPrompt } from "@/hooks/usePWAInstallPrompt";
 import * as Sentry from "@sentry/react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -23,6 +24,28 @@ const queryClient = new QueryClient();
 
 const SentryRoutes = Sentry.withSentryRouting(Routes);
 
+const AppContent = () => {
+  // Hook para detectar e gerenciar instalação PWA
+  usePWAInstallPrompt();
+
+  return (
+    <SentryRoutes>
+      <Route path="/" element={<Index />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/library" element={<Library />} />
+      <Route path="/reader/:id" element={<Reader />} />
+      <Route path="/summary/:id" element={<Summary />} />
+      <Route path="/share/:id" element={<Share />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/download" element={<Download />} />
+      <Route path="/install" element={<Install />} />
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </SentryRoutes>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -32,20 +55,7 @@ const App = () => (
         <AuthProvider>
           <ThemeProvider>
             <SentryUserContext>
-              <SentryRoutes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/library" element={<Library />} />
-              <Route path="/reader/:id" element={<Reader />} />
-              <Route path="/summary/:id" element={<Summary />} />
-              <Route path="/share/:id" element={<Share />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/download" element={<Download />} />
-              <Route path="/install" element={<Install />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-              </SentryRoutes>
+              <AppContent />
             </SentryUserContext>
           </ThemeProvider>
         </AuthProvider>
