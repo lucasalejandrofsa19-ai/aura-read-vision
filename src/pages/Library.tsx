@@ -66,7 +66,14 @@ const Library = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setPremiumBooks(data || []);
+      
+      // Adicionar flag para identificar como livro premium
+      const premiumBooksWithFlag = (data || []).map(book => ({
+        ...book,
+        isPremiumBook: true,
+      }));
+      
+      setPremiumBooks(premiumBooksWithFlag);
     } catch (error) {
       console.error("Error loading premium books:", error);
     }
@@ -197,7 +204,7 @@ const Library = () => {
                 {premiumBooks.map((book, index) => (
                   <BookCard 
                     key={book.id} 
-                    book={{ ...book, isPremium: true }} 
+                    book={book} 
                     index={index} 
                     onDelete={loadPremiumBooks}
                     isPremiumBook={true}

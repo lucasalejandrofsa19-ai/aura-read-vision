@@ -56,7 +56,7 @@ export const UploadPremiumBook = () => {
       if (uploadError) throw uploadError;
 
       // Create premium book record
-      const { error: insertError } = await supabase
+      const { data: bookData, error: insertError } = await supabase
         .from("premium_books")
         .insert({
           title,
@@ -64,11 +64,29 @@ export const UploadPremiumBook = () => {
           summary,
           file_path: uploadData.path,
           file_size: file.size,
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) throw insertError;
 
-      toast.success("Livro premium adicionado com sucesso!");
+      toast.success("Livro premium adicionado! Processando PDF...");
+
+      // Processar PDF em background
+      supabase.functions
+        .invoke('process-premium-pdf', {
+          body: { bookId: bookData.id },
+        })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error processing PDF:', error);
+            toast.error("PDF adicionado, mas houve erro no processamento");
+          } else {
+            console.log('PDF processed successfully:', data);
+            toast.success(`PDF processado: ${data.totalPages} páginas extraídas`);
+          }
+        });
+
       setOpen(false);
       setFile(null);
       setTitle("");
@@ -76,7 +94,7 @@ export const UploadPremiumBook = () => {
       setSummary("");
       
       // Reload page to show new book
-      window.location.reload();
+      setTimeout(() => window.location.reload(), 1000);
     } catch (error: any) {
       console.error("Error uploading premium book:", error);
       toast.error(`Erro ao fazer upload: ${error.message}`);
