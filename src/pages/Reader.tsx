@@ -324,8 +324,9 @@ const Reader = () => {
         animate={{ opacity: 1, y: 0 }}
         className="glass sticky top-0 z-50 border-b border-border/50"
       >
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          {/* Linha 1: Botão voltar e título do livro */}
+          <div className="flex items-center gap-4 mb-3">
             <Button
               variant="ghost"
               size="icon"
@@ -340,96 +341,20 @@ const Reader = () => {
             </div>
           </div>
 
-          {/* Mobile: Compact menu */}
-          <div className="flex md:hidden items-center gap-1">
-            <NotesPanel
-              notes={notes}
-              currentPage={currentPage}
-              onAddNote={addNote}
-              onUpdateNote={updateNote}
-              onDeleteNote={deleteNote}
-              onNavigateToPage={handleNavigateToHighlight}
-            />
-
-            <div className="[&>*]:scale-90">
-              <ExportDialog
-                bookTitle={book.title}
-                highlights={highlights}
-                notes={notes}
-              />
-            </div>
-
-            <TextToSpeechControls
-              isSpeaking={isSpeaking}
-              isPaused={isPaused}
-              onSpeak={handleReadAloud}
-              onStop={stop}
-              onTogglePause={togglePause}
-              voices={voices}
-              selectedVoice={selectedVoice}
-              onVoiceChange={setSelectedVoice}
-              rate={rate}
-              onRateChange={setRate}
-              pitch={pitch}
-              onPitchChange={setPitch}
-            />
-
-            <ThemeSelector />
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="aura-soft transition-aura"
-                >
-                  <Palette className="w-5 h-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={handleBookmark}>
-                  <Bookmark className="w-4 h-4 mr-2" />
-                  {bookmarkedPage === currentPage ? "Remover marcador" : "Marcar página"}
-                </DropdownMenuItem>
-                {bookmarkedPage && bookmarkedPage !== currentPage && (
-                  <DropdownMenuItem onClick={goToBookmark}>
-                    <BookmarkCheck className="w-4 h-4 mr-2" />
-                    Ir para página {bookmarkedPage}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={handleEnterFocusedMode}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  Modo Leitura Focada
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleEnterPresentationMode}>
-                  <Maximize className="w-4 h-4 mr-2" />
-                  Modo Apresentação
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/summary/" + id)}>
-                  <FileText className="w-4 h-4 mr-2" />
-                  Resumo
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/share/" + id)}>
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Compartilhar
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Desktop: All buttons visible */}
-          <div className="hidden md:flex items-center gap-2">
+          {/* Linha 2: Todos os ícones de função em fila */}
+          <div className="flex items-center gap-2 flex-wrap ml-14">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
                   className={`transition-aura ${bookmarkedPage ? "text-accent aura-amber" : "aura-soft"}`}
+                  title="Marcador"
                 >
                   {bookmarkedPage ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="glass">
+              <DropdownMenuContent align="start" className="glass">
                 <DropdownMenuItem onClick={handleBookmark}>
                   {bookmarkedPage === currentPage ? "Remover marcador" : "Marcar página atual"}
                 </DropdownMenuItem>
@@ -478,6 +403,7 @@ const Reader = () => {
               size="icon"
               onClick={() => navigate("/summary/" + id)}
               className="aura-soft transition-aura"
+              title="Resumo"
             >
               <FileText className="w-5 h-5" />
             </Button>
@@ -487,6 +413,7 @@ const Reader = () => {
               size="icon"
               onClick={() => navigate("/share/" + id)}
               className="aura-soft transition-aura"
+              title="Compartilhar"
             >
               <Share2 className="w-5 h-5" />
             </Button>
@@ -506,7 +433,7 @@ const Reader = () => {
               size="icon"
               onClick={handleEnterPresentationMode}
               className="aura-soft transition-aura"
-              title="Modo Apresentação (F11)"
+              title="Modo Apresentação"
             >
               <Maximize className="w-5 h-5" />
             </Button>
