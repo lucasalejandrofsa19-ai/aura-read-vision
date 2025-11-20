@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Download, CheckCircle, Smartphone, Monitor } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Download, CheckCircle, Smartphone, Monitor, ExternalLink } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,7 @@ interface PWAInstallDialogProps {
 }
 
 export const PWAInstallDialog = ({ children }: PWAInstallDialogProps) => {
+  const navigate = useNavigate();
   const [isInstalled, setIsInstalled] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -168,6 +170,16 @@ export const PWAInstallDialog = ({ children }: PWAInstallDialogProps) => {
               Instalar App
             </Button>
           )}
+
+          {/* Link to detailed instructions */}
+          <Button
+            variant="outline"
+            onClick={() => navigate("/install")}
+            className="w-full"
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Ver Guia Completo de Instalação
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
