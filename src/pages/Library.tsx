@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, User, CreditCard } from "lucide-react";
+import { Search, User, CreditCard, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import BookCard from "@/components/BookCard";
 import UploadPDF from "@/components/UploadPDF";
 import SubscriptionDialog from "@/components/SubscriptionDialog";
@@ -19,6 +20,7 @@ const Library = () => {
   const [loading, setLoading] = useState(true);
   const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
   const { user, signOut, subscriptionTier, checkSubscription } = useAuth();
+  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -91,9 +93,20 @@ const Library = () => {
           </div>
         </div>
 
-        {/* Premium button and book count */}
+        {/* Premium button, admin button and book count */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="aura-soft transition-aura border-primary hover:bg-primary/10"
+                onClick={() => navigate("/admin")}
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Painel Admin
+              </Button>
+            )}
             {subscriptionTier === "free" && (
               <Button
                 variant="outline"
