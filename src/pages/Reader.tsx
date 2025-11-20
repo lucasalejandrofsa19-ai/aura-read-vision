@@ -545,12 +545,28 @@ const Reader = () => {
         />
 
         {pdfUrl ? (
-          <PDFViewer 
-            fileUrl={pdfUrl} 
-            initialPage={currentPage}
-            onPageChange={handlePageChange}
-            onTextSelect={handleTextSelect}
-          />
+          <div className="relative">
+            {/* Bookmark indicator */}
+            {bookmarkedPage === currentPage && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute top-0 right-8 z-10 -mt-4"
+              >
+                <div className="bg-accent text-accent-foreground px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                  <BookmarkCheck className="w-4 h-4" />
+                  <span className="text-sm font-medium">Página marcada</span>
+                </div>
+              </motion.div>
+            )}
+            
+            <PDFViewer 
+              fileUrl={pdfUrl} 
+              initialPage={currentPage}
+              onPageChange={handlePageChange}
+              onTextSelect={handleTextSelect}
+            />
+          </div>
         ) : (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Nenhum arquivo PDF disponível</p>
