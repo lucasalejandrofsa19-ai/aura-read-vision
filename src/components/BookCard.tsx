@@ -1,11 +1,19 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Trash2, RefreshCw } from "lucide-react";
+import { BookOpen, Trash2, RefreshCw, Images } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface Book {
   id: string;
@@ -29,6 +37,9 @@ interface BookCardProps {
 const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = false, onReprocess }: BookCardProps) => {
   const navigate = useNavigate();
   const [reprocessing, setReprocessing] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<any[]>([]);
+  const [loadingGallery, setLoadingGallery] = useState(false);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -92,6 +103,41 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
     }
   };
 
+  const handleOpenGallery = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowGallery(true);
+    setLoadingGallery(true);
+
+    try {
+      const { data: highlights, error: highlightsError } = await supabase
+        .from("highlights")
+        .select("id")
+        .eq("book_id", book.id);
+
+      if (highlightsError) throw highlightsError;
+
+      if (highlights && highlights.length > 0) {
+        const highlightIds = highlights.map(h => h.id);
+        
+        const { data: images, error: imagesError } = await supabase
+          .from("highlight_images")
+          .select("*")
+          .in("highlight_id", highlightIds)
+          .order("created_at", { ascending: false });
+
+        if (imagesError) throw imagesError;
+        setGalleryImages(images || []);
+      } else {
+        setGalleryImages([]);
+      }
+    } catch (error) {
+      captureError(error, { context: "load_book_gallery" });
+      toast.error("Erro ao carregar galeria");
+    } finally {
+      setLoadingGallery(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -130,6 +176,15 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
             <div className="flex justify-between items-start relative z-10">
               <BookOpen className="w-8 h-8 text-white/90 drop-shadow-lg" />
               <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleOpenGallery}
+                  className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/40 text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
+                  title="Galeria de Imagens"
+                >
+                  <Images className="w-4 h-4" />
+                </Button>
                 {isAdmin && isPremiumBook && (
                   <Button
                     variant="ghost"
@@ -186,6 +241,47 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
           </div>
         </div>
       </motion.div>
+
+      {/* Gallery Dialog */}
+      <Dialog open={showGallery} onOpenChange={setShowGallery}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Images className="w-5 h-5" />
+              Galeria de Imagens - {book.title}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {loadingGallery ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : galleryImages.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Images className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhuma imagem gerada para este livro ainda.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {galleryImages.map((image) => (
+                <div key={image.id} className="relative group">
+                  <img
+                    src={image.image_url}
+                    alt={image.style}
+                    className="w-full h-48 object-cover rounded-lg border border-border"
+                  />
+                  <div className="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded text-xs">
+                    <p className="font-medium capitalize">{image.style}</p>
+                    <p className="text-[10px] opacity-80">
+                      {format(new Date(image.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 };
