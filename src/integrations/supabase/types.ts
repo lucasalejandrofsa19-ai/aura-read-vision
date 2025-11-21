@@ -140,6 +140,7 @@ export type Database = {
         Row: {
           author: string | null
           cover_color: string | null
+          cover_image_url: string | null
           created_at: string | null
           extracted_text: string | null
           file_path: string
@@ -153,6 +154,7 @@ export type Database = {
         Insert: {
           author?: string | null
           cover_color?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           extracted_text?: string | null
           file_path: string
@@ -166,6 +168,7 @@ export type Database = {
         Update: {
           author?: string | null
           cover_color?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           extracted_text?: string | null
           file_path?: string
