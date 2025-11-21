@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Trash2 } from "lucide-react";
+import { BookOpen, Trash2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
+import { useState } from "react";
 
 interface Book {
   id: string;
@@ -21,10 +22,13 @@ interface BookCardProps {
   index: number;
   onDelete?: () => void;
   isPremiumBook?: boolean;
+  isAdmin?: boolean;
+  onReprocess?: () => void;
 }
 
-const BookCard = ({ book, index, onDelete, isPremiumBook = false }: BookCardProps) => {
+const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = false, onReprocess }: BookCardProps) => {
   const navigate = useNavigate();
+  const [reprocessing, setReprocessing] = useState(false);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -56,6 +60,35 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false }: BookCardProp
     } catch (error) {
       captureError(error, { context: "delete_book" });
       toast.error("Erro ao deletar livro");
+    }
+  };
+
+  const handleReprocess = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!confirm("Deseja reprocessar este PDF? Isso irá extrair novamente o texto e gerar uma nova thumbnail.")) return;
+
+    setReprocessing(true);
+    toast.loading("Processando PDF...", { id: "reprocess" });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('process-premium-pdf', {
+        body: { bookId: book.id },
+      });
+
+      if (error) throw error;
+
+      toast.success(
+        `PDF reprocessado com sucesso! ${data.totalPages} páginas extraídas`,
+        { id: "reprocess" }
+      );
+      
+      onReprocess?.();
+    } catch (error) {
+      captureError(error, { context: "reprocess_premium_pdf" });
+      toast.error("Erro ao reprocessar PDF", { id: "reprocess" });
+    } finally {
+      setReprocessing(false);
     }
   };
 
@@ -97,6 +130,18 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false }: BookCardProp
             <div className="flex justify-between items-start relative z-10">
               <BookOpen className="w-8 h-8 text-white/90 drop-shadow-lg" />
               <div className="flex gap-2">
+                {isAdmin && isPremiumBook && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleReprocess}
+                    disabled={reprocessing}
+                    className="w-8 h-8 rounded-full bg-blue-500/20 hover:bg-blue-500/40 text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm disabled:opacity-50"
+                    title="Reprocessar PDF"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${reprocessing ? 'animate-spin' : ''}`} />
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
