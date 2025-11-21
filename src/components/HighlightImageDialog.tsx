@@ -19,7 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Image, Download, Loader2, Trash2, History, AlertCircle, Crown } from "lucide-react";
+import { Image, Download, Loader2, Trash2, Images, AlertCircle, Crown } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -338,7 +338,7 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
           {gallery.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2 border-t pt-4">
-                <History className="w-4 h-4 text-muted-foreground" />
+                <Images className="w-4 h-4 text-muted-foreground" />
                 <h3 className="text-sm font-medium">Histórico de Imagens ({gallery.length})</h3>
               </div>
 
