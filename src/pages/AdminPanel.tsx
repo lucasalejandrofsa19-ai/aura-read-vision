@@ -27,6 +27,8 @@ const AdminPanel = () => {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "premium" | "free">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 20;
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -176,6 +178,21 @@ const AdminPanel = () => {
 
     return filtered;
   }, [allUsers, searchQuery, roleFilter]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, roleFilter]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const startIndex = (currentPage - 1) * usersPerPage;
+  const endIndex = startIndex + usersPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
 
   // Statistics
   const stats = useMemo(() => {
@@ -401,7 +418,8 @@ const AdminPanel = () => {
                       Gerenciar Usuários
                     </CardTitle>
                     <CardDescription className="mt-2">
-                      {filteredUsers.length} de {allUsers.length} usuários
+                      Mostrando {startIndex + 1}-{Math.min(endIndex, filteredUsers.length)} de {filteredUsers.length} usuário(s)
+                      {allUsers.length !== filteredUsers.length && ` (${allUsers.length} total)`}
                     </CardDescription>
                   </div>
                   <Button variant="outline" onClick={fetchAllUsers} disabled={loadingUsers}>
@@ -446,73 +464,150 @@ const AdminPanel = () => {
                 </div>
 
                 {/* Users List */}
-                <ScrollArea className="h-[600px] pr-4">
-                  <div className="space-y-3">
-                    {loadingUsers ? (
-                      <div className="flex items-center justify-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      </div>
-                    ) : filteredUsers.length === 0 ? (
-                      <div className="text-center py-12">
-                        <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                        <p className="text-muted-foreground">
-                          {searchQuery || roleFilter !== "all" 
-                            ? "Nenhum usuário encontrado com os filtros aplicados" 
-                            : "Nenhum usuário cadastrado"}
-                        </p>
-                      </div>
-                    ) : (
-                      filteredUsers.map((user) => (
-                        <motion.div
-                          key={user.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="p-4 border border-border/50 rounded-lg hover:border-primary/50 transition-all hover:shadow-md"
-                        >
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <p className="font-semibold">{user.full_name || "Sem nome"}</p>
-                                {user.id === currentUser?.id && (
-                                  <Badge variant="outline" className="text-xs">Você</Badge>
-                                )}
+                <div className="space-y-3">
+                  {loadingUsers ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : filteredUsers.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                      <p className="text-muted-foreground">
+                        {searchQuery || roleFilter !== "all" 
+                          ? "Nenhum usuário encontrado com os filtros aplicados" 
+                          : "Nenhum usuário cadastrado"}
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <ScrollArea className="h-[500px]">
+                        <div className="space-y-3 pr-4">
+                          {paginatedUsers.map((user) => (
+                            <motion.div
+                              key={user.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="p-4 border border-border/50 rounded-lg hover:border-primary/50 transition-all hover:shadow-md"
+                            >
+                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <p className="font-semibold">{user.full_name || "Sem nome"}</p>
+                                    {user.id === currentUser?.id && (
+                                      <Badge variant="outline" className="text-xs">Você</Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                                </div>
+                                
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {user.roles.length > 0 ? (
+                                    user.roles.map((role: "admin" | "premium" | "free") => (
+                                      <Badge
+                                        key={role}
+                                        variant="secondary"
+                                        className="flex items-center gap-2 px-3 py-1"
+                                      >
+                                        {role === "admin" && <Shield className="w-3 h-3 text-red-500" />}
+                                        {role === "premium" && <Star className="w-3 h-3 text-yellow-500" />}
+                                        {role === "free" && <Users className="w-3 h-3 text-gray-500" />}
+                                        <span className="capitalize">{role}</span>
+                                        <button
+                                          onClick={() => removeRole(user.id, role)}
+                                          className="ml-1 hover:text-destructive transition-colors"
+                                          title="Remover role"
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </button>
+                                      </Badge>
+                                    ))
+                                  ) : (
+                                    <Badge variant="outline" className="text-muted-foreground">
+                                      Sem roles
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
-                              <p className="text-sm text-muted-foreground">{user.email}</p>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+
+                      {/* Pagination Controls */}
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-between pt-4 border-t">
+                          <div className="text-sm text-muted-foreground">
+                            Página {currentPage} de {totalPages}
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => goToPage(1)}
+                              disabled={currentPage === 1}
+                            >
+                              Primeira
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => goToPage(currentPage - 1)}
+                              disabled={currentPage === 1}
+                            >
+                              Anterior
+                            </Button>
+                            
+                            {/* Page numbers */}
+                            <div className="flex gap-1">
+                              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                let pageNum;
+                                if (totalPages <= 5) {
+                                  pageNum = i + 1;
+                                } else if (currentPage <= 3) {
+                                  pageNum = i + 1;
+                                } else if (currentPage >= totalPages - 2) {
+                                  pageNum = totalPages - 4 + i;
+                                } else {
+                                  pageNum = currentPage - 2 + i;
+                                }
+                                
+                                return (
+                                  <Button
+                                    key={pageNum}
+                                    variant={currentPage === pageNum ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => goToPage(pageNum)}
+                                    className="w-10"
+                                  >
+                                    {pageNum}
+                                  </Button>
+                                );
+                              })}
                             </div>
                             
-                            <div className="flex items-center gap-2 flex-wrap">
-                              {user.roles.length > 0 ? (
-                                user.roles.map((role: "admin" | "premium" | "free") => (
-                                  <Badge
-                                    key={role}
-                                    variant="secondary"
-                                    className="flex items-center gap-2 px-3 py-1"
-                                  >
-                                    {role === "admin" && <Shield className="w-3 h-3 text-red-500" />}
-                                    {role === "premium" && <Star className="w-3 h-3 text-yellow-500" />}
-                                    {role === "free" && <Users className="w-3 h-3 text-gray-500" />}
-                                    <span className="capitalize">{role}</span>
-                                    <button
-                                      onClick={() => removeRole(user.id, role)}
-                                      className="ml-1 hover:text-destructive transition-colors"
-                                      title="Remover role"
-                                    >
-                                      <X className="w-3 h-3" />
-                                    </button>
-                                  </Badge>
-                                ))
-                              ) : (
-                                <Badge variant="outline" className="text-muted-foreground">
-                                  Sem roles
-                                </Badge>
-                              )}
-                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => goToPage(currentPage + 1)}
+                              disabled={currentPage === totalPages}
+                            >
+                              Próxima
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => goToPage(totalPages)}
+                              disabled={currentPage === totalPages}
+                            >
+                              Última
+                            </Button>
                           </div>
-                        </motion.div>
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
