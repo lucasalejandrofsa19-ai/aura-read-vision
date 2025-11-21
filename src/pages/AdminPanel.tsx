@@ -17,7 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const AdminPanel = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user: currentUser } = useAuth();
   const { isAdmin, loading } = useUserRole();
   const { toast } = useToast();
   
@@ -473,7 +473,7 @@ const AdminPanel = () => {
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
                                 <p className="font-semibold">{user.full_name || "Sem nome"}</p>
-                                {user.id === user.id && (
+                                {user.id === currentUser?.id && (
                                   <Badge variant="outline" className="text-xs">Você</Badge>
                                 )}
                               </div>
