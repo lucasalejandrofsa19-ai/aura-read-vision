@@ -207,7 +207,9 @@ const Library = () => {
                     book={book} 
                     index={index} 
                     onDelete={loadPremiumBooks}
+                    onReprocess={loadPremiumBooks}
                     isPremiumBook={true}
+                    isAdmin={isAdmin}
                   />
                 ))}
               </div>
