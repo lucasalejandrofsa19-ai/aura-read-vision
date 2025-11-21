@@ -7,6 +7,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Image, Download, Loader2 } from "lucide-react";
@@ -16,18 +24,36 @@ interface HighlightImageDialogProps {
   trigger?: React.ReactNode;
 }
 
+type ImageStyle = "photorealistic" | "cartoon" | "painting" | "minimalist";
+
+const styleLabels: Record<ImageStyle, string> = {
+  photorealistic: "Fotorrealista",
+  cartoon: "Cartoon",
+  painting: "Pintura",
+  minimalist: "Minimalista",
+};
+
+const stylePrompts: Record<ImageStyle, string> = {
+  photorealistic: "photorealistic, highly detailed, realistic lighting, professional photography",
+  cartoon: "cartoon style, vibrant colors, animated, playful, illustrated",
+  painting: "oil painting style, artistic, textured brushstrokes, gallery quality",
+  minimalist: "minimalist design, clean lines, simple shapes, modern, elegant",
+};
+
 export const HighlightImageDialog = ({ text, trigger }: HighlightImageDialogProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [style, setStyle] = useState<ImageStyle>("photorealistic");
 
   const generateImage = async () => {
     setLoading(true);
+    setImageUrl(null); // Clear previous image
     toast.loading("Gerando imagem...", { id: "generate-image" });
 
     try {
       const { data, error } = await supabase.functions.invoke('text-to-image', {
-        body: { text },
+        body: { text, style },
       });
 
       if (error) throw error;
@@ -44,7 +70,7 @@ export const HighlightImageDialog = ({ text, trigger }: HighlightImageDialogProp
       }
 
       setImageUrl(data.imageUrl);
-      toast.success("Imagem gerada com sucesso!", { id: "generate-image" });
+      toast.success(`Imagem gerada com sucesso em estilo ${styleLabels[style]}!`, { id: "generate-image" });
     } catch (error) {
       console.error('Error generating image:', error);
       toast.error("Erro ao gerar imagem", { id: "generate-image" });
@@ -101,23 +127,48 @@ export const HighlightImageDialog = ({ text, trigger }: HighlightImageDialogProp
             <p className="text-sm line-clamp-3">{text}</p>
           </div>
 
-          {!imageUrl && !loading && (
-            <Button 
-              onClick={generateImage} 
-              className="w-full gap-2"
-              size="lg"
-            >
-              <Image className="w-4 h-4" />
-              Gerar Imagem com IA
-            </Button>
-          )}
+          {!imageUrl && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="style-select">Estilo da Imagem</Label>
+                <Select value={style} onValueChange={(value) => setStyle(value as ImageStyle)}>
+                  <SelectTrigger id="style-select" className="w-full">
+                    <SelectValue placeholder="Escolha um estilo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(styleLabels).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {style === "photorealistic" && "Imagem realista e detalhada como uma fotografia"}
+                  {style === "cartoon" && "Estilo animado e colorido"}
+                  {style === "painting" && "Pintura artística com textura"}
+                  {style === "minimalist" && "Design limpo e simples"}
+                </p>
+              </div>
 
-          {loading && (
-            <div className="flex flex-col items-center justify-center py-12 space-y-3">
-              <Loader2 className="w-12 h-12 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">
-                Gerando imagem... Isso pode levar alguns segundos
-              </p>
+              <Button 
+                onClick={generateImage} 
+                className="w-full gap-2"
+                size="lg"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <Image className="w-4 h-4" />
+                    Gerar Imagem com IA
+                  </>
+                )}
+              </Button>
             </div>
           )}
 
