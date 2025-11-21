@@ -13,6 +13,7 @@ interface Book {
   cover_color: string;
   progress: number;
   file_path: string;
+  cover_image_url?: string;
 }
 
 interface BookCardProps {
@@ -78,9 +79,20 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false }: BookCardProp
         {/* Book cover card */}
         <div className="glass rounded-xl overflow-hidden shadow-2xl transition-aura hover:aura-safira">
           {/* Book cover front */}
-          <div className={`relative h-72 bg-gradient-to-br ${book.cover_color || 'from-blue-500 to-blue-700'} p-6 flex flex-col justify-between`}>
-            {/* Subtle texture overlay */}
-            <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] pointer-events-none" />
+          <div className={`relative h-72 ${book.cover_image_url ? 'bg-muted' : `bg-gradient-to-br ${book.cover_color || 'from-blue-500 to-blue-700'}`} p-6 flex flex-col justify-between overflow-hidden`}>
+            {/* Thumbnail image or texture overlay */}
+            {book.cover_image_url ? (
+              <img 
+                src={book.cover_image_url} 
+                alt={book.title}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] pointer-events-none" />
+            )}
+            
+            {/* Gradient overlay for readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
             
             <div className="flex justify-between items-start relative z-10">
               <BookOpen className="w-8 h-8 text-white/90 drop-shadow-lg" />

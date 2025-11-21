@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createCanvas } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -95,14 +96,71 @@ serve(async (req) => {
     // Extrair apenas uma amostra do texto para não sobrecarregar o banco
     const extractedText = pdfData.text.substring(0, 50000); // Primeiros 50k caracteres
 
+    // Gerar thumbnail da primeira página
+    let coverImageUrl = null;
+    try {
+      console.log(`[PROCESS-PREMIUM-PDF] Generating thumbnail...`);
+      
+      const pdfjsLib = await import('https://esm.sh/pdfjs-dist@4.0.379/build/pdf.min.mjs');
+      
+      // Load PDF document
+      const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+      const pdfDoc = await loadingTask.promise;
+      
+      // Get first page
+      const page = await pdfDoc.getPage(1);
+      const viewport = page.getViewport({ scale: 1.5 });
+      
+      // Create canvas
+      const canvas = createCanvas(viewport.width, viewport.height);
+      const context = canvas.getContext('2d');
+      
+      // Render page to canvas
+      await page.render({
+        canvasContext: context,
+        viewport: viewport,
+      }).promise;
+      
+      // Convert canvas to PNG buffer
+      const thumbnailBuffer = canvas.toBuffer('image/png');
+      
+      // Upload thumbnail to storage
+      const coverFileName = `${bookId}-cover.png`;
+      const { error: uploadError } = await supabaseClient.storage
+        .from('premium-covers')
+        .upload(coverFileName, thumbnailBuffer, {
+          contentType: 'image/png',
+          upsert: true,
+        });
+      
+      if (uploadError) {
+        console.error(`[PROCESS-PREMIUM-PDF] Error uploading thumbnail:`, uploadError);
+      } else {
+        const { data: urlData } = supabaseClient.storage
+          .from('premium-covers')
+          .getPublicUrl(coverFileName);
+        coverImageUrl = urlData.publicUrl;
+        console.log(`[PROCESS-PREMIUM-PDF] Thumbnail uploaded: ${coverImageUrl}`);
+      }
+    } catch (thumbError) {
+      console.error(`[PROCESS-PREMIUM-PDF] Error generating thumbnail:`, thumbError);
+      // Continue without thumbnail
+    }
+
     // Atualizar registro do livro
+    const updateData: any = {
+      total_pages: pdfData.numpages,
+      extracted_text: extractedText,
+      updated_at: new Date().toISOString(),
+    };
+    
+    if (coverImageUrl) {
+      updateData.cover_image_url = coverImageUrl;
+    }
+    
     const { error: updateError } = await supabaseClient
       .from('premium_books')
-      .update({
-        total_pages: pdfData.numpages,
-        extracted_text: extractedText,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', bookId);
 
     if (updateError) {
