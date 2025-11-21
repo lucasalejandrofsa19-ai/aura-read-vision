@@ -48,6 +48,56 @@ serve(async (req) => {
 
     console.log(`[TEXT-TO-IMAGE] Generating image for user: ${user.id}, highlight: ${highlightId}, style: ${style}`);
 
+    // Check how many images the user has generated
+    const { count, error: countError } = await supabaseClient
+      .from('highlight_images')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+
+    if (countError) {
+      console.error('[TEXT-TO-IMAGE] Error counting images:', countError);
+    }
+
+    const imageCount = count || 0;
+    console.log(`[TEXT-TO-IMAGE] User has generated ${imageCount} images`);
+
+    // Check if user has premium access
+    const FREE_IMAGE_LIMIT = 3;
+    if (imageCount >= FREE_IMAGE_LIMIT) {
+      console.log('[TEXT-TO-IMAGE] User reached free limit, checking premium access...');
+      
+      // Verify premium access using edge function
+      const { data: premiumData, error: premiumError } = await supabaseClient.functions.invoke(
+        'verify-premium-access',
+        { headers: { Authorization: req.headers.get('Authorization') || '' } }
+      );
+
+      if (premiumError) {
+        console.error('[TEXT-TO-IMAGE] Error checking premium:', premiumError);
+        throw new Error('Erro ao verificar acesso premium');
+      }
+
+      const hasPremiumAccess = premiumData?.hasPremiumAccess || false;
+      console.log(`[TEXT-TO-IMAGE] Premium access: ${hasPremiumAccess}`);
+
+      if (!hasPremiumAccess) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'limit_reached',
+            message: `Você atingiu o limite de ${FREE_IMAGE_LIMIT} imagens gratuitas. Assine o plano Premium para gerar imagens ilimitadas.`,
+            imageCount,
+            limit: FREE_IMAGE_LIMIT
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 403,
+          }
+        );
+      }
+      
+      console.log('[TEXT-TO-IMAGE] Premium user, proceeding with generation');
+    }
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');

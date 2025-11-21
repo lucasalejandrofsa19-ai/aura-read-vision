@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Image, Download, Loader2, Trash2, History } from "lucide-react";
+import { Image, Download, Loader2, Trash2, History, AlertCircle, Crown } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -51,6 +52,10 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
   const [style, setStyle] = useState<ImageStyle>("photorealistic");
   const [gallery, setGallery] = useState<any[]>([]);
   const [loadingGallery, setLoadingGallery] = useState(false);
+  const [imageCount, setImageCount] = useState(0);
+  const [showLimitWarning, setShowLimitWarning] = useState(false);
+
+  const FREE_IMAGE_LIMIT = 3;
 
   const loadGallery = async () => {
     setLoadingGallery(true);
@@ -70,9 +75,27 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
     }
   };
 
+  const loadImageCount = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { count, error } = await supabase
+        .from('highlight_images')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      return count || 0;
+    } catch (error) {
+      console.error('Error loading image count:', error);
+      return 0;
+    }
+  };
+
   const generateImage = async () => {
     setLoading(true);
-    setImageUrl(null); // Clear previous image
+    setImageUrl(null);
     toast.loading("Gerando imagem...", { id: "generate-image" });
 
     try {
@@ -83,7 +106,16 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
       if (error) throw error;
 
       if (data.error) {
-        if (data.error.includes('Rate limit')) {
+        if (data.error === 'limit_reached') {
+          toast.error(data.message, { 
+            id: "generate-image",
+            duration: 6000,
+            action: {
+              label: 'Ver Planos',
+              onClick: () => window.location.href = '/pricing'
+            }
+          });
+        } else if (data.error.includes('Rate limit')) {
           toast.error("Limite de requisições atingido. Tente novamente em alguns instantes.", { id: "generate-image" });
         } else if (data.error.includes('Payment required')) {
           toast.error("Créditos insuficientes. Adicione créditos no seu workspace.", { id: "generate-image" });
@@ -96,7 +128,6 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
       setImageUrl(data.imageUrl);
       toast.success(`Imagem gerada com sucesso em estilo ${styleLabels[style]}!`, { id: "generate-image" });
       
-      // Reload gallery
       loadGallery();
     } catch (error) {
       console.error('Error generating image:', error);
@@ -143,10 +174,13 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
     toast.success("Imagem baixada!");
   };
 
-  const handleOpenChange = (newOpen: boolean) => {
+  const handleOpenChange = async (newOpen: boolean) => {
     setOpen(newOpen);
     if (newOpen) {
       loadGallery();
+      const count = await loadImageCount();
+      setImageCount(count);
+      setShowLimitWarning(count >= FREE_IMAGE_LIMIT);
     } else {
       setImageUrl(null);
     }
@@ -155,6 +189,10 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
   useEffect(() => {
     if (open) {
       loadGallery();
+      loadImageCount().then(count => {
+        setImageCount(count);
+        setShowLimitWarning(count >= FREE_IMAGE_LIMIT);
+      });
     }
   }, [open]);
 
@@ -189,6 +227,39 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
 
           {!imageUrl && (
             <div className="space-y-4">
+              {/* Usage Warning */}
+              {showLimitWarning && (
+                <Alert className="border-amber-500/50 bg-amber-500/10">
+                  <AlertCircle className="h-4 w-4 text-amber-500" />
+                  <AlertDescription className="text-sm">
+                    Você já usou {imageCount} de {FREE_IMAGE_LIMIT} imagens gratuitas.
+                    {imageCount >= FREE_IMAGE_LIMIT ? (
+                      <>
+                        {" "}Para gerar mais imagens, 
+                        <Button 
+                          variant="link" 
+                          className="h-auto p-0 ml-1 text-amber-500 hover:text-amber-600 inline-flex items-center gap-1"
+                          onClick={() => window.location.href = '/pricing'}
+                        >
+                          <Crown className="w-3 h-3" />
+                          assine o plano Premium
+                        </Button>
+                      </>
+                    ) : (
+                      <> Restam {FREE_IMAGE_LIMIT - imageCount} imagens gratuitas.</>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Usage Counter for all users */}
+              {!showLimitWarning && (
+                <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                  <span>Imagens geradas: {imageCount}</span>
+                  <span>{imageCount < FREE_IMAGE_LIMIT ? `${FREE_IMAGE_LIMIT - imageCount} gratuitas restantes` : 'Premium ilimitado'}</span>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="style-select">Estilo da Imagem</Label>
                 <Select value={style} onValueChange={(value) => setStyle(value as ImageStyle)}>
