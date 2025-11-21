@@ -6,6 +6,7 @@ import { Trash2, ChevronDown, ChevronUp, Highlighter } from "lucide-react";
 import { Highlight } from "@/hooks/useHighlights";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { HighlightImageDialog } from "@/components/HighlightImageDialog";
 
 interface HighlightsListProps {
   highlights: Highlight[];
@@ -92,17 +93,20 @@ export const HighlightsList = ({
                           </span>
                         </div>
                       </button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete(highlight.id);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <HighlightImageDialog text={highlight.text} />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(highlight.id);
+                          }}
+                          className="h-8 w-8"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
