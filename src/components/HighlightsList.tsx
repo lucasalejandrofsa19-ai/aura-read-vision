@@ -94,7 +94,7 @@ export const HighlightsList = ({
                         </div>
                       </button>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <HighlightImageDialog text={highlight.text} />
+                        <HighlightImageDialog text={highlight.text} highlightId={highlight.id} />
                         <Button
                           variant="ghost"
                           size="icon"

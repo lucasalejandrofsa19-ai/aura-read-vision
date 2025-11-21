@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,13 +19,34 @@ serve(async (req) => {
   }
 
   try {
-    const { text, style = 'photorealistic' } = await req.json();
+    const { text, style = 'photorealistic', highlightId } = await req.json();
 
     if (!text) {
       throw new Error('Text is required');
     }
 
-    console.log(`[TEXT-TO-IMAGE] Generating image for text: ${text.substring(0, 100)}... with style: ${style}`);
+    if (!highlightId) {
+      throw new Error('Highlight ID is required');
+    }
+
+    // Get user from auth header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      throw new Error('Unauthorized');
+    }
+
+    console.log(`[TEXT-TO-IMAGE] Generating image for user: ${user.id}, highlight: ${highlightId}, style: ${style}`);
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -77,13 +99,64 @@ serve(async (req) => {
       throw new Error('No image generated');
     }
 
-    console.log('[TEXT-TO-IMAGE] Image generated successfully');
+    console.log('[TEXT-TO-IMAGE] Image generated, uploading to storage...');
+
+    // Convert base64 to blob
+    const base64Data = imageUrl.split(',')[1];
+    const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+
+    // Upload to Supabase Storage
+    const fileName = `${user.id}/${highlightId}-${Date.now()}.png`;
+    const { data: uploadData, error: uploadError } = await supabaseClient.storage
+      .from('highlight-images')
+      .upload(fileName, binaryData, {
+        contentType: 'image/png',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('[TEXT-TO-IMAGE] Upload error:', uploadError);
+      throw new Error(`Failed to upload image: ${uploadError.message}`);
+    }
+
+    // Get public URL
+    const { data: urlData } = supabaseClient.storage
+      .from('highlight-images')
+      .getPublicUrl(fileName);
+
+    const publicUrl = urlData.publicUrl;
+
+    console.log('[TEXT-TO-IMAGE] Image uploaded, saving to database...');
+
+    // Save to database
+    const { error: dbError } = await supabaseClient
+      .from('highlight_images')
+      .insert({
+        highlight_id: highlightId,
+        user_id: user.id,
+        image_url: publicUrl,
+        storage_path: fileName,
+        style: style,
+        prompt: imagePrompt,
+      });
+
+    if (dbError) {
+      console.error('[TEXT-TO-IMAGE] Database error:', dbError);
+      // Try to clean up uploaded file
+      await supabaseClient.storage
+        .from('highlight-images')
+        .remove([fileName]);
+      throw new Error(`Failed to save image record: ${dbError.message}`);
+    }
+
+    console.log('[TEXT-TO-IMAGE] Image saved successfully');
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        imageUrl,
-        prompt: imagePrompt
+        imageUrl: publicUrl,
+        prompt: imagePrompt,
+        style: style,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

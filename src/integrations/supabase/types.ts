@@ -65,6 +65,47 @@ export type Database = {
         }
         Relationships: []
       }
+      highlight_images: {
+        Row: {
+          created_at: string | null
+          highlight_id: string
+          id: string
+          image_url: string
+          prompt: string | null
+          storage_path: string
+          style: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          highlight_id: string
+          id?: string
+          image_url: string
+          prompt?: string | null
+          storage_path: string
+          style: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          highlight_id?: string
+          id?: string
+          image_url?: string
+          prompt?: string | null
+          storage_path?: string
+          style?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "highlight_images_highlight_id_fkey"
+            columns: ["highlight_id"]
+            isOneToOne: false
+            referencedRelation: "highlights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       highlights: {
         Row: {
           book_id: string

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,12 +15,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Image, Download, Loader2 } from "lucide-react";
+import { Image, Download, Loader2, Trash2, History } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface HighlightImageDialogProps {
   text: string;
+  highlightId: string;
   trigger?: React.ReactNode;
 }
 
@@ -40,11 +44,31 @@ const stylePrompts: Record<ImageStyle, string> = {
   minimalist: "minimalist design, clean lines, simple shapes, modern, elegant",
 };
 
-export const HighlightImageDialog = ({ text, trigger }: HighlightImageDialogProps) => {
+export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightImageDialogProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [style, setStyle] = useState<ImageStyle>("photorealistic");
+  const [gallery, setGallery] = useState<any[]>([]);
+  const [loadingGallery, setLoadingGallery] = useState(false);
+
+  const loadGallery = async () => {
+    setLoadingGallery(true);
+    try {
+      const { data, error } = await supabase
+        .from('highlight_images')
+        .select('*')
+        .eq('highlight_id', highlightId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setGallery(data || []);
+    } catch (error) {
+      console.error('Error loading gallery:', error);
+    } finally {
+      setLoadingGallery(false);
+    }
+  };
 
   const generateImage = async () => {
     setLoading(true);
@@ -53,7 +77,7 @@ export const HighlightImageDialog = ({ text, trigger }: HighlightImageDialogProp
 
     try {
       const { data, error } = await supabase.functions.invoke('text-to-image', {
-        body: { text, style },
+        body: { text, style, highlightId },
       });
 
       if (error) throw error;
@@ -71,11 +95,39 @@ export const HighlightImageDialog = ({ text, trigger }: HighlightImageDialogProp
 
       setImageUrl(data.imageUrl);
       toast.success(`Imagem gerada com sucesso em estilo ${styleLabels[style]}!`, { id: "generate-image" });
+      
+      // Reload gallery
+      loadGallery();
     } catch (error) {
       console.error('Error generating image:', error);
       toast.error("Erro ao gerar imagem", { id: "generate-image" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteImage = async (imageId: string, storagePath: string) => {
+    try {
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('highlight-images')
+        .remove([storagePath]);
+
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('highlight_images')
+        .delete()
+        .eq('id', imageId);
+
+      if (dbError) throw dbError;
+
+      toast.success("Imagem deletada!");
+      loadGallery();
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      toast.error("Erro ao deletar imagem");
     }
   };
 
@@ -93,10 +145,18 @@ export const HighlightImageDialog = ({ text, trigger }: HighlightImageDialogProp
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
-    if (!newOpen) {
+    if (newOpen) {
+      loadGallery();
+    } else {
       setImageUrl(null);
     }
   };
+
+  useEffect(() => {
+    if (open) {
+      loadGallery();
+    }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -200,6 +260,56 @@ export const HighlightImageDialog = ({ text, trigger }: HighlightImageDialogProp
                   Gerar Nova
                 </Button>
               </div>
+            </div>
+          )}
+
+          {/* Gallery Section */}
+          {gallery.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 border-t pt-4">
+                <History className="w-4 h-4 text-muted-foreground" />
+                <h3 className="text-sm font-medium">Histórico de Imagens ({gallery.length})</h3>
+              </div>
+
+              {loadingGallery ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <ScrollArea className="h-[300px] pr-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {gallery.map((img) => (
+                      <div key={img.id} className="group relative rounded-lg overflow-hidden border border-border bg-muted/20">
+                        <img 
+                          src={img.image_url} 
+                          alt={`Imagem ${styleLabels[img.style as ImageStyle]}`}
+                          className="w-full h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => setImageUrl(img.image_url)}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute bottom-0 left-0 right-0 p-2 text-white">
+                            <p className="text-xs font-medium">{styleLabels[img.style as ImageStyle]}</p>
+                            <p className="text-xs opacity-80">
+                              {format(new Date(img.created_at), "dd/MM/yy HH:mm", { locale: ptBR })}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteImage(img.id, img.storage_path);
+                            }}
+                            className="absolute top-2 right-2 h-6 w-6 bg-red-500/80 hover:bg-red-500 text-white"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
             </div>
           )}
         </div>
