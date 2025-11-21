@@ -5,28 +5,36 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const stylePrompts: Record<string, string> = {
+  photorealistic: "photorealistic, highly detailed, realistic lighting, professional photography, 8k quality",
+  cartoon: "cartoon style, vibrant colors, animated, playful, illustrated, bold outlines",
+  painting: "oil painting style, artistic, textured brushstrokes, gallery quality, fine art",
+  minimalist: "minimalist design, clean lines, simple shapes, modern, elegant, flat design",
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { text } = await req.json();
+    const { text, style = 'photorealistic' } = await req.json();
 
     if (!text) {
       throw new Error('Text is required');
     }
 
-    console.log(`[TEXT-TO-IMAGE] Generating image for text: ${text.substring(0, 100)}...`);
+    console.log(`[TEXT-TO-IMAGE] Generating image for text: ${text.substring(0, 100)}... with style: ${style}`);
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // Create a visual prompt based on the highlighted text
+    // Create a visual prompt based on the highlighted text and chosen style
+    const styleDescription = stylePrompts[style] || stylePrompts.photorealistic;
     const imagePrompt = `Create a beautiful, artistic illustration that represents this concept: "${text}". 
-    Make it visually appealing, creative and easy to understand. Style: modern, clean, professional.`;
+    Style: ${styleDescription}. Make it visually appealing, creative and easy to understand.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
