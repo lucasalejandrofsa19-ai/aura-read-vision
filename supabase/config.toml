@@ -3,8 +3,15 @@ project_id = "qvtfaidgpsapjctxehhq"
 [functions.process-pdf]
 verify_jwt = true
 
+[functions.process-premium-pdf]
+verify_jwt = true
+
 [functions.create-checkout]
 verify_jwt = true
 
 [functions.check-subscription]
 verify_jwt = true
+
+[functions.text-to-image]
+verify_jwt = true
+
