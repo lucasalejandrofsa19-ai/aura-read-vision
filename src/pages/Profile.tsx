@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Camera, Save, Crown, CreditCard } from "lucide-react";
+import { ArrowLeft, Camera, Save, Crown, CreditCard, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,11 +15,13 @@ import { ProfileHighlights } from "@/components/ProfileHighlights";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const Profile = () => {
   const navigate = useNavigate();
   const { user, subscriptionTier } = useAuth();
   const { theme } = useTheme();
+  const { isAdmin } = useUserRole();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -143,7 +145,20 @@ const Profile = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-3xl font-bold">Configurações do Perfil</h1>
+          <div>
+            <h1 className="text-3xl font-bold">Configurações do Perfil</h1>
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/admin")}
+                className="mt-2"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Painel Admin
+              </Button>
+            )}
+          </div>
         </motion.div>
 
         <Tabs defaultValue="profile" className="space-y-6">

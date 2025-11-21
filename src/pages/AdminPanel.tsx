@@ -3,15 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
-import { Shield, Users, ArrowLeft, Crown, Star, TrendingUp } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Shield, Users, ArrowLeft, Crown, Star, TrendingUp, Search, UserPlus, Filter, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -23,6 +25,8 @@ const AdminPanel = () => {
   const [selectedRole, setSelectedRole] = useState<"admin" | "premium" | "free">("premium");
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "premium" | "free">("all");
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -153,6 +157,37 @@ const AdminPanel = () => {
     }
   };
 
+  // Filtered and searched users
+  const filteredUsers = useMemo(() => {
+    let filtered = allUsers;
+
+    // Search by email or name
+    if (searchQuery) {
+      filtered = filtered.filter(user => 
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Filter by role
+    if (roleFilter !== "all") {
+      filtered = filtered.filter(user => user.roles.includes(roleFilter));
+    }
+
+    return filtered;
+  }, [allUsers, searchQuery, roleFilter]);
+
+  // Statistics
+  const stats = useMemo(() => {
+    const totalUsers = allUsers.length;
+    const adminCount = allUsers.filter(u => u.roles.includes("admin")).length;
+    const premiumCount = allUsers.filter(u => u.roles.includes("premium")).length;
+    const freeCount = allUsers.filter(u => u.roles.includes("free")).length;
+    const noRoleCount = allUsers.filter(u => u.roles.length === 0).length;
+
+    return { totalUsers, adminCount, premiumCount, freeCount, noRoleCount };
+  }, [allUsers]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -204,10 +239,78 @@ const AdminPanel = () => {
       </motion.header>
 
       <main className="max-w-7xl mx-auto px-6 py-12">
-        <Tabs defaultValue="assign" className="w-full">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription>Total de Usuários</CardDescription>
+              <CardTitle className="text-3xl">{stats.totalUsers}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Users className="w-4 h-4" />
+                Todos os registros
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription>Administradores</CardDescription>
+              <CardTitle className="text-3xl text-red-500">{stats.adminCount}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Shield className="w-4 h-4" />
+                Acesso total
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription>Usuários Premium</CardDescription>
+              <CardTitle className="text-3xl text-yellow-500">{stats.premiumCount}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Star className="w-4 h-4" />
+                Recursos premium
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription>Usuários Free</CardDescription>
+              <CardTitle className="text-3xl text-blue-500">{stats.freeCount}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Users className="w-4 h-4" />
+                Plano gratuito
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription>Sem Roles</CardDescription>
+              <CardTitle className="text-3xl text-gray-500">{stats.noRoleCount}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <UserPlus className="w-4 h-4" />
+                Atribuir role
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Tabs defaultValue="users" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="assign">Atribuir Roles</TabsTrigger>
             <TabsTrigger value="users">Gerenciar Usuários</TabsTrigger>
+            <TabsTrigger value="assign">Atribuir Roles</TabsTrigger>
           </TabsList>
 
           {/* Tab: Assign Roles */}
@@ -289,57 +392,128 @@ const AdminPanel = () => {
 
           {/* Tab: Manage Users */}
           <TabsContent value="users">
-            <Card className="glass p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold flex items-center gap-3">
-                  <Users className="w-6 h-6 text-primary" />
-                  Todos os Usuários ({allUsers.length})
-                </h2>
-                <Button variant="outline" onClick={fetchAllUsers} disabled={loadingUsers}>
-                  {loadingUsers ? "Carregando..." : "Atualizar"}
-                </Button>
-              </div>
+            <Card className="glass">
+              <CardHeader>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-2xl flex items-center gap-3">
+                      <Users className="w-6 h-6 text-primary" />
+                      Gerenciar Usuários
+                    </CardTitle>
+                    <CardDescription className="mt-2">
+                      {filteredUsers.length} de {allUsers.length} usuários
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" onClick={fetchAllUsers} disabled={loadingUsers}>
+                    {loadingUsers ? "Carregando..." : "Atualizar"}
+                  </Button>
+                </div>
+              </CardHeader>
 
-              <div className="space-y-4">
-                {allUsers.map((user) => (
-                  <motion.div
-                    key={user.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-4 border border-border/50 rounded-lg hover:border-primary/50 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold">{user.full_name || "Sem nome"}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
+              <CardContent className="space-y-6">
+                {/* Search and Filters */}
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por email ou nome..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <Select value={roleFilter} onValueChange={(value: any) => setRoleFilter(value)}>
+                    <SelectTrigger className="w-full md:w-[200px]">
+                      <Filter className="w-4 h-4 mr-2" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as Roles</SelectItem>
+                      <SelectItem value="admin">Apenas Admins</SelectItem>
+                      <SelectItem value="premium">Apenas Premium</SelectItem>
+                      <SelectItem value="free">Apenas Free</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Users List */}
+                <ScrollArea className="h-[600px] pr-4">
+                  <div className="space-y-3">
+                    {loadingUsers ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {user.roles.length > 0 ? (
-                          user.roles.map((role: "admin" | "premium" | "free") => (
-                            <div
-                              key={role}
-                              className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20"
-                            >
-                              {role === "admin" && <Shield className="w-4 h-4 text-red-500" />}
-                              {role === "premium" && <Star className="w-4 h-4 text-yellow-500" />}
-                              {role === "free" && <Users className="w-4 h-4 text-gray-500" />}
-                              <span className="text-sm font-medium capitalize">{role}</span>
-                              <button
-                                onClick={() => removeRole(user.id, role)}
-                                className="ml-2 text-destructive hover:text-destructive/80"
-                              >
-                                ×
-                              </button>
+                    ) : filteredUsers.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                        <p className="text-muted-foreground">
+                          {searchQuery || roleFilter !== "all" 
+                            ? "Nenhum usuário encontrado com os filtros aplicados" 
+                            : "Nenhum usuário cadastrado"}
+                        </p>
+                      </div>
+                    ) : (
+                      filteredUsers.map((user) => (
+                        <motion.div
+                          key={user.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="p-4 border border-border/50 rounded-lg hover:border-primary/50 transition-all hover:shadow-md"
+                        >
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-semibold">{user.full_name || "Sem nome"}</p>
+                                {user.id === user.id && (
+                                  <Badge variant="outline" className="text-xs">Você</Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground">{user.email}</p>
                             </div>
-                          ))
-                        ) : (
-                          <span className="text-sm text-muted-foreground">Sem roles</span>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                            
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {user.roles.length > 0 ? (
+                                user.roles.map((role: "admin" | "premium" | "free") => (
+                                  <Badge
+                                    key={role}
+                                    variant="secondary"
+                                    className="flex items-center gap-2 px-3 py-1"
+                                  >
+                                    {role === "admin" && <Shield className="w-3 h-3 text-red-500" />}
+                                    {role === "premium" && <Star className="w-3 h-3 text-yellow-500" />}
+                                    {role === "free" && <Users className="w-3 h-3 text-gray-500" />}
+                                    <span className="capitalize">{role}</span>
+                                    <button
+                                      onClick={() => removeRole(user.id, role)}
+                                      className="ml-1 hover:text-destructive transition-colors"
+                                      title="Remover role"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </Badge>
+                                ))
+                              ) : (
+                                <Badge variant="outline" className="text-muted-foreground">
+                                  Sem roles
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
