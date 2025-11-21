@@ -28,7 +28,7 @@ const AdminPanel = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "premium" | "free">("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const usersPerPage = 20;
+  const [usersPerPage, setUsersPerPage] = useState(20);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -182,7 +182,7 @@ const AdminPanel = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, roleFilter]);
+  }, [searchQuery, roleFilter, usersPerPage]);
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
@@ -422,9 +422,25 @@ const AdminPanel = () => {
                       {allUsers.length !== filteredUsers.length && ` (${allUsers.length} total)`}
                     </CardDescription>
                   </div>
-                  <Button variant="outline" onClick={fetchAllUsers} disabled={loadingUsers}>
-                    {loadingUsers ? "Carregando..." : "Atualizar"}
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="perPage" className="text-sm whitespace-nowrap">Por página:</Label>
+                      <Select value={usersPerPage.toString()} onValueChange={(value) => setUsersPerPage(Number(value))}>
+                        <SelectTrigger id="perPage" className="w-[100px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="20">20</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                          <SelectItem value="100">100</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button variant="outline" onClick={fetchAllUsers} disabled={loadingUsers}>
+                      {loadingUsers ? "Carregando..." : "Atualizar"}
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
 
