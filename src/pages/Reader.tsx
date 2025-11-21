@@ -354,6 +354,21 @@ const Reader = () => {
 
           {/* Mobile: Ícones essenciais + Menu "Mais opções" */}
           <div className="flex md:hidden items-center gap-2 ml-14 flex-wrap">
+            <NotesPanel
+              notes={notes}
+              currentPage={currentPage}
+              onAddNote={addNote}
+              onUpdateNote={updateNote}
+              onDeleteNote={deleteNote}
+              onNavigateToPage={handleNavigateToHighlight}
+            />
+
+            <ExportDialog
+              bookTitle={book.title}
+              highlights={highlights}
+              notes={notes}
+            />
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -376,21 +391,6 @@ const Reader = () => {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-
-            <NotesPanel
-              notes={notes}
-              currentPage={currentPage}
-              onAddNote={addNote}
-              onUpdateNote={updateNote}
-              onDeleteNote={deleteNote}
-              onNavigateToPage={handleNavigateToHighlight}
-            />
-
-            <ExportDialog
-              bookTitle={book.title}
-              highlights={highlights}
-              notes={notes}
-            />
 
             {/* Dropdown "Mais opções" para funções secundárias */}
             <DropdownMenu>
@@ -433,29 +433,6 @@ const Reader = () => {
 
           {/* Desktop: Linha 2 com todos os ícones de função em fila */}
           <div className="hidden md:flex items-center gap-2 flex-wrap ml-14">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`transition-aura ${bookmarkedPage ? "text-accent aura-amber" : "aura-soft"}`}
-                  title="Marcador"
-                >
-                  {bookmarkedPage ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="glass">
-                <DropdownMenuItem onClick={handleBookmark}>
-                  {bookmarkedPage === currentPage ? "Remover marcador" : "Marcar página atual"}
-                </DropdownMenuItem>
-                {bookmarkedPage && bookmarkedPage !== currentPage && (
-                  <DropdownMenuItem onClick={goToBookmark}>
-                    Ir para página {bookmarkedPage}
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             <TextToSpeechControls
               isSpeaking={isSpeaking}
               isPaused={isPaused}
@@ -487,6 +464,29 @@ const Reader = () => {
               onDeleteNote={deleteNote}
               onNavigateToPage={handleNavigateToHighlight}
             />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`transition-aura ${bookmarkedPage ? "text-accent aura-amber" : "aura-soft"}`}
+                  title="Marcador"
+                >
+                  {bookmarkedPage ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="glass">
+                <DropdownMenuItem onClick={handleBookmark}>
+                  {bookmarkedPage === currentPage ? "Remover marcador" : "Marcar página atual"}
+                </DropdownMenuItem>
+                {bookmarkedPage && bookmarkedPage !== currentPage && (
+                  <DropdownMenuItem onClick={goToBookmark}>
+                    Ir para página {bookmarkedPage}
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <Button
               variant="ghost"
