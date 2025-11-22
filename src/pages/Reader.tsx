@@ -60,6 +60,7 @@ const Reader = () => {
   const [showNotesPanel, setShowNotesPanel] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
+  const [pageTurnSoundEnabled, setPageTurnSoundEnabled] = useState(true);
 
   const {
     highlights,
@@ -76,7 +77,7 @@ const Reader = () => {
   } = useNotes(id || "");
 
   const { enterFullscreen } = useFullscreen();
-  const { subscriptionTier } = useAuth();
+  const { subscriptionTier, user } = useAuth();
   const { verifyPremiumAccess } = usePremiumAccessCache();
   
   const {
@@ -96,7 +97,25 @@ const Reader = () => {
 
   useEffect(() => {
     loadBook();
+    loadSoundSettings();
   }, [id]);
+
+  const loadSoundSettings = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("page_turn_sound_enabled")
+        .eq("id", user.id)
+        .single();
+      
+      if (error) throw error;
+      setPageTurnSoundEnabled(data?.page_turn_sound_enabled ?? true);
+    } catch (error) {
+      captureError(error, { context: "load_sound_settings" });
+    }
+  };
 
   // Realtime sync for reading position
   useEffect(() => {
@@ -202,10 +221,12 @@ const Reader = () => {
     saveCurrentPage(page);
     setSelectedText(""); // Clear selection when changing pages
     
-    // Play page turn sound
-    const audio = new Audio('/sounds/page-turn.mp3');
-    audio.volume = 0.3;
-    audio.play().catch(err => console.log('Audio play failed:', err));
+    // Play page turn sound if enabled
+    if (pageTurnSoundEnabled) {
+      const audio = new Audio('/sounds/page-turn.mp3');
+      audio.volume = 0.3;
+      audio.play().catch(err => console.log('Audio play failed:', err));
+    }
   };
 
   const handleTextSelect = (text: string) => {

@@ -234,6 +234,7 @@ export type Database = {
           has_seen_library_tour: boolean
           has_seen_welcome: boolean
           id: string
+          page_turn_sound_enabled: boolean | null
           stripe_customer_id: string | null
           subscription_status: string | null
           subscription_tier: string | null
@@ -248,6 +249,7 @@ export type Database = {
           has_seen_library_tour?: boolean
           has_seen_welcome?: boolean
           id: string
+          page_turn_sound_enabled?: boolean | null
           stripe_customer_id?: string | null
           subscription_status?: string | null
           subscription_tier?: string | null
@@ -262,6 +264,7 @@ export type Database = {
           has_seen_library_tour?: boolean
           has_seen_welcome?: boolean
           id?: string
+          page_turn_sound_enabled?: boolean | null
           stripe_customer_id?: string | null
           subscription_status?: string | null
           subscription_tier?: string | null
