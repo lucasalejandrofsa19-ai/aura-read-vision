@@ -93,9 +93,14 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
 
           if (insertError) throw insertError;
 
-          toast.success("PDF adicionado com sucesso! Gerando capa...");
+          toast.success("PDF adicionado com sucesso!");
+
+          // Invalidar query imediatamente para mostrar o livro com indicador de loading
+          queryClient.invalidateQueries({ queryKey: ["books", user.id] });
 
           // Process PDF in background (extract text and generate cover)
+          toast.loading("Gerando capa da primeira página...", { id: "cover-generation" });
+          
           supabase.functions
             .invoke("process-pdf", {
               body: {
@@ -107,13 +112,19 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
               if (error) {
                 console.error("PDF processing error:", error);
                 captureError(error, { context: "pdf_processing" });
+                toast.error("Erro ao gerar capa", { id: "cover-generation" });
               } else if (data?.coverImageUrl) {
-                toast.success("Capa gerada automaticamente!", { id: "cover-generated" });
+                toast.success("✨ Capa gerada com sucesso!", { id: "cover-generation" });
                 // Invalidar novamente para mostrar a capa
                 queryClient.invalidateQueries({ queryKey: ["books", user.id] });
+              } else {
+                toast.dismiss("cover-generation");
               }
             })
-            .catch((error) => captureError(error, { context: "pdf_processing" }));
+            .catch((error) => {
+              captureError(error, { context: "pdf_processing" });
+              toast.error("Erro ao gerar capa", { id: "cover-generation" });
+            });
           
           // Invalidar query do React Query para atualizar lista automaticamente
           queryClient.invalidateQueries({ queryKey: ["books", user.id] });

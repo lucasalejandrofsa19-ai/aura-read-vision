@@ -282,17 +282,27 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
 
           {/* Book cover (frente) */}
           <div className="glass rounded-lg overflow-hidden shadow-2xl transition-all duration-300 group-hover:shadow-primary/50">
-            <div className={`relative h-80 ${book.cover_image_url ? 'bg-muted' : `bg-gradient-to-br ${book.cover_color || 'from-blue-500 to-blue-700'}`} overflow-hidden`}>
+            <div className={`relative h-80 ${book.cover_image_url ? 'bg-background' : `bg-gradient-to-br ${book.cover_color || 'from-blue-500 to-blue-700'}`} overflow-hidden`}>
               {/* Cover Image */}
               {book.cover_image_url ? (
                 <LazyImage
                   src={book.cover_image_url} 
                   alt={book.title}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-contain"
                   containerClassName="absolute inset-0"
                 />
               ) : (
-                <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] pointer-events-none" />
+                <>
+                  <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] pointer-events-none" />
+                  
+                  {/* Generating cover indicator */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center text-white/80 p-4">
+                      <div className="w-12 h-12 border-3 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-3" />
+                      <p className="text-sm font-medium">Gerando capa...</p>
+                    </div>
+                  </div>
+                </>
               )}
               
               {/* Gradient overlay */}
