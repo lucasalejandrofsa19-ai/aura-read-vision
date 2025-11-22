@@ -10,6 +10,7 @@ import { usePWAInstallPrompt } from "@/hooks/usePWAInstallPrompt";
 import * as Sentry from "@sentry/react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Welcome from "./pages/Welcome";
 import Library from "./pages/Library";
 import Reader from "./pages/Reader";
 import Summary from "./pages/Summary";
@@ -34,6 +35,7 @@ const AppContent = () => {
     <SentryRoutes>
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/welcome" element={<Welcome />} />
       <Route path="/library" element={<Library />} />
       <Route path="/reader/:id" element={<Reader />} />
       <Route path="/summary/:id" element={<Summary />} />
@@ -42,8 +44,8 @@ const AppContent = () => {
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/download" element={<Download />} />
       <Route path="/install" element={<Install />} />
-            <Route path="/admin" element={<AdminPanel />} />
-            <Route path="/admin/analytics" element={<AdminAnalytics />} />
+      <Route path="/admin" element={<AdminPanel />} />
+      <Route path="/admin/analytics" element={<AdminAnalytics />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </SentryRoutes>
