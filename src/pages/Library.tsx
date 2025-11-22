@@ -11,6 +11,7 @@ import UploadPDF from "@/components/UploadPDF";
 import { UploadPremiumBook } from "@/components/UploadPremiumBook";
 import SubscriptionDialog from "@/components/SubscriptionDialog";
 import { PWAInstallDialog } from "@/components/PWAInstallDialog";
+import { LibraryTour } from "@/components/LibraryTour";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
@@ -105,6 +106,7 @@ const Library = () => {
               size="icon"
               className="aura-soft transition-aura"
               onClick={() => navigate("/profile")}
+              data-tour="profile-button"
             >
               <User className="w-5 h-5" />
             </Button>
@@ -164,7 +166,7 @@ const Library = () => {
         </div>
 
         {/* Search bar */}
-        <div className="relative">
+        <div className="relative" data-tour="search-bar">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
             placeholder="Buscar livros ou autores..."
@@ -246,7 +248,13 @@ const Library = () => {
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"
               >
                 {filteredBooks.map((book, index) => (
-                  <BookCard key={book.id} book={book} index={index} onDelete={loadBooks} />
+                  <BookCard 
+                    key={book.id} 
+                    book={book} 
+                    index={index} 
+                    onDelete={loadBooks}
+                    data-tour={index === 0 ? "book-card" : undefined}
+                  />
                 ))}
               </motion.div>
             </>
@@ -260,6 +268,7 @@ const Library = () => {
         animate={{ scale: 1 }}
         transition={{ delay: 0.4, type: "spring" }}
         className="fixed bottom-8 right-8"
+        data-tour="upload-button"
       >
         <UploadPDF onUploadComplete={loadBooks} />
       </motion.div>
@@ -268,6 +277,8 @@ const Library = () => {
         open={subscriptionDialogOpen}
         onOpenChange={setSubscriptionDialogOpen}
       />
+
+      <LibraryTour />
     </div>
   );
 };
