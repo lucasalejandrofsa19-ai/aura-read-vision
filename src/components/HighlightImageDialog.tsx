@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { Image, Download, Loader2, Trash2, Images, AlertCircle, Crown, X, Maximize2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { LazyImage } from "@/components/LazyImage";
 
 interface HighlightImageDialogProps {
   text: string;
@@ -308,12 +309,14 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
           {imageUrl && (
             <div className="space-y-4">
               <div className="rounded-lg overflow-hidden border border-border bg-muted/20 relative group">
-                <img 
+                <LazyImage
                   src={imageUrl} 
                   alt="Imagem gerada do destaque" 
                   className="w-full h-auto cursor-pointer"
-                  onClick={() => setFullscreenImage(imageUrl)}
+                  placeholderClassName="w-full h-64"
+                  onLoad={() => {}}
                 />
+                <div onClick={() => setFullscreenImage(imageUrl)} className="absolute inset-0 cursor-pointer" />
                 <Button
                   variant="ghost"
                   size="icon"
@@ -362,12 +365,15 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
                   <div className="grid grid-cols-2 gap-3">
                     {gallery.map((img) => (
                       <div key={img.id} className="group relative rounded-lg overflow-hidden border border-border bg-muted/20">
-                        <img 
-                          src={img.image_url} 
-                          alt={`Imagem ${styleLabels[img.style as ImageStyle]}`}
-                          className="w-full h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => setFullscreenImage(img.image_url)}
-                        />
+                        <div className="relative">
+                          <LazyImage
+                            src={img.image_url} 
+                            alt={`Imagem ${styleLabels[img.style as ImageStyle]}`}
+                            className="w-full h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                            placeholderClassName="w-full h-32"
+                          />
+                          <div onClick={() => setFullscreenImage(img.image_url)} className="absolute inset-0 cursor-pointer" />
+                        </div>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                           <div className="absolute bottom-0 left-0 right-0 p-2 text-white">
                             <p className="text-xs font-medium">{styleLabels[img.style as ImageStyle]}</p>

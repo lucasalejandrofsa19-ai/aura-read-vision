@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { LazyImage } from "@/components/LazyImage";
 
 interface Book {
   id: string;
@@ -161,10 +162,11 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
           <div className={`relative h-72 ${book.cover_image_url ? 'bg-muted' : `bg-gradient-to-br ${book.cover_color || 'from-blue-500 to-blue-700'}`} p-6 flex flex-col justify-between overflow-hidden`}>
             {/* Thumbnail image or texture overlay */}
             {book.cover_image_url ? (
-              <img 
+              <LazyImage
                 src={book.cover_image_url} 
                 alt={book.title}
                 className="absolute inset-0 w-full h-full object-cover"
+                placeholderClassName="absolute inset-0"
               />
             ) : (
               <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] pointer-events-none" />
@@ -265,10 +267,11 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {galleryImages.map((image) => (
                 <div key={image.id} className="relative group">
-                  <img
+                  <LazyImage
                     src={image.image_url}
                     alt={image.style}
                     className="w-full h-48 object-cover rounded-lg border border-border"
+                    placeholderClassName="w-full h-48 rounded-lg border border-border"
                   />
                   <div className="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded text-xs">
                     <p className="font-medium capitalize">{image.style}</p>
