@@ -95,36 +95,34 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
 
           toast.success("PDF adicionado com sucesso!");
 
-          // Invalidar query imediatamente para mostrar o livro com indicador de loading
+          // Invalidar query imediatamente
           queryClient.invalidateQueries({ queryKey: ["books", user.id] });
 
-          // Process PDF in background (extract text and generate cover)
+          // Generate cover from first page in the background
           toast.loading("Gerando capa da primeira página...", { id: "cover-generation" });
           
-          supabase.functions
-            .invoke("process-pdf", {
-              body: {
-                bookId: bookData.id,
-                filePath: fileName,
-              },
-            })
-            .then(({ data, error }) => {
-              if (error) {
-                console.error("PDF processing error:", error);
-                captureError(error, { context: "pdf_processing" });
-                toast.error("Erro ao gerar capa", { id: "cover-generation" });
-              } else if (data?.coverImageUrl) {
+          // Get the PDF URL
+          const { data: urlData } = supabase.storage
+            .from("pdfs")
+            .getPublicUrl(fileName);
+          
+          // Import and use the hook
+          import("@/hooks/useGenerateCover").then(({ useGenerateCover }) => {
+            const { generateCover } = useGenerateCover();
+            
+            generateCover(bookData.id, urlData.publicUrl, 1)
+              .then(() => {
                 toast.success("✨ Capa gerada com sucesso!", { id: "cover-generation" });
-                // Invalidar novamente para mostrar a capa
                 queryClient.invalidateQueries({ queryKey: ["books", user.id] });
-              } else {
+              })
+              .catch((error) => {
+                captureError(error, { context: "auto_generate_cover" });
                 toast.dismiss("cover-generation");
-              }
-            })
-            .catch((error) => {
-              captureError(error, { context: "pdf_processing" });
-              toast.error("Erro ao gerar capa", { id: "cover-generation" });
-            });
+              });
+          }).catch((error) => {
+            captureError(error, { context: "import_generate_cover" });
+            toast.dismiss("cover-generation");
+          });
           
           // Invalidar query do React Query para atualizar lista automaticamente
           queryClient.invalidateQueries({ queryKey: ["books", user.id] });
