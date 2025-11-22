@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import { motion } from "framer-motion";
 import { Search, User, CreditCard, Shield, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useUserData } from "@/hooks/useUserData";
+import { useBooks } from "@/hooks/useBooks";
 import BookCard from "@/components/BookCard";
 import UploadPDF from "@/components/UploadPDF";
 import { UploadPremiumBook } from "@/components/UploadPremiumBook";
@@ -13,78 +14,42 @@ import SubscriptionDialog from "@/components/SubscriptionDialog";
 import { PWAInstallDialog } from "@/components/PWAInstallDialog";
 import { LibraryTour } from "@/components/LibraryTour";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { captureError } from "@/lib/sentry";
+
+// Memoizar BookCard para evitar re-renders desnecessários
+const MemoizedBookCard = memo(BookCard);
 
 const Library = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [books, setBooks] = useState<any[]>([]);
-  const [premiumBooks, setPremiumBooks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
-  const { user, signOut, subscriptionTier, checkSubscription } = useAuth();
-  const { isAdmin, hasPremiumAccess } = useUserRole();
+  const { user, signOut, subscriptionTier } = useAuth();
+  const { isAdmin, hasPremiumAccess } = useUserData();
+  const { books, premiumBooks, isLoading } = useBooks();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) {
       navigate("/auth");
-      return;
     }
-
-    loadBooks();
-    loadPremiumBooks();
-    checkSubscription();
   }, [user, navigate]);
 
-  const loadBooks = async () => {
-    if (!user) return;
+  // Memoizar livros premium com flag
+  const premiumBooksWithFlag = useMemo(() => 
+    premiumBooks.map(book => ({
+      ...book,
+      isPremiumBook: true,
+      progress: 0,
+    })),
+    [premiumBooks]
+  );
 
-    try {
-      const { data, error } = await supabase
-        .from("books")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setBooks(data || []);
-    } catch (error) {
-      captureError(error, { context: "load_books" });
-      toast.error("Erro ao carregar livros");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadPremiumBooks = async () => {
-    if (!user || !hasPremiumAccess) return;
-
-    try {
-      const { data, error } = await supabase
-        .from("premium_books")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      
-      // Adicionar flag para identificar como livro premium
-      const premiumBooksWithFlag = (data || []).map(book => ({
-        ...book,
-        isPremiumBook: true,
-      }));
-      
-      setPremiumBooks(premiumBooksWithFlag);
-    } catch (error) {
-      console.error("Error loading premium books:", error);
-    }
-  };
-
-  const filteredBooks = books.filter(
-    (book) =>
-      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (book.author && book.author.toLowerCase().includes(searchQuery.toLowerCase()))
+  // Memoizar filtro de livros
+  const filteredBooks = useMemo(() => 
+    books.filter(
+      (book) =>
+        book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (book.author && book.author.toLowerCase().includes(searchQuery.toLowerCase()))
+    ),
+    [books, searchQuery]
   );
 
   return (
@@ -194,14 +159,14 @@ const Library = () => {
       </motion.header>
 
       {/* Books grid */}
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center items-center min-h-[400px]">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
         <>
           {/* Premium Books Section */}
-          {hasPremiumAccess && premiumBooks.length > 0 && (
+          {hasPremiumAccess && premiumBooksWithFlag.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -219,13 +184,11 @@ const Library = () => {
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {premiumBooks.map((book, index) => (
-                  <BookCard 
+                {premiumBooksWithFlag.map((book, index) => (
+                  <MemoizedBookCard 
                     key={book.id} 
                     book={book} 
                     index={index} 
-                    onDelete={loadPremiumBooks}
-                    onReprocess={loadPremiumBooks}
                     isPremiumBook={true}
                     isAdmin={isAdmin}
                   />
@@ -252,7 +215,7 @@ const Library = () => {
             </motion.div>
           ) : (
             <>
-              {(hasPremiumAccess && premiumBooks.length > 0) && (
+              {(hasPremiumAccess && premiumBooksWithFlag.length > 0) && (
                 <div className="flex items-center gap-3 mb-4">
                   <h2 className="text-2xl font-bold">Meus Livros</h2>
                 </div>
@@ -264,11 +227,10 @@ const Library = () => {
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"
               >
                 {filteredBooks.map((book, index) => (
-                  <BookCard 
+                  <MemoizedBookCard 
                     key={book.id} 
                     book={book} 
                     index={index} 
-                    onDelete={loadBooks}
                     data-tour={index === 0 ? "book-card" : undefined}
                   />
                 ))}
@@ -286,7 +248,7 @@ const Library = () => {
         className="fixed bottom-8 right-8"
         data-tour="upload-button"
       >
-        <UploadPDF onUploadComplete={loadBooks} />
+        <UploadPDF />
       </motion.div>
 
       <SubscriptionDialog

@@ -20,7 +20,7 @@ interface Book {
   title: string;
   author: string;
   cover_color: string;
-  progress: number;
+  progress?: number;
   file_path: string;
   cover_image_url?: string;
 }
