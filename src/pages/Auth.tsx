@@ -209,7 +209,10 @@ const Auth = () => {
                         type="email"
                         placeholder="seu@email.com"
                         className="glass border-primary/20 focus:border-primary"
-                        {...field}
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
                       />
                       <FormMessage />
                     </FormItem>
@@ -226,7 +229,10 @@ const Auth = () => {
                         type="password"
                         placeholder="••••••••"
                         className="glass border-primary/20 focus:border-primary"
-                        {...field}
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
                       />
                       <FormMessage />
                     </FormItem>
@@ -257,7 +263,10 @@ const Auth = () => {
                       <Input
                         placeholder="Seu nome completo"
                         className="glass border-primary/20 focus:border-primary"
-                        {...field}
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
                       />
                       <FormMessage />
                     </FormItem>
@@ -274,7 +283,10 @@ const Auth = () => {
                         type="email"
                         placeholder="seu@email.com"
                         className="glass border-primary/20 focus:border-primary"
-                        {...field}
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
                       />
                       <FormMessage />
                     </FormItem>
@@ -291,7 +303,10 @@ const Auth = () => {
                         type="password"
                         placeholder="••••••••"
                         className="glass border-primary/20 focus:border-primary"
-                        {...field}
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
                       />
                       <FormMessage />
                     </FormItem>
