@@ -228,6 +228,7 @@ export type Database = {
           created_at: string | null
           email: string | null
           full_name: string | null
+          has_seen_library_tour: boolean
           has_seen_welcome: boolean
           id: string
           stripe_customer_id: string | null
@@ -241,6 +242,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           full_name?: string | null
+          has_seen_library_tour?: boolean
           has_seen_welcome?: boolean
           id: string
           stripe_customer_id?: string | null
@@ -254,6 +256,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           full_name?: string | null
+          has_seen_library_tour?: boolean
           has_seen_welcome?: boolean
           id?: string
           stripe_customer_id?: string | null
