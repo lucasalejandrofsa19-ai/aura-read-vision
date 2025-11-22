@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Trash2, RefreshCw, Images, ImagePlus } from "lucide-react";
+import { BookOpen, Trash2, RefreshCw, Images, ImagePlus, FileImage } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LazyImage } from "@/components/LazyImage";
+import { SelectCoverPageDialog } from "@/components/SelectCoverPageDialog";
 
 interface Book {
   id: string;
@@ -24,6 +25,7 @@ interface Book {
   progress?: number;
   file_path: string;
   cover_image_url?: string;
+  total_pages?: number;
 }
 
 interface BookCardProps {
@@ -42,6 +44,8 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
   const [loadingGallery, setLoadingGallery] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [showSelectPage, setShowSelectPage] = useState(false);
+  const [generatingCover, setGeneratingCover] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const handleDelete = async (e: React.MouseEvent) => {
@@ -167,6 +171,36 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
     }
   };
 
+  const handleSelectCoverPage = async (pageNumber: number) => {
+    setGeneratingCover(true);
+    toast.loading("Gerando capa da página selecionada...", { id: "generate-cover" });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('process-pdf', {
+        body: { 
+          bookId: book.id,
+          filePath: book.file_path,
+          pageNumber
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.coverImageUrl) {
+        toast.success("Capa gerada com sucesso!", { id: "generate-cover" });
+        setShowSelectPage(false);
+        onReprocess?.();
+      } else {
+        toast.error("Erro ao gerar capa", { id: "generate-cover" });
+      }
+    } catch (error) {
+      captureError(error, { context: "generate_cover_from_page" });
+      toast.error("Erro ao gerar capa da página", { id: "generate-cover" });
+    } finally {
+      setGeneratingCover(false);
+    }
+  };
+
   const handleOpenGallery = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowGallery(true);
@@ -275,11 +309,28 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                       size="icon"
                       onClick={(e) => {
                         e.stopPropagation();
+                        setShowSelectPage(true);
+                      }}
+                      disabled={generatingCover}
+                      className="w-7 h-7 rounded-full bg-blue-500/30 hover:bg-blue-500/50 text-white backdrop-blur-sm"
+                      title="Escolher Página da Capa"
+                    >
+                      {generatingCover ? (
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <FileImage className="w-3.5 h-3.5" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
                         coverInputRef.current?.click();
                       }}
                       disabled={uploadingCover}
                       className="w-7 h-7 rounded-full bg-green-500/30 hover:bg-green-500/50 text-white backdrop-blur-sm"
-                      title="Alterar Capa"
+                      title="Upload Capa Personalizada"
                     >
                       {uploadingCover ? (
                         <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -347,6 +398,16 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
           </div>
         </motion.div>
       </div>
+
+      {/* Select Cover Page Dialog */}
+      <SelectCoverPageDialog
+        open={showSelectPage}
+        onOpenChange={setShowSelectPage}
+        onSelectPage={handleSelectCoverPage}
+        bookTitle={book.title}
+        totalPages={book.total_pages}
+        isLoading={generatingCover}
+      />
 
       {/* Gallery Dialog */}
       <Dialog open={showGallery} onOpenChange={setShowGallery}>
