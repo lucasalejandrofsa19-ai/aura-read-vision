@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Trash2, RefreshCw, Images } from "lucide-react";
+import { BookOpen, Trash2, RefreshCw, Images, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +41,8 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
   const [showGallery, setShowGallery] = useState(false);
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
   const [loadingGallery, setLoadingGallery] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -104,6 +106,67 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
     }
   };
 
+  const handleUploadCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Por favor, selecione uma imagem");
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5242880) {
+      toast.error("Imagem muito grande. Limite de 5MB");
+      return;
+    }
+
+    setUploadingCover(true);
+    toast.loading("Fazendo upload da capa...", { id: "cover-upload" });
+
+    try {
+      const bucket = isPremiumBook ? "premium-covers" : "premium-covers";
+      const fileName = `${book.id}-custom-cover.${file.name.split('.').pop()}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(fileName);
+
+      // Update book record
+      const table = isPremiumBook ? "premium_books" : "books";
+      const { error: updateError } = await supabase
+        .from(table)
+        .update({ cover_image_url: urlData.publicUrl })
+        .eq("id", book.id);
+
+      if (updateError) throw updateError;
+
+      toast.success("Capa atualizada com sucesso!", { id: "cover-upload" });
+      
+      // Refresh the page or callback
+      onReprocess?.();
+      
+    } catch (error) {
+      captureError(error, { context: "upload_custom_cover" });
+      toast.error("Erro ao fazer upload da capa", { id: "cover-upload" });
+    } finally {
+      setUploadingCover(false);
+      if (coverInputRef.current) {
+        coverInputRef.current.value = "";
+      }
+    }
+  };
+
   const handleOpenGallery = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowGallery(true);
@@ -140,13 +203,23 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="cursor-pointer group relative"
-      onClick={() => navigate(`/reader/${book.id}`)}
-    >
+    <>
+      {/* Hidden file input for cover upload */}
+      <input
+        ref={coverInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleUploadCover}
+        className="hidden"
+      />
+      
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05 }}
+        className="cursor-pointer group relative"
+        onClick={() => navigate(`/reader/${book.id}`)}
+      >
       {/* Book standing on shelf */}
       <div className="relative perspective-1000">
         {/* Book spine and shadow */}
@@ -197,6 +270,23 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                   
                   {/* Action buttons */}
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        coverInputRef.current?.click();
+                      }}
+                      disabled={uploadingCover}
+                      className="w-7 h-7 rounded-full bg-green-500/30 hover:bg-green-500/50 text-white backdrop-blur-sm"
+                      title="Alterar Capa"
+                    >
+                      {uploadingCover ? (
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <ImagePlus className="w-3.5 h-3.5" />
+                      )}
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -300,6 +390,7 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
         </DialogContent>
       </Dialog>
     </motion.div>
+    </>
   );
 };
 
