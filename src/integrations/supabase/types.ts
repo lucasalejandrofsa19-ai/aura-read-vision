@@ -228,12 +228,16 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bookmark_sound_enabled: boolean | null
           created_at: string | null
+          delete_sound_enabled: boolean | null
           email: string | null
           full_name: string | null
           has_seen_library_tour: boolean
           has_seen_welcome: boolean
+          highlight_sound_enabled: boolean | null
           id: string
+          note_sound_enabled: boolean | null
           page_turn_sound_enabled: boolean | null
           stripe_customer_id: string | null
           subscription_status: string | null
@@ -243,12 +247,16 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bookmark_sound_enabled?: boolean | null
           created_at?: string | null
+          delete_sound_enabled?: boolean | null
           email?: string | null
           full_name?: string | null
           has_seen_library_tour?: boolean
           has_seen_welcome?: boolean
+          highlight_sound_enabled?: boolean | null
           id: string
+          note_sound_enabled?: boolean | null
           page_turn_sound_enabled?: boolean | null
           stripe_customer_id?: string | null
           subscription_status?: string | null
@@ -258,12 +266,16 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bookmark_sound_enabled?: boolean | null
           created_at?: string | null
+          delete_sound_enabled?: boolean | null
           email?: string | null
           full_name?: string | null
           has_seen_library_tour?: boolean
           has_seen_welcome?: boolean
+          highlight_sound_enabled?: boolean | null
           id?: string
+          note_sound_enabled?: boolean | null
           page_turn_sound_enabled?: boolean | null
           stripe_customer_id?: string | null
           subscription_status?: string | null

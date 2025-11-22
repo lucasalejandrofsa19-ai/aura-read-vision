@@ -41,6 +41,7 @@ import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { useNotes } from "@/hooks/useNotes";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePremiumAccessCache } from "@/hooks/usePremiumAccessCache";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { captureError } from "@/lib/sentry";
 
 
@@ -60,7 +61,6 @@ const Reader = () => {
   const [showNotesPanel, setShowNotesPanel] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
-  const [pageTurnSoundEnabled, setPageTurnSoundEnabled] = useState(true);
 
   const {
     highlights,
@@ -71,14 +71,38 @@ const Reader = () => {
 
   const {
     notes,
-    addNote,
+    addNote: addNoteOriginal,
     updateNote,
-    deleteNote,
+    deleteNote: deleteNoteOriginal,
   } = useNotes(id || "");
+
+  // Wrapper functions to play sounds
+  const addNote = async (pageNumber: number, noteText: string) => {
+    const result = await addNoteOriginal(pageNumber, noteText);
+    if (result) {
+      playSound('note');
+    }
+    return result;
+  };
+
+  const deleteNote = async (noteId: string) => {
+    const success = await deleteNoteOriginal(noteId);
+    if (success) {
+      playSound('delete');
+    }
+  };
+
+  const handleDeleteHighlight = async (highlightId: string) => {
+    const success = await deleteHighlight(highlightId);
+    if (success) {
+      playSound('delete');
+    }
+  };
 
   const { enterFullscreen } = useFullscreen();
   const { subscriptionTier, user } = useAuth();
   const { verifyPremiumAccess } = usePremiumAccessCache();
+  const { playSound } = useSoundEffects();
   
   const {
     speak,
@@ -97,25 +121,7 @@ const Reader = () => {
 
   useEffect(() => {
     loadBook();
-    loadSoundSettings();
   }, [id]);
-
-  const loadSoundSettings = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("page_turn_sound_enabled")
-        .eq("id", user.id)
-        .single();
-      
-      if (error) throw error;
-      setPageTurnSoundEnabled(data?.page_turn_sound_enabled ?? true);
-    } catch (error) {
-      captureError(error, { context: "load_sound_settings" });
-    }
-  };
 
   // Realtime sync for reading position
   useEffect(() => {
@@ -200,10 +206,12 @@ const Reader = () => {
     if (bookmarkedPage === currentPage) {
       // Remove bookmark
       setBookmarkedPage(null);
+      playSound('delete');
       toast.success("Marcador removido");
     } else {
       // Set bookmark to current page
       setBookmarkedPage(currentPage);
+      playSound('bookmark');
       toast.success(`Página ${currentPage} marcada!`);
     }
   };
@@ -220,13 +228,7 @@ const Reader = () => {
     setCurrentPage(page);
     saveCurrentPage(page);
     setSelectedText(""); // Clear selection when changing pages
-    
-    // Play page turn sound if enabled
-    if (pageTurnSoundEnabled) {
-      const audio = new Audio('/sounds/page-turn.mp3');
-      audio.volume = 0.3;
-      audio.play().catch(err => console.log('Audio play failed:', err));
-    }
+    playSound('page-turn');
   };
 
   const handleTextSelect = (text: string) => {
@@ -240,6 +242,7 @@ const Reader = () => {
     }
 
     await addHighlight(currentPage, selectedText, highlightColor);
+    playSound('highlight');
     setSelectedText("");
     window.getSelection()?.removeAllRanges();
   };
@@ -570,7 +573,7 @@ const Reader = () => {
         {/* Highlights List */}
         <HighlightsList
           highlights={highlights}
-          onDelete={deleteHighlight}
+          onDelete={handleDeleteHighlight}
           onNavigate={handleNavigateToHighlight}
         />
 
