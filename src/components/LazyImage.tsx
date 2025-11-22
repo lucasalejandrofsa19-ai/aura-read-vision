@@ -6,6 +6,7 @@ interface LazyImageProps {
   src: string;
   alt: string;
   className?: string;
+  containerClassName?: string;
   placeholderClassName?: string;
   onLoad?: () => void;
 }
@@ -14,6 +15,7 @@ export const LazyImage = ({
   src, 
   alt, 
   className, 
+  containerClassName,
   placeholderClassName,
   onLoad 
 }: LazyImageProps) => {
@@ -31,13 +33,13 @@ export const LazyImage = ({
   };
 
   return (
-    <div ref={imgRef} className={cn("relative", className)}>
+    <div ref={imgRef} className={cn("relative overflow-hidden", containerClassName)}>
       {/* Placeholder com skeleton loading */}
       {!isLoaded && !hasError && (
         <div 
           className={cn(
-            "absolute inset-0 bg-gradient-to-br from-muted to-muted/50 animate-pulse",
-            placeholderClassName
+            "bg-gradient-to-br from-muted to-muted/50 animate-pulse",
+            placeholderClassName || className
           )}
         />
       )}
@@ -61,8 +63,8 @@ export const LazyImage = ({
       {/* Fallback se houver erro */}
       {hasError && (
         <div className={cn(
-          "absolute inset-0 bg-gradient-to-br from-red-500/10 to-red-600/10 flex items-center justify-center",
-          placeholderClassName
+          "bg-gradient-to-br from-red-500/10 to-red-600/10 flex items-center justify-center",
+          placeholderClassName || className
         )}>
           <span className="text-xs text-muted-foreground">Erro ao carregar</span>
         </div>
