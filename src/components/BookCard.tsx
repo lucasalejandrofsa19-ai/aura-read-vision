@@ -26,6 +26,7 @@ interface Book {
   file_path: string;
   cover_image_url?: string;
   total_pages?: number;
+  file_url?: string;
 }
 
 interface BookCardProps {
@@ -405,6 +406,7 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
         onOpenChange={setShowSelectPage}
         onSelectPage={handleSelectCoverPage}
         bookTitle={book.title}
+        fileUrl={book.file_url}
         totalPages={book.total_pages}
         isLoading={generatingCover}
       />

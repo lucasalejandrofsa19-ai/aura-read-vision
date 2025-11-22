@@ -19,7 +19,20 @@ export const useBooks = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Add public URLs for PDFs
+      const booksWithUrls = (data || []).map(book => {
+        const { data: urlData } = supabase.storage
+          .from("pdfs")
+          .getPublicUrl(book.file_path);
+        
+        return {
+          ...book,
+          file_url: urlData.publicUrl
+        };
+      });
+      
+      return booksWithUrls;
     },
     enabled: !!user,
     staleTime: 3 * 60 * 1000, // 3 minutos
@@ -36,7 +49,20 @@ export const useBooks = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Add public URLs for PDFs
+      const booksWithUrls = (data || []).map(book => {
+        const { data: urlData } = supabase.storage
+          .from("premium-pdfs")
+          .getPublicUrl(book.file_path);
+        
+        return {
+          ...book,
+          file_url: urlData.publicUrl
+        };
+      });
+      
+      return booksWithUrls;
     },
     staleTime: 10 * 60 * 1000, // 10 minutos (premium books mudam menos)
     gcTime: 15 * 60 * 1000,
