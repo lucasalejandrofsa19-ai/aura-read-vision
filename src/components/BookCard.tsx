@@ -17,6 +17,8 @@ import { ptBR } from "date-fns/locale";
 import { LazyImage } from "@/components/LazyImage";
 import { SelectCoverPageDialog } from "@/components/SelectCoverPageDialog";
 import { useGenerateCover } from "@/hooks/useGenerateCover";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Book {
   id: string;
@@ -41,6 +43,8 @@ interface BookCardProps {
 
 const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = false, onReprocess }: BookCardProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [reprocessing, setReprocessing] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
@@ -74,6 +78,13 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
         .eq("id", book.id);
 
       if (error) throw error;
+
+      // Invalidate cache immediately for instant UI update
+      if (isPremiumBook) {
+        queryClient.invalidateQueries({ queryKey: ["premium-books"] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
+      }
 
       toast.success("Livro deletado com sucesso!");
       onDelete?.();
