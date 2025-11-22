@@ -21,7 +21,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { user, subscriptionTier } = useAuth();
   const { theme } = useTheme();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, hasPremiumAccess } = useUserRole();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -145,8 +145,22 @@ const Profile = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <div>
-            <h1 className="text-3xl font-bold">Configurações do Perfil</h1>
+          <div className="flex-1">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-3xl font-bold">Configurações do Perfil</h1>
+              {isAdmin && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30">
+                  <Shield className="w-3.5 h-3.5 text-red-500" />
+                  <span className="text-xs font-semibold text-red-500">Admin</span>
+                </div>
+              )}
+              {hasPremiumAccess && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30">
+                  <Crown className="w-3.5 h-3.5 text-purple-500" />
+                  <span className="text-xs font-semibold text-purple-500">Premium</span>
+                </div>
+              )}
+            </div>
             {isAdmin && (
               <Button
                 variant="outline"
@@ -202,7 +216,21 @@ const Profile = () => {
                       disabled={uploading}
                     />
                   </div>
-                  <div>
+                  <div className="flex-1">
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {isAdmin && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30">
+                          <Shield className="w-3.5 h-3.5 text-red-500" />
+                          <span className="text-xs font-semibold text-red-500">Admin</span>
+                        </div>
+                      )}
+                      {hasPremiumAccess && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30">
+                          <Crown className="w-3.5 h-3.5 text-purple-500" />
+                          <span className="text-xs font-semibold text-purple-500">Premium</span>
+                        </div>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground mb-1">
                       Clique no avatar para alterar
                     </p>
