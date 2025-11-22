@@ -45,7 +45,9 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [showReset, setShowReset] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
   const navigate = useNavigate();
   const { signIn, signUp, user } = useAuth();
 
@@ -100,6 +102,38 @@ const Auth = () => {
       const { error } = await signUp(signupData.email, signupData.password, signupData.fullName);
       if (error) {
         toast.error(error.message || "Erro ao criar conta");
+      }
+    } catch (error) {
+      toast.error("Erro inesperado. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onSubmitReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const emailSchema = z.string().email("E-mail inválido");
+      const result = emailSchema.safeParse(resetEmail);
+      
+      if (!result.success) {
+        toast.error("Por favor, insira um e-mail válido");
+        setLoading(false);
+        return;
+      }
+
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { error } = await supabase.functions.invoke("reset-password", {
+        body: { email: resetEmail },
+      });
+
+      if (error) {
+        toast.error("Erro ao enviar email de recuperação");
+      } else {
+        toast.success("Email de recuperação enviado! Verifique sua caixa de entrada.");
+        setResetEmail("");
+        setShowReset(false);
       }
     } catch (error) {
       toast.error("Erro inesperado. Tente novamente.");
@@ -183,22 +217,67 @@ const Auth = () => {
         >
           <div className="flex gap-4 mb-6">
             <Button
-              variant={isLogin ? "default" : "ghost"}
+              variant={isLogin && !showReset ? "default" : "ghost"}
               className="flex-1"
-              onClick={() => setIsLogin(true)}
+              onClick={() => {
+                setIsLogin(true);
+                setShowReset(false);
+              }}
             >
               Entrar
             </Button>
             <Button
-              variant={!isLogin ? "default" : "ghost"}
+              variant={!isLogin && !showReset ? "default" : "ghost"}
               className="flex-1"
-              onClick={() => setIsLogin(false)}
+              onClick={() => {
+                setIsLogin(false);
+                setShowReset(false);
+              }}
             >
               Cadastrar
             </Button>
           </div>
 
-          {isLogin ? (
+          {showReset ? (
+            <form 
+              onSubmit={onSubmitReset} 
+              className="space-y-4"
+            >
+              <div className="space-y-2">
+                <label htmlFor="reset-email" className="text-sm font-medium leading-none">
+                  E-mail
+                </label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  className="glass border-primary/20 focus:border-primary"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Digite seu e-mail para receber o link de recuperação
+                </p>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-safira"
+              >
+                {loading ? "Enviando..." : "Enviar Link de Recuperação"}
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => setShowReset(false)}
+              >
+                Voltar para o login
+              </Button>
+            </form>
+          ) : isLogin ? (
             <Form {...loginForm}>
               <form 
                 onSubmit={loginForm.handleSubmit(onSubmitLogin)} 
@@ -250,6 +329,15 @@ const Auth = () => {
                   className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-safira"
                 >
                   {loading ? "Processando..." : "Entrar"}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full text-sm"
+                  onClick={() => setShowReset(true)}
+                >
+                  Esqueceu a senha?
                 </Button>
               </form>
             </Form>
