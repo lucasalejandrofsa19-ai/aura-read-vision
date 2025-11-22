@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, memo } from "react";
+import { useState, useEffect, useMemo, memo, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, User, CreditCard, Shield, Crown } from "lucide-react";
+import { Search, User, CreditCard, Shield, Crown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,22 @@ const Library = () => {
   const { isAdmin, hasPremiumAccess } = useUserData();
   const { books, premiumBooks, isLoading } = useBooks();
   const navigate = useNavigate();
+  
+  // Refs for scroll containers
+  const premiumScrollRef = useRef<HTMLDivElement>(null);
+  const userBooksScrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollLeft = (ref: React.RefObject<HTMLDivElement>) => {
+    if (ref.current) {
+      ref.current.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = (ref: React.RefObject<HTMLDivElement>) => {
+    if (ref.current) {
+      ref.current.scrollBy({ left: 300, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -197,8 +213,26 @@ const Library = () => {
                 <div className="absolute -bottom-4 left-0 right-0 h-6 bg-gradient-to-b from-amber-800/30 to-amber-900/40 rounded-lg shadow-xl border-t border-amber-700/50" />
                 <div className="absolute -bottom-2 left-0 right-0 h-3 bg-gradient-to-b from-amber-900/20 to-transparent rounded-lg" />
                 
+                {/* Navigation buttons */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background/90 rounded-full shadow-lg"
+                  onClick={() => scrollLeft(premiumScrollRef)}
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background/90 rounded-full shadow-lg"
+                  onClick={() => scrollRight(premiumScrollRef)}
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </Button>
+                
                 {/* Books on shelf */}
-                <div className="flex gap-4 overflow-x-auto pb-8 px-2 scrollbar-hide">
+                <div ref={premiumScrollRef} className="flex gap-4 overflow-x-auto pb-8 px-2 scrollbar-hide">
                   {premiumBooksWithFlag.map((book, index) => (
                     <div key={book.id} className="flex-shrink-0 w-48">
                       <MemoizedBookCard 
@@ -247,8 +281,26 @@ const Library = () => {
                 <div className="absolute -bottom-4 left-0 right-0 h-6 bg-gradient-to-b from-amber-800/30 to-amber-900/40 rounded-lg shadow-xl border-t border-amber-700/50" />
                 <div className="absolute -bottom-2 left-0 right-0 h-3 bg-gradient-to-b from-amber-900/20 to-transparent rounded-lg" />
                 
+                {/* Navigation buttons */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background/90 rounded-full shadow-lg"
+                  onClick={() => scrollLeft(userBooksScrollRef)}
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background/90 rounded-full shadow-lg"
+                  onClick={() => scrollRight(userBooksScrollRef)}
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </Button>
+                
                 {/* Books on shelf */}
-                <div className="flex gap-4 overflow-x-auto pb-8 px-2 scrollbar-hide mb-8">
+                <div ref={userBooksScrollRef} className="flex gap-4 overflow-x-auto pb-8 px-2 scrollbar-hide mb-8">
                   {filteredBooks.map((book, index) => (
                     <div key={book.id} className="flex-shrink-0 w-48">
                       <MemoizedBookCard 
