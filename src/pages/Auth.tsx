@@ -42,7 +42,6 @@ const signupSchema = loginSchema.extend({
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
-type SignupFormData = z.infer<typeof signupSchema>;
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -50,22 +49,19 @@ const Auth = () => {
   const navigate = useNavigate();
   const { signIn, signUp, user } = useAuth();
 
+  // Signup state without react-hook-form
+  const [signupData, setSignupData] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+  });
+
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     mode: "onChange",
     defaultValues: {
       email: "",
       password: "",
-    },
-  });
-
-  const signupForm = useForm<SignupFormData>({
-    resolver: zodResolver(signupSchema),
-    mode: "onChange",
-    defaultValues: {
-      email: "",
-      password: "",
-      fullName: "",
     },
   });
 
@@ -89,10 +85,19 @@ const Auth = () => {
     }
   };
 
-  const onSubmitSignup = async (data: SignupFormData) => {
+  const onSubmitSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await signUp(data.email, data.password, data.fullName);
+      const result = signupSchema.safeParse(signupData);
+      if (!result.success) {
+        const firstError = result.error.errors[0];
+        toast.error(firstError.message);
+        setLoading(false);
+        return;
+      }
+      
+      const { error } = await signUp(signupData.email, signupData.password, signupData.fullName);
       if (error) {
         toast.error(error.message || "Erro ao criar conta");
       }
@@ -249,79 +254,59 @@ const Auth = () => {
               </form>
             </Form>
           ) : (
-            <Form {...signupForm}>
-              <form 
-                onSubmit={signupForm.handleSubmit(onSubmitSignup)} 
-                className="space-y-4"
+            <form 
+              onSubmit={onSubmitSignup} 
+              className="space-y-4"
+            >
+              <div className="space-y-2">
+                <label htmlFor="fullName" className="text-sm font-medium leading-none">
+                  Nome Completo
+                </label>
+                <Input
+                  id="fullName"
+                  placeholder="Seu nome completo"
+                  className="glass border-primary/20 focus:border-primary"
+                  value={signupData.fullName}
+                  onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="signup-email" className="text-sm font-medium leading-none">
+                  E-mail
+                </label>
+                <Input
+                  id="signup-email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  className="glass border-primary/20 focus:border-primary"
+                  value={signupData.email}
+                  onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="signup-password" className="text-sm font-medium leading-none">
+                  Senha
+                </label>
+                <Input
+                  id="signup-password"
+                  type="password"
+                  placeholder="••••••••"
+                  className="glass border-primary/20 focus:border-primary"
+                  value={signupData.password}
+                  onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-safira"
               >
-                <FormField
-                  control={signupForm.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome Completo</FormLabel>
-                      <Input
-                        placeholder="Seu nome completo"
-                        className="glass border-primary/20 focus:border-primary"
-                        value={field.value}
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={signupForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>E-mail</FormLabel>
-                      <Input
-                        type="email"
-                        placeholder="seu@email.com"
-                        className="glass border-primary/20 focus:border-primary"
-                        value={field.value}
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={signupForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Senha</FormLabel>
-                      <Input
-                        type="password"
-                        placeholder="••••••••"
-                        className="glass border-primary/20 focus:border-primary"
-                        value={field.value}
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-safira"
-                >
-                  {loading ? "Processando..." : "Criar Conta"}
-                </Button>
-              </form>
-            </Form>
+                {loading ? "Processando..." : "Criar Conta"}
+              </Button>
+            </form>
           )}
         </motion.div>
       </motion.div>
