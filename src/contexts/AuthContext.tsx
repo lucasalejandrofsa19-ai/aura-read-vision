@@ -90,7 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
 
       toast.success("Conta criada com sucesso! Você já está logado.");
-      navigate("/library");
+      navigate("/welcome");
       return { error: null };
     } catch (error) {
       return { error: error as Error };
@@ -106,8 +106,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
+      // Check if user has seen welcome page
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("has_seen_welcome")
+        .eq("id", (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
       toast.success("Login realizado com sucesso!");
-      navigate("/library");
+      
+      if (profile && !profile.has_seen_welcome) {
+        navigate("/welcome");
+      } else {
+        navigate("/library");
+      }
+      
       return { error: null };
     } catch (error) {
       return { error: error as Error };
