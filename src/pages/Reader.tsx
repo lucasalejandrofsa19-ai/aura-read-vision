@@ -201,6 +201,11 @@ const Reader = () => {
     setCurrentPage(page);
     saveCurrentPage(page);
     setSelectedText(""); // Clear selection when changing pages
+    
+    // Play page turn sound
+    const audio = new Audio('/sounds/page-turn.mp3');
+    audio.volume = 0.3;
+    audio.play().catch(err => console.log('Audio play failed:', err));
   };
 
   const handleTextSelect = (text: string) => {
