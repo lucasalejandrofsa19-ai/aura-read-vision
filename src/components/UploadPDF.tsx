@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 import { useSentryTracking } from "@/hooks/use-sentry-tracking";
 import { useQueryClient } from "@tanstack/react-query";
+import { useGenerateCover } from "@/hooks/useGenerateCover";
 
 interface UploadPDFProps {
   onUploadComplete?: () => void;
@@ -18,6 +19,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
   const { user, subscriptionTier } = useAuth();
   const { trackClick, trackAsyncOperation } = useSentryTracking();
   const queryClient = useQueryClient();
+  const { generateCover } = useGenerateCover();
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -95,37 +97,30 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
 
           toast.success("PDF adicionado com sucesso!");
 
-          // Invalidar query imediatamente
+          // Invalidar query imediatamente para mostrar o card com loading
           queryClient.invalidateQueries({ queryKey: ["books", user.id] });
 
           // Generate cover from first page in the background
-          toast.loading("Gerando capa da primeira página...", { id: "cover-generation" });
-          
-          // Get the PDF URL
-          const { data: urlData } = supabase.storage
-            .from("pdfs")
-            .getPublicUrl(fileName);
-          
-          // Import and use the hook
-          import("@/hooks/useGenerateCover").then(({ useGenerateCover }) => {
-            const { generateCover } = useGenerateCover();
-            
-            generateCover(bookData.id, urlData.publicUrl, 1)
-              .then(() => {
-                toast.success("✨ Capa gerada com sucesso!", { id: "cover-generation" });
-                queryClient.invalidateQueries({ queryKey: ["books", user.id] });
-              })
-              .catch((error) => {
-                captureError(error, { context: "auto_generate_cover" });
-                toast.dismiss("cover-generation");
-              });
-          }).catch((error) => {
-            captureError(error, { context: "import_generate_cover" });
-            toast.dismiss("cover-generation");
-          });
-          
-          // Invalidar query do React Query para atualizar lista automaticamente
-          queryClient.invalidateQueries({ queryKey: ["books", user.id] });
+          const generateCoverAsync = async () => {
+            try {
+              toast.loading("Gerando capa da primeira página...", { id: "cover-generation" });
+              
+              // Get the PDF URL
+              const { data: urlData } = supabase.storage
+                .from("pdfs")
+                .getPublicUrl(fileName);
+              
+              await generateCover(bookData.id, urlData.publicUrl, 1);
+              toast.success("✨ Capa gerada com sucesso!", { id: "cover-generation" });
+              queryClient.invalidateQueries({ queryKey: ["books", user.id] });
+            } catch (error) {
+              captureError(error, { context: "auto_generate_cover" });
+              toast.error("Erro ao gerar capa", { id: "cover-generation" });
+            }
+          };
+
+          // Execute asynchronously without blocking
+          generateCoverAsync();
           
           // Chamar callback se fornecido
           if (onUploadComplete) {
