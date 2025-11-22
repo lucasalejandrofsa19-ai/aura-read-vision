@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserData } from "@/hooks/useUserData";
 import { useBooks } from "@/hooks/useBooks";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import BookCard from "@/components/BookCard";
 import UploadPDF from "@/components/UploadPDF";
 import { UploadPremiumBook } from "@/components/UploadPremiumBook";
@@ -29,6 +30,7 @@ const Library = () => {
   // Refs for scroll containers
   const premiumScrollRef = useRef<HTMLDivElement>(null);
   const userBooksScrollRef = useRef<HTMLDivElement>(null);
+  const [activeSection, setActiveSection] = useState<'premium' | 'user'>('user');
 
   const scrollLeft = (ref: React.RefObject<HTMLDivElement>) => {
     if (ref.current) {
@@ -41,6 +43,25 @@ const Library = () => {
       ref.current.scrollBy({ left: 300, behavior: 'smooth' });
     }
   };
+
+  // Setup swipe gestures
+  useSwipeGesture({
+    onSwipeLeft: () => {
+      if (activeSection === 'premium') {
+        scrollRight(premiumScrollRef);
+      } else {
+        scrollRight(userBooksScrollRef);
+      }
+    },
+    onSwipeRight: () => {
+      if (activeSection === 'premium') {
+        scrollLeft(premiumScrollRef);
+      } else {
+        scrollLeft(userBooksScrollRef);
+      }
+    },
+    threshold: 50,
+  });
 
   useEffect(() => {
     if (!user) {
@@ -232,7 +253,12 @@ const Library = () => {
                 </Button>
                 
                 {/* Books on shelf */}
-                <div ref={premiumScrollRef} className="flex gap-4 overflow-x-auto pb-8 px-2 scrollbar-hide">
+                <div 
+                  ref={premiumScrollRef} 
+                  className="flex gap-4 overflow-x-auto pb-8 px-2 scrollbar-hide"
+                  onMouseEnter={() => setActiveSection('premium')}
+                  onTouchStart={() => setActiveSection('premium')}
+                >
                   {premiumBooksWithFlag.map((book, index) => (
                     <div key={book.id} className="flex-shrink-0 w-48">
                       <MemoizedBookCard 
@@ -300,7 +326,12 @@ const Library = () => {
                 </Button>
                 
                 {/* Books on shelf */}
-                <div ref={userBooksScrollRef} className="flex gap-4 overflow-x-auto pb-8 px-2 scrollbar-hide mb-8">
+                <div 
+                  ref={userBooksScrollRef} 
+                  className="flex gap-4 overflow-x-auto pb-8 px-2 scrollbar-hide mb-8"
+                  onMouseEnter={() => setActiveSection('user')}
+                  onTouchStart={() => setActiveSection('user')}
+                >
                   {filteredBooks.map((book, index) => (
                     <div key={book.id} className="flex-shrink-0 w-48">
                       <MemoizedBookCard 
