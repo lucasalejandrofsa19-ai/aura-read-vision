@@ -6,18 +6,31 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper to convert Uint8Array to base64 in chunks to avoid stack overflow
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const chunkSize = 8192;
+  
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    binary += String.fromCharCode(...chunk);
+  }
+  
+  return btoa(binary);
+}
+
 // Helper to generate cover image from PDF first page using AI
-async function generateCoverFromPDF(pdfBytes: Uint8Array): Promise<Blob> {
+async function generateCoverFromPDF(pdfBytes: Uint8Array, pageNumber: number = 1): Promise<Blob> {
   try {
-    console.log("Converting PDF to base64 for AI processing...");
+    console.log(`Converting PDF to base64 for AI processing (page ${pageNumber})...`);
     
-    // Convert PDF to base64
-    const base64PDF = btoa(String.fromCharCode(...pdfBytes));
+    // Convert PDF to base64 using chunks to avoid stack overflow
+    const base64PDF = uint8ArrayToBase64(pdfBytes);
     const pdfDataUrl = `data:application/pdf;base64,${base64PDF}`;
 
-    console.log("Calling Lovable AI to extract first page...");
+    console.log("Calling Lovable AI to extract page...");
 
-    // Use Lovable AI to extract and render the first page
+    // Use Lovable AI to extract and render the specified page
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -32,7 +45,7 @@ async function generateCoverFromPDF(pdfBytes: Uint8Array): Promise<Blob> {
             content: [
               {
                 type: "text",
-                text: "Extract and render the first page of this PDF document as a high-quality book cover image. Keep the exact layout and content of the page, just convert it to an image format suitable for a book cover. Maintain the original aspect ratio."
+                text: `Extract and render page ${pageNumber} of this PDF document as a high-quality book cover image. Keep the exact layout and content of the page, just convert it to an image format suitable for a book cover. Maintain the original aspect ratio.`
               },
               {
                 type: "document_url",
@@ -96,8 +109,8 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
     if (authError || !user) throw new Error("Unauthorized");
 
-    const { bookId, filePath } = await req.json();
-    console.log(`Processing PDF for book ${bookId}, file: ${filePath}`);
+    const { bookId, filePath, pageNumber } = await req.json();
+    console.log(`Processing PDF for book ${bookId}, file: ${filePath}, page: ${pageNumber || 1}`);
 
     // Download PDF from storage
     const { data: fileData, error: downloadError } = await supabaseClient.storage
@@ -114,10 +127,10 @@ serve(async (req) => {
     // Convert file to Uint8Array
     const pdfBytes = new Uint8Array(await fileData.arrayBuffer());
 
-    // Generate cover image from first page
+    // Generate cover image from specified page (default: first page)
     let coverImageUrl = null;
     try {
-      const coverBlob = await generateCoverFromPDF(pdfBytes);
+      const coverBlob = await generateCoverFromPDF(pdfBytes, pageNumber || 1);
       
       // Upload cover to storage
       const coverFileName = `${bookId}-cover.png`;
