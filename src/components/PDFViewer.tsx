@@ -3,6 +3,8 @@ import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { PDFSearchBar } from "@/components/PDFSearchBar";
+import { PrefetchIndicator } from "@/components/PrefetchIndicator";
+import { usePDFPrefetch } from "@/hooks/usePDFPrefetch";
 import type { TextItem } from "pdfjs-dist/types/src/display/api";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -40,6 +42,22 @@ export const PDFViewer = ({
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const [pageTexts, setPageTexts] = useState<Map<number, string>>(new Map());
+  const [isPrefetching, setIsPrefetching] = useState(false);
+
+  // Prefetch hook para carregar próximas páginas
+  const { isPageCached, cache } = usePDFPrefetch({
+    fileUrl,
+    currentPage: pageNumber,
+    numPages,
+    prefetchCount: 3, // Prefetch de 3 páginas à frente
+  });
+
+  // Detectar quando está fazendo prefetch
+  useEffect(() => {
+    setIsPrefetching(true);
+    const timer = setTimeout(() => setIsPrefetching(false), 1000);
+    return () => clearTimeout(timer);
+  }, [pageNumber]);
 
   useEffect(() => {
     setPageNumber(initialPage);
@@ -259,6 +277,7 @@ export const PDFViewer = ({
             onClick={goToNextPage}
             disabled={pageNumber >= numPages}
             className="aura-soft"
+            title={isPageCached(pageNumber + 1) ? "Próxima página (pré-carregada)" : "Próxima página"}
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
@@ -273,6 +292,22 @@ export const PDFViewer = ({
         ref={pageRef}
         className="border border-border rounded-lg overflow-auto shadow-lg bg-muted/20 relative"
       >
+        {/* Indicador de prefetch */}
+        <PrefetchIndicator 
+          isActive={isPrefetching} 
+          cachedPagesCount={cache.size}
+        />
+        
+        {/* Indicador de página pronta */}
+        {isPageCached(pageNumber + 1) && (
+          <div className="absolute top-2 right-2 z-10 px-2 py-1 rounded-md bg-green-500/20 border border-green-500/30 backdrop-blur-sm">
+            <span className="text-xs text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              Próxima página pronta
+            </span>
+          </div>
+        )}
+        
         <Document
           file={fileUrl}
           onLoadSuccess={onDocumentLoadSuccess}
