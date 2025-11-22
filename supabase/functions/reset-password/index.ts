@@ -39,7 +39,7 @@ const handler = async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Generate password reset link
-    const redirectTo = `${req.headers.get("origin")}/auth?mode=reset`;
+    const redirectTo = `${req.headers.get("origin")}/reset-password`;
     const { data, error: resetError } = await supabase.auth.admin.generateLink({
       type: "recovery",
       email: email,

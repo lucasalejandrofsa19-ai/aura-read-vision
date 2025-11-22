@@ -11,6 +11,7 @@ import * as Sentry from "@sentry/react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Welcome from "./pages/Welcome";
+import ResetPassword from "./pages/ResetPassword";
 import Library from "./pages/Library";
 import Reader from "./pages/Reader";
 import Summary from "./pages/Summary";
@@ -36,6 +37,7 @@ const AppContent = () => {
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/welcome" element={<Welcome />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/library" element={<Library />} />
       <Route path="/reader/:id" element={<Reader />} />
       <Route path="/summary/:id" element={<Summary />} />
