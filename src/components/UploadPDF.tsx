@@ -93,7 +93,9 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
 
           if (insertError) throw insertError;
 
-          // Process PDF in background (extract text)
+          toast.success("PDF adicionado com sucesso! Gerando capa...");
+
+          // Process PDF in background (extract text and generate cover)
           supabase.functions
             .invoke("process-pdf", {
               body: {
@@ -101,9 +103,17 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
                 filePath: fileName,
               },
             })
+            .then(({ data, error }) => {
+              if (error) {
+                console.error("PDF processing error:", error);
+                captureError(error, { context: "pdf_processing" });
+              } else if (data?.coverImageUrl) {
+                toast.success("Capa gerada automaticamente!", { id: "cover-generated" });
+                // Invalidar novamente para mostrar a capa
+                queryClient.invalidateQueries({ queryKey: ["books", user.id] });
+              }
+            })
             .catch((error) => captureError(error, { context: "pdf_processing" }));
-
-          toast.success("PDF adicionado com sucesso!");
           
           // Invalidar query do React Query para atualizar lista automaticamente
           queryClient.invalidateQueries({ queryKey: ["books", user.id] });

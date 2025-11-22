@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           author: string | null
           cover_color: string | null
+          cover_image_url: string | null
           created_at: string | null
           current_page: number | null
           extracted_text: string | null
@@ -34,6 +35,7 @@ export type Database = {
         Insert: {
           author?: string | null
           cover_color?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           current_page?: number | null
           extracted_text?: string | null
@@ -50,6 +52,7 @@ export type Database = {
         Update: {
           author?: string | null
           cover_color?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           current_page?: number | null
           extracted_text?: string | null
