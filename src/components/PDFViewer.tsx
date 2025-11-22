@@ -213,7 +213,7 @@ export const PDFViewer = ({
   return (
     <div ref={containerRef} className="flex flex-col items-center gap-4">
       {/* Controls */}
-      <div className="space-y-3 w-full flex flex-col items-center">
+      <div className="space-y-4 md:space-y-3 w-full flex flex-col items-center">
         <div className="glass sticky top-20 z-40 rounded-lg p-2 flex items-center gap-2">
           <Button
             variant="ghost"
@@ -283,8 +283,12 @@ export const PDFViewer = ({
           </Button>
         </div>
         
-        {/* Bookmark indicator below controls */}
-        {bookmarkIndicator}
+        {/* Bookmark indicator below controls with extra spacing on mobile */}
+        {bookmarkIndicator && (
+          <div className="mb-4 md:mb-0">
+            {bookmarkIndicator}
+          </div>
+        )}
       </div>
 
       {/* PDF Document */}
