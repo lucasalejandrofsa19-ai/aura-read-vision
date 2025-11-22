@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LazyImage } from "@/components/LazyImage";
 import { SelectCoverPageDialog } from "@/components/SelectCoverPageDialog";
+import { useGenerateCover } from "@/hooks/useGenerateCover";
 
 interface Book {
   id: string;
@@ -46,8 +47,8 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
   const [loadingGallery, setLoadingGallery] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [showSelectPage, setShowSelectPage] = useState(false);
-  const [generatingCover, setGeneratingCover] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const { generateCover, generating: generatingCover } = useGenerateCover();
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -173,32 +174,21 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
   };
 
   const handleSelectCoverPage = async (pageNumber: number) => {
-    setGeneratingCover(true);
-    toast.loading("Gerando capa da página selecionada...", { id: "generate-cover" });
+    if (!book.file_url) {
+      toast.error("URL do PDF não disponível");
+      return;
+    }
+
+    toast.loading("Gerando capa...", { id: "generate-cover" });
 
     try {
-      const { data, error } = await supabase.functions.invoke('process-pdf', {
-        body: { 
-          bookId: book.id,
-          filePath: book.file_path,
-          pageNumber
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.coverImageUrl) {
-        toast.success("Capa gerada com sucesso!", { id: "generate-cover" });
-        setShowSelectPage(false);
-        onReprocess?.();
-      } else {
-        toast.error("Erro ao gerar capa", { id: "generate-cover" });
-      }
+      await generateCover(book.id, book.file_url, pageNumber);
+      toast.success("✨ Capa gerada com sucesso!", { id: "generate-cover" });
+      setShowSelectPage(false);
+      onReprocess?.();
     } catch (error) {
       captureError(error, { context: "generate_cover_from_page" });
-      toast.error("Erro ao gerar capa da página", { id: "generate-cover" });
-    } finally {
-      setGeneratingCover(false);
+      toast.error("Erro ao gerar capa", { id: "generate-cover" });
     }
   };
 
