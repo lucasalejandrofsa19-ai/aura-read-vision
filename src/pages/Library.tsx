@@ -123,17 +123,22 @@ const Library = () => {
               </>
             )}
             {subscriptionTier === "free" && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="aura-soft transition-aura border-accent hover:bg-accent/10"
-                onClick={() => navigate("/pricing")}
-              >
-                <CreditCard className="w-4 h-4 mr-2" />
-                Assinar Premium
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="aura-soft transition-aura border-accent hover:bg-accent/10"
+                  onClick={() => navigate("/pricing")}
+                >
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Assinar Premium
+                </Button>
+                <FeedbackDialog />
+              </>
             )}
-            <FeedbackDialog />
+            {subscriptionTier !== "free" && (
+              <FeedbackDialog />
+            )}
             <PWAInstallDialog>
               <button className="hover-scale transition-all duration-300 hover:shadow-lg active:scale-95">
                 <img 
