@@ -213,83 +213,81 @@ export const PDFViewer = ({
   return (
     <div ref={containerRef} className="flex flex-col items-center gap-4">
       {/* Controls */}
-      <div className="space-y-4 md:space-y-3 w-full flex flex-col items-center">
-        <div className="glass sticky top-20 z-40 rounded-lg p-2 flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={zoomOut}
-            disabled={scale <= 0.5}
-            className="aura-soft"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </Button>
-          <span className="text-sm font-medium min-w-[60px] text-center">
-            {Math.round(scale * 100)}%
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={zoomIn}
-            disabled={scale >= 3.0}
-            className="aura-soft"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={fitToWidth}
-            className={`aura-soft ${autoFit ? 'text-primary' : ''}`}
-            title="Ajustar à largura"
-          >
-            <Maximize2 className="w-4 h-4" />
-          </Button>
-          
-          <div className="h-6 w-px bg-border mx-2" />
-          
-          <PDFSearchBar
-            onSearch={handleSearch}
-            onNextResult={handleNextResult}
-            onPrevResult={handlePrevResult}
-            onClear={handleClearSearch}
-            currentResultIndex={currentResultIndex}
-            totalResults={searchResults.length}
-            isSearching={isSearching}
-          />
-          
-          <div className="h-6 w-px bg-border mx-2" />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToPrevPage}
-            disabled={pageNumber <= 1}
-            className="aura-soft"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <span className="text-sm font-medium min-w-[80px] text-center">
-            {pageNumber} / {numPages}
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToNextPage}
-            disabled={pageNumber >= numPages}
-            className="aura-soft"
-            title={isPageCached(pageNumber + 1) ? "Próxima página (pré-carregada)" : "Próxima página"}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
+      <div className="glass sticky top-20 z-40 rounded-lg p-2 flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={zoomOut}
+          disabled={scale <= 0.5}
+          className="aura-soft"
+        >
+          <ZoomOut className="w-4 h-4" />
+        </Button>
+        <span className="text-sm font-medium min-w-[60px] text-center">
+          {Math.round(scale * 100)}%
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={zoomIn}
+          disabled={scale >= 3.0}
+          className="aura-soft"
+        >
+          <ZoomIn className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={fitToWidth}
+          className={`aura-soft ${autoFit ? 'text-primary' : ''}`}
+          title="Ajustar à largura"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </Button>
         
-        {/* Bookmark indicator below controls with extra spacing on mobile */}
-        {bookmarkIndicator && (
-          <div className="mb-4 md:mb-0">
-            {bookmarkIndicator}
-          </div>
-        )}
+        <div className="h-6 w-px bg-border mx-2" />
+        
+        <PDFSearchBar
+          onSearch={handleSearch}
+          onNextResult={handleNextResult}
+          onPrevResult={handlePrevResult}
+          onClear={handleClearSearch}
+          currentResultIndex={currentResultIndex}
+          totalResults={searchResults.length}
+          isSearching={isSearching}
+        />
+        
+        <div className="h-6 w-px bg-border mx-2" />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={goToPrevPage}
+          disabled={pageNumber <= 1}
+          className="aura-soft"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <span className="text-sm font-medium min-w-[80px] text-center">
+          {pageNumber} / {numPages}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={goToNextPage}
+          disabled={pageNumber >= numPages}
+          className="aura-soft"
+          title={isPageCached(pageNumber + 1) ? "Próxima página (pré-carregada)" : "Próxima página"}
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Button>
       </div>
+      
+      {/* Bookmark indicator below controls */}
+      {bookmarkIndicator && (
+        <div className="w-full flex justify-center">
+          {bookmarkIndicator}
+        </div>
+      )}
 
       {/* PDF Document */}
       <div 
