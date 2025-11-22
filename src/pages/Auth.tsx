@@ -7,12 +7,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
   FormLabel,
@@ -54,6 +52,7 @@ const Auth = () => {
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    mode: "onChange",
     defaultValues: {
       email: "",
       password: "",
@@ -62,6 +61,7 @@ const Auth = () => {
 
   const signupForm = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
+    mode: "onChange",
     defaultValues: {
       email: "",
       password: "",
@@ -205,14 +205,12 @@ const Auth = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>E-mail</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="seu@email.com"
-                          className="glass border-primary/20 focus:border-primary"
-                          {...field}
-                        />
-                      </FormControl>
+                      <Input
+                        type="email"
+                        placeholder="seu@email.com"
+                        className="glass border-primary/20 focus:border-primary"
+                        {...field}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -224,14 +222,12 @@ const Auth = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Senha</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="••••••••"
-                          className="glass border-primary/20 focus:border-primary"
-                          {...field}
-                        />
-                      </FormControl>
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        className="glass border-primary/20 focus:border-primary"
+                        {...field}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -258,13 +254,11 @@ const Auth = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Nome Completo</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Seu nome completo"
-                          className="glass border-primary/20 focus:border-primary"
-                          {...field}
-                        />
-                      </FormControl>
+                      <Input
+                        placeholder="Seu nome completo"
+                        className="glass border-primary/20 focus:border-primary"
+                        {...field}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -276,14 +270,12 @@ const Auth = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>E-mail</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="seu@email.com"
-                          className="glass border-primary/20 focus:border-primary"
-                          {...field}
-                        />
-                      </FormControl>
+                      <Input
+                        type="email"
+                        placeholder="seu@email.com"
+                        className="glass border-primary/20 focus:border-primary"
+                        {...field}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -295,14 +287,12 @@ const Auth = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Senha</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="••••••••"
-                          className="glass border-primary/20 focus:border-primary"
-                          {...field}
-                        />
-                      </FormControl>
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        className="glass border-primary/20 focus:border-primary"
+                        {...field}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
