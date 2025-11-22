@@ -53,7 +53,11 @@ const Library = () => {
   );
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-6 bg-gradient-to-b from-background via-background to-muted/20"
+         style={{
+           backgroundImage: `radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.05), transparent 50%)`
+         }}
+    >
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -183,16 +187,24 @@ const Library = () => {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {premiumBooksWithFlag.map((book, index) => (
-                  <MemoizedBookCard 
-                    key={book.id} 
-                    book={book} 
-                    index={index} 
-                    isPremiumBook={true}
-                    isAdmin={isAdmin}
-                  />
-                ))}
+              <div className="relative mb-12">
+                {/* Wooden shelf effect */}
+                <div className="absolute -bottom-4 left-0 right-0 h-6 bg-gradient-to-b from-amber-800/30 to-amber-900/40 rounded-lg shadow-xl border-t border-amber-700/50" />
+                <div className="absolute -bottom-2 left-0 right-0 h-3 bg-gradient-to-b from-amber-900/20 to-transparent rounded-lg" />
+                
+                {/* Books on shelf */}
+                <div className="flex gap-4 overflow-x-auto pb-8 px-2 scrollbar-hide">
+                  {premiumBooksWithFlag.map((book, index) => (
+                    <div key={book.id} className="flex-shrink-0 w-48">
+                      <MemoizedBookCard 
+                        book={book} 
+                        index={index} 
+                        isPremiumBook={true}
+                        isAdmin={isAdmin}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </motion.div>
           )}
@@ -224,16 +236,24 @@ const Library = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"
+                className="relative"
               >
-                {filteredBooks.map((book, index) => (
-                  <MemoizedBookCard 
-                    key={book.id} 
-                    book={book} 
-                    index={index} 
-                    data-tour={index === 0 ? "book-card" : undefined}
-                  />
-                ))}
+                {/* Wooden shelf effect */}
+                <div className="absolute -bottom-4 left-0 right-0 h-6 bg-gradient-to-b from-amber-800/30 to-amber-900/40 rounded-lg shadow-xl border-t border-amber-700/50" />
+                <div className="absolute -bottom-2 left-0 right-0 h-3 bg-gradient-to-b from-amber-900/20 to-transparent rounded-lg" />
+                
+                {/* Books on shelf */}
+                <div className="flex gap-4 overflow-x-auto pb-8 px-2 scrollbar-hide mb-8">
+                  {filteredBooks.map((book, index) => (
+                    <div key={book.id} className="flex-shrink-0 w-48">
+                      <MemoizedBookCard 
+                        book={book} 
+                        index={index} 
+                        data-tour={index === 0 ? "book-card" : undefined}
+                      />
+                    </div>
+                  ))}
+                </div>
               </motion.div>
             </>
           )}

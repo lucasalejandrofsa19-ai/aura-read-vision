@@ -143,106 +143,120 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className="cursor-pointer group perspective-1000"
+      transition={{ delay: index * 0.05 }}
+      className="cursor-pointer group relative"
       onClick={() => navigate(`/reader/${book.id}`)}
     >
-      <motion.div
-        whileHover={{ rotateY: -5, scale: 1.05 }}
-        transition={{ duration: 0.3 }}
-        className="relative preserve-3d"
-        style={{ transformStyle: "preserve-3d" }}
-      >
-        {/* Book spine shadow for 3D effect */}
-        <div className="absolute -left-2 top-4 bottom-4 w-2 bg-gradient-to-r from-black/40 to-transparent rounded-l-sm" />
-        
-        {/* Book cover card */}
-        <div className="glass rounded-xl overflow-hidden shadow-2xl transition-aura hover:aura-safira">
-          {/* Book cover front */}
-          <div className={`relative h-72 ${book.cover_image_url ? 'bg-muted' : `bg-gradient-to-br ${book.cover_color || 'from-blue-500 to-blue-700'}`} p-6 flex flex-col justify-between overflow-hidden`}>
-            {/* Thumbnail image or texture overlay */}
-            {book.cover_image_url ? (
-              <LazyImage
-                src={book.cover_image_url} 
-                alt={book.title}
-                className="absolute inset-0 w-full h-full object-cover"
-                containerClassName="absolute inset-0"
-              />
-            ) : (
-              <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] pointer-events-none" />
-            )}
-            
-            {/* Gradient overlay for readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-            
-            <div className="flex justify-between items-start relative z-10">
-              <BookOpen className="w-8 h-8 text-white/90 drop-shadow-lg" />
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleOpenGallery}
-                  className="w-8 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/40 text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
-                  title="Galeria de Imagens"
-                >
-                  <Images className="w-4 h-4" />
-                </Button>
-                {isAdmin && isPremiumBook && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleReprocess}
-                    disabled={reprocessing}
-                    className="w-8 h-8 rounded-full bg-blue-500/20 hover:bg-blue-500/40 text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm disabled:opacity-50"
-                    title="Reprocessar PDF"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${reprocessing ? 'animate-spin' : ''}`} />
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleDelete}
-                  className="w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/40 text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-                <div className="w-10 h-10 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                  <span className="text-white text-xs font-bold drop-shadow">{book.progress}%</span>
+      {/* Book standing on shelf */}
+      <div className="relative perspective-1000">
+        {/* Book spine and shadow */}
+        <motion.div
+          whileHover={{ rotateY: -8, z: 20 }}
+          transition={{ duration: 0.3 }}
+          className="relative preserve-3d"
+          style={{ transformStyle: "preserve-3d" }}
+        >
+          {/* Shelf shadow */}
+          <div className="absolute -bottom-2 left-0 right-0 h-8 bg-gradient-to-t from-black/30 to-transparent blur-sm" />
+          
+          {/* Book spine (lado visível quando em pé) */}
+          <div className="absolute -left-3 top-0 bottom-0 w-12 rounded-l-lg shadow-2xl overflow-hidden"
+               style={{
+                 transform: "rotateY(90deg) translateZ(-24px)",
+                 transformStyle: "preserve-3d"
+               }}>
+            <div className={`w-full h-full ${book.cover_color || 'bg-gradient-to-b from-blue-500 to-blue-700'} p-2 flex flex-col items-center justify-center`}>
+              <span className="text-white font-bold text-xs writing-mode-vertical transform rotate-180 line-clamp-3 text-center">
+                {book.title}
+              </span>
+            </div>
+          </div>
+
+          {/* Book cover (frente) */}
+          <div className="glass rounded-lg overflow-hidden shadow-2xl transition-all duration-300 group-hover:shadow-primary/50">
+            <div className={`relative h-80 ${book.cover_image_url ? 'bg-muted' : `bg-gradient-to-br ${book.cover_color || 'from-blue-500 to-blue-700'}`} overflow-hidden`}>
+              {/* Cover Image */}
+              {book.cover_image_url ? (
+                <LazyImage
+                  src={book.cover_image_url} 
+                  alt={book.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  containerClassName="absolute inset-0"
+                />
+              ) : (
+                <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] pointer-events-none" />
+              )}
+              
+              {/* Gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+              
+              {/* Title and author on cover */}
+              <div className="absolute inset-0 p-6 flex flex-col justify-between">
+                <div className="flex justify-between items-start">
+                  <BookOpen className="w-6 h-6 text-white/90 drop-shadow-lg" />
+                  
+                  {/* Action buttons */}
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleOpenGallery}
+                      className="w-7 h-7 rounded-full bg-purple-500/30 hover:bg-purple-500/50 text-white backdrop-blur-sm"
+                      title="Galeria"
+                    >
+                      <Images className="w-3.5 h-3.5" />
+                    </Button>
+                    {isAdmin && isPremiumBook && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleReprocess}
+                        disabled={reprocessing}
+                        className="w-7 h-7 rounded-full bg-blue-500/30 hover:bg-blue-500/50 text-white backdrop-blur-sm"
+                        title="Reprocessar"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${reprocessing ? 'animate-spin' : ''}`} />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleDelete}
+                      className="w-7 h-7 rounded-full bg-red-500/30 hover:bg-red-500/50 text-white backdrop-blur-sm"
+                      title="Deletar"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-white text-lg font-bold mb-1 line-clamp-2 drop-shadow-lg">
+                    {book.title}
+                  </h3>
+                  <p className="text-white/80 text-xs drop-shadow">{book.author || "Autor Desconhecido"}</p>
+                  
+                  {/* Progress badge */}
+                  <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm">
+                    <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                    <span className="text-white text-xs font-semibold">{book.progress}% lido</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="relative z-10">
-              <h3 className="text-white text-xl font-bold mb-1 line-clamp-2 drop-shadow-lg">
-                {book.title}
-              </h3>
-              <p className="text-white/90 text-sm drop-shadow">{book.author || "Autor Desconhecido"}</p>
-            </div>
 
-            {/* Progress bar */}
-            <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/20">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${book.progress}%` }}
-                transition={{ delay: index * 0.1 + 0.3, duration: 0.8 }}
-                className="h-full bg-white shadow-lg"
-              />
+              {/* Progress bar at bottom */}
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${book.progress}%` }}
+                  transition={{ delay: index * 0.05 + 0.2, duration: 0.6 }}
+                  className="h-full bg-gradient-to-r from-primary to-accent shadow-lg"
+                />
+              </div>
             </div>
-
-            {/* Book spine highlight */}
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-r from-white/30 to-transparent" />
           </div>
-
-          {/* Card footer */}
-          <div className="p-4 bg-gradient-to-b from-background to-muted/20">
-            <p className="text-sm text-muted-foreground flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              Continue lendo
-            </p>
-          </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
 
       {/* Gallery Dialog */}
       <Dialog open={showGallery} onOpenChange={setShowGallery}>

@@ -282,5 +282,29 @@ All colors MUST be HSL.
   button, a, input, textarea, select {
     -webkit-tap-highlight-color: transparent;
   }
+
+  /* 3D perspective utilities */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  /* Scrollbar hiding */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Vertical writing mode for book spines */
+  .writing-mode-vertical {
+    writing-mode: vertical-rl;
+  }
 }
 
