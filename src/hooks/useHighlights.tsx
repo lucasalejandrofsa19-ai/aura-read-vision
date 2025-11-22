@@ -86,9 +86,11 @@ export const useHighlights = (bookId: string) => {
 
       setHighlights((prev) => prev.filter((h) => h.id !== highlightId));
       toast.success("Destaque removido!");
+      return true;
     } catch (error) {
       captureError(error, { context: "delete_highlight" });
       toast.error("Erro ao remover destaque");
+      return false;
     }
   };
 

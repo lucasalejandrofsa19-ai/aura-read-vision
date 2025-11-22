@@ -119,9 +119,11 @@ export const useNotes = (bookId: string) => {
 
       setNotes((prev) => prev.filter((note) => note.id !== noteId));
       toast.success("Anotação removida");
+      return true;
     } catch (error) {
       captureError(error, { context: "delete_note" });
       toast.error("Erro ao remover anotação");
+      return false;
     }
   };
 
