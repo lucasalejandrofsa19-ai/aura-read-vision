@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect, useMemo } from "react";
-import { Shield, Users, ArrowLeft, Crown, Star, TrendingUp, Search, UserPlus, Filter, X } from "lucide-react";
+import { Shield, Users, ArrowLeft, Crown, Star, TrendingUp, Search, UserPlus, Filter, X, MessageSquare } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -244,14 +244,22 @@ const AdminPanel = () => {
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => navigate("/admin/analytics")}
-            className="ml-auto"
-          >
-            <TrendingUp className="w-4 h-4 mr-2" />
-            Analytics
-          </Button>
+          <div className="ml-auto flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/admin/feedback")}
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Sugestões
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/admin/analytics")}
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Analytics
+            </Button>
+          </div>
         </div>
       </motion.header>
 

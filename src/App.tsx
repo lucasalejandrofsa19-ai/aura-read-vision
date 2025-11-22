@@ -22,6 +22,7 @@ import Download from "./pages/Download";
 import Install from "./pages/Install";
 import AdminPanel from "./pages/AdminPanel";
 import AdminAnalytics from "./pages/AdminAnalytics";
+import AdminFeedback from "./pages/AdminFeedback";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const AppContent = () => {
       <Route path="/install" element={<Install />} />
       <Route path="/admin" element={<AdminPanel />} />
       <Route path="/admin/analytics" element={<AdminAnalytics />} />
+      <Route path="/admin/feedback" element={<AdminFeedback />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </SentryRoutes>

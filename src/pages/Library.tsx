@@ -12,6 +12,7 @@ import { UploadPremiumBook } from "@/components/UploadPremiumBook";
 import SubscriptionDialog from "@/components/SubscriptionDialog";
 import { PWAInstallDialog } from "@/components/PWAInstallDialog";
 import { LibraryTour } from "@/components/LibraryTour";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
@@ -163,6 +164,7 @@ const Library = () => {
                 Assinar Premium
               </Button>
             )}
+            <FeedbackDialog />
             <PWAInstallDialog>
               <button className="hover-scale transition-all duration-300 hover:shadow-lg active:scale-95">
                 <img 
