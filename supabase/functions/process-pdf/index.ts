@@ -6,10 +6,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helper to generate cover image from first PDF page
+// Helper to generate cover image from PDF first page using AI
 async function generateCoverFromPDF(pdfBytes: Uint8Array): Promise<Blob> {
   try {
-    // Use Lovable AI image generation to create a book cover
+    console.log("Converting PDF to base64 for AI processing...");
+    
+    // Convert PDF to base64
+    const base64PDF = btoa(String.fromCharCode(...pdfBytes));
+    const pdfDataUrl = `data:application/pdf;base64,${base64PDF}`;
+
+    console.log("Calling Lovable AI to extract first page...");
+
+    // Use Lovable AI to extract and render the first page
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -21,7 +29,18 @@ async function generateCoverFromPDF(pdfBytes: Uint8Array): Promise<Blob> {
         messages: [
           {
             role: "user",
-            content: "Generate a beautiful, professional book cover design with an abstract pattern. Make it elegant and suitable for an ebook library. Use rich colors and modern design."
+            content: [
+              {
+                type: "text",
+                text: "Extract and render the first page of this PDF document as a high-quality book cover image. Keep the exact layout and content of the page, just convert it to an image format suitable for a book cover. Maintain the original aspect ratio."
+              },
+              {
+                type: "document_url",
+                document_url: {
+                  url: pdfDataUrl
+                }
+              }
+            ]
           }
         ],
         modalities: ["image", "text"]
@@ -29,23 +48,32 @@ async function generateCoverFromPDF(pdfBytes: Uint8Array): Promise<Blob> {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("AI generation error:", errorText);
       throw new Error(`AI generation failed: ${response.statusText}`);
     }
 
     const data = await response.json();
+    console.log("AI response received");
+    
     const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     
     if (!imageUrl) {
-      throw new Error("No image generated");
+      console.error("No image in AI response:", JSON.stringify(data));
+      throw new Error("No image generated from PDF");
     }
 
+    console.log("Converting base64 image to blob...");
+    
     // Convert base64 to blob
     const base64Data = imageUrl.split(',')[1];
     const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    
+    console.log("Cover image generated successfully");
     return new Blob([binaryData], { type: 'image/png' });
     
   } catch (error) {
-    console.error("Error generating cover:", error);
+    console.error("Error generating cover from PDF:", error);
     throw error;
   }
 }
