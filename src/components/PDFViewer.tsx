@@ -19,6 +19,8 @@ interface PDFViewerProps {
   onTextSelect?: (text: string) => void;
   highlightedAreas?: Array<{ x: number; y: number; width: number; height: number; color: string }>;
   bookmarkIndicator?: React.ReactNode;
+  externalScale?: number;
+  onScaleChange?: (scale: number) => void;
 }
 
 export const PDFViewer = ({ 
@@ -27,11 +29,13 @@ export const PDFViewer = ({
   onPageChange,
   onTextSelect,
   highlightedAreas = [],
-  bookmarkIndicator
+  bookmarkIndicator,
+  externalScale,
+  onScaleChange
 }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
-  const [scale, setScale] = useState<number>(1.0);
+  const [scale, setScale] = useState<number>(externalScale || 1.0);
   const [autoFit, setAutoFit] = useState<boolean>(true);
   const pageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -58,6 +62,13 @@ export const PDFViewer = ({
     const timer = setTimeout(() => setIsPrefetching(false), 1000);
     return () => clearTimeout(timer);
   }, [pageNumber]);
+
+  useEffect(() => {
+    if (externalScale !== undefined) {
+      setScale(externalScale);
+      setAutoFit(false);
+    }
+  }, [externalScale]);
 
   useEffect(() => {
     setPageNumber(initialPage);
@@ -174,12 +185,16 @@ export const PDFViewer = ({
 
   const zoomIn = () => {
     setAutoFit(false);
-    setScale((prev) => Math.min(prev + 0.2, 3.0));
+    const newScale = Math.min(scale + 0.2, 3.0);
+    setScale(newScale);
+    onScaleChange?.(newScale);
   };
 
   const zoomOut = () => {
     setAutoFit(false);
-    setScale((prev) => Math.max(prev - 0.2, 0.5));
+    const newScale = Math.max(scale - 0.2, 0.5);
+    setScale(newScale);
+    onScaleChange?.(newScale);
   };
 
   const fitToWidth = () => {

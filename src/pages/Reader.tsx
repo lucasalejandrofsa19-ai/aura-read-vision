@@ -34,6 +34,7 @@ import { TextToSpeechControls } from "@/components/TextToSpeechControls";
 import { NotesPanel } from "@/components/NotesPanel";
 import { ExportDialog } from "@/components/ExportDialog";
 import { PremiumActionButton } from "@/components/PremiumActionButton";
+import { FloatingControls } from "@/components/FloatingControls";
 import { useHighlights } from "@/hooks/useHighlights";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
@@ -57,6 +58,8 @@ const Reader = () => {
   const [isFocusedMode, setIsFocusedMode] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showNotesPanel, setShowNotesPanel] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [scale, setScale] = useState(1.0);
 
   const {
     highlights,
@@ -560,6 +563,8 @@ const Reader = () => {
               initialPage={currentPage}
               onPageChange={handlePageChange}
               onTextSelect={handleTextSelect}
+              externalScale={scale}
+              onScaleChange={setScale}
               bookmarkIndicator={
                 bookmarkedPage === currentPage && (
                   <motion.div
@@ -579,6 +584,29 @@ const Reader = () => {
           </div>
         )}
       </motion.main>
+
+      {/* Floating Controls for Mobile */}
+      <FloatingControls
+        onZoomIn={() => setScale(prev => Math.min(prev + 0.2, 3.0))}
+        onZoomOut={() => setScale(prev => Math.max(prev - 0.2, 0.5))}
+        onBookmark={handleBookmark}
+        onPrevPage={() => {
+          const newPage = Math.max(currentPage - 1, 1);
+          handlePageChange(newPage);
+        }}
+        onNextPage={() => {
+          const newPage = Math.min(currentPage + 1, book.total_pages || 1);
+          handlePageChange(newPage);
+        }}
+        onSearch={() => setShowSearch(true)}
+        isBookmarked={bookmarkedPage === currentPage}
+        canZoomIn={scale < 3.0}
+        canZoomOut={scale > 0.5}
+        canGoPrev={currentPage > 1}
+        canGoNext={currentPage < (book.total_pages || 1)}
+        currentPage={currentPage}
+        totalPages={book.total_pages || 1}
+      />
     </div>
   );
 };
