@@ -77,10 +77,13 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
-  // Reset form when switching between login and signup
+  // Reset only the active form when switching
   useEffect(() => {
-    loginForm.reset();
-    signupForm.reset();
+    if (isLogin) {
+      loginForm.reset({ email: "", password: "" });
+    } else {
+      signupForm.reset({ email: "", password: "", fullName: "" });
+    }
   }, [isLogin]);
 
   const onSubmitLogin = async (data: LoginFormData) => {
@@ -218,6 +221,7 @@ const Auth = () => {
                           placeholder="Seu nome completo"
                           className="glass border-primary/20 focus:border-primary"
                           {...field}
+                          value={field.value || ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -238,6 +242,7 @@ const Auth = () => {
                         placeholder="seu@email.com"
                         className="glass border-primary/20 focus:border-primary"
                         {...field}
+                        value={field.value || ""}
                       />
                     </FormControl>
                     <FormMessage />
@@ -257,6 +262,7 @@ const Auth = () => {
                         placeholder="••••••••"
                         className="glass border-primary/20 focus:border-primary"
                         {...field}
+                        value={field.value || ""}
                       />
                     </FormControl>
                     <FormMessage />
