@@ -4,12 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Camera, Save, Crown, CreditCard, Shield } from "lucide-react";
+import { ArrowLeft, Camera, Save, Crown, CreditCard, Shield, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { ProfileHighlights } from "@/components/ProfileHighlights";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,6 +27,7 @@ const Profile = () => {
   const [uploading, setUploading] = useState(false);
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [pageTurnSoundEnabled, setPageTurnSoundEnabled] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -39,7 +41,7 @@ const Profile = () => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("full_name, avatar_url")
+        .select("full_name, avatar_url, page_turn_sound_enabled")
         .eq("id", user.id)
         .single();
 
@@ -47,6 +49,7 @@ const Profile = () => {
 
       setFullName(data?.full_name || "");
       setAvatarUrl(data?.avatar_url || "");
+      setPageTurnSoundEnabled(data?.page_turn_sound_enabled ?? true);
     } catch (error) {
       captureError(error, { context: "load_profile" });
     }
@@ -285,6 +288,49 @@ const Profile = () => {
                 <div className="space-y-2">
                   <Label>Tema Atual: <span className="font-semibold capitalize">{theme}</span></Label>
                   <ThemeSelector />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Sound Settings Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Volume2 className="w-5 h-5" />
+                  Preferências de Som
+                </CardTitle>
+                <CardDescription>
+                  Configure efeitos sonoros durante a leitura
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="page-turn-sound">Som de virada de página</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Reproduz um som ao mudar de página
+                    </p>
+                  </div>
+                  <Switch
+                    id="page-turn-sound"
+                    checked={pageTurnSoundEnabled}
+                    onCheckedChange={async (checked) => {
+                      setPageTurnSoundEnabled(checked);
+                      try {
+                        const { error } = await supabase
+                          .from("profiles")
+                          .update({ page_turn_sound_enabled: checked })
+                          .eq("id", user?.id);
+                        
+                        if (error) throw error;
+                        toast.success(checked ? "Som ativado" : "Som desativado");
+                      } catch (error) {
+                        captureError(error, { context: "update_sound_settings" });
+                        toast.error("Erro ao atualizar configuração");
+                        setPageTurnSoundEnabled(!checked);
+                      }
+                    }}
+                  />
                 </div>
               </CardContent>
             </Card>
