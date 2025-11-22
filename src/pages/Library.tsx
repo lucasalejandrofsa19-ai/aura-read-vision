@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, User, CreditCard, Shield } from "lucide-react";
+import { Search, User, CreditCard, Shield, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,10 +95,24 @@ const Library = () => {
         className="glass rounded-2xl p-6 mb-8 aura-soft"
       >
         <div className="flex items-center justify-between mb-6">
-          <div>
+          <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Minha Biblioteca
             </h1>
+            <div className="flex gap-2">
+              {isAdmin && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30">
+                  <Shield className="w-3.5 h-3.5 text-red-500" />
+                  <span className="text-xs font-semibold text-red-500">Admin</span>
+                </div>
+              )}
+              {hasPremiumAccess && !isAdmin && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30">
+                  <Crown className="w-3.5 h-3.5 text-purple-500" />
+                  <span className="text-xs font-semibold text-purple-500">Premium</span>
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex gap-2">
             <Button
