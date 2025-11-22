@@ -69,22 +69,11 @@ const Auth = () => {
     },
   });
 
-  const currentForm = isLogin ? loginForm : signupForm;
-
   useEffect(() => {
     if (user) {
       navigate("/library");
     }
   }, [user, navigate]);
-
-  // Reset only the active form when switching
-  useEffect(() => {
-    if (isLogin) {
-      loginForm.reset({ email: "", password: "" });
-    } else {
-      signupForm.reset({ email: "", password: "", fullName: "" });
-    }
-  }, [isLogin]);
 
   const onSubmitLogin = async (data: LoginFormData) => {
     setLoading(true);
@@ -204,12 +193,65 @@ const Auth = () => {
             </Button>
           </div>
 
-          <Form {...currentForm}>
-            <form 
-              onSubmit={currentForm.handleSubmit(isLogin ? onSubmitLogin : onSubmitSignup)} 
-              className="space-y-4"
-            >
-              {!isLogin && (
+          {isLogin ? (
+            <Form {...loginForm}>
+              <form 
+                onSubmit={loginForm.handleSubmit(onSubmitLogin)} 
+                className="space-y-4"
+              >
+                <FormField
+                  control={loginForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="seu@email.com"
+                          className="glass border-primary/20 focus:border-primary"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={loginForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
+                          className="glass border-primary/20 focus:border-primary"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-safira"
+                >
+                  {loading ? "Processando..." : "Entrar"}
+                </Button>
+              </form>
+            </Form>
+          ) : (
+            <Form {...signupForm}>
+              <form 
+                onSubmit={signupForm.handleSubmit(onSubmitSignup)} 
+                className="space-y-4"
+              >
                 <FormField
                   control={signupForm.control}
                   name="fullName"
@@ -221,64 +263,61 @@ const Auth = () => {
                           placeholder="Seu nome completo"
                           className="glass border-primary/20 focus:border-primary"
                           {...field}
-                          value={field.value || ""}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              )}
-              
-              <FormField
-                control={currentForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>E-mail</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="seu@email.com"
-                        className="glass border-primary/20 focus:border-primary"
-                        {...field}
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                
+                <FormField
+                  control={signupForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="seu@email.com"
+                          className="glass border-primary/20 focus:border-primary"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={currentForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Senha</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="••••••••"
-                        className="glass border-primary/20 focus:border-primary"
-                        {...field}
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={signupForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
+                          className="glass border-primary/20 focus:border-primary"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-safira"
-              >
-                {loading ? "Processando..." : (isLogin ? "Entrar" : "Criar Conta")}
-              </Button>
-            </form>
-          </Form>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-safira"
+                >
+                  {loading ? "Processando..." : "Criar Conta"}
+                </Button>
+              </form>
+            </Form>
+          )}
         </motion.div>
       </motion.div>
     </div>
