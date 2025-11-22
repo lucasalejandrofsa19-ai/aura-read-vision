@@ -19,7 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Image, Download, Loader2, Trash2, Images, AlertCircle, Crown } from "lucide-react";
+import { Image, Download, Loader2, Trash2, Images, AlertCircle, Crown, X, Maximize2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -49,6 +49,7 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [style, setStyle] = useState<ImageStyle>("photorealistic");
   const [gallery, setGallery] = useState<any[]>([]);
   const [loadingGallery, setLoadingGallery] = useState(false);
@@ -162,11 +163,12 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
     }
   };
 
-  const downloadImage = () => {
-    if (!imageUrl) return;
+  const downloadImage = (url?: string) => {
+    const targetUrl = url || imageUrl;
+    if (!targetUrl) return;
 
     const link = document.createElement('a');
-    link.href = imageUrl;
+    link.href = targetUrl;
     link.download = `highlight-${Date.now()}.png`;
     document.body.appendChild(link);
     link.click();
@@ -305,17 +307,26 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
 
           {imageUrl && (
             <div className="space-y-4">
-              <div className="rounded-lg overflow-hidden border border-border bg-muted/20">
+              <div className="rounded-lg overflow-hidden border border-border bg-muted/20 relative group">
                 <img 
                   src={imageUrl} 
                   alt="Imagem gerada do destaque" 
-                  className="w-full h-auto"
+                  className="w-full h-auto cursor-pointer"
+                  onClick={() => setFullscreenImage(imageUrl)}
                 />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => setFullscreenImage(imageUrl)}
+                >
+                  <Maximize2 className="w-4 h-4" />
+                </Button>
               </div>
 
               <div className="flex gap-2">
                 <Button 
-                  onClick={downloadImage} 
+                  onClick={() => downloadImage()} 
                   className="flex-1 gap-2"
                   variant="outline"
                 >
@@ -355,7 +366,7 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
                           src={img.image_url} 
                           alt={`Imagem ${styleLabels[img.style as ImageStyle]}`}
                           className="w-full h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => setImageUrl(img.image_url)}
+                          onClick={() => setFullscreenImage(img.image_url)}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                           <div className="absolute bottom-0 left-0 right-0 p-2 text-white">
@@ -364,17 +375,30 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
                               {format(new Date(img.created_at), "dd/MM/yy HH:mm", { locale: ptBR })}
                             </p>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteImage(img.id, img.storage_path);
-                            }}
-                            className="absolute top-2 right-2 h-6 w-6 bg-red-500/80 hover:bg-red-500 text-white"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
+                          <div className="absolute top-2 right-2 flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                downloadImage(img.image_url);
+                              }}
+                              className="h-6 w-6 bg-green-500/80 hover:bg-green-500 text-white"
+                            >
+                              <Download className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteImage(img.id, img.storage_path);
+                              }}
+                              className="h-6 w-6 bg-red-500/80 hover:bg-red-500 text-white"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -385,6 +409,47 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
           )}
         </div>
       </DialogContent>
+
+      {/* Fullscreen Image Viewer */}
+      {fullscreenImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <div className="relative w-full h-full flex items-center justify-center">
+            {/* Close Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-4 h-10 w-10 bg-black/50 hover:bg-black/70 text-white rounded-full z-10"
+              onClick={() => setFullscreenImage(null)}
+            >
+              <X className="w-6 h-6" />
+            </Button>
+
+            {/* Save Button */}
+            <Button
+              variant="default"
+              className="absolute bottom-8 left-1/2 -translate-x-1/2 gap-2 bg-primary/90 hover:bg-primary z-10"
+              onClick={(e) => {
+                e.stopPropagation();
+                downloadImage(fullscreenImage);
+              }}
+            >
+              <Download className="w-4 h-4" />
+              Salvar Imagem
+            </Button>
+
+            {/* Image */}
+            <img 
+              src={fullscreenImage}
+              alt="Imagem em tela cheia"
+              className="max-w-full max-h-full object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </Dialog>
   );
 };
