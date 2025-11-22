@@ -30,7 +30,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const [theme, setThemeState] = useState<ThemeType>("safira");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load theme from user profile
+  // Load theme from user profile with cache
   useEffect(() => {
     const loadTheme = async () => {
       if (!user) {
@@ -40,6 +40,18 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
           setThemeState(savedTheme);
           applyTheme(savedTheme);
         }
+        setIsLoading(false);
+        return;
+      }
+
+      // Verificar cache primeiro
+      const cacheKey = `theme_${user.id}`;
+      const cachedTheme = sessionStorage.getItem(cacheKey);
+      
+      if (cachedTheme) {
+        const theme = cachedTheme as ThemeType;
+        setThemeState(theme);
+        applyTheme(theme);
         setIsLoading(false);
         return;
       }
@@ -56,6 +68,9 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
         const userTheme = (data?.theme_preference as ThemeType) || "safira";
         setThemeState(userTheme);
         applyTheme(userTheme);
+        
+        // Salvar no cache da sessão
+        sessionStorage.setItem(cacheKey, userTheme);
       } catch (error) {
         console.error("Error loading theme:", error);
       } finally {
@@ -87,6 +102,10 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       localStorage.setItem("theme", newTheme);
       return;
     }
+
+    // Atualizar cache imediatamente
+    const cacheKey = `theme_${user.id}`;
+    sessionStorage.setItem(cacheKey, newTheme);
 
     try {
       const { error } = await supabase

@@ -26,7 +26,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   const checkSubscription = async () => {
-    if (!session) return;
+    if (!session?.user) return;
+    
+    // Verificar cache primeiro (5 minutos)
+    const cacheKey = `subscription_${session.user.id}`;
+    const cachedData = sessionStorage.getItem(cacheKey);
+    
+    if (cachedData) {
+      try {
+        const { tier, timestamp } = JSON.parse(cachedData);
+        const now = Date.now();
+        
+        // Se cache é válido (menos de 5 minutos)
+        if (now - timestamp < 5 * 60 * 1000) {
+          setSubscriptionTier(tier);
+          return;
+        }
+      } catch (e) {
+        // Ignorar erro de parse
+      }
+    }
     
     try {
       const { data, error } = await supabase.functions.invoke("check-subscription", {
@@ -36,7 +55,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (!error && data) {
-        setSubscriptionTier(data.tier || "free");
+        const tier = data.tier || "free";
+        setSubscriptionTier(tier);
+        
+        // Salvar no cache
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          tier,
+          timestamp: Date.now()
+        }));
       }
     } catch (error) {
       captureError(error, { context: "check_subscription" });
@@ -44,32 +70,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    let mounted = true;
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
-          setTimeout(() => {
-            checkSubscription();
-          }, 0);
+        if (session?.user && event === 'SIGNED_IN') {
+          checkSubscription();
         }
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
       
       if (session?.user) {
-        setTimeout(() => {
-          checkSubscription();
-        }, 0);
+        checkSubscription();
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {

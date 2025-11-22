@@ -6,16 +6,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 import { useSentryTracking } from "@/hooks/use-sentry-tracking";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface UploadPDFProps {
-  onUploadComplete: () => void;
+  onUploadComplete?: () => void;
 }
 
-const UploadPDF = ({ onUploadComplete }: UploadPDFProps) => {
+const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, subscriptionTier } = useAuth();
   const { trackClick, trackAsyncOperation } = useSentryTracking();
+  const queryClient = useQueryClient();
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -102,7 +104,14 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps) => {
             .catch((error) => captureError(error, { context: "pdf_processing" }));
 
           toast.success("PDF adicionado com sucesso!");
-          onUploadComplete();
+          
+          // Invalidar query do React Query para atualizar lista automaticamente
+          queryClient.invalidateQueries({ queryKey: ["books", user.id] });
+          
+          // Chamar callback se fornecido
+          if (onUploadComplete) {
+            onUploadComplete();
+          }
 
           // Reset input
           if (fileInputRef.current) {
