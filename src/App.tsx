@@ -8,6 +8,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { SentryUserContext } from "./components/SentryUserContext";
 import { usePWAInstallPrompt } from "@/hooks/usePWAInstallPrompt";
 import { UpdateNotification } from "@/components/UpdateNotification";
+import { AppHealthMonitor } from "@/components/AppHealthMonitor";
 import * as Sentry from "@sentry/react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -67,6 +68,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <UpdateNotification />
+      <AppHealthMonitor />
       <BrowserRouter>
         <AuthProvider>
           <ThemeProvider>
