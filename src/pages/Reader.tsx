@@ -290,6 +290,17 @@ const Reader = () => {
     toast.success("Destaque adicionado!");
   };
 
+  const handleHighlightDeleted = async (highlightId: string) => {
+    try {
+      await deleteHighlight(highlightId);
+      playSound('delete');
+      toast.success("Destaque apagado!");
+    } catch (error) {
+      console.error("Error deleting highlight:", error);
+      toast.error("Erro ao apagar destaque");
+    }
+  };
+
   const handleNavigateToHighlight = (pageNumber: number) => {
     setCurrentPage(pageNumber);
     saveCurrentPage(pageNumber);
@@ -679,9 +690,11 @@ const Reader = () => {
               isHighlightMode={isHighlightDrawMode}
               highlightColor={highlightColor}
               onHighlightDrawn={handleHighlightDrawn}
+              onHighlightDeleted={handleHighlightDeleted}
               highlightedAreas={getHighlightsForPage(currentPage)
                 .filter(h => h.position_data)
                 .map(h => ({
+                  id: h.id,
                   x: (h.position_data as any).x,
                   y: (h.position_data as any).y,
                   width: (h.position_data as any).width,
