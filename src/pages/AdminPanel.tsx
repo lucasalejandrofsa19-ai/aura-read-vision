@@ -254,6 +254,13 @@ const AdminPanel = () => {
             </Button>
             <Button
               variant="outline"
+              onClick={() => navigate("/admin/audit-logs")}
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              Auditoria
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => navigate("/admin/analytics")}
             >
               <TrendingUp className="w-4 h-4 mr-2" />
