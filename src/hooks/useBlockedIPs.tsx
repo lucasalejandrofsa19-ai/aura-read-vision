@@ -13,6 +13,10 @@ export interface BlockedIP {
   auto_blocked: boolean;
   metadata: any;
   created_at: string;
+  reputation_score: number | null;
+  reputation_data: any;
+  is_threat: boolean;
+  threat_categories: string[] | null;
 }
 
 export const useBlockedIPs = () => {
@@ -133,6 +137,21 @@ export const useBlockedIPs = () => {
     }
   };
 
+  const checkReputation = async (ipAddress: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('check-ip-reputation', {
+        body: { ipAddress, maxAgeInDays: 90 },
+      });
+
+      if (error) throw error;
+
+      return data?.reputation;
+    } catch (err) {
+      console.error('Error checking reputation:', err);
+      return null;
+    }
+  };
+
   const getStats = () => {
     const activeBlocks = blockedIPs.filter(
       ip => !ip.blocked_until || new Date(ip.blocked_until) > new Date()
@@ -142,6 +161,8 @@ export const useBlockedIPs = () => {
     );
     const autoBlocked = blockedIPs.filter(ip => ip.auto_blocked);
     const manualBlocked = blockedIPs.filter(ip => !ip.auto_blocked);
+    const threatIPs = blockedIPs.filter(ip => ip.is_threat);
+    const highRiskIPs = blockedIPs.filter(ip => (ip.reputation_score || 0) >= 75);
 
     return {
       total: blockedIPs.length,
@@ -149,6 +170,8 @@ export const useBlockedIPs = () => {
       expired: expiredBlocks.length,
       autoBlocked: autoBlocked.length,
       manualBlocked: manualBlocked.length,
+      threats: threatIPs.length,
+      highRisk: highRiskIPs.length,
     };
   };
 
@@ -159,6 +182,7 @@ export const useBlockedIPs = () => {
     blockIP,
     unblockIP,
     checkAutoBlock,
+    checkReputation,
     refetch: fetchBlockedIPs,
     stats: getStats(),
   };

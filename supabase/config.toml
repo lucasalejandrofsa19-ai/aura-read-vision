@@ -24,3 +24,6 @@ verify_jwt = false
 [functions.auto-block-ip]
 verify_jwt = false
 
+[functions.check-ip-reputation]
+verify_jwt = false
+

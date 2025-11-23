@@ -37,6 +37,26 @@ serve(async (req) => {
     
     console.log(`[AUTO-BLOCK] Checking IP: ${ipAddress} for reason: ${reason}`);
 
+    // Check reputation before blocking
+    const reputationCheck = await supabaseClient.functions.invoke('check-ip-reputation', {
+      body: { ipAddress, maxAgeInDays: 90 },
+    });
+
+    let reputationScore: number | undefined;
+    let isThreat = false;
+    let threatCategories: string[] = [];
+
+    if (reputationCheck.data?.success) {
+      const reputation = reputationCheck.data.reputation;
+      reputationScore = reputation.abuseConfidenceScore;
+      isThreat = reputation.isThreat;
+      threatCategories = reputation.threatCategories || [];
+      
+      console.log(`[AUTO-BLOCK] IP ${ipAddress} reputation score: ${reputationScore}, threat: ${isThreat}`);
+    } else {
+      console.warn(`[AUTO-BLOCK] Could not check reputation for ${ipAddress}:`, reputationCheck.error);
+    }
+
     // Check if IP is whitelisted
     const { data: isWhitelisted } = await supabaseClient.rpc('is_ip_whitelisted', { 
       check_ip: ipAddress 
@@ -48,6 +68,7 @@ serve(async (req) => {
         JSON.stringify({ 
           blocked: false, 
           whitelisted: true,
+          reputation: reputationCheck.data?.reputation,
           message: 'IP is whitelisted and exempt from auto-blocking'
         }),
         { 
@@ -130,11 +151,15 @@ serve(async (req) => {
           reason: blockReason,
           blocked_until: blockedUntil.toISOString(),
           auto_blocked: true,
+          reputation_score: reputationScore,
+          is_threat: isThreat,
+          threat_categories: threatCategories.length > 0 ? threatCategories : null,
           metadata: {
             ...metadata,
             userId,
             detectionReason: reason,
             blockedUntil: blockedUntil.toISOString(),
+            reputationData: reputationCheck.data?.reputation,
           },
         });
 
