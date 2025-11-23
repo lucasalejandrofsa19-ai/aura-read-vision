@@ -70,6 +70,38 @@ serve(async (req) => {
 
     console.log(`[VERIFY-PREMIUM] Checking access for user: ${user.id}`);
 
+    // Check if IP is blocked
+    const { data: isBlocked } = await supabaseClient.rpc('is_ip_blocked', { 
+      check_ip: ipAddress 
+    });
+
+    if (isBlocked) {
+      console.warn(`[VERIFY-PREMIUM] Blocked IP attempt: ${ipAddress}`);
+      
+      // Audit log: Blocked IP attempt
+      await supabaseClient.from('premium_access_audit').insert({
+        user_id: user.id,
+        action: 'validate',
+        feature: 'premium_access_check',
+        ip_address: ipAddress,
+        user_agent: userAgent,
+        granted: false,
+        reason: 'ip_blocked',
+        metadata: { ip_address: ipAddress },
+      });
+
+      return new Response(
+        JSON.stringify({ 
+          error: 'Access denied. Your IP address has been blocked.',
+          hasPremiumAccess: false 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 403 
+        }
+      );
+    }
+
     // Apply rate limiting
     const rateLimit = checkRateLimit(user.id);
     
@@ -108,6 +140,15 @@ serve(async (req) => {
           },
         },
       }).catch(err => console.error('[VERIFY-PREMIUM] Alert error:', err));
+
+      // Check if IP should be auto-blocked
+      supabaseClient.functions.invoke('auto-block-ip', {
+        body: {
+          ipAddress,
+          userId: user.id,
+          reason: 'rate_limit',
+        },
+      }).catch(err => console.error('[VERIFY-PREMIUM] Auto-block error:', err));
 
       return new Response(
         JSON.stringify({ 

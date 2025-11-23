@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_ips: {
+        Row: {
+          auto_blocked: boolean
+          blocked_at: string
+          blocked_by: string | null
+          blocked_until: string | null
+          created_at: string
+          id: string
+          ip_address: string
+          metadata: Json | null
+          reason: string
+        }
+        Insert: {
+          auto_blocked?: boolean
+          blocked_at?: string
+          blocked_by?: string | null
+          blocked_until?: string | null
+          created_at?: string
+          id?: string
+          ip_address: string
+          metadata?: Json | null
+          reason: string
+        }
+        Update: {
+          auto_blocked?: boolean
+          blocked_at?: string
+          blocked_by?: string | null
+          blocked_until?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string
+          metadata?: Json | null
+          reason?: string
+        }
+        Relationships: []
+      }
       books: {
         Row: {
           author: string | null
@@ -432,6 +468,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_ip_blocked: { Args: { check_ip: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "premium" | "free"
