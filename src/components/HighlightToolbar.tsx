@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Highlighter, Trash2 } from "lucide-react";
+import { Highlighter, Trash2, Pen, X } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -12,6 +12,8 @@ interface HighlightToolbarProps {
   onHighlight: () => void;
   isHighlightMode: boolean;
   selectedText: string;
+  isDrawMode?: boolean;
+  onCancelDraw?: () => void;
 }
 
 const HIGHLIGHT_COLORS = [
@@ -29,9 +31,23 @@ export const HighlightToolbar = ({
   onHighlight,
   isHighlightMode,
   selectedText,
+  isDrawMode = false,
+  onCancelDraw,
 }: HighlightToolbarProps) => {
   return (
     <div className="glass rounded-lg p-2 flex items-center gap-2">
+      {isDrawMode && (
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={onCancelDraw}
+          className="gap-2 animate-pulse"
+        >
+          <X className="w-4 h-4" />
+          <span className="text-xs">Cancelar Desenho</span>
+        </Button>
+      )}
+      
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -40,7 +56,7 @@ export const HighlightToolbar = ({
             className={`gap-2 ${isHighlightMode ? "aura-amber text-accent" : "aura-soft"}`}
           >
             <Highlighter className="w-4 h-4" />
-            <span className="text-xs">Destacar</span>
+            <span className="text-xs">Destacar Texto</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="glass w-64" align="start">
@@ -84,9 +100,20 @@ export const HighlightToolbar = ({
             )}
 
             {!selectedText && (
-              <p className="text-xs text-muted-foreground text-center py-2">
-                Selecione um texto no PDF para destacar
-              </p>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground text-center py-2">
+                  Selecione um texto no PDF para destacar
+                </p>
+                <Button
+                  onClick={onHighlight}
+                  variant="outline"
+                  className="w-full"
+                  size="sm"
+                >
+                  <Pen className="w-3 h-3 mr-2" />
+                  Desenhar Destaque
+                </Button>
+              </div>
             )}
           </div>
         </PopoverContent>

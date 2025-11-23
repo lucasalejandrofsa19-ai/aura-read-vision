@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { PDFSearchBar } from "@/components/PDFSearchBar";
 import { PrefetchIndicator } from "@/components/PrefetchIndicator";
+import { HighlightCanvas } from "@/components/HighlightCanvas";
 import { usePDFPrefetch } from "@/hooks/usePDFPrefetch";
 import type { TextItem } from "pdfjs-dist/types/src/display/api";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -21,6 +22,9 @@ interface PDFViewerProps {
   bookmarkIndicator?: React.ReactNode;
   externalScale?: number;
   onScaleChange?: (scale: number) => void;
+  isHighlightMode?: boolean;
+  highlightColor?: string;
+  onHighlightDrawn?: (highlight: { x: number; y: number; width: number; height: number }) => void;
 }
 
 export const PDFViewer = ({ 
@@ -31,7 +35,10 @@ export const PDFViewer = ({
   highlightedAreas = [],
   bookmarkIndicator,
   externalScale,
-  onScaleChange
+  onScaleChange,
+  isHighlightMode = false,
+  highlightColor = "#fef08a",
+  onHighlightDrawn
 }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
@@ -47,6 +54,7 @@ export const PDFViewer = ({
   const [isSearching, setIsSearching] = useState(false);
   const [pageTexts, setPageTexts] = useState<Map<number, string>>(new Map());
   const [isPrefetching, setIsPrefetching] = useState(false);
+  const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
 
   // Prefetch hook para carregar próximas páginas
   const { isPageCached, cache } = usePDFPrefetch({
@@ -345,47 +353,50 @@ export const PDFViewer = ({
           }
         >
           <div className="relative">
-          <Page
-            pageNumber={pageNumber}
-            scale={scale}
-            renderTextLayer={true}
-            renderAnnotationLayer={true}
-            loading={
-              <div className="flex items-center justify-center p-12">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
-            }
-            customTextRenderer={(textItem) => {
-              const text = 'str' in textItem ? textItem.str : '';
-              if (searchTerm && text.toLowerCase().includes(searchTerm)) {
-                return text
-                  .split(new RegExp(`(${searchTerm})`, 'gi'))
-                  .map((part, i) => 
-                    part.toLowerCase() === searchTerm 
-                      ? `<mark style="background-color: #fef08a; color: #000; padding: 2px 0;">${part}</mark>`
-                      : part
-                  )
-                  .join('');
+            <Page
+              pageNumber={pageNumber}
+              scale={scale}
+              renderTextLayer={true}
+              renderAnnotationLayer={true}
+              onLoadSuccess={(page) => {
+                setPageSize({
+                  width: page.width,
+                  height: page.height,
+                });
+              }}
+              loading={
+                <div className="flex items-center justify-center p-12">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
               }
-              return text;
-            }}
-          />
-            {/* Highlight overlays */}
-            {highlightedAreas.map((area, index) => (
-              <div
-                key={index}
-                className="absolute pointer-events-none transition-opacity"
-                style={{
-                  left: `${area.x}px`,
-                  top: `${area.y}px`,
-                  width: `${area.width}px`,
-                  height: `${area.height}px`,
-                  backgroundColor: area.color,
-                  opacity: 0.4,
-                  mixBlendMode: "multiply",
-                }}
+              customTextRenderer={(textItem) => {
+                const text = 'str' in textItem ? textItem.str : '';
+                if (searchTerm && text.toLowerCase().includes(searchTerm)) {
+                  return text
+                    .split(new RegExp(`(${searchTerm})`, 'gi'))
+                    .map((part, i) => 
+                      part.toLowerCase() === searchTerm 
+                        ? `<mark style="background-color: #fef08a; color: #000; padding: 2px 0;">${part}</mark>`
+                        : part
+                    )
+                    .join('');
+                }
+                return text;
+              }}
+            />
+            
+            {/* Highlight Canvas Overlay */}
+            {pageSize.width > 0 && pageSize.height > 0 && (
+              <HighlightCanvas
+                pageNumber={pageNumber}
+                highlights={highlightedAreas}
+                onHighlightAdded={onHighlightDrawn}
+                isDrawingMode={isHighlightMode}
+                highlightColor={highlightColor}
+                canvasWidth={pageSize.width}
+                canvasHeight={pageSize.height}
               />
-            ))}
+            )}
           </div>
         </Document>
       </div>

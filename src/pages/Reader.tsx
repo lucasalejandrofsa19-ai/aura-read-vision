@@ -62,6 +62,7 @@ const Reader = () => {
   const [showNotesPanel, setShowNotesPanel] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
+  const [isHighlightDrawMode, setIsHighlightDrawMode] = useState(false);
 
   const {
     highlights,
@@ -267,15 +268,26 @@ const Reader = () => {
   };
 
   const handleAddHighlight = async () => {
-    if (!selectedText) {
-      toast.error("Selecione um texto primeiro");
+    if (!selectedText && !isHighlightDrawMode) {
+      // Enable draw mode
+      setIsHighlightDrawMode(true);
+      toast.info("Modo de destacação ativado! Desenhe sobre o texto para destacar.");
       return;
     }
 
-    await addHighlight(currentPage, selectedText, highlightColor);
+    if (selectedText) {
+      await addHighlight(currentPage, selectedText, highlightColor);
+      playSound('highlight');
+      setSelectedText("");
+      window.getSelection()?.removeAllRanges();
+    }
+  };
+
+  const handleHighlightDrawn = async (coords: { x: number; y: number; width: number; height: number }) => {
+    await addHighlight(currentPage, "", highlightColor, coords);
     playSound('highlight');
-    setSelectedText("");
-    window.getSelection()?.removeAllRanges();
+    setIsHighlightDrawMode(false);
+    toast.success("Destaque adicionado!");
   };
 
   const handleNavigateToHighlight = (pageNumber: number) => {
@@ -647,8 +659,13 @@ const Reader = () => {
           selectedColor={highlightColor}
           onColorChange={setHighlightColor}
           onHighlight={handleAddHighlight}
-          isHighlightMode={!!selectedText}
+          isHighlightMode={!!selectedText || isHighlightDrawMode}
           selectedText={selectedText}
+          isDrawMode={isHighlightDrawMode}
+          onCancelDraw={() => {
+            setIsHighlightDrawMode(false);
+            toast.info("Modo de desenho cancelado");
+          }}
         />
 
         {pdfUrl ? (
@@ -659,6 +676,18 @@ const Reader = () => {
               onTextSelect={handleTextSelect}
               externalScale={scale}
               onScaleChange={setScale}
+              isHighlightMode={isHighlightDrawMode}
+              highlightColor={highlightColor}
+              onHighlightDrawn={handleHighlightDrawn}
+              highlightedAreas={getHighlightsForPage(currentPage)
+                .filter(h => h.position_data)
+                .map(h => ({
+                  x: (h.position_data as any).x,
+                  y: (h.position_data as any).y,
+                  width: (h.position_data as any).width,
+                  height: (h.position_data as any).height,
+                  color: h.color || "#fef08a",
+                }))}
               bookmarkIndicator={
                 bookmarkedPage === currentPage && (
                   <motion.div
