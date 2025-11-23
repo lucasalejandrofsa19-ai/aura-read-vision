@@ -92,6 +92,23 @@ serve(async (req) => {
         },
       });
 
+      // Send security alert
+      supabaseClient.functions.invoke('send-security-alert', {
+        body: {
+          alert: {
+            type: 'rate_limit_violation',
+            userId: user.id,
+            ipAddress,
+            details: {
+              attempts: rateLimitMap.get(user.id)?.count,
+              maxAllowed: RATE_LIMIT_MAX,
+              window: `${RATE_LIMIT_WINDOW / 1000}s`,
+              userAgent,
+            },
+          },
+        },
+      }).catch(err => console.error('[VERIFY-PREMIUM] Alert error:', err));
+
       return new Response(
         JSON.stringify({ 
           error: 'Too many requests. Please try again later.',
