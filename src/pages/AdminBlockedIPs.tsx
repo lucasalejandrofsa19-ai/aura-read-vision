@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, Ban, Unlock, Plus, CheckCircle, Download, Upload } from "lucide-react";
+import { ArrowLeft, Shield, Ban, Unlock, Plus, CheckCircle, Download, Upload, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,7 @@ import { toast } from "sonner";
 export default function AdminBlockedIPs() {
   const navigate = useNavigate();
   const { isAdmin, isLoading: userLoading } = useUserData();
-  const { blockedIPs, loading, blockIP, unblockIP, stats } = useBlockedIPs();
+  const { blockedIPs, loading, blockIP, unblockIP, stats, checkReputation } = useBlockedIPs();
   const { whitelistedIPs, loading: whitelistLoading, whitelistIP, removeFromWhitelist, stats: whitelistStats } = useWhitelistedIPs();
   
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
@@ -37,6 +37,8 @@ export default function AdminBlockedIPs() {
   const [importType, setImportType] = useState<"blocked" | "whitelist">("blocked");
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
+
+  const [checkingReputation, setCheckingReputation] = useState<string | null>(null);
 
   if (userLoading) {
     return (
@@ -299,6 +301,44 @@ export default function AdminBlockedIPs() {
     }
   };
 
+  const handleCheckReputation = async (ipAddress: string) => {
+    setCheckingReputation(ipAddress);
+    try {
+      const reputation = await checkReputation(ipAddress);
+      if (reputation) {
+        toast.success(`Reputação verificada: ${reputation.abuseConfidenceScore}/100`);
+      } else {
+        toast.error('Não foi possível verificar a reputação');
+      }
+    } finally {
+      setCheckingReputation(null);
+    }
+  };
+
+  const handleBulkReputationCheck = async () => {
+    const ipsToCheck = blockedIPs.filter(ip => 
+      ip.reputation_score === null || ip.reputation_score === undefined
+    );
+
+    if (ipsToCheck.length === 0) {
+      toast.info('Todos os IPs já foram verificados');
+      return;
+    }
+
+    toast.info(`Verificando reputação de ${ipsToCheck.length} IP(s)...`);
+    
+    let checkedCount = 0;
+    for (const ip of ipsToCheck) {
+      await handleCheckReputation(ip.ip_address);
+      checkedCount++;
+      
+      // Add small delay to respect API rate limits
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+
+    toast.success(`${checkedCount} IP(s) verificado(s)`);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -528,7 +568,7 @@ export default function AdminBlockedIPs() {
           {/* Blocked IPs Tab */}
           <TabsContent value="blocked" className="space-y-6">
             {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-5">
+            <div className="grid gap-4 md:grid-cols-7">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium">Total</CardTitle>
@@ -572,6 +612,24 @@ export default function AdminBlockedIPs() {
             <CardContent>
               <div className="text-2xl font-bold text-blue-500">{stats.manualBlocked}</div>
             </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Ameaças</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-500">{stats.threats}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Alto Risco</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{stats.highRisk}</div>
+            </CardContent>
               </Card>
             </div>
 
@@ -585,10 +643,21 @@ export default function AdminBlockedIPs() {
                       {blockedIPs.length} IP(s) registrado(s)
                     </CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" onClick={handleExportBlocked}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Exportar CSV
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleBulkReputationCheck}
+                      disabled={checkingReputation !== null}
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Verificar Todos
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleExportBlocked}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Exportar CSV
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
           <CardContent>
@@ -608,6 +677,7 @@ export default function AdminBlockedIPs() {
                       <TableHead>Endereço IP</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Tipo</TableHead>
+                      <TableHead>Reputação</TableHead>
                       <TableHead>Motivo</TableHead>
                       <TableHead>Bloqueado em</TableHead>
                       <TableHead>Expira em</TableHead>
@@ -638,6 +708,40 @@ export default function AdminBlockedIPs() {
                             </Badge>
                           )}
                         </TableCell>
+                        <TableCell>
+                          {ip.reputation_score !== null && ip.reputation_score !== undefined ? (
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-sm font-semibold ${
+                                  ip.reputation_score >= 75 ? 'text-red-500' :
+                                  ip.reputation_score >= 50 ? 'text-orange-500' :
+                                  ip.reputation_score >= 25 ? 'text-yellow-500' : 'text-green-500'
+                                }`}>
+                                  {ip.reputation_score}/100
+                                </span>
+                                {ip.is_threat && (
+                                  <Badge variant="destructive" className="text-xs">Ameaça</Badge>
+                                )}
+                              </div>
+                              {ip.threat_categories && ip.threat_categories.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {ip.threat_categories.slice(0, 2).map((cat: string) => (
+                                    <Badge key={cat} variant="outline" className="text-xs">
+                                      {cat}
+                                    </Badge>
+                                  ))}
+                                  {ip.threat_categories.length > 2 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{ip.threat_categories.length - 2}
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Não verificado</span>
+                          )}
+                        </TableCell>
                         <TableCell className="max-w-xs truncate text-sm">
                           {ip.reason}
                         </TableCell>
@@ -648,14 +752,26 @@ export default function AdminBlockedIPs() {
                           {ip.blocked_until ? formatDate(ip.blocked_until) : 'Permanente'}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => unblockIP(ip.id)}
-                            disabled={!isActive(ip.blocked_until)}
-                          >
-                            <Unlock className="w-4 h-4" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleCheckReputation(ip.ip_address)}
+                              disabled={checkingReputation === ip.ip_address}
+                              title="Verificar reputação"
+                            >
+                              <AlertTriangle className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => unblockIP(ip.id)}
+                              disabled={!isActive(ip.blocked_until)}
+                              title="Desbloquear"
+                            >
+                              <Unlock className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
