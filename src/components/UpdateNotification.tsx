@@ -1,6 +1,6 @@
 import { useAppUpdate } from '@/hooks/useAppUpdate';
 import { Button } from '@/components/ui/button';
-import { Download, X } from 'lucide-react';
+import { Download, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const UpdateNotification = () => {
@@ -18,46 +18,56 @@ export const UpdateNotification = () => {
           <div className="bg-card border border-border rounded-lg shadow-lg p-4">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-full bg-primary/10">
-                <Download className="h-5 w-5 text-primary" />
+                {updateReady ? (
+                  <Download className="h-5 w-5 text-primary" />
+                ) : (
+                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                )}
               </div>
               
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-foreground mb-1">
-                  Nova Versão Disponível
+                  {updateReady ? 'Nova Versão Disponível' : 'Preparando Atualização'}
                 </h3>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Uma atualização do app está pronta. Recomendamos atualizar para ter acesso às últimas melhorias.
+                  {updateReady 
+                    ? 'Uma atualização do app está pronta. O app será atualizado automaticamente quando você sair.'
+                    : 'Uma nova versão está sendo baixada em segundo plano...'
+                  }
                 </p>
                 
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleUpdate}
-                    disabled={!updateReady}
-                    size="sm"
-                    className="flex-1"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Atualizar Agora
-                  </Button>
-                  
-                  <Button
-                    onClick={dismissUpdate}
-                    variant="ghost"
-                    size="sm"
-                  >
-                    Depois
-                  </Button>
-                </div>
+                {updateReady && (
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleUpdate}
+                      size="sm"
+                      className="flex-1"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Atualizar Agora
+                    </Button>
+                    
+                    <Button
+                      onClick={dismissUpdate}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      Depois
+                    </Button>
+                  </div>
+                )}
               </div>
               
-              <Button
-                onClick={dismissUpdate}
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 shrink-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              {updateReady && (
+                <Button
+                  onClick={dismissUpdate}
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         </motion.div>
