@@ -191,9 +191,17 @@ const Reader = () => {
     if (!id) return;
     
     try {
+      // Calculate progress percentage based on current page and total pages
+      const progress = book?.total_pages 
+        ? Math.round((page / book.total_pages) * 100)
+        : 0;
+
       const { error } = await supabase
         .from("books")
-        .update({ current_page: page })
+        .update({ 
+          current_page: page,
+          progress: progress 
+        })
         .eq("id", id);
       
       if (error) throw error;
