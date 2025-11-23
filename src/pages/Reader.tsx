@@ -42,6 +42,7 @@ import { useNotes } from "@/hooks/useNotes";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePremiumValidation } from "@/hooks/usePremiumValidation";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { useReadingSession } from "@/hooks/useReadingSession";
 import { captureError } from "@/lib/sentry";
 
 
@@ -103,6 +104,7 @@ const Reader = () => {
   const { subscriptionTier, user } = useAuth();
   const { validatePremiumAccess } = usePremiumValidation();
   const { playSound } = useSoundEffects();
+  const { startSession, endSession, updateSession, isSessionActive } = useReadingSession(id || "");
   
   const {
     speak,
@@ -122,6 +124,22 @@ const Reader = () => {
   useEffect(() => {
     loadBook();
   }, [id]);
+
+  // Start reading session when book loads
+  useEffect(() => {
+    if (book && currentPage && !isSessionActive) {
+      startSession(currentPage);
+    }
+  }, [book]);
+
+  // End session when component unmounts
+  useEffect(() => {
+    return () => {
+      if (isSessionActive && currentPage) {
+        endSession(currentPage);
+      }
+    };
+  }, [isSessionActive, currentPage]);
 
   // Realtime sync for reading position
   useEffect(() => {
@@ -237,6 +255,11 @@ const Reader = () => {
     saveCurrentPage(page);
     setSelectedText(""); // Clear selection when changing pages
     playSound('page-turn');
+    
+    // Update reading session
+    if (isSessionActive) {
+      updateSession(page);
+    }
   };
 
   const handleTextSelect = (text: string) => {

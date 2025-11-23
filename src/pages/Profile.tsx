@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { ProfileHighlights } from "@/components/ProfileHighlights";
+import { ReadingStatsCard } from "@/components/ReadingStatsCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
@@ -179,8 +180,9 @@ const Profile = () => {
         </motion.div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile">Perfil</TabsTrigger>
+            <TabsTrigger value="stats">Estatísticas</TabsTrigger>
             <TabsTrigger value="subscription">Assinatura</TabsTrigger>
             <TabsTrigger value="highlights">Destaques</TabsTrigger>
           </TabsList>
@@ -410,6 +412,10 @@ const Profile = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="stats" className="space-y-6">
+            <ReadingStatsCard />
           </TabsContent>
 
           <TabsContent value="subscription" className="space-y-6">
