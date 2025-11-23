@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, Ban, Unlock, Plus } from "lucide-react";
+import { ArrowLeft, Shield, Ban, Unlock, Plus, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBlockedIPs } from "@/hooks/useBlockedIPs";
+import { useWhitelistedIPs } from "@/hooks/useWhitelistedIPs";
 import { useUserData } from "@/hooks/useUserData";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -18,11 +20,17 @@ export default function AdminBlockedIPs() {
   const navigate = useNavigate();
   const { isAdmin, isLoading: userLoading } = useUserData();
   const { blockedIPs, loading, blockIP, unblockIP, stats } = useBlockedIPs();
+  const { whitelistedIPs, loading: whitelistLoading, whitelistIP, removeFromWhitelist, stats: whitelistStats } = useWhitelistedIPs();
   
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [newBlockIP, setNewBlockIP] = useState("");
   const [newBlockReason, setNewBlockReason] = useState("");
   const [newBlockDuration, setNewBlockDuration] = useState<string>("24");
+
+  const [whitelistDialogOpen, setWhitelistDialogOpen] = useState(false);
+  const [newWhitelistIP, setNewWhitelistIP] = useState("");
+  const [newWhitelistDescription, setNewWhitelistDescription] = useState("");
+  const [newWhitelistExpiration, setNewWhitelistExpiration] = useState<string>("permanent");
 
   if (userLoading) {
     return (
@@ -78,6 +86,20 @@ export default function AdminBlockedIPs() {
     }
   };
 
+  const handleWhitelistIP = async () => {
+    if (!newWhitelistIP || !newWhitelistDescription) return;
+    
+    const expiresInDays = newWhitelistExpiration === "permanent" ? undefined : parseInt(newWhitelistExpiration);
+    const success = await whitelistIP(newWhitelistIP, newWhitelistDescription, expiresInDays);
+    
+    if (success) {
+      setWhitelistDialogOpen(false);
+      setNewWhitelistIP("");
+      setNewWhitelistDescription("");
+      setNewWhitelistExpiration("permanent");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -93,20 +115,82 @@ export default function AdminBlockedIPs() {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold">IPs Bloqueados</h1>
+                <h1 className="text-2xl font-bold">Gerenciamento de IPs</h1>
                 <p className="text-sm text-muted-foreground">
-                  Gerencie IPs bloqueados por atividade suspeita
+                  Gerencie IPs bloqueados e whitelist de IPs confiáveis
                 </p>
               </div>
             </div>
 
-            <Dialog open={blockDialogOpen} onOpenChange={setBlockDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Bloquear IP
-                </Button>
-              </DialogTrigger>
+            <div className="flex gap-2">
+              <Dialog open={whitelistDialogOpen} onOpenChange={setWhitelistDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Adicionar à Whitelist
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Adicionar IP à Whitelist</DialogTitle>
+                    <DialogDescription>
+                      IPs confiáveis que não serão bloqueados automaticamente
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="whitelistIP">Endereço IP</Label>
+                      <Input
+                        id="whitelistIP"
+                        placeholder="192.168.1.1"
+                        value={newWhitelistIP}
+                        onChange={(e) => setNewWhitelistIP(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="whitelistDesc">Descrição</Label>
+                      <Input
+                        id="whitelistDesc"
+                        placeholder="Ex: Servidor corporativo"
+                        value={newWhitelistDescription}
+                        onChange={(e) => setNewWhitelistDescription(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="whitelistExpiration">Expiração</Label>
+                      <Select value={newWhitelistExpiration} onValueChange={setNewWhitelistExpiration}>
+                        <SelectTrigger id="whitelistExpiration">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="7">7 dias</SelectItem>
+                          <SelectItem value="30">30 dias</SelectItem>
+                          <SelectItem value="90">90 dias</SelectItem>
+                          <SelectItem value="365">1 ano</SelectItem>
+                          <SelectItem value="permanent">Permanente</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setWhitelistDialogOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleWhitelistIP} disabled={!newWhitelistIP || !newWhitelistDescription}>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Adicionar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={blockDialogOpen} onOpenChange={setBlockDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Ban className="w-4 h-4 mr-2" />
+                    Bloquear IP
+                  </Button>
+                </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Bloquear Novo IP</DialogTitle>
@@ -161,13 +245,22 @@ export default function AdminBlockedIPs() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-6">
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-5">
+        <Tabs defaultValue="blocked" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="blocked">IPs Bloqueados</TabsTrigger>
+            <TabsTrigger value="whitelist">Whitelist</TabsTrigger>
+          </TabsList>
+
+          {/* Blocked IPs Tab */}
+          <TabsContent value="blocked" className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid gap-4 md:grid-cols-5">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium">Total</CardTitle>
@@ -211,11 +304,11 @@ export default function AdminBlockedIPs() {
             <CardContent>
               <div className="text-2xl font-bold text-blue-500">{stats.manualBlocked}</div>
             </CardContent>
-          </Card>
-        </div>
+              </Card>
+            </div>
 
-        {/* Blocked IPs Table */}
-        <Card>
+            {/* Blocked IPs Table */}
+            <Card>
           <CardHeader>
             <CardTitle>IPs Bloqueados</CardTitle>
             <CardDescription>
@@ -294,8 +387,123 @@ export default function AdminBlockedIPs() {
                 </Table>
               </div>
             )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Whitelist Tab */}
+          <TabsContent value="whitelist" className="space-y-6">
+            {/* Whitelist Stats Cards */}
+            <div className="grid gap-4 md:grid-cols-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Total</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{whitelistStats.total}</div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Ativos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-500">{whitelistStats.active}</div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Expirados</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-muted-foreground">{whitelistStats.expired}</div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">Permanentes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-500">{whitelistStats.permanent}</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Whitelisted IPs Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>IPs na Whitelist</CardTitle>
+                <CardDescription>
+                  {whitelistedIPs.length} IP(s) confiável(is)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {whitelistLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : whitelistedIPs.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum IP na whitelist
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Endereço IP</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Descrição</TableHead>
+                          <TableHead>Adicionado em</TableHead>
+                          <TableHead>Expira em</TableHead>
+                          <TableHead>Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {whitelistedIPs.map((ip) => (
+                          <TableRow key={ip.id}>
+                            <TableCell className="font-mono text-sm">
+                              {ip.ip_address}
+                            </TableCell>
+                            <TableCell>
+                              {isActive(ip.expires_at) ? (
+                                <Badge variant="default" className="bg-green-500">Ativo</Badge>
+                              ) : (
+                                <Badge variant="secondary">Expirado</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate text-sm">
+                              {ip.description}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {formatDate(ip.added_at)}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {ip.expires_at ? formatDate(ip.expires_at) : 'Permanente'}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => removeFromWhitelist(ip.id)}
+                                disabled={!isActive(ip.expires_at)}
+                              >
+                                <Ban className="w-4 h-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

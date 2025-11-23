@@ -37,6 +37,26 @@ serve(async (req) => {
     
     console.log(`[AUTO-BLOCK] Checking IP: ${ipAddress} for reason: ${reason}`);
 
+    // Check if IP is whitelisted
+    const { data: isWhitelisted } = await supabaseClient.rpc('is_ip_whitelisted', { 
+      check_ip: ipAddress 
+    });
+
+    if (isWhitelisted) {
+      console.log(`[AUTO-BLOCK] IP ${ipAddress} is whitelisted, skipping auto-block`);
+      return new Response(
+        JSON.stringify({ 
+          blocked: false, 
+          whitelisted: true,
+          message: 'IP is whitelisted and exempt from auto-blocking'
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
+    }
+
     // Check if IP is already blocked
     const { data: existingBlock } = await supabaseClient
       .from('blocked_ips')
