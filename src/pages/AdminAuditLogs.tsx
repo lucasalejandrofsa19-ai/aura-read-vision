@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, Shield, Activity, Calendar, User, Target } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Shield, Activity, Calendar, User, Target, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,8 @@ import { useAuditLogs, type AuditLog } from "@/hooks/useAuditLogs";
 import { useUserData } from "@/hooks/useUserData";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function AdminAuditLogs() {
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ export default function AdminAuditLogs() {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [searchUserId, setSearchUserId] = useState("");
+  const [sendingAlert, setSendingAlert] = useState(false);
 
   const { logs, loading, stats, suspiciousActivity, refetch } = useAuditLogs({
     limit: 100,
@@ -29,6 +32,55 @@ export default function AdminAuditLogs() {
     startDate,
     endDate,
   });
+
+  const handleSendSecurityAlert = async (type: 'high_volume_ip' | 'rate_limit_violation') => {
+    setSendingAlert(true);
+    try {
+      let alertData;
+      
+      if (type === 'high_volume_ip' && suspiciousActivity.suspiciousIPs.length > 0) {
+        const topIP = suspiciousActivity.suspiciousIPs[0];
+        alertData = {
+          type: 'high_volume_ip',
+          ipAddress: topIP.ip,
+          details: {
+            attempts: topIP.count,
+            threshold: 20,
+            allSuspiciousIPs: suspiciousActivity.suspiciousIPs,
+          },
+        };
+      } else if (type === 'rate_limit_violation') {
+        alertData = {
+          type: 'rate_limit_violation',
+          details: {
+            totalViolations: suspiciousActivity.rateLimitViolations,
+            threshold: 5,
+            recentViolations: logs
+              .filter(log => log.reason === 'rate_limit_exceeded')
+              .slice(0, 5)
+              .map(log => ({
+                userId: log.user_id,
+                ipAddress: log.ip_address,
+                timestamp: log.created_at,
+              })),
+          },
+        };
+      }
+
+      const { error } = await supabase.functions.invoke('send-security-alert', {
+        body: { alert: alertData },
+      });
+
+      if (error) throw error;
+
+      toast.success('Alerta enviado com sucesso!');
+    } catch (error) {
+      console.error('Error sending alert:', error);
+      toast.error('Erro ao enviar alerta');
+    } finally {
+      setSendingAlert(false);
+    }
+  };
 
   // Filter by user ID if searching
   const filteredLogs = searchUserId
@@ -360,7 +412,18 @@ export default function AdminAuditLogs() {
                   <CardContent className="space-y-4">
                     {suspiciousActivity.suspiciousIPs.length > 0 && (
                       <div>
-                        <h3 className="font-semibold mb-2">IPs com Alto Volume de Tentativas</h3>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold">IPs com Alto Volume de Tentativas</h3>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleSendSecurityAlert('high_volume_ip')}
+                            disabled={sendingAlert}
+                          >
+                            <Bell className="w-4 h-4 mr-2" />
+                            Enviar Alerta
+                          </Button>
+                        </div>
                         <div className="space-y-2">
                           {suspiciousActivity.suspiciousIPs.map(({ ip, count }) => (
                             <div key={ip} className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg">
@@ -374,7 +437,19 @@ export default function AdminAuditLogs() {
 
                     {suspiciousActivity.rateLimitViolations > 5 && (
                       <div>
-                        <h3 className="font-semibold mb-2">Violações de Rate Limit</h3>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold">Violações de Rate Limit</h3>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-orange-500 text-orange-500 hover:bg-orange-500/10"
+                            onClick={() => handleSendSecurityAlert('rate_limit_violation')}
+                            disabled={sendingAlert}
+                          >
+                            <Bell className="w-4 h-4 mr-2" />
+                            Enviar Alerta
+                          </Button>
+                        </div>
                         <div className="p-3 bg-orange-500/10 rounded-lg">
                           <p className="text-sm">
                             <span className="font-semibold text-orange-500">
