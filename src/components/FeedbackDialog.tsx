@@ -76,9 +76,14 @@ export const FeedbackDialog = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <MessageSquare className="h-4 w-4 mr-2" />
-          Enviar Sugestão
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="relative overflow-hidden group animate-pulse hover:animate-none border-accent hover:border-accent/80 hover:bg-accent/10 transition-all duration-300"
+        >
+          <MessageSquare className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
+          <span className="relative z-10">Enviar Sugestão</span>
+          <span className="absolute inset-0 bg-gradient-to-r from-accent/20 to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[525px]">
