@@ -55,26 +55,42 @@ export const HighlightToolbar = ({
             size="sm"
             className={`gap-2 ${isHighlightMode ? "aura-amber text-accent" : "aura-soft"}`}
           >
-            <Highlighter className="w-4 h-4" />
-            <span className="text-xs">Destacar Texto</span>
+            <div className="flex items-center gap-2">
+              <Highlighter className="w-4 h-4" />
+              <span className="text-xs">Destacar</span>
+              <div 
+                className="w-4 h-4 rounded border-2 border-border"
+                style={{ backgroundColor: selectedColor }}
+                title="Cor atual"
+              />
+            </div>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="glass w-64" align="start">
           <div className="space-y-3">
             <div>
-              <p className="text-sm font-medium mb-2">Escolha a cor</p>
+              <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                Escolha a cor
+                <span className="text-xs text-muted-foreground">(cores variadas)</span>
+              </p>
               <div className="grid grid-cols-3 gap-2">
                 {HIGHLIGHT_COLORS.map((color) => (
                   <button
                     key={color.value}
                     onClick={() => onColorChange(color.value)}
-                    className={`${color.class} h-10 rounded-md border-2 transition-all hover:scale-105 ${
+                    className={`${color.class} h-12 rounded-md border-2 transition-all hover:scale-105 relative ${
                       selectedColor === color.value
-                        ? "border-primary ring-2 ring-primary ring-offset-2"
+                        ? "border-primary ring-2 ring-primary ring-offset-2 shadow-lg"
                         : "border-border"
                     }`}
                     title={color.name}
-                  />
+                  >
+                    {selectedColor === color.value && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Highlighter className="w-5 h-5 text-primary drop-shadow-md" />
+                      </div>
+                    )}
+                  </button>
                 ))}
               </div>
             </div>
@@ -92,6 +108,7 @@ export const HighlightToolbar = ({
                   onClick={onHighlight}
                   className="w-full mt-2"
                   size="sm"
+                  style={{ backgroundColor: selectedColor }}
                 >
                   <Highlighter className="w-3 h-3 mr-2" />
                   Adicionar Destaque
