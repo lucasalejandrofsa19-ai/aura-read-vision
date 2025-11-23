@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, Ban, Unlock, Plus, CheckCircle } from "lucide-react";
+import { ArrowLeft, Shield, Ban, Unlock, Plus, CheckCircle, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import { useWhitelistedIPs } from "@/hooks/useWhitelistedIPs";
 import { useUserData } from "@/hooks/useUserData";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 export default function AdminBlockedIPs() {
   const navigate = useNavigate();
@@ -31,6 +32,11 @@ export default function AdminBlockedIPs() {
   const [newWhitelistIP, setNewWhitelistIP] = useState("");
   const [newWhitelistDescription, setNewWhitelistDescription] = useState("");
   const [newWhitelistExpiration, setNewWhitelistExpiration] = useState<string>("permanent");
+
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importType, setImportType] = useState<"blocked" | "whitelist">("blocked");
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
 
   if (userLoading) {
     return (
@@ -100,6 +106,199 @@ export default function AdminBlockedIPs() {
     }
   };
 
+  // CSV Export Functions
+  const exportToCSV = (data: any[], filename: string, headers: string[]) => {
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => headers.map(header => {
+        const value = row[header] || '';
+        // Escape commas and quotes
+        return `"${String(value).replace(/"/g, '""')}"`;
+      }).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const handleExportBlocked = () => {
+    const headers = ['ip_address', 'reason', 'blocked_at', 'blocked_until', 'auto_blocked'];
+    const data = blockedIPs.map(ip => ({
+      ip_address: ip.ip_address,
+      reason: ip.reason,
+      blocked_at: ip.blocked_at,
+      blocked_until: ip.blocked_until || 'permanent',
+      auto_blocked: ip.auto_blocked ? 'true' : 'false',
+    }));
+    
+    const timestamp = format(new Date(), 'yyyy-MM-dd-HHmmss');
+    exportToCSV(data, `blocked-ips-${timestamp}.csv`, headers);
+    toast.success('IPs bloqueados exportados com sucesso');
+  };
+
+  const handleExportWhitelist = () => {
+    const headers = ['ip_address', 'description', 'added_at', 'expires_at'];
+    const data = whitelistedIPs.map(ip => ({
+      ip_address: ip.ip_address,
+      description: ip.description,
+      added_at: ip.added_at,
+      expires_at: ip.expires_at || 'permanent',
+    }));
+    
+    const timestamp = format(new Date(), 'yyyy-MM-dd-HHmmss');
+    exportToCSV(data, `whitelisted-ips-${timestamp}.csv`, headers);
+    toast.success('IPs da whitelist exportados com sucesso');
+  };
+
+  // CSV Import Functions
+  const parseCSV = (text: string): string[][] => {
+    const lines = text.split('\n').filter(line => line.trim());
+    return lines.map(line => {
+      const values: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      
+      values.push(current.trim());
+      return values;
+    });
+  };
+
+  const validateIPAddress = (ip: string): boolean => {
+    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    if (!ipRegex.test(ip)) return false;
+    
+    const parts = ip.split('.');
+    return parts.every(part => {
+      const num = parseInt(part);
+      return num >= 0 && num <= 255;
+    });
+  };
+
+  const handleImportCSV = async () => {
+    if (!importFile) {
+      toast.error('Selecione um arquivo CSV');
+      return;
+    }
+
+    setImporting(true);
+
+    try {
+      const text = await importFile.text();
+      const rows = parseCSV(text);
+      
+      if (rows.length < 2) {
+        toast.error('Arquivo CSV vazio ou inválido');
+        setImporting(false);
+        return;
+      }
+
+      const headers = rows[0].map(h => h.toLowerCase().trim());
+      const dataRows = rows.slice(1);
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      if (importType === 'blocked') {
+        const ipIndex = headers.indexOf('ip_address');
+        const reasonIndex = headers.indexOf('reason');
+        const durationIndex = headers.indexOf('blocked_until');
+
+        if (ipIndex === -1 || reasonIndex === -1) {
+          toast.error('CSV deve conter colunas: ip_address, reason');
+          setImporting(false);
+          return;
+        }
+
+        for (const row of dataRows) {
+          const ip = row[ipIndex]?.trim();
+          const reason = row[reasonIndex]?.trim();
+          const blockedUntil = row[durationIndex]?.trim();
+
+          if (!ip || !reason || !validateIPAddress(ip)) {
+            errorCount++;
+            continue;
+          }
+
+          let durationHours: number | undefined;
+          if (blockedUntil && blockedUntil !== 'permanent') {
+            const blockedDate = new Date(blockedUntil);
+            if (!isNaN(blockedDate.getTime())) {
+              durationHours = Math.ceil((blockedDate.getTime() - Date.now()) / (1000 * 60 * 60));
+            }
+          }
+
+          const success = await blockIP(ip, reason, durationHours);
+          if (success) successCount++;
+          else errorCount++;
+        }
+      } else {
+        const ipIndex = headers.indexOf('ip_address');
+        const descIndex = headers.indexOf('description');
+        const expiresIndex = headers.indexOf('expires_at');
+
+        if (ipIndex === -1 || descIndex === -1) {
+          toast.error('CSV deve conter colunas: ip_address, description');
+          setImporting(false);
+          return;
+        }
+
+        for (const row of dataRows) {
+          const ip = row[ipIndex]?.trim();
+          const description = row[descIndex]?.trim();
+          const expiresAt = row[expiresIndex]?.trim();
+
+          if (!ip || !description || !validateIPAddress(ip)) {
+            errorCount++;
+            continue;
+          }
+
+          let expiresInDays: number | undefined;
+          if (expiresAt && expiresAt !== 'permanent') {
+            const expiresDate = new Date(expiresAt);
+            if (!isNaN(expiresDate.getTime())) {
+              expiresInDays = Math.ceil((expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+            }
+          }
+
+          const success = await whitelistIP(ip, description, expiresInDays);
+          if (success) successCount++;
+          else errorCount++;
+        }
+      }
+
+      toast.success(`Importação concluída: ${successCount} sucesso(s), ${errorCount} erro(s)`);
+      setImportDialogOpen(false);
+      setImportFile(null);
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('Erro ao importar arquivo CSV');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -123,6 +322,75 @@ export default function AdminBlockedIPs() {
             </div>
 
             <div className="flex gap-2">
+              <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Importar CSV
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Importar IPs via CSV</DialogTitle>
+                    <DialogDescription>
+                      Carregue um arquivo CSV para adicionar múltiplos IPs de uma vez
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Tipo de Importação</Label>
+                      <Select value={importType} onValueChange={(value: "blocked" | "whitelist") => setImportType(value)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="blocked">IPs Bloqueados</SelectItem>
+                          <SelectItem value="whitelist">Whitelist</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="csvFile">Arquivo CSV</Label>
+                      <Input
+                        id="csvFile"
+                        type="file"
+                        accept=".csv"
+                        onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                      />
+                    </div>
+
+                    <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                      <p className="text-sm font-medium">Formato do CSV:</p>
+                      {importType === 'blocked' ? (
+                        <code className="text-xs block bg-background p-2 rounded">
+                          ip_address,reason,blocked_until<br/>
+                          192.168.1.1,"Tentativas suspeitas",2025-12-31<br/>
+                          10.0.0.5,"Spam",permanent
+                        </code>
+                      ) : (
+                        <code className="text-xs block bg-background p-2 rounded">
+                          ip_address,description,expires_at<br/>
+                          192.168.1.100,"Servidor corporativo",2026-01-01<br/>
+                          10.0.0.50,"VPN confiável",permanent
+                        </code>
+                      )}
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => {
+                      setImportDialogOpen(false);
+                      setImportFile(null);
+                    }}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleImportCSV} disabled={!importFile || importing}>
+                      {importing ? 'Importando...' : 'Importar'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
               <Dialog open={whitelistDialogOpen} onOpenChange={setWhitelistDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline">
@@ -309,12 +577,20 @@ export default function AdminBlockedIPs() {
 
             {/* Blocked IPs Table */}
             <Card>
-          <CardHeader>
-            <CardTitle>IPs Bloqueados</CardTitle>
-            <CardDescription>
-              {blockedIPs.length} IP(s) registrado(s)
-            </CardDescription>
-          </CardHeader>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>IPs Bloqueados</CardTitle>
+                    <CardDescription>
+                      {blockedIPs.length} IP(s) registrado(s)
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={handleExportBlocked}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Exportar CSV
+                  </Button>
+                </div>
+              </CardHeader>
           <CardContent>
             {loading ? (
               <div className="flex justify-center py-8">
@@ -435,10 +711,18 @@ export default function AdminBlockedIPs() {
             {/* Whitelisted IPs Table */}
             <Card>
               <CardHeader>
-                <CardTitle>IPs na Whitelist</CardTitle>
-                <CardDescription>
-                  {whitelistedIPs.length} IP(s) confiável(is)
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>IPs na Whitelist</CardTitle>
+                    <CardDescription>
+                      {whitelistedIPs.length} IP(s) confiável(is)
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={handleExportWhitelist}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Exportar CSV
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {whitelistLoading ? (
