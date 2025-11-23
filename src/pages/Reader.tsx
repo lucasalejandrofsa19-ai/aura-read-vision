@@ -288,6 +288,15 @@ const Reader = () => {
     }
 
     if (!hasPremiumAccess) {
+      // Audit log for denied access attempt
+      await supabase.from('premium_access_audit').insert({
+        user_id: user.id,
+        action: 'access_attempt',
+        feature: 'text_to_speech',
+        granted: false,
+        reason: 'no_premium_access',
+      });
+
       toast.error("Recurso disponível apenas para assinantes Premium", {
         action: {
           label: "Assinar",
@@ -296,6 +305,15 @@ const Reader = () => {
       });
       return;
     }
+
+    // Audit log for successful access
+    await supabase.from('premium_access_audit').insert({
+      user_id: user.id,
+      action: 'access_granted',
+      feature: 'text_to_speech',
+      granted: true,
+      reason: 'premium_access_verified',
+    });
 
     if (!book?.extracted_text) {
       toast.error("Texto não disponível para leitura");

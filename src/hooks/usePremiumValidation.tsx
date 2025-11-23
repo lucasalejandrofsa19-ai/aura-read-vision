@@ -86,6 +86,17 @@ export const usePremiumValidation = () => {
 
       if (error) {
         console.error('[PREMIUM-VALIDATION] Error:', error);
+        
+        // Log audit event for error
+        await supabase.from('premium_access_audit').insert({
+          user_id: user.id,
+          action: 'validate',
+          feature: 'premium_access_frontend',
+          granted: false,
+          reason: 'database_error',
+          metadata: { error: error.message },
+        });
+
         throw error;
       }
 
@@ -93,6 +104,16 @@ export const usePremiumValidation = () => {
       const hasPremiumAccess = userRoles.includes('admin') || userRoles.includes('premium');
 
       console.log('[PREMIUM-VALIDATION] Result:', { hasPremiumAccess, roles: userRoles });
+
+      // Log audit event for successful validation
+      await supabase.from('premium_access_audit').insert({
+        user_id: user.id,
+        action: 'validate',
+        feature: 'premium_access_frontend',
+        granted: hasPremiumAccess,
+        reason: hasPremiumAccess ? 'has_premium_role' : 'no_premium_role',
+        metadata: { roles: userRoles },
+      });
 
       return { hasPremiumAccess, roles: userRoles };
     } catch (error) {

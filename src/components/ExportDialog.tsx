@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useExport, type ExportFormat } from "@/hooks/useExport";
 import { usePremiumValidation } from "@/hooks/usePremiumValidation";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Highlight } from "@/hooks/useHighlights";
@@ -64,6 +65,16 @@ export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps
       }
 
       if (!hasPremiumAccess) {
+        // Audit log for denied access attempt
+        await supabase.from('premium_access_audit').insert({
+          user_id: user.id,
+          action: 'access_attempt',
+          feature: `export_${format}`,
+          granted: false,
+          reason: 'no_premium_access',
+          metadata: { format, bookTitle },
+        });
+
         toast.error("Recurso disponível apenas para assinantes Premium", {
           action: {
             label: "Ver Planos",
@@ -72,6 +83,16 @@ export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps
         });
         return;
       }
+
+      // Audit log for successful access
+      await supabase.from('premium_access_audit').insert({
+        user_id: user.id,
+        action: 'access_granted',
+        feature: `export_${format}`,
+        granted: true,
+        reason: 'premium_access_verified',
+        metadata: { format, bookTitle },
+      });
     }
 
     setIsExporting(true);

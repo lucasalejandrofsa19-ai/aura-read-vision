@@ -43,13 +43,13 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { persistSession: false } }
-    );
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    { auth: { persistSession: false } }
+  );
 
+  try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('No authorization header');
@@ -62,6 +62,12 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
+    // Extract IP and user agent for audit logging
+    const ipAddress = req.headers.get('x-forwarded-for') || 
+                      req.headers.get('x-real-ip') || 
+                      'unknown';
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+
     console.log(`[VERIFY-PREMIUM] Checking access for user: ${user.id}`);
 
     // Apply rate limiting
@@ -69,6 +75,23 @@ serve(async (req) => {
     
     if (!rateLimit.allowed) {
       console.warn(`[VERIFY-PREMIUM] Rate limit exceeded for user: ${user.id}`);
+      
+      // Audit log: Rate limit exceeded
+      await supabaseClient.from('premium_access_audit').insert({
+        user_id: user.id,
+        action: 'validate',
+        feature: 'premium_access_check',
+        ip_address: ipAddress,
+        user_agent: userAgent,
+        granted: false,
+        reason: 'rate_limit_exceeded',
+        metadata: {
+          rate_limit_max: RATE_LIMIT_MAX,
+          rate_limit_window: RATE_LIMIT_WINDOW,
+          attempts: rateLimitMap.get(user.id)?.count,
+        },
+      });
+
       return new Response(
         JSON.stringify({ 
           error: 'Too many requests. Please try again later.',
@@ -95,6 +118,19 @@ serve(async (req) => {
 
     if (rolesError) {
       console.error('[VERIFY-PREMIUM] Error fetching roles:', rolesError);
+      
+      // Audit log: Error fetching roles
+      await supabaseClient.from('premium_access_audit').insert({
+        user_id: user.id,
+        action: 'validate',
+        feature: 'premium_access_check',
+        ip_address: ipAddress,
+        user_agent: userAgent,
+        granted: false,
+        reason: 'database_error',
+        metadata: { error: rolesError.message },
+      });
+
       throw rolesError;
     }
 
@@ -102,6 +138,21 @@ serve(async (req) => {
     const hasPremiumAccess = userRoles.includes('admin') || userRoles.includes('premium');
 
     console.log(`[VERIFY-PREMIUM] User roles: ${userRoles.join(', ')}, has premium: ${hasPremiumAccess}`);
+
+    // Audit log: Successful validation
+    await supabaseClient.from('premium_access_audit').insert({
+      user_id: user.id,
+      action: 'validate',
+      feature: 'premium_access_check',
+      ip_address: ipAddress,
+      user_agent: userAgent,
+      granted: hasPremiumAccess,
+      reason: hasPremiumAccess ? 'has_premium_role' : 'no_premium_role',
+      metadata: {
+        roles: userRoles,
+        rate_limit_remaining: rateLimit.remaining,
+      },
+    });
 
     return new Response(
       JSON.stringify({ 

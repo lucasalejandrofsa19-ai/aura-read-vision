@@ -180,6 +180,45 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_access_audit: {
+        Row: {
+          action: string
+          created_at: string
+          feature: string
+          granted: boolean
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          reason: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          feature: string
+          granted: boolean
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          reason?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          feature?: string
+          granted?: boolean
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          reason?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       premium_books: {
         Row: {
           author: string | null
