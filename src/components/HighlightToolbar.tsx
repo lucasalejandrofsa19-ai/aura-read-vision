@@ -13,6 +13,8 @@ interface HighlightToolbarProps {
   isHighlightMode: boolean;
   isDrawMode?: boolean;
   onCancelDraw?: () => void;
+  isQuickMode?: boolean;
+  onToggleQuickMode?: () => void;
 }
 
 const HIGHLIGHT_COLORS = [
@@ -31,6 +33,8 @@ export const HighlightToolbar = ({
   isHighlightMode,
   isDrawMode = false,
   onCancelDraw,
+  isQuickMode = false,
+  onToggleQuickMode,
 }: HighlightToolbarProps) => {
   return (
     <div className="glass rounded-lg p-2 flex items-center gap-2">
@@ -46,8 +50,21 @@ export const HighlightToolbar = ({
             <span className="text-xs">Cancelar</span>
           </Button>
           <div className="px-3 py-1 bg-primary/10 rounded-md border border-primary/20 animate-pulse">
-            <span className="text-xs font-medium text-primary">Toque na área para destacar</span>
+            <span className="text-xs font-medium text-primary">
+              {isQuickMode ? "Modo Rápido: Toque para destacar múltiplas áreas" : "Toque na área para destacar"}
+            </span>
           </div>
+          {onToggleQuickMode && (
+            <Button
+              variant={isQuickMode ? "default" : "outline"}
+              size="sm"
+              onClick={onToggleQuickMode}
+              className="gap-2"
+            >
+              <Highlighter className="w-4 h-4" />
+              <span className="text-xs">{isQuickMode ? "Modo Rápido ON" : "Modo Único"}</span>
+            </Button>
+          )}
         </>
       ) : (
         <>

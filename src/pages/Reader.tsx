@@ -63,6 +63,7 @@ const Reader = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
   const [isHighlightDrawMode, setIsHighlightDrawMode] = useState(false);
+  const [isQuickHighlightMode, setIsQuickHighlightMode] = useState(false);
 
   const {
     highlights,
@@ -270,14 +271,30 @@ const Reader = () => {
   const handleAddHighlight = async () => {
     // Sempre ativa o modo de desenho quando clicar em "Destacar"
     setIsHighlightDrawMode(true);
-    toast.info("Toque na área do PDF que deseja destacar");
+    const modeText = isQuickHighlightMode ? "Modo Rápido ativado! Toque para destacar múltiplas áreas" : "Toque na área do PDF que deseja destacar";
+    toast.info(modeText);
   };
 
   const handleHighlightDrawn = async (coords: { x: number; y: number; width: number; height: number }) => {
     await addHighlight(currentPage, "", highlightColor, coords);
     playSound('highlight');
-    setIsHighlightDrawMode(false);
-    toast.success("Destaque adicionado!");
+    
+    // Se não estiver em modo rápido, desativa o modo de desenho
+    if (!isQuickHighlightMode) {
+      setIsHighlightDrawMode(false);
+      toast.success("Destaque adicionado!");
+    } else {
+      toast.success("Destaque adicionado! Continue destacando ou clique em Cancelar");
+    }
+  };
+
+  const handleToggleQuickMode = () => {
+    setIsQuickHighlightMode(!isQuickHighlightMode);
+    if (!isQuickHighlightMode) {
+      toast.success("Modo Rápido ativado! Você pode adicionar vários destaques seguidos");
+    } else {
+      toast.info("Modo Único ativado");
+    }
   };
 
   const handleHighlightDeleted = async (highlightId: string) => {
@@ -662,8 +679,11 @@ const Reader = () => {
           onHighlight={handleAddHighlight}
           isHighlightMode={isHighlightDrawMode}
           isDrawMode={isHighlightDrawMode}
+          isQuickMode={isQuickHighlightMode}
+          onToggleQuickMode={handleToggleQuickMode}
           onCancelDraw={() => {
             setIsHighlightDrawMode(false);
+            setIsQuickHighlightMode(false);
             toast.info("Modo de destaque cancelado");
           }}
         />
