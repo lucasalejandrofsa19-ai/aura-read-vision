@@ -8,6 +8,7 @@ import {
   ZoomIn,
   ZoomOut,
   Info,
+  Highlighter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
@@ -22,6 +23,8 @@ interface PresentationModeProps {
   bookTitle: string;
   onClose: () => void;
   onPageChange?: (page: number) => void;
+  highlightCount?: number;
+  onOpenHighlights?: () => void;
 }
 
 export const PresentationMode = ({
@@ -30,6 +33,8 @@ export const PresentationMode = ({
   bookTitle,
   onClose,
   onPageChange,
+  highlightCount = 0,
+  onOpenHighlights,
 }: PresentationModeProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
@@ -301,6 +306,23 @@ export const PresentationMode = ({
                 className="text-white hover:bg-white/20"
               >
                 <ZoomIn className="w-5 h-5" />
+              </Button>
+
+              <div className="h-8 w-px bg-white/20 mx-2" />
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onOpenHighlights}
+                className="text-white hover:bg-white/20 relative"
+                title="Ver destaques"
+              >
+                <Highlighter className="w-5 h-5" />
+                {highlightCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                    {highlightCount > 9 ? '9+' : highlightCount}
+                  </span>
+                )}
               </Button>
 
               <div className="h-8 w-px bg-white/20 mx-2" />
