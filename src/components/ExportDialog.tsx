@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useExport, type ExportFormat } from "@/hooks/useExport";
-import { supabase } from "@/integrations/supabase/client";
+import { usePremiumValidation } from "@/hooks/usePremiumValidation";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Highlight } from "@/hooks/useHighlights";
@@ -39,6 +39,7 @@ export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps
   const [isExporting, setIsExporting] = useState(false);
 
   const { exportData } = useExport();
+  const { validatePremiumAccess } = usePremiumValidation();
 
   const handleExport = async () => {
     if (!user) {
@@ -46,39 +47,31 @@ export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps
       return;
     }
 
+    if (!includeHighlights && !includeNotes) {
+      toast.error("Selecione pelo menos uma opção para exportar");
+      return;
+    }
+
     // Check premium access for advanced export formats
     const advancedFormats = ["word", "notion"];
     
     if (advancedFormats.includes(format)) {
-      try {
-        // Server-side validation - never trust client-side cache for operations
-        const { data: roles } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id);
+      // Server-side validation with rate limiting
+      const { hasPremiumAccess, rateLimitReached } = await validatePremiumAccess();
 
-        const userRoles = (roles || []).map(r => r.role);
-        const hasPremiumAccess = userRoles.includes('admin') || userRoles.includes('premium');
+      if (rateLimitReached) {
+        return; // Toast already shown by hook
+      }
 
-        if (!hasPremiumAccess) {
-          toast.error("Recurso disponível apenas para assinantes Premium", {
-            action: {
-              label: "Ver Planos",
-              onClick: () => navigate("/pricing"),
-            },
-          });
-          return;
-        }
-      } catch (error) {
-        console.error('Error validating premium access:', error);
-        toast.error("Erro ao validar acesso premium");
+      if (!hasPremiumAccess) {
+        toast.error("Recurso disponível apenas para assinantes Premium", {
+          action: {
+            label: "Ver Planos",
+            onClick: () => navigate("/pricing"),
+          },
+        });
         return;
       }
-    }
-
-    if (!includeHighlights && !includeNotes) {
-      toast.error("Selecione pelo menos uma opção para exportar");
-      return;
     }
 
     setIsExporting(true);
