@@ -34,6 +34,12 @@ export const HighlightCanvas = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
   const drawingRectRef = useRef<Rect | null>(null);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  // Detect touch device
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
 
   // Initialize canvas
   useEffect(() => {
@@ -97,15 +103,31 @@ export const HighlightCanvas = ({
     if (!fabricCanvas) return;
 
     if (isDrawingMode) {
-      // Enable drawing
+      // Enable drawing - both mouse and touch events
       fabricCanvas.on("mouse:down", handleMouseDown);
       fabricCanvas.on("mouse:move", handleMouseMove);
       fabricCanvas.on("mouse:up", handleMouseUp);
+      
+      // Add touch event listeners for better mobile support
+      if (isTouchDevice) {
+        const canvas = fabricCanvas.getElement();
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+        canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+      }
     } else {
       // Disable drawing
       fabricCanvas.off("mouse:down", handleMouseDown);
       fabricCanvas.off("mouse:move", handleMouseMove);
       fabricCanvas.off("mouse:up", handleMouseUp);
+      
+      if (isTouchDevice) {
+        const canvas = fabricCanvas.getElement();
+        canvas.removeEventListener('touchstart', handleTouchStart);
+        canvas.removeEventListener('touchmove', handleTouchMove);
+        canvas.removeEventListener('touchend', handleTouchEnd);
+      }
+      
       setIsDrawing(false);
       setStartPoint(null);
       if (drawingRectRef.current) {
@@ -118,8 +140,15 @@ export const HighlightCanvas = ({
       fabricCanvas.off("mouse:down", handleMouseDown);
       fabricCanvas.off("mouse:move", handleMouseMove);
       fabricCanvas.off("mouse:up", handleMouseUp);
+      
+      if (isTouchDevice && fabricCanvas.getElement()) {
+        const canvas = fabricCanvas.getElement();
+        canvas.removeEventListener('touchstart', handleTouchStart);
+        canvas.removeEventListener('touchmove', handleTouchMove);
+        canvas.removeEventListener('touchend', handleTouchEnd);
+      }
     };
-  }, [isDrawingMode, fabricCanvas, highlightColor]);
+  }, [isDrawingMode, fabricCanvas, highlightColor, isTouchDevice]);
 
   const handleMouseDown = (e: any) => {
     if (!fabricCanvas) return;
@@ -190,12 +219,98 @@ export const HighlightCanvas = ({
     drawingRectRef.current = null;
   };
 
+  // Touch event handlers for mobile devices
+  const handleTouchStart = (e: TouchEvent) => {
+    if (!fabricCanvas) return;
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const rect = fabricCanvas.getElement().getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    
+    setIsDrawing(true);
+    setStartPoint({ x, y });
+
+    // Create temporary rectangle
+    const tempRect = new Rect({
+      left: x,
+      top: y,
+      width: 0,
+      height: 0,
+      fill: highlightColor,
+      opacity: 0.4,
+      selectable: false,
+      evented: false,
+    });
+
+    fabricCanvas.add(tempRect);
+    drawingRectRef.current = tempRect;
+    fabricCanvas.renderAll();
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (!isDrawing || !startPoint || !drawingRectRef.current || !fabricCanvas) return;
+    e.preventDefault();
+
+    const touch = e.touches[0];
+    const rect = fabricCanvas.getElement().getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    
+    const width = x - startPoint.x;
+    const height = y - startPoint.y;
+
+    drawingRectRef.current.set({
+      width: Math.abs(width),
+      height: Math.abs(height),
+      left: width < 0 ? x : startPoint.x,
+      top: height < 0 ? y : startPoint.y,
+    });
+
+    fabricCanvas.renderAll();
+  };
+
+  const handleTouchEnd = (e: TouchEvent) => {
+    if (!isDrawing || !startPoint || !drawingRectRef.current || !fabricCanvas) return;
+    e.preventDefault();
+
+    const touch = e.changedTouches[0];
+    const rect = fabricCanvas.getElement().getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    
+    const width = Math.abs(x - startPoint.x);
+    const height = Math.abs(y - startPoint.y);
+
+    // Only save if the highlight is large enough
+    if (width > 10 && height > 10) {
+      const highlight = {
+        x: Math.min(startPoint.x, x),
+        y: Math.min(startPoint.y, y),
+        width,
+        height,
+      };
+
+      onHighlightAdded?.(highlight);
+    } else {
+      // Remove the rectangle if it's too small
+      fabricCanvas.remove(drawingRectRef.current);
+      fabricCanvas.renderAll();
+    }
+
+    setIsDrawing(false);
+    setStartPoint(null);
+    drawingRectRef.current = null;
+  };
+
   return (
     <canvas
       ref={canvasRef}
       className="absolute top-0 left-0 pointer-events-auto z-10"
       style={{
         cursor: isDrawingMode ? "crosshair" : "default",
+        touchAction: isDrawingMode ? "none" : "auto",
       }}
     />
   );
