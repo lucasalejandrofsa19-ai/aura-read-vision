@@ -378,6 +378,45 @@ export type Database = {
         }
         Relationships: []
       }
+      reading_sessions: {
+        Row: {
+          book_id: string
+          created_at: string
+          duration_minutes: number | null
+          end_page: number | null
+          ended_at: string | null
+          id: string
+          pages_read: number
+          start_page: number
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          duration_minutes?: number | null
+          end_page?: number | null
+          ended_at?: string | null
+          id?: string
+          pages_read?: number
+          start_page: number
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          duration_minutes?: number | null
+          end_page?: number | null
+          ended_at?: string | null
+          id?: string
+          pages_read?: number
+          start_page?: number
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
