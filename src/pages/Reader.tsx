@@ -450,6 +450,11 @@ const Reader = () => {
         bookTitle={book.title}
         onClose={handleExitPresentationMode}
         onPageChange={handlePageChange}
+        highlightCount={highlights.length}
+        onOpenHighlights={() => {
+          handleExitPresentationMode();
+          toast.info("Ver lista de destaques");
+        }}
       />
     );
   }
