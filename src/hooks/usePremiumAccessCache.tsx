@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+// SECURITY WARNING: This cache is ONLY for UI display purposes (showing/hiding features)
+// NEVER use this cache alone to authorize premium operations
+// All premium operations MUST validate directly from database/server
 interface CachedPremiumAccess {
   hasPremiumAccess: boolean;
   roles: string[];
@@ -9,7 +12,7 @@ interface CachedPremiumAccess {
 }
 
 const CACHE_KEY = "premium_access_cache";
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos em milissegundos
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes (reduced for security)
 
 export const usePremiumAccessCache = () => {
   const { user } = useAuth();

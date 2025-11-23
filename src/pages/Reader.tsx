@@ -275,26 +275,49 @@ const Reader = () => {
   };
 
   const handleReadAloud = async () => {
+    if (!user) {
+      toast.error("Faça login para usar este recurso");
+      return;
+    }
+
+    // Server-side validation - never trust client-side cache for operations
     try {
-      // Server-side premium verification with cache
-      const { hasPremiumAccess } = await verifyPremiumAccess();
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+
+      const userRoles = (roles || []).map(r => r.role);
+      const hasPremiumAccess = userRoles.includes('admin') || userRoles.includes('premium');
 
       if (!hasPremiumAccess) {
-        toast.error("Recurso disponível apenas para assinantes Premium");
+        toast.error("Recurso disponível apenas para assinantes Premium", {
+          action: {
+            label: "Assinar",
+            onClick: () => navigate("/pricing"),
+          },
+        });
         return;
       }
 
       if (!book?.extracted_text) {
-        toast.error("Nenhum texto extraído disponível para leitura");
+        toast.error("Texto não disponível para leitura");
         return;
       }
-      
-      // Read a portion of text (you could enhance this to read the current page)
-      const textToRead = book.extracted_text.substring(0, 2000);
-      speak(textToRead);
+
+      const startIndex = book.current_page || 1;
+      const textToRead = book.extracted_text
+        .split(/Página \d+/)
+        .slice(startIndex)
+        .join(" ");
+
+      if (textToRead.trim()) {
+        speak(textToRead);
+        playSound('page-turn');
+      }
     } catch (error) {
-      console.error('Read aloud error:', error);
-      toast.error("Erro ao verificar acesso premium");
+      console.error('Error validating premium access:', error);
+      toast.error("Erro ao validar acesso premium");
     }
   };
 

@@ -30,9 +30,12 @@ export const PremiumActionButton = ({
 }: PremiumActionButtonProps) => {
   const navigate = useNavigate();
   const { subscriptionTier } = useAuth();
+  // Use client-side check only for UI display
   const isPremium = subscriptionTier === "premium" || subscriptionTier === "pro";
 
   const handleClick = () => {
+    // UI-level check for immediate feedback
+    // Actual premium operations must validate server-side
     if (requiresPremium && !isPremium) {
       toast.error("Recurso disponível apenas para assinantes Premium", {
         action: {
