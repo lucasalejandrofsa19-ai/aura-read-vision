@@ -11,7 +11,6 @@ interface HighlightToolbarProps {
   onColorChange: (color: string) => void;
   onHighlight: () => void;
   isHighlightMode: boolean;
-  selectedText: string;
   isDrawMode?: boolean;
   onCancelDraw?: () => void;
 }
@@ -30,111 +29,82 @@ export const HighlightToolbar = ({
   onColorChange,
   onHighlight,
   isHighlightMode,
-  selectedText,
   isDrawMode = false,
   onCancelDraw,
 }: HighlightToolbarProps) => {
   return (
     <div className="glass rounded-lg p-2 flex items-center gap-2">
-      {isDrawMode && (
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={onCancelDraw}
-          className="gap-2 animate-pulse"
-        >
-          <X className="w-4 h-4" />
-          <span className="text-xs">Cancelar Desenho</span>
-        </Button>
-      )}
-      
-      <Popover>
-        <PopoverTrigger asChild>
+      {isDrawMode ? (
+        <>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={onCancelDraw}
+            className="gap-2"
+          >
+            <X className="w-4 h-4" />
+            <span className="text-xs">Cancelar</span>
+          </Button>
+          <div className="px-3 py-1 bg-primary/10 rounded-md border border-primary/20 animate-pulse">
+            <span className="text-xs font-medium text-primary">Toque na área para destacar</span>
+          </div>
+        </>
+      ) : (
+        <>
           <Button
             variant="ghost"
             size="sm"
-            className={`gap-2 ${isHighlightMode ? "aura-amber text-accent" : "aura-soft"}`}
+            onClick={onHighlight}
+            className="gap-2 aura-soft"
           >
-            <div className="flex items-center gap-2">
-              <Highlighter className="w-4 h-4" />
-              <span className="text-xs">Destacar</span>
-              <div 
-                className="w-4 h-4 rounded border-2 border-border"
-                style={{ backgroundColor: selectedColor }}
-                title="Cor atual"
-              />
-            </div>
+            <Highlighter className="w-4 h-4" />
+            <span className="text-xs">Destacar</span>
           </Button>
-        </PopoverTrigger>
-        <PopoverContent className="glass w-64" align="start">
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm font-medium mb-2 flex items-center gap-2">
-                Escolha a cor
-                <span className="text-xs text-muted-foreground">(cores variadas)</span>
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {HIGHLIGHT_COLORS.map((color) => (
-                  <button
-                    key={color.value}
-                    onClick={() => onColorChange(color.value)}
-                    className={`${color.class} h-12 rounded-md border-2 transition-all hover:scale-105 relative ${
-                      selectedColor === color.value
-                        ? "border-primary ring-2 ring-primary ring-offset-2 shadow-lg"
-                        : "border-border"
-                    }`}
-                    title={color.name}
-                  >
-                    {selectedColor === color.value && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Highlighter className="w-5 h-5 text-primary drop-shadow-md" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {selectedText && (
-              <div>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Texto selecionado:
-                </p>
-                <div className="p-2 bg-muted rounded text-xs max-h-20 overflow-auto">
-                  {selectedText.substring(0, 100)}
-                  {selectedText.length > 100 && "..."}
-                </div>
-                <Button
-                  onClick={onHighlight}
-                  className="w-full mt-2"
-                  size="sm"
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 aura-soft"
+              >
+                <div 
+                  className="w-6 h-6 rounded border-2 border-border shadow-sm"
                   style={{ backgroundColor: selectedColor }}
-                >
-                  <Highlighter className="w-3 h-3 mr-2" />
-                  Adicionar Destaque
-                </Button>
+                  title="Trocar cor"
+                />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="glass w-64" align="start">
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium mb-3">Escolha a cor do destaque</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {HIGHLIGHT_COLORS.map((color) => (
+                      <button
+                        key={color.value}
+                        onClick={() => onColorChange(color.value)}
+                        className={`${color.class} h-12 rounded-md border-2 transition-all hover:scale-105 relative ${
+                          selectedColor === color.value
+                            ? "border-primary ring-2 ring-primary ring-offset-2 shadow-lg"
+                            : "border-border"
+                        }`}
+                        title={color.name}
+                      >
+                        {selectedColor === color.value && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Highlighter className="w-5 h-5 text-primary drop-shadow-md" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-            )}
-
-            {!selectedText && (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground text-center py-2">
-                  Selecione um texto no PDF para destacar
-                </p>
-                <Button
-                  onClick={onHighlight}
-                  variant="outline"
-                  className="w-full"
-                  size="sm"
-                >
-                  <Pen className="w-3 h-3 mr-2" />
-                  Desenhar Destaque
-                </Button>
-              </div>
-            )}
-          </div>
-        </PopoverContent>
-      </Popover>
+            </PopoverContent>
+          </Popover>
+        </>
+      )}
     </div>
   );
 };

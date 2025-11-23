@@ -268,19 +268,9 @@ const Reader = () => {
   };
 
   const handleAddHighlight = async () => {
-    if (!selectedText && !isHighlightDrawMode) {
-      // Enable draw mode
-      setIsHighlightDrawMode(true);
-      toast.info("Modo de destacação ativado! Desenhe sobre o texto para destacar.");
-      return;
-    }
-
-    if (selectedText) {
-      await addHighlight(currentPage, selectedText, highlightColor);
-      playSound('highlight');
-      setSelectedText("");
-      window.getSelection()?.removeAllRanges();
-    }
+    // Sempre ativa o modo de desenho quando clicar em "Destacar"
+    setIsHighlightDrawMode(true);
+    toast.info("Toque na área do PDF que deseja destacar");
   };
 
   const handleHighlightDrawn = async (coords: { x: number; y: number; width: number; height: number }) => {
@@ -670,12 +660,11 @@ const Reader = () => {
           selectedColor={highlightColor}
           onColorChange={setHighlightColor}
           onHighlight={handleAddHighlight}
-          isHighlightMode={!!selectedText || isHighlightDrawMode}
-          selectedText={selectedText}
+          isHighlightMode={isHighlightDrawMode}
           isDrawMode={isHighlightDrawMode}
           onCancelDraw={() => {
             setIsHighlightDrawMode(false);
-            toast.info("Modo de desenho cancelado");
+            toast.info("Modo de destaque cancelado");
           }}
         />
 
