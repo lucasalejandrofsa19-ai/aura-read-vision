@@ -465,6 +465,11 @@ const Reader = () => {
             height: (h.position_data as any).height,
             color: h.color || "#fef08a",
           }))}
+        onHighlightAdded={async (coords) => {
+          await addHighlight(currentPage, "", highlightColor, coords);
+          playSound('highlight');
+          toast.success("Destaque adicionado!");
+        }}
       />
     );
   }
