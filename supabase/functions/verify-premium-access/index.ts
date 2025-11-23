@@ -6,6 +6,38 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limiting configuration
+const RATE_LIMIT_MAX = 20; // requests
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in ms
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(userId: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const userLimit = rateLimitMap.get(userId);
+
+  // Clean up expired entries
+  if (userLimit && now > userLimit.resetAt) {
+    rateLimitMap.delete(userId);
+  }
+
+  if (!rateLimitMap.has(userId)) {
+    rateLimitMap.set(userId, {
+      count: 1,
+      resetAt: now + RATE_LIMIT_WINDOW,
+    });
+    return { allowed: true, remaining: RATE_LIMIT_MAX - 1 };
+  }
+
+  const limit = rateLimitMap.get(userId)!;
+
+  if (limit.count >= RATE_LIMIT_MAX) {
+    return { allowed: false, remaining: 0 };
+  }
+
+  limit.count++;
+  return { allowed: true, remaining: RATE_LIMIT_MAX - limit.count };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -32,6 +64,29 @@ serve(async (req) => {
 
     console.log(`[VERIFY-PREMIUM] Checking access for user: ${user.id}`);
 
+    // Apply rate limiting
+    const rateLimit = checkRateLimit(user.id);
+    
+    if (!rateLimit.allowed) {
+      console.warn(`[VERIFY-PREMIUM] Rate limit exceeded for user: ${user.id}`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many requests. Please try again later.',
+          hasPremiumAccess: false 
+        }),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'X-RateLimit-Limit': RATE_LIMIT_MAX.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimitMap.get(user.id)!.resetAt.toString(),
+          },
+          status: 429 
+        }
+      );
+    }
+
     // Check if user is admin or has premium role
     const { data: roles, error: rolesError } = await supabaseClient
       .from('user_roles')
@@ -54,7 +109,12 @@ serve(async (req) => {
         roles: userRoles 
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'X-RateLimit-Limit': RATE_LIMIT_MAX.toString(),
+          'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        },
         status: 200 
       }
     );

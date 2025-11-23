@@ -40,7 +40,7 @@ import { useFullscreen } from "@/hooks/useFullscreen";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { useNotes } from "@/hooks/useNotes";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePremiumAccessCache } from "@/hooks/usePremiumAccessCache";
+import { usePremiumValidation } from "@/hooks/usePremiumValidation";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { captureError } from "@/lib/sentry";
 
@@ -101,7 +101,7 @@ const Reader = () => {
 
   const { enterFullscreen } = useFullscreen();
   const { subscriptionTier, user } = useAuth();
-  const { verifyPremiumAccess } = usePremiumAccessCache();
+  const { validatePremiumAccess } = usePremiumValidation();
   const { playSound } = useSoundEffects();
   
   const {
@@ -280,44 +280,37 @@ const Reader = () => {
       return;
     }
 
-    // Server-side validation - never trust client-side cache for operations
-    try {
-      const { data: roles } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id);
+    // Server-side validation with rate limiting
+    const { hasPremiumAccess, rateLimitReached } = await validatePremiumAccess();
 
-      const userRoles = (roles || []).map(r => r.role);
-      const hasPremiumAccess = userRoles.includes('admin') || userRoles.includes('premium');
+    if (rateLimitReached) {
+      return; // Toast already shown by hook
+    }
 
-      if (!hasPremiumAccess) {
-        toast.error("Recurso disponível apenas para assinantes Premium", {
-          action: {
-            label: "Assinar",
-            onClick: () => navigate("/pricing"),
-          },
-        });
-        return;
-      }
+    if (!hasPremiumAccess) {
+      toast.error("Recurso disponível apenas para assinantes Premium", {
+        action: {
+          label: "Assinar",
+          onClick: () => navigate("/pricing"),
+        },
+      });
+      return;
+    }
 
-      if (!book?.extracted_text) {
-        toast.error("Texto não disponível para leitura");
-        return;
-      }
+    if (!book?.extracted_text) {
+      toast.error("Texto não disponível para leitura");
+      return;
+    }
 
-      const startIndex = book.current_page || 1;
-      const textToRead = book.extracted_text
-        .split(/Página \d+/)
-        .slice(startIndex)
-        .join(" ");
+    const startIndex = book.current_page || 1;
+    const textToRead = book.extracted_text
+      .split(/Página \d+/)
+      .slice(startIndex)
+      .join(" ");
 
-      if (textToRead.trim()) {
-        speak(textToRead);
-        playSound('page-turn');
-      }
-    } catch (error) {
-      console.error('Error validating premium access:', error);
-      toast.error("Erro ao validar acesso premium");
+    if (textToRead.trim()) {
+      speak(textToRead);
+      playSound('page-turn');
     }
   };
 
