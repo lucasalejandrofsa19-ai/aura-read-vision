@@ -4,6 +4,7 @@ import { Canvas as FabricCanvas, Rect } from "fabric";
 interface HighlightCanvasProps {
   pageNumber: number;
   highlights: Array<{
+    id: string;
     x: number;
     y: number;
     width: number;
@@ -11,6 +12,7 @@ interface HighlightCanvasProps {
     color: string;
   }>;
   onHighlightAdded?: (highlight: { x: number; y: number; width: number; height: number }) => void;
+  onHighlightDeleted?: (highlightId: string) => void;
   isDrawingMode: boolean;
   highlightColor: string;
   canvasWidth: number;
@@ -21,6 +23,7 @@ export const HighlightCanvas = ({
   pageNumber,
   highlights,
   onHighlightAdded,
+  onHighlightDeleted,
   isDrawingMode,
   highlightColor,
   canvasWidth,
@@ -66,14 +69,28 @@ export const HighlightCanvas = ({
         height: highlight.height,
         fill: highlight.color,
         opacity: 0.4,
-        selectable: false,
-        evented: false,
+        selectable: !isDrawingMode,
+        evented: !isDrawingMode,
+        hoverCursor: isDrawingMode ? 'crosshair' : 'pointer',
       });
+      
+      // Store highlight id in the rect for deletion
+      rect.set('data', { highlightId: highlight.id });
+      
+      // Add click event for deletion (only when not in drawing mode)
+      if (!isDrawingMode) {
+        rect.on('mousedown', () => {
+          if (onHighlightDeleted && confirm('Deseja apagar este destaque?')) {
+            onHighlightDeleted(highlight.id);
+          }
+        });
+      }
+      
       fabricCanvas.add(rect);
     });
 
     fabricCanvas.renderAll();
-  }, [highlights, fabricCanvas, pageNumber]);
+  }, [highlights, fabricCanvas, pageNumber, isDrawingMode, onHighlightDeleted]);
 
   // Handle drawing mode
   useEffect(() => {

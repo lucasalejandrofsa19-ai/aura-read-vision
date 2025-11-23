@@ -18,13 +18,14 @@ interface PDFViewerProps {
   initialPage?: number;
   onPageChange?: (page: number) => void;
   onTextSelect?: (text: string) => void;
-  highlightedAreas?: Array<{ x: number; y: number; width: number; height: number; color: string }>;
+  highlightedAreas?: Array<{ id: string; x: number; y: number; width: number; height: number; color: string }>;
   bookmarkIndicator?: React.ReactNode;
   externalScale?: number;
   onScaleChange?: (scale: number) => void;
   isHighlightMode?: boolean;
   highlightColor?: string;
   onHighlightDrawn?: (highlight: { x: number; y: number; width: number; height: number }) => void;
+  onHighlightDeleted?: (highlightId: string) => void;
 }
 
 export const PDFViewer = ({ 
@@ -38,7 +39,8 @@ export const PDFViewer = ({
   onScaleChange,
   isHighlightMode = false,
   highlightColor = "#fef08a",
-  onHighlightDrawn
+  onHighlightDrawn,
+  onHighlightDeleted
 }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
@@ -391,6 +393,7 @@ export const PDFViewer = ({
                 pageNumber={pageNumber}
                 highlights={highlightedAreas}
                 onHighlightAdded={onHighlightDrawn}
+                onHighlightDeleted={onHighlightDeleted}
                 isDrawingMode={isHighlightMode}
                 highlightColor={highlightColor}
                 canvasWidth={pageSize.width}
