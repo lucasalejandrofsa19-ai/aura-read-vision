@@ -157,10 +157,11 @@ const Library = () => {
                   Painel Admin
                 </Button>
                 <UploadPremiumBook />
+                <FeedbackDialog />
               </>
             )}
             {subscriptionTier === "free" && (
-              <>
+              <div className="flex flex-col gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -171,9 +172,9 @@ const Library = () => {
                   Assinar Premium
                 </Button>
                 <FeedbackDialog />
-              </>
+              </div>
             )}
-            {subscriptionTier !== "free" && (
+            {subscriptionTier !== "free" && !isAdmin && (
               <FeedbackDialog />
             )}
             <PWAInstallDialog>
