@@ -23,8 +23,12 @@ export type Database = {
           created_at: string
           id: string
           ip_address: string
+          is_threat: boolean | null
           metadata: Json | null
           reason: string
+          reputation_data: Json | null
+          reputation_score: number | null
+          threat_categories: string[] | null
         }
         Insert: {
           auto_blocked?: boolean
@@ -34,8 +38,12 @@ export type Database = {
           created_at?: string
           id?: string
           ip_address: string
+          is_threat?: boolean | null
           metadata?: Json | null
           reason: string
+          reputation_data?: Json | null
+          reputation_score?: number | null
+          threat_categories?: string[] | null
         }
         Update: {
           auto_blocked?: boolean
@@ -45,8 +53,12 @@ export type Database = {
           created_at?: string
           id?: string
           ip_address?: string
+          is_threat?: boolean | null
           metadata?: Json | null
           reason?: string
+          reputation_data?: Json | null
+          reputation_score?: number | null
+          threat_categories?: string[] | null
         }
         Relationships: []
       }
@@ -226,6 +238,8 @@ export type Database = {
           ip_address: string | null
           metadata: Json | null
           reason: string | null
+          reputation_checked: boolean | null
+          reputation_score: number | null
           user_agent: string | null
           user_id: string
         }
@@ -238,6 +252,8 @@ export type Database = {
           ip_address?: string | null
           metadata?: Json | null
           reason?: string | null
+          reputation_checked?: boolean | null
+          reputation_score?: number | null
           user_agent?: string | null
           user_id: string
         }
@@ -250,6 +266,8 @@ export type Database = {
           ip_address?: string | null
           metadata?: Json | null
           reason?: string | null
+          reputation_checked?: boolean | null
+          reputation_score?: number | null
           user_agent?: string | null
           user_id?: string
         }
