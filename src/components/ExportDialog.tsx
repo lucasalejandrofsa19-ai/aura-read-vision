@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Download, FileText, File, Hash, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useExport, type ExportFormat } from "@/hooks/useExport";
-import { usePremiumAccessCache } from "@/hooks/usePremiumAccessCache";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Highlight } from "@/hooks/useHighlights";
 import type { Note } from "@/hooks/useNotes";
@@ -25,6 +27,8 @@ interface ExportDialogProps {
 }
 
 export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [includeHighlights, setIncludeHighlights] = useState(true);
@@ -35,20 +39,51 @@ export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps
   const [isExporting, setIsExporting] = useState(false);
 
   const { exportData } = useExport();
-  const { verifyPremiumAccess } = usePremiumAccessCache();
 
   const handleExport = async () => {
-    setIsExporting(true);
-    try {
-      // Server-side premium verification with cache
-      const { hasPremiumAccess } = await verifyPremiumAccess();
+    if (!user) {
+      toast.error("Faça login para exportar");
+      return;
+    }
 
-      if (!hasPremiumAccess) {
-        toast.error("Recurso de exportação disponível apenas para assinantes Premium");
-        setIsExporting(false);
+    // Check premium access for advanced export formats
+    const advancedFormats = ["word", "notion"];
+    
+    if (advancedFormats.includes(format)) {
+      try {
+        // Server-side validation - never trust client-side cache for operations
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id);
+
+        const userRoles = (roles || []).map(r => r.role);
+        const hasPremiumAccess = userRoles.includes('admin') || userRoles.includes('premium');
+
+        if (!hasPremiumAccess) {
+          toast.error("Recurso disponível apenas para assinantes Premium", {
+            action: {
+              label: "Ver Planos",
+              onClick: () => navigate("/pricing"),
+            },
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Error validating premium access:', error);
+        toast.error("Erro ao validar acesso premium");
         return;
       }
+    }
 
+    if (!includeHighlights && !includeNotes) {
+      toast.error("Selecione pelo menos uma opção para exportar");
+      return;
+    }
+
+    setIsExporting(true);
+
+    try {
       await exportData(format, bookTitle, highlights, notes, {
         includeHighlights,
         includeNotes,
@@ -56,6 +91,8 @@ export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps
         includeTimestamps,
         includeColors,
       });
+      
+      toast.success("Exportação realizada com sucesso!");
       setOpen(false);
     } catch (error) {
       console.error('Export error:', error);
