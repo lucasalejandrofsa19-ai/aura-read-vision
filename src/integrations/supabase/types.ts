@@ -453,6 +453,39 @@ export type Database = {
         }
         Relationships: []
       }
+      whitelisted_ips: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          created_at: string
+          description: string
+          expires_at: string | null
+          id: string
+          ip_address: string
+          metadata: Json | null
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          created_at?: string
+          description: string
+          expires_at?: string | null
+          id?: string
+          ip_address: string
+          metadata?: Json | null
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          created_at?: string
+          description?: string
+          expires_at?: string | null
+          id?: string
+          ip_address?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -469,6 +502,7 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_ip_blocked: { Args: { check_ip: string }; Returns: boolean }
+      is_ip_whitelisted: { Args: { check_ip: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "premium" | "free"

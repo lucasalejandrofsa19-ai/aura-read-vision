@@ -70,36 +70,45 @@ serve(async (req) => {
 
     console.log(`[VERIFY-PREMIUM] Checking access for user: ${user.id}`);
 
-    // Check if IP is blocked
-    const { data: isBlocked } = await supabaseClient.rpc('is_ip_blocked', { 
+    // Check if IP is whitelisted (skip blocking check if whitelisted)
+    const { data: isWhitelisted } = await supabaseClient.rpc('is_ip_whitelisted', { 
       check_ip: ipAddress 
     });
 
-    if (isBlocked) {
-      console.warn(`[VERIFY-PREMIUM] Blocked IP attempt: ${ipAddress}`);
-      
-      // Audit log: Blocked IP attempt
-      await supabaseClient.from('premium_access_audit').insert({
-        user_id: user.id,
-        action: 'validate',
-        feature: 'premium_access_check',
-        ip_address: ipAddress,
-        user_agent: userAgent,
-        granted: false,
-        reason: 'ip_blocked',
-        metadata: { ip_address: ipAddress },
+    if (!isWhitelisted) {
+      // Check if IP is blocked only if not whitelisted
+      const { data: isBlocked } = await supabaseClient.rpc('is_ip_blocked', { 
+        check_ip: ipAddress 
       });
 
-      return new Response(
-        JSON.stringify({ 
-          error: 'Access denied. Your IP address has been blocked.',
-          hasPremiumAccess: false 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 403 
-        }
-      );
+      if (isBlocked) {
+        console.warn(`[VERIFY-PREMIUM] Blocked IP attempt: ${ipAddress}`);
+        
+        // Audit log: Blocked IP attempt
+        await supabaseClient.from('premium_access_audit').insert({
+          user_id: user.id,
+          action: 'validate',
+          feature: 'premium_access_check',
+          ip_address: ipAddress,
+          user_agent: userAgent,
+          granted: false,
+          reason: 'ip_blocked',
+          metadata: { ip_address: ipAddress },
+        });
+
+        return new Response(
+          JSON.stringify({ 
+            error: 'Access denied. Your IP address has been blocked.',
+            hasPremiumAccess: false 
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 403 
+          }
+        );
+      }
+    } else {
+      console.log(`[VERIFY-PREMIUM] IP ${ipAddress} is whitelisted, bypassing block check`);
     }
 
     // Apply rate limiting
