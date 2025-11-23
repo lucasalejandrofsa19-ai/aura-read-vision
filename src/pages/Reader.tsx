@@ -455,6 +455,16 @@ const Reader = () => {
           handleExitPresentationMode();
           toast.info("Ver lista de destaques");
         }}
+        highlights={getHighlightsForPage(currentPage)
+          .filter(h => h.position_data)
+          .map(h => ({
+            id: h.id,
+            x: (h.position_data as any).x,
+            y: (h.position_data as any).y,
+            width: (h.position_data as any).width,
+            height: (h.position_data as any).height,
+            color: h.color || "#fef08a",
+          }))}
       />
     );
   }

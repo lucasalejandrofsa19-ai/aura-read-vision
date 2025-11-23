@@ -11,6 +11,7 @@ import {
   Highlighter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HighlightCanvas } from "@/components/HighlightCanvas";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -25,6 +26,14 @@ interface PresentationModeProps {
   onPageChange?: (page: number) => void;
   highlightCount?: number;
   onOpenHighlights?: () => void;
+  highlights?: Array<{
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    color: string;
+  }>;
 }
 
 export const PresentationMode = ({
@@ -35,12 +44,14 @@ export const PresentationMode = ({
   onPageChange,
   highlightCount = 0,
   onOpenHighlights,
+  highlights = [],
 }: PresentationModeProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
   const [scale, setScale] = useState<number>(1.2);
   const [showControls, setShowControls] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
+  const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
   const hideControlsTimeout = useState<NodeJS.Timeout | null>(null)[1];
 
   const goToPrevPage = useCallback(() => {
@@ -208,28 +219,48 @@ export const PresentationMode = ({
 
       {/* PDF Document */}
       <div className="w-full h-full flex items-center justify-center overflow-auto">
-        <Document
-          file={fileUrl}
-          onLoadSuccess={onDocumentLoadSuccess}
-          loading={
-            <div className="flex items-center justify-center p-12">
-              <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin" />
-            </div>
-          }
-          error={
-            <div className="p-12 text-center">
-              <p className="text-white">Erro ao carregar o PDF</p>
-            </div>
-          }
-        >
-          <Page
-            pageNumber={pageNumber}
-            scale={scale}
-            renderTextLayer={true}
-            renderAnnotationLayer={false}
-            className="shadow-2xl"
-          />
-        </Document>
+        <div className="relative">
+          <Document
+            file={fileUrl}
+            onLoadSuccess={onDocumentLoadSuccess}
+            loading={
+              <div className="flex items-center justify-center p-12">
+                <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin" />
+              </div>
+            }
+            error={
+              <div className="p-12 text-center">
+                <p className="text-white">Erro ao carregar o PDF</p>
+              </div>
+            }
+          >
+            <Page
+              pageNumber={pageNumber}
+              scale={scale}
+              renderTextLayer={true}
+              renderAnnotationLayer={false}
+              className="shadow-2xl"
+              onLoadSuccess={(page) => {
+                setPageSize({
+                  width: page.width,
+                  height: page.height,
+                });
+              }}
+            />
+          </Document>
+          
+          {/* Highlight Canvas Overlay */}
+          {pageSize.width > 0 && pageSize.height > 0 && highlights.length > 0 && (
+            <HighlightCanvas
+              pageNumber={pageNumber}
+              highlights={highlights}
+              isDrawingMode={false}
+              highlightColor="#fef08a"
+              canvasWidth={pageSize.width}
+              canvasHeight={pageSize.height}
+            />
+          )}
+        </div>
       </div>
 
       {/* Navigation Arrows - Left */}
