@@ -24,6 +24,7 @@ import AdminPanel from "./pages/AdminPanel";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import AdminFeedback from "./pages/AdminFeedback";
 import AdminAuditLogs from "./pages/AdminAuditLogs";
+import AdminBlockedIPs from "./pages/AdminBlockedIPs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const AppContent = () => {
       <Route path="/admin/analytics" element={<AdminAnalytics />} />
       <Route path="/admin/feedback" element={<AdminFeedback />} />
       <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+      <Route path="/admin/blocked-ips" element={<AdminBlockedIPs />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </SentryRoutes>

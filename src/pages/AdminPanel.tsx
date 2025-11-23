@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect, useMemo } from "react";
-import { Shield, Users, ArrowLeft, Crown, Star, TrendingUp, Search, UserPlus, Filter, X, MessageSquare } from "lucide-react";
+import { Shield, Users, ArrowLeft, Crown, Star, TrendingUp, Search, UserPlus, Filter, X, MessageSquare, Ban } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -258,6 +258,13 @@ const AdminPanel = () => {
             >
               <Shield className="w-4 h-4 mr-2" />
               Auditoria
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/admin/blocked-ips")}
+            >
+              <Ban className="w-4 h-4 mr-2" />
+              IPs Bloqueados
             </Button>
             <Button
               variant="outline"
