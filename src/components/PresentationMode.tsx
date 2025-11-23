@@ -34,6 +34,7 @@ interface PresentationModeProps {
     height: number;
     color: string;
   }>;
+  onHighlightAdded?: (highlight: { x: number; y: number; width: number; height: number }) => void;
 }
 
 export const PresentationMode = ({
@@ -45,6 +46,7 @@ export const PresentationMode = ({
   highlightCount = 0,
   onOpenHighlights,
   highlights = [],
+  onHighlightAdded,
 }: PresentationModeProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
@@ -52,6 +54,8 @@ export const PresentationMode = ({
   const [showControls, setShowControls] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
+  const [isHighlightMode, setIsHighlightMode] = useState(false);
+  const [highlightColor, setHighlightColor] = useState("#fef08a");
   const hideControlsTimeout = useState<NodeJS.Timeout | null>(null)[1];
 
   const goToPrevPage = useCallback(() => {
@@ -102,7 +106,11 @@ export const PresentationMode = ({
           break;
         case "Escape":
           e.preventDefault();
-          onClose();
+          if (isHighlightMode) {
+            setIsHighlightMode(false);
+          } else {
+            onClose();
+          }
           break;
         case "+":
         case "=":
@@ -112,6 +120,11 @@ export const PresentationMode = ({
         case "-":
           e.preventDefault();
           zoomOut();
+          break;
+        case "h":
+        case "H":
+          e.preventDefault();
+          setIsHighlightMode((prev) => !prev);
           break;
         case "i":
         case "I":
@@ -123,7 +136,7 @@ export const PresentationMode = ({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [goToPrevPage, goToNextPage, onClose]);
+  }, [goToPrevPage, goToNextPage, onClose, isHighlightMode]);
 
   // Auto-hide controls
   useEffect(() => {
@@ -207,6 +220,7 @@ export const PresentationMode = ({
               <p>← → : Navegar páginas</p>
               <p>Espaço : Próxima página</p>
               <p>+ / - : Zoom</p>
+              <p>H : Destacar texto</p>
               <p>I : Mostrar/ocultar info</p>
               <p>ESC : Sair</p>
               <p className="pt-2 border-t border-white/20">
@@ -250,14 +264,15 @@ export const PresentationMode = ({
           </Document>
           
           {/* Highlight Canvas Overlay */}
-          {pageSize.width > 0 && pageSize.height > 0 && highlights.length > 0 && (
+          {pageSize.width > 0 && pageSize.height > 0 && (
             <HighlightCanvas
               pageNumber={pageNumber}
               highlights={highlights}
-              isDrawingMode={false}
-              highlightColor="#fef08a"
+              isDrawingMode={isHighlightMode}
+              highlightColor={highlightColor}
               canvasWidth={pageSize.width}
               canvasHeight={pageSize.height}
+              onHighlightAdded={onHighlightAdded}
             />
           )}
         </div>
@@ -340,6 +355,16 @@ export const PresentationMode = ({
               </Button>
 
               <div className="h-8 w-px bg-white/20 mx-2" />
+
+              <Button
+                variant={isHighlightMode ? "default" : "ghost"}
+                size="icon"
+                onClick={() => setIsHighlightMode(!isHighlightMode)}
+                className={`${isHighlightMode ? "bg-primary text-primary-foreground" : "text-white hover:bg-white/20"} relative`}
+                title={isHighlightMode ? "Desativar modo destaque (H)" : "Ativar modo destaque (H)"}
+              >
+                <Highlighter className="w-5 h-5" />
+              </Button>
 
               <Button
                 variant="ghost"
