@@ -48,7 +48,7 @@ const PLANS: Record<string, PlanFeatures> = {
     name: "Pro",
     price: "R$ 19,90",
     period: "/mês",
-    priceId: "price_1SSeWJFGn21ViXD31bV8SnrT",
+    priceId: "price_1SX79qFGn21ViXD3SRtlkbgi",
     icon: Zap,
     color: "from-blue-500 to-blue-700",
     popular: true,
@@ -68,7 +68,7 @@ const PLANS: Record<string, PlanFeatures> = {
     name: "Premium",
     price: "R$ 39,90",
     period: "/mês",
-    priceId: "price_1SSeZkFGn21ViXD3ajyV2R0i",
+    priceId: "price_1SX79rFGn21ViXD3aVs533MV",
     icon: Crown,
     color: "from-purple-500 to-purple-700",
     features: [
@@ -117,8 +117,8 @@ export default function Pricing() {
   const isCurrentPlan = (key: string) => {
     if (!subscribed) return key === "free";
     const productMap: Record<string, string> = {
-      pro: "prod_RfVJArvA0fJgFM",
-      premium: "prod_RfVLqwOqGhJcIB"
+      pro: "prod_TU5KTScAQUJOkS",
+      premium: "prod_TU5KLqyK3KGUSd"
     };
     return productMap[key] === product_id;
   };
