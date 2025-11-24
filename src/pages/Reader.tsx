@@ -278,15 +278,18 @@ const Reader = () => {
   };
 
   const handleHighlightDrawn = async (coords: { x: number; y: number; width: number; height: number }) => {
-    await addHighlight(currentPage, "", highlightColor, coords);
-    playSound('highlight');
+    const result = await addHighlight(currentPage, "", highlightColor, coords);
     
-    // Se não estiver em modo rápido, desativa o modo de desenho
-    if (!isQuickHighlightMode) {
-      setIsHighlightDrawMode(false);
-      toast.success("Destaque adicionado!");
-    } else {
-      toast.success("Destaque adicionado! Continue destacando ou clique em Cancelar");
+    if (result) {
+      playSound('highlight');
+      
+      // Se não estiver em modo rápido, desativa o modo de desenho
+      if (!isQuickHighlightMode) {
+        setIsHighlightDrawMode(false);
+        toast.success("Destaque adicionado!");
+      } else {
+        toast.success("Destaque adicionado! Continue destacando ou clique em Cancelar");
+      }
     }
   };
 
