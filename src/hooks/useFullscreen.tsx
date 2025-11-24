@@ -19,6 +19,7 @@ export const useFullscreen = () => {
       // Check if fullscreen is supported
       if (!document.documentElement.requestFullscreen) {
         console.log("Fullscreen não suportado neste dispositivo");
+        setIsFullscreen(false);
         return false;
       }
       await document.documentElement.requestFullscreen();
@@ -26,6 +27,7 @@ export const useFullscreen = () => {
       return true;
     } catch (error) {
       console.error("Erro ao entrar em tela cheia:", error);
+      setIsFullscreen(false);
       return false;
     }
   }, []);

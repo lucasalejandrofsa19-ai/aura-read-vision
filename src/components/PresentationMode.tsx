@@ -288,7 +288,16 @@ export const PresentationMode = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center">
+    <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center" style={{ 
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100vw',
+      height: '100vh',
+      overflow: 'hidden'
+    }}>
       {/* Top Controls */}
       {mobileConfig.shouldReduceAnimations ? (
         showControls && (
