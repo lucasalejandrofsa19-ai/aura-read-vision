@@ -79,16 +79,24 @@ export default {
         "card-swipe": {
           "0%": {
             left: "-100%",
+            opacity: "0",
+          },
+          "10%": {
+            opacity: "1",
+          },
+          "90%": {
+            opacity: "1",
           },
           "100%": {
             left: "200%",
+            opacity: "0",
           },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "card-swipe": "card-swipe 2s ease-in-out infinite",
+        "card-swipe": "card-swipe 3s ease-in-out infinite",
       },
     },
   },
