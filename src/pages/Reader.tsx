@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
+import { useMobileOptimization } from "@/hooks/useMobileOptimization";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowLeft,
@@ -64,6 +65,7 @@ const Reader = () => {
   const [scale, setScale] = useState(1.0);
   const [isHighlightDrawMode, setIsHighlightDrawMode] = useState(false);
   const [isQuickHighlightMode, setIsQuickHighlightMode] = useState(false);
+  const mobileConfig = useMobileOptimization();
 
   const {
     highlights,
@@ -481,12 +483,20 @@ const Reader = () => {
     );
   }
 
+  const MotionHeader = mobileConfig.shouldReduceAnimations ? 'header' : motion.header;
+  const MotionMain = mobileConfig.shouldReduceAnimations ? 'main' : motion.main;
+  const headerProps = mobileConfig.shouldReduceAnimations 
+    ? {} 
+    : { initial: { opacity: 0, y: -20 }, animate: { opacity: 1, y: 0 } };
+  const mainProps = mobileConfig.shouldReduceAnimations
+    ? {}
+    : { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { delay: 0.2 } };
+
   return (
     <div className="min-h-screen bg-background transition-colors duration-500">
       {/* Toolbar */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+      <MotionHeader
+        {...headerProps}
         className="glass sticky top-0 z-50 border-b border-border/50"
       >
         <div className="max-w-6xl mx-auto px-4 py-4">
@@ -683,13 +693,11 @@ const Reader = () => {
             </Button>
           </div>
         </div>
-      </motion.header>
+      </MotionHeader>
 
       {/* Content */}
-      <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
+      <MotionMain
+        {...mainProps}
         className="max-w-5xl mx-auto px-6 py-12 space-y-6"
       >
         {/* Highlights List */}
@@ -738,7 +746,7 @@ const Reader = () => {
                   color: h.color || "#fef08a",
                 }))}
               bookmarkIndicator={
-                bookmarkedPage === currentPage && (
+                bookmarkedPage === currentPage && !mobileConfig.shouldReduceAnimations ? (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -747,7 +755,12 @@ const Reader = () => {
                     <BookmarkCheck className="w-6 h-6" />
                     <span className="text-base">Página marcada</span>
                   </motion.div>
-                )
+                ) : bookmarkedPage === currentPage ? (
+                  <div className="bg-accent/90 backdrop-blur text-accent-foreground px-6 py-3 rounded-full shadow-xl border-2 border-accent flex items-center gap-3 font-semibold">
+                    <BookmarkCheck className="w-6 h-6" />
+                    <span className="text-base">Página marcada</span>
+                  </div>
+                ) : null
               }
             />
         ) : (
@@ -755,7 +768,7 @@ const Reader = () => {
             <p className="text-muted-foreground">Nenhum arquivo PDF disponível</p>
           </div>
         )}
-      </motion.main>
+      </MotionMain>
 
       {/* Floating Controls for Mobile */}
       <FloatingControls

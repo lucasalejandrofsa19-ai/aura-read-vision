@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMobileOptimization } from "@/hooks/useMobileOptimization";
 import { Document, Page, pdfjs } from "react-pdf";
 import {
   X,
@@ -59,9 +60,10 @@ export const PresentationMode = ({
   onHighlightAdded,
   extractedText = "",
 }: PresentationModeProps) => {
+  const mobileConfig = useMobileOptimization();
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
-  const [scale, setScale] = useState<number>(1.2);
+  const [scale, setScale] = useState<number>(mobileConfig.isMobile ? 1.0 : 1.2);
   const [showControls, setShowControls] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
@@ -288,14 +290,9 @@ export const PresentationMode = ({
   return (
     <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center">
       {/* Top Controls */}
-      <AnimatePresence>
-        {showControls && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4"
-          >
+      {mobileConfig.shouldReduceAnimations ? (
+        showControls && (
+          <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <h1 className="text-white font-semibold text-lg truncate max-w-md">
@@ -319,9 +316,44 @@ export const PresentationMode = ({
                 <X className="w-6 h-6" />
               </Button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        )
+      ) : (
+        <AnimatePresence>
+          {showControls && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4"
+            >
+              <div className="max-w-7xl mx-auto flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <h1 className="text-white font-semibold text-lg truncate max-w-md">
+                    {bookTitle}
+                  </h1>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowInfo(!showInfo)}
+                    className="text-white hover:bg-white/20"
+                  >
+                    <Info className="w-5 h-5" />
+                  </Button>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="text-white hover:bg-white/20"
+                >
+                  <X className="w-6 h-6" />
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
 
       {/* Info Panel */}
       <AnimatePresence>
@@ -418,14 +450,9 @@ export const PresentationMode = ({
       </div>
 
       {/* Navigation Arrows - Left */}
-      <AnimatePresence>
-        {showControls && pageNumber > 1 && (
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="fixed left-4 top-1/2 -translate-y-1/2 z-50"
-          >
+      {mobileConfig.shouldReduceAnimations ? (
+        showControls && pageNumber > 1 && (
+          <div className="fixed left-4 top-1/2 -translate-y-1/2 z-50">
             <Button
               variant="ghost"
               size="icon"
@@ -434,19 +461,34 @@ export const PresentationMode = ({
             >
               <ChevronLeft className="w-8 h-8" />
             </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        )
+      ) : (
+        <AnimatePresence>
+          {showControls && pageNumber > 1 && (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="fixed left-4 top-1/2 -translate-y-1/2 z-50"
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={goToPrevPage}
+                className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
+              >
+                <ChevronLeft className="w-8 h-8" />
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
 
       {/* Navigation Arrows - Right */}
-      <AnimatePresence>
-        {showControls && pageNumber < numPages && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="fixed right-4 top-1/2 -translate-y-1/2 z-50"
-          >
+      {mobileConfig.shouldReduceAnimations ? (
+        showControls && pageNumber < numPages && (
+          <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50">
             <Button
               variant="ghost"
               size="icon"
@@ -455,19 +497,135 @@ export const PresentationMode = ({
             >
               <ChevronRight className="w-8 h-8" />
             </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        )
+      ) : (
+        <AnimatePresence>
+          {showControls && pageNumber < numPages && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="fixed right-4 top-1/2 -translate-y-1/2 z-50"
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={goToNextPage}
+                className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
+              >
+                <ChevronRight className="w-8 h-8" />
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
 
       {/* Bottom Controls */}
-      <AnimatePresence>
-        {showControls && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4"
-          >
+      {mobileConfig.shouldReduceAnimations ? (
+        showControls && (
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4">
+            <div className="max-w-7xl mx-auto flex items-center justify-center gap-4 flex-wrap">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={zoomOut}
+                disabled={scale <= 0.5}
+                className="text-white hover:bg-white/20"
+              >
+                <ZoomOut className="w-5 h-5" />
+              </Button>
+
+              <div className="glass-dark px-4 py-2 rounded-full text-white font-medium">
+                <span className="text-lg">{Math.round(scale * 100)}%</span>
+              </div>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={zoomIn}
+                disabled={scale >= 3.0}
+                className="text-white hover:bg-white/20"
+              >
+                <ZoomIn className="w-5 h-5" />
+              </Button>
+
+              <div className="h-8 w-px bg-white/20 mx-2" />
+
+              <Button
+                variant={isHighlightMode ? "default" : "ghost"}
+                size="icon"
+                onClick={() => setIsHighlightMode(!isHighlightMode)}
+                className="text-white hover:bg-white/20"
+                title="Destacar (H)"
+              >
+                <Highlighter className="w-5 h-5" />
+              </Button>
+
+              {isHighlightMode && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowColorPicker(!showColorPicker)}
+                    className="text-white hover:bg-white/20"
+                    title="Cor do destaque"
+                  >
+                    <Palette className="w-5 h-5" style={{ color: highlightColor }} />
+                  </Button>
+
+                  {showColorPicker && (
+                    <div className="glass-dark p-2 rounded-lg flex gap-2">
+                      {highlightColors.map(({ color, name }) => (
+                        <button
+                          key={color}
+                          onClick={() => {
+                            setHighlightColor(color);
+                            setShowColorPicker(false);
+                          }}
+                          className={`w-8 h-8 rounded-full border-2 ${
+                            highlightColor === color ? "border-white" : "border-transparent"
+                          }`}
+                          style={{ backgroundColor: color }}
+                          title={name}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleSpeak}
+                className="text-white hover:bg-white/20"
+                title="Ler em voz alta"
+              >
+                <Volume2 className="w-5 h-5" />
+              </Button>
+
+              {highlightCount > 0 && onOpenHighlights && (
+                <Button
+                  variant="ghost"
+                  onClick={onOpenHighlights}
+                  className="text-white hover:bg-white/20 px-4"
+                >
+                  {highlightCount} {highlightCount === 1 ? "Destaque" : "Destaques"}
+                </Button>
+              )}
+            </div>
+          </div>
+        )
+      ) : (
+        <AnimatePresence>
+          {showControls && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4"
+            >
             <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
               <Button
                 variant="ghost"
@@ -585,6 +743,7 @@ export const PresentationMode = ({
           </motion.div>
         )}
       </AnimatePresence>
+      )}
 
       {/* Color Picker */}
       <AnimatePresence>
