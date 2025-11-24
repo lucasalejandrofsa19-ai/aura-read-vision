@@ -20,12 +20,14 @@ import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Profile = () => {
   const navigate = useNavigate();
   const { user, subscriptionTier } = useAuth();
   const { theme } = useTheme();
   const { isAdmin, hasPremiumAccess } = useUserRole();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -140,8 +142,8 @@ const Profile = () => {
       <div className="container max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={isMobile ? false : { opacity: 0, y: -20 }}
+          animate={isMobile ? false : { opacity: 1, y: 0 }}
           className="flex items-center gap-4 mb-8"
         >
           <button
@@ -153,18 +155,18 @@ const Profile = () => {
           <div className="flex-1">
             <div className="flex items-center gap-3 flex-wrap">
               <motion.h1 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5 }}
+                initial={isMobile ? false : { opacity: 0, x: -20 }}
+                animate={isMobile ? false : { opacity: 1, x: 0 }}
+                transition={isMobile ? undefined : { duration: 0.5 }}
                 className="text-3xl font-bold"
               >
                 Configurações do Perfil
               </motion.h1>
               {isAdmin && (
                 <motion.div 
-                  initial={{ opacity: 0, scale: 0.8, y: -10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ 
+                  initial={isMobile ? false : { opacity: 0, scale: 0.8, y: -10 }}
+                  animate={isMobile ? false : { opacity: 1, scale: 1, y: 0 }}
+                  transition={isMobile ? undefined : { 
                     duration: 0.5, 
                     delay: 0.2,
                     type: "spring",
@@ -182,20 +184,22 @@ const Profile = () => {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <motion.div 
-                        initial={{ opacity: 0, scale: 0.8, y: -10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        transition={{ 
+                        initial={isMobile ? false : { opacity: 0, scale: 0.8, y: -10 }}
+                        animate={isMobile ? false : { opacity: 1, scale: 1, y: 0 }}
+                        transition={isMobile ? undefined : { 
                           duration: 0.5, 
                           delay: isAdmin ? 0.35 : 0.2,
                           type: "spring",
                           stiffness: 200,
                           damping: 15
                         }}
-                         className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 overflow-hidden cursor-help"
+                         className={`relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 ${!isMobile ? 'overflow-hidden' : ''} cursor-help`}
                       >
                         <Crown className="w-3.5 h-3.5 text-purple-500 relative z-10" />
                         <span className="text-xs font-semibold text-purple-500 relative z-10">Premium</span>
-                        <div className="absolute inset-0 -left-full w-[150%] h-full bg-gradient-to-r from-transparent via-white/70 to-transparent animate-card-swipe will-change-transform" />
+                        {!isMobile && (
+                          <div className="absolute inset-0 -left-full w-[150%] h-full bg-gradient-to-r from-transparent via-white/70 to-transparent animate-card-swipe will-change-transform" />
+                        )}
                       </motion.div>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-xs">
