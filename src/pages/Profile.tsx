@@ -195,7 +195,7 @@ const Profile = () => {
                       >
                         <Crown className="w-3.5 h-3.5 text-purple-500 relative z-10" />
                         <span className="text-xs font-semibold text-purple-500 relative z-10">Premium</span>
-                        <div className="absolute inset-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-card-swipe" />
+                        <div className="absolute inset-0 -left-full w-[200%] h-full bg-gradient-to-r from-transparent via-white/90 to-transparent blur-[2px] animate-card-swipe" />
                       </motion.div>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-xs">
