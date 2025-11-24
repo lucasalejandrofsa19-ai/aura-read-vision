@@ -27,3 +27,6 @@ verify_jwt = false
 [functions.check-ip-reputation]
 verify_jwt = false
 
+[functions.stripe-webhook]
+verify_jwt = false
+
