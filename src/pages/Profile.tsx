@@ -151,21 +151,50 @@ const Profile = () => {
           </button>
           <div className="flex-1">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-3xl font-bold">Configurações do Perfil</h1>
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+                className="text-3xl font-bold"
+              >
+                Configurações do Perfil
+              </motion.h1>
               {isAdmin && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ 
+                    duration: 0.5, 
+                    delay: 0.2,
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 15
+                  }}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30"
+                >
                   <Shield className="w-3.5 h-3.5 text-red-500" />
                   <span className="text-xs font-semibold text-red-500">Admin</span>
-                </div>
+                </motion.div>
               )}
               {hasPremiumAccess && (
-                <div className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 overflow-hidden">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ 
+                    duration: 0.5, 
+                    delay: isAdmin ? 0.35 : 0.2,
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 15
+                  }}
+                  className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 overflow-hidden"
+                >
                   <Crown className="w-3.5 h-3.5 text-purple-500 relative z-10" />
                   <span className="text-xs font-semibold text-purple-500 relative z-10">Premium</span>
                   <div className="absolute inset-0 w-full h-full animate-card-swipe">
                     <div className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full" />
                   </div>
-                </div>
+                </motion.div>
               )}
             </div>
             {isAdmin && (
