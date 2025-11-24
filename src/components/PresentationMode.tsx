@@ -415,10 +415,6 @@ export const PresentationMode = ({
       <div 
         ref={pdfContainerRef} 
         className="w-full h-full flex items-center justify-center overflow-auto"
-        style={{
-          paddingTop: mobileConfig.isMobile ? '60px' : '0',
-          paddingBottom: mobileConfig.isMobile ? '80px' : '0',
-        }}
       >
         <div className="relative">
           <Document
