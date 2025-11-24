@@ -12,7 +12,7 @@ const SUBSCRIPTION_PLANS = {
   pro: {
     name: "Pro",
     price: "R$ 19,90",
-    priceId: "price_1SSeWJFGn21ViXD31bV8SnrT",
+    priceId: "price_1SX79qFGn21ViXD3SRtlkbgi",
     features: [
       "Até 100 PDFs",
       "Todos os recursos básicos",
@@ -24,7 +24,7 @@ const SUBSCRIPTION_PLANS = {
   premium: {
     name: "Premium",
     price: "R$ 39,90",
-    priceId: "price_1SSeZkFGn21ViXD3ajyV2R0i",
+    priceId: "price_1SX79rFGn21ViXD3aVs533MV",
     features: [
       "PDFs ilimitados",
       "Todos os recursos Pro",
@@ -47,8 +47,8 @@ const SubscriptionDialog = ({ open, onOpenChange }: SubscriptionDialogProps) => 
     if (!subscribed) return false;
     // Map plan keys to product IDs
     const productMap: Record<string, string> = {
-      pro: "prod_RfVJArvA0fJgFM",
-      premium: "prod_RfVLqwOqGhJcIB"
+      pro: "prod_TU5KTScAQUJOkS",
+      premium: "prod_TU5KLqyK3KGUSd"
     };
     return productMap[key] === product_id;
   };

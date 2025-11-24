@@ -14,8 +14,8 @@ const logStep = (step: string, details?: any) => {
 
 // Map Stripe product IDs to roles
 const PRODUCT_ROLE_MAP: Record<string, string> = {
-  "prod_RfVLqwOqGhJcIB": "premium", // Premium plan
-  "prod_RfVJArvA0fJgFM": "premium", // Pro plan (also gets premium role)
+  "prod_TU5KLqyK3KGUSd": "premium", // Premium plan
+  "prod_TU5KTScAQUJOkS": "premium", // Pro plan (also gets premium role)
 };
 
 serve(async (req) => {
