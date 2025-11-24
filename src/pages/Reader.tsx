@@ -105,7 +105,7 @@ const Reader = () => {
   };
 
   const { enterFullscreen } = useFullscreen();
-  const { subscriptionTier, user } = useAuth();
+  const { user } = useAuth();
   const { validatePremiumAccess } = usePremiumValidation();
   const { playSound } = useSoundEffects();
   const { startSession, endSession, updateSession, isSessionActive } = useReadingSession(id || "");

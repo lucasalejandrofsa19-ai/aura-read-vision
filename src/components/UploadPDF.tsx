@@ -16,7 +16,7 @@ interface UploadPDFProps {
 const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { user, subscriptionTier } = useAuth();
+  const { user } = useAuth();
   const { trackClick, trackAsyncOperation } = useSentryTracking();
   const queryClient = useQueryClient();
   const { generateCover } = useGenerateCover();
@@ -48,7 +48,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
       .select("*", { count: "exact", head: true })
       .eq("user_id", user.id);
 
-    const maxBooks = subscriptionTier === "premium" ? 1000 : subscriptionTier === "pro" ? 100 : 5;
+    const maxBooks = 5;
     
     if ((count || 0) >= maxBooks) {
       toast.error(`Limite de ${maxBooks} livros atingido. Faça upgrade para adicionar mais!`);
@@ -140,7 +140,6 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
       },
       {
         fileSize: file.size,
-        subscriptionTier,
         fileName: file.name,
       }
     );

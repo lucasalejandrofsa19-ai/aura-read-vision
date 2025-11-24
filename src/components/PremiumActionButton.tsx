@@ -29,9 +29,7 @@ export const PremiumActionButton = ({
   className = "",
 }: PremiumActionButtonProps) => {
   const navigate = useNavigate();
-  const { subscriptionTier } = useAuth();
-  // Use client-side check only for UI display
-  const isPremium = subscriptionTier === "premium" || subscriptionTier === "pro";
+  const isPremium = false;
 
   const handleClick = () => {
     // UI-level check for immediate feedback

@@ -1,11 +1,5 @@
-import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
-import { captureError } from "@/lib/sentry";
 
 interface SubscriptionDialogProps {
   open: boolean;
@@ -41,43 +35,6 @@ const SUBSCRIPTION_PLANS = {
 };
 
 const SubscriptionDialog = ({ open, onOpenChange }: SubscriptionDialogProps) => {
-  const [loading, setLoading] = useState<string | null>(null);
-  const { session } = useAuth();
-
-  const handleSubscribe = async (priceId: string, planName: string) => {
-    if (!session) {
-      toast.error("Faça login para assinar");
-      return;
-    }
-
-    setLoading(planName);
-
-    try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) {
-        console.error("Erro ao criar checkout:", error);
-        throw error;
-      }
-
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      } else {
-        throw new Error("URL de checkout não retornada");
-      }
-    } catch (error) {
-      console.error("Erro completo:", error);
-      captureError(error, { context: "subscription_checkout" });
-      toast.error("Erro ao iniciar assinatura. Verifique o console para mais detalhes.");
-    } finally {
-      setLoading(null);
-    }
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -109,13 +66,9 @@ const SubscriptionDialog = ({ open, onOpenChange }: SubscriptionDialogProps) => 
                 ))}
               </ul>
 
-              <Button
-                onClick={() => handleSubscribe(plan.priceId, plan.name)}
-                disabled={loading !== null}
-                className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
-              >
-                {loading === plan.name ? "Processando..." : "Assinar Agora"}
-              </Button>
+              <div className="text-center text-sm text-muted-foreground">
+                Em breve: Sistema de pagamento
+              </div>
             </div>
           ))}
         </div>

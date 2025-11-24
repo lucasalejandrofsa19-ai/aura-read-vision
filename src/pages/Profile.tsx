@@ -27,7 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, subscriptionTier } = useAuth();
+  const { user } = useAuth();
   const { theme } = useTheme();
   const { isAdmin, hasPremiumAccess } = useUserRole();
   const isMobile = useIsMobile();
@@ -552,44 +552,19 @@ const Profile = () => {
                 {/* Current Plan */}
                 <div className="flex items-start justify-between p-4 rounded-lg border bg-card">
                   <div className="flex items-start gap-4">
-                    <div className={`p-3 rounded-full ${
-                      subscriptionTier === "premium" ? "bg-gradient-to-br from-purple-500 to-purple-700" :
-                      subscriptionTier === "pro" ? "bg-gradient-to-br from-blue-500 to-blue-700" :
-                      "bg-gradient-to-br from-slate-500 to-slate-700"
-                    }`}>
+                    <div className="p-3 rounded-full bg-gradient-to-br from-slate-500 to-slate-700">
                       <Crown className="w-6 h-6 text-white" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg mb-1">
-                        Plano {subscriptionTier === "free" ? "Gratuito" : subscriptionTier === "pro" ? "Pro" : "Premium"}
+                        Plano Gratuito
                       </h3>
                       <p className="text-sm text-muted-foreground mb-3">
-                        {subscriptionTier === "premium" && "Acesso completo a todos os recursos premium"}
-                        {subscriptionTier === "pro" && "Recursos avançados de leitura"}
-                        {subscriptionTier === "free" && "Recursos básicos de leitura"}
+                        Recursos básicos de leitura
                       </p>
                       <div className="flex flex-col gap-1 text-sm">
-                        {subscriptionTier === "free" && (
-                          <>
-                            <span className="text-muted-foreground">• Até 5 PDFs</span>
-                            <span className="text-muted-foreground">• Destaques básicos</span>
-                          </>
-                        )}
-                        {subscriptionTier === "pro" && (
-                          <>
-                            <span className="text-muted-foreground">• Até 100 PDFs</span>
-                            <span className="text-muted-foreground">• Exportação de anotações</span>
-                            <span className="text-muted-foreground">• Modo de apresentação</span>
-                          </>
-                        )}
-                        {subscriptionTier === "premium" && (
-                          <>
-                            <span className="text-muted-foreground">• PDFs ilimitados</span>
-                            <span className="text-muted-foreground">• Leitura em voz alta</span>
-                            <span className="text-muted-foreground">• Modo de leitura focada</span>
-                            <span className="text-muted-foreground">• Suporte prioritário</span>
-                          </>
-                        )}
+                        <span className="text-muted-foreground">• Até 5 PDFs</span>
+                        <span className="text-muted-foreground">• Destaques básicos</span>
                       </div>
                     </div>
                   </div>
@@ -597,26 +572,13 @@ const Profile = () => {
 
                 {/* Actions */}
                 <div className="flex gap-3">
-                  {subscriptionTier === "free" && (
-                    <Button
-                      onClick={() => navigate("/pricing")}
-                      className="flex-1 bg-gradient-to-r from-primary to-accent hover:opacity-90"
-                    >
-                      <Crown className="w-4 h-4 mr-2" />
-                      Ver Planos Premium
-                    </Button>
-                  )}
-                  {(subscriptionTier === "pro" || subscriptionTier === "premium") && (
-                    <>
-                      <Button
-                        variant="outline"
-                        onClick={() => navigate("/pricing")}
-                        className="flex-1"
-                      >
-                        Ver Outros Planos
-                      </Button>
-                    </>
-                  )}
+                  <Button
+                    onClick={() => navigate("/pricing")}
+                    className="flex-1 bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    Ver Planos Premium
+                  </Button>
                 </div>
               </CardContent>
             </Card>
