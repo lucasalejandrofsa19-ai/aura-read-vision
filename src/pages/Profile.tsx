@@ -15,6 +15,7 @@ import { ThemeSelector } from "@/components/ThemeSelector";
 import { ProfileHighlights } from "@/components/ProfileHighlights";
 import { ReadingStatsCard } from "@/components/ReadingStatsCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -177,24 +178,45 @@ const Profile = () => {
                 </motion.div>
               )}
               {hasPremiumAccess && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.8, y: -10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ 
-                    duration: 0.5, 
-                    delay: isAdmin ? 0.35 : 0.2,
-                    type: "spring",
-                    stiffness: 200,
-                    damping: 15
-                  }}
-                  className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 overflow-hidden"
-                >
-                  <Crown className="w-3.5 h-3.5 text-purple-500 relative z-10" />
-                  <span className="text-xs font-semibold text-purple-500 relative z-10">Premium</span>
-                  <div className="absolute inset-0 w-full h-full animate-card-swipe">
-                    <div className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full" />
-                  </div>
-                </motion.div>
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ 
+                          duration: 0.5, 
+                          delay: isAdmin ? 0.35 : 0.2,
+                          type: "spring",
+                          stiffness: 200,
+                          damping: 15
+                        }}
+                        className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 overflow-hidden cursor-help"
+                      >
+                        <Crown className="w-3.5 h-3.5 text-purple-500 relative z-10" />
+                        <span className="text-xs font-semibold text-purple-500 relative z-10">Premium</span>
+                        <div className="absolute inset-0 w-full h-full animate-card-swipe">
+                          <div className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full" />
+                        </div>
+                      </motion.div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <div className="space-y-2">
+                        <p className="font-semibold text-sm flex items-center gap-1">
+                          <Crown className="w-4 h-4 text-purple-500" />
+                          Benefícios Premium
+                        </p>
+                        <ul className="text-xs space-y-1 text-muted-foreground">
+                          <li>✓ Upload ilimitado de livros</li>
+                          <li>✓ Acesso a livros premium exclusivos</li>
+                          <li>✓ Geração de imagens para destaques</li>
+                          <li>✓ Estatísticas avançadas de leitura</li>
+                          <li>✓ Suporte prioritário</li>
+                        </ul>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
             {isAdmin && (
