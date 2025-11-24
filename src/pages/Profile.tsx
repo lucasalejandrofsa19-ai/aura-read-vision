@@ -159,9 +159,12 @@ const Profile = () => {
                 </div>
               )}
               {hasPremiumAccess && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30">
-                  <Crown className="w-3.5 h-3.5 text-purple-500" />
-                  <span className="text-xs font-semibold text-purple-500">Premium</span>
+                <div className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 overflow-hidden">
+                  <Crown className="w-3.5 h-3.5 text-purple-500 relative z-10" />
+                  <span className="text-xs font-semibold text-purple-500 relative z-10">Premium</span>
+                  <div className="absolute inset-0 w-full h-full animate-card-swipe">
+                    <div className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full" />
+                  </div>
                 </div>
               )}
             </div>
