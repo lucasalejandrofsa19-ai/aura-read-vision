@@ -24,7 +24,7 @@ const MemoizedBookCard = memo(BookCard);
 const Library = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
-  const { user, signOut, subscriptionTier } = useAuth();
+  const { user, signOut } = useAuth();
   const { isAdmin, hasPremiumAccess } = useUserData();
   const { books, premiumBooks, isLoading } = useBooks();
   const navigate = useNavigate();
@@ -162,7 +162,7 @@ const Library = () => {
                 <FeedbackDialog />
               </>
             )}
-            {subscriptionTier === "free" && (
+            {true && (
               <div className="flex flex-col gap-2">
                 <Button
                   variant="outline"
@@ -176,7 +176,7 @@ const Library = () => {
                 <FeedbackDialog />
               </div>
             )}
-            {subscriptionTier !== "free" && !isAdmin && (
+            {false && !isAdmin && (
               <FeedbackDialog />
             )}
             <PWAInstallDialog>
@@ -191,7 +191,7 @@ const Library = () => {
             </PWAInstallDialog>
           </div>
           <p className="text-sm text-muted-foreground ml-auto">
-            {books.length} livros na sua coleção • Plano {subscriptionTier === "free" ? "Gratuito" : subscriptionTier === "pro" ? "Pro" : "Premium"}
+            {books.length} livros na sua coleção
           </p>
         </div>
 

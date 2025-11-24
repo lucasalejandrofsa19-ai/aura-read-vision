@@ -1,14 +1,9 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, ArrowLeft, Sparkles, Zap, Crown } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { captureError } from "@/lib/sentry";
 
 interface PlanFeatures {
   name: string;
@@ -95,86 +90,6 @@ const PLANS: Record<string, PlanFeatures> = {
 
 export default function Pricing() {
   const navigate = useNavigate();
-  const { user, subscriptionTier } = useAuth();
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-
-  const handleSubscribe = async (priceId: string, planName: string) => {
-    if (!user) {
-      toast.error("Faça login para assinar");
-      navigate("/auth");
-      return;
-    }
-
-    setLoadingPlan(planName);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        navigate("/auth");
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) {
-        console.error("Erro ao criar checkout:", error);
-        throw error;
-      }
-
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      } else {
-        throw new Error("URL de checkout não retornada");
-      }
-    } catch (error) {
-      console.error("Erro completo:", error);
-      captureError(error, { context: "create-checkout", priceId, planName });
-      toast.error("Erro ao processar assinatura. Verifique o console para mais detalhes.");
-    } finally {
-      setLoadingPlan(null);
-    }
-  };
-
-  const getPlanButton = (planKey: string) => {
-    const plan = PLANS[planKey as keyof typeof PLANS];
-    
-    if (planKey === "free") {
-      return (
-        <Button variant="outline" disabled className="w-full">
-          Plano Atual
-        </Button>
-      );
-    }
-
-    const isCurrentPlan = 
-      (subscriptionTier === "pro" && planKey === "pro") ||
-      (subscriptionTier === "premium" && planKey === "premium");
-
-    if (isCurrentPlan) {
-      return (
-        <Button variant="outline" disabled className="w-full">
-          <Check className="mr-2 h-4 w-4" />
-          Plano Atual
-        </Button>
-      );
-    }
-
-    return (
-      <Button
-        className="w-full"
-        onClick={() => handleSubscribe(plan.priceId!, plan.name)}
-        disabled={loadingPlan === plan.name}
-      >
-        {loadingPlan === plan.name ? "Processando..." : "Assinar Agora"}
-      </Button>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
@@ -204,10 +119,6 @@ export default function Pricing() {
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {Object.entries(PLANS).map(([key, plan], index) => {
             const Icon = plan.icon;
-            const isCurrentPlan = 
-              (subscriptionTier === "free" && key === "free") ||
-              (subscriptionTier === "pro" && key === "pro") ||
-              (subscriptionTier === "premium" && key === "premium");
 
             return (
               <motion.div
@@ -218,17 +129,12 @@ export default function Pricing() {
               >
                 <Card 
                   className={`relative h-full ${
-                    isCurrentPlan ? "border-primary shadow-lg shadow-primary/20" : ""
-                  } ${plan.popular ? "border-blue-500 shadow-lg shadow-blue-500/20" : ""}`}
+                    plan.popular ? "border-blue-500 shadow-lg shadow-blue-500/20" : ""
+                  }`}
                 >
                   {plan.popular && (
                     <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500">
                       Mais Popular
-                    </Badge>
-                  )}
-                  {isCurrentPlan && (
-                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
-                      Seu Plano
                     </Badge>
                   )}
                   
@@ -262,7 +168,9 @@ export default function Pricing() {
                   </CardContent>
 
                   <CardFooter className="pt-6">
-                    {getPlanButton(key)}
+                    <div className="w-full text-center text-sm text-muted-foreground">
+                      Em breve: Sistema de pagamento
+                    </div>
                   </CardFooter>
                 </Card>
               </motion.div>
@@ -276,8 +184,7 @@ export default function Pricing() {
           transition={{ delay: 0.5 }}
           className="mt-16 text-center text-muted-foreground"
         >
-          <p className="mb-2">Todas as assinaturas podem ser canceladas a qualquer momento.</p>
-          <p>Pagamento 100% seguro processado pelo Stripe.</p>
+          <p>Sistema de pagamento em breve.</p>
         </motion.div>
       </div>
     </div>
