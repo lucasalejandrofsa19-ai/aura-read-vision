@@ -45,6 +45,9 @@ export const PresentationMode = memo(({
   const { user } = useAuth();
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout>();
   
+  // Desabilita animações do Framer Motion
+  const shouldAnimate = false;
+  
   // Load zoom sensitivity from profile
   useEffect(() => {
     const loadZoomSensitivity = async () => {
@@ -257,7 +260,7 @@ export const PresentationMode = memo(({
     }}>
       {/* Top Controls - Sempre sem animação para melhor performance */}
       {showControls && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4 transition-opacity duration-200">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h1 className="text-white font-semibold text-lg truncate max-w-md">
@@ -286,7 +289,7 @@ export const PresentationMode = memo(({
 
       {/* Info Panel - Sem animação */}
       {showInfo && (
-        <div className="fixed top-20 right-4 z-50 glass-dark p-4 rounded-lg max-w-xs transition-opacity duration-200">
+        <div className="fixed top-20 right-4 z-50 glass-dark p-4 rounded-lg max-w-xs">
             <h3 className="text-white font-semibold mb-2">Atalhos</h3>
             <div className="space-y-1 text-sm text-white/80">
               <p>← → : Navegar páginas</p>
@@ -362,7 +365,7 @@ export const PresentationMode = memo(({
 
       {/* Navigation Arrows - Left - Sem animação */}
       {showControls && pageNumber > 1 && (
-        <div className="fixed left-4 top-1/2 -translate-y-1/2 z-50 transition-opacity duration-200">
+        <div className="fixed left-4 top-1/2 -translate-y-1/2 z-50">
           <Button
             variant="ghost"
             size="icon"
@@ -377,7 +380,7 @@ export const PresentationMode = memo(({
 
       {/* Navigation Arrows - Right - Sem animação */}
       {showControls && pageNumber < numPages && (
-        <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 transition-opacity duration-200">
+        <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50">
           <Button
             variant="ghost"
             size="icon"
@@ -392,7 +395,7 @@ export const PresentationMode = memo(({
 
       {/* Bottom Controls - Sem animação */}
       {showControls && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-200">
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4">
           <div className="max-w-7xl mx-auto flex items-center justify-center gap-4 flex-wrap">
             <Button
               variant="ghost"
