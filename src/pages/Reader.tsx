@@ -463,14 +463,17 @@ const Reader = () => {
         initialPage={currentPage}
         bookTitle={book.title}
         onClose={handleExitPresentationMode}
-        onPageChange={handlePageChange}
+        onPageChange={(page) => {
+          setCurrentPage(page);
+          handlePageChange(page);
+        }}
         highlightCount={highlights.length}
         onOpenHighlights={() => {
           handleExitPresentationMode();
           toast.info("Ver lista de destaques");
         }}
-        highlights={getHighlightsForPage(currentPage)
-          .filter(h => h.position_data)
+        highlights={highlights
+          .filter(h => h.page_number === currentPage && h.position_data)
           .map(h => ({
             id: h.id,
             text: h.text,
@@ -481,9 +484,10 @@ const Reader = () => {
             color: h.color || "#fef08a",
           }))}
         onHighlightAdded={async (coords) => {
-          await addHighlight(currentPage, "", highlightColor, coords);
-          playSound('highlight');
-          toast.success("Destaque adicionado!");
+          const result = await addHighlight(currentPage, "", highlightColor, coords);
+          if (result) {
+            playSound('highlight');
+          }
         }}
         extractedText={book?.extracted_text || ""}
       />
