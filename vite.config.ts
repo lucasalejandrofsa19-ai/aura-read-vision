@@ -15,6 +15,9 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
+      devOptions: {
+        enabled: false
+      },
       includeAssets: ['favicon.ico', 'robots.txt'],
       manifest: {
         name: 'AURA READ - Biblioteca Interativa',
@@ -52,6 +55,8 @@ export default defineConfig(({ mode }) => ({
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB for PDFs
         skipWaiting: true,
         clientsClaim: true,
+        cleanupOutdatedCaches: true,
+        sourcemap: false,
         runtimeCaching: [
           // Google Fonts
           {
