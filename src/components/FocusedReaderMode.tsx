@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { X, Eye, Moon, Sun, Contrast } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Document, Page, pdfjs } from "react-pdf";
@@ -96,22 +95,13 @@ export const FocusedReaderMode = ({
   const currentStyle = readingModeStyles[readingMode];
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className={`fixed inset-0 z-[100] ${currentStyle.bg} ${currentStyle.text} transition-colors duration-500`}
+    <div
+      className={`fixed inset-0 z-[100] ${currentStyle.bg} ${currentStyle.text}`}
       onMouseMove={handleMouseMove}
     >
       {/* Top Controls */}
-      <AnimatePresence>
-        {showControls && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-0 left-0 right-0 z-[101] p-4"
-          >
+      {showControls && (
+        <div className="fixed top-0 left-0 right-0 z-[101] p-4">
             <div className="max-w-7xl mx-auto flex items-center justify-between backdrop-blur-xl bg-background/80 rounded-lg px-6 py-3 shadow-lg border border-border/50">
               <div className="flex items-center gap-4">
                 <Button
@@ -146,11 +136,10 @@ export const FocusedReaderMode = ({
                     </Button>
                   );
                 })}
-              </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
 
       {/* PDF Content */}
       <div className="h-full flex items-center justify-center p-8 overflow-auto">
@@ -185,14 +174,8 @@ export const FocusedReaderMode = ({
       </div>
 
       {/* Bottom Controls */}
-      <AnimatePresence>
-        {showControls && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-0 left-0 right-0 z-[101] p-4"
-          >
+      {showControls && (
+        <div className="fixed bottom-0 left-0 right-0 z-[101] p-4">
             <div className="max-w-3xl mx-auto backdrop-blur-xl bg-background/80 rounded-lg px-6 py-3 shadow-lg border border-border/50">
               <div className="flex items-center justify-between">
                 <Button
@@ -252,25 +235,17 @@ export const FocusedReaderMode = ({
                 />
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* Hint */}
-      <AnimatePresence>
-        {showControls && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[100]"
-          >
-            <div className="backdrop-blur-xl bg-background/60 rounded-full px-4 py-2 text-xs text-muted-foreground border border-border/30">
-              Use ← → para navegar • ESC para sair
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {showControls && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[100]">
+          <div className="backdrop-blur-xl bg-background/60 rounded-full px-4 py-2 text-xs text-muted-foreground border border-border/30">
+            Use ← → para navegar • ESC para sair
+          </div>
+        </div>
+      )}
 
       <style>{`
         .slider-thumb::-webkit-slider-thumb {
@@ -298,6 +273,6 @@ export const FocusedReaderMode = ({
           transform: scale(1.2);
         }
       `}</style>
-    </motion.div>
+    </div>
   );
 };

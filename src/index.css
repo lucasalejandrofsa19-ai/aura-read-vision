@@ -7,6 +7,14 @@ All colors MUST be HSL.
 */
 
 @layer base {
+  /* Desabilita todas animações para performance máxima no PWA */
+  *, *::before, *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+
   /* Theme: Safira (Default) */
   :root,
   .theme-safira {
@@ -245,37 +253,29 @@ All colors MUST be HSL.
     }
   }
   
-  /* Glassmorphism utility */
+  
+  /* Glassmorphism utility - Simplificado */
   .glass {
     background: var(--glass-bg);
-    backdrop-filter: blur(12px) saturate(180%);
     border: 1px solid var(--glass-border);
   }
   
-  /* Aura glow effects */
-  .aura-safira {
-    box-shadow: var(--glow-safira);
-  }
-  
-  .aura-amber {
-    box-shadow: var(--glow-amber);
-  }
-  
+  /* Aura glow effects - Desabilitados para performance */
+  .aura-safira,
+  .aura-amber,
   .aura-soft {
-    box-shadow: var(--glow-soft);
+    box-shadow: none;
   }
   
   /* Glass dark for presentation mode */
   .glass-dark {
     background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
-  /* Smooth transitions */
+  /* Smooth transitions - Desabilitadas */
   .transition-aura {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: none;
   }
   
   /* Touch-friendly buttons and interactive elements */
