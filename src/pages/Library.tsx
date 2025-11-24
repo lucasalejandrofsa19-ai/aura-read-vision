@@ -15,6 +15,8 @@ import SubscriptionDialog from "@/components/SubscriptionDialog";
 import { PWAInstallDialog } from "@/components/PWAInstallDialog";
 import { LibraryTour } from "@/components/LibraryTour";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
+import { LazyLoadWrapper } from "@/components/LazyLoadWrapper";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Memoizar BookCard para evitar re-renders desnecessários
 const MemoizedBookCard = memo(BookCard);
@@ -262,12 +264,23 @@ const Library = () => {
                 >
                   {premiumBooksWithFlag.map((book, index) => (
                     <div key={book.id} className="flex-shrink-0 w-48">
-                      <MemoizedBookCard 
-                        book={book} 
-                        index={index} 
-                        isPremiumBook={true}
-                        isAdmin={isAdmin}
-                      />
+                      <LazyLoadWrapper
+                        minHeight="280px"
+                        rootMargin="200px"
+                        fallback={
+                          <div className="space-y-2">
+                            <Skeleton className="h-64 w-full rounded-lg" />
+                            <Skeleton className="h-4 w-3/4" />
+                          </div>
+                        }
+                      >
+                        <MemoizedBookCard 
+                          book={book} 
+                          index={index} 
+                          isPremiumBook={true}
+                          isAdmin={isAdmin}
+                        />
+                      </LazyLoadWrapper>
                     </div>
                   ))}
                 </div>
@@ -335,11 +348,22 @@ const Library = () => {
                 >
                   {filteredBooks.map((book, index) => (
                     <div key={book.id} className="flex-shrink-0 w-48">
-                      <MemoizedBookCard 
-                        book={book} 
-                        index={index} 
-                        data-tour={index === 0 ? "book-card" : undefined}
-                      />
+                      <LazyLoadWrapper
+                        minHeight="280px"
+                        rootMargin="200px"
+                        fallback={
+                          <div className="space-y-2">
+                            <Skeleton className="h-64 w-full rounded-lg" />
+                            <Skeleton className="h-4 w-3/4" />
+                          </div>
+                        }
+                      >
+                        <MemoizedBookCard 
+                          book={book} 
+                          index={index} 
+                          data-tour={index === 0 ? "book-card" : undefined}
+                        />
+                      </LazyLoadWrapper>
                     </div>
                   ))}
                 </div>

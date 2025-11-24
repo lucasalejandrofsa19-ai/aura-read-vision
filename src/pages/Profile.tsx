@@ -21,6 +21,8 @@ import { captureError } from "@/lib/sentry";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { LazyLoadWrapper } from "@/components/LazyLoadWrapper";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -471,7 +473,24 @@ const Profile = () => {
           </TabsContent>
 
           <TabsContent value="stats" className="space-y-6">
-            <ReadingStatsCard />
+            <LazyLoadWrapper
+              minHeight="300px"
+              fallback={
+                <Card>
+                  <CardHeader>
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-4 w-64 mt-2" />
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                  </CardContent>
+                </Card>
+              }
+            >
+              <ReadingStatsCard />
+            </LazyLoadWrapper>
           </TabsContent>
 
           <TabsContent value="subscription" className="space-y-6">
@@ -568,7 +587,19 @@ const Profile = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ProfileHighlights />
+                <LazyLoadWrapper
+                  minHeight="400px"
+                  fallback={
+                    <div className="space-y-4">
+                      <Skeleton className="h-8 w-full" />
+                      <Skeleton className="h-32 w-full" />
+                      <Skeleton className="h-32 w-full" />
+                      <Skeleton className="h-32 w-full" />
+                    </div>
+                  }
+                >
+                  <ProfileHighlights />
+                </LazyLoadWrapper>
               </CardContent>
             </Card>
           </TabsContent>
