@@ -337,6 +337,7 @@ export type Database = {
           subscription_tier: string | null
           theme_preference: string | null
           updated_at: string | null
+          zoom_sensitivity: number | null
         }
         Insert: {
           avatar_url?: string | null
@@ -356,6 +357,7 @@ export type Database = {
           subscription_tier?: string | null
           theme_preference?: string | null
           updated_at?: string | null
+          zoom_sensitivity?: number | null
         }
         Update: {
           avatar_url?: string | null
@@ -375,6 +377,7 @@ export type Database = {
           subscription_tier?: string | null
           theme_preference?: string | null
           updated_at?: string | null
+          zoom_sensitivity?: number | null
         }
         Relationships: []
       }
