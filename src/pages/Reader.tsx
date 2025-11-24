@@ -314,9 +314,14 @@ const Reader = () => {
   };
 
   const handleEnterPresentationMode = async () => {
-    await enterFullscreen();
+    const fullscreenSuccess = await enterFullscreen();
     setIsPresentationMode(true);
-    toast.success("Modo apresentação ativado");
+    
+    if (fullscreenSuccess) {
+      toast.success("Modo apresentação ativado");
+    } else {
+      toast.success("Modo apresentação ativado (tela cheia não disponível)");
+    }
   };
 
   const handleExitPresentationMode = () => {
