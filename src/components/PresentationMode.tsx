@@ -71,7 +71,6 @@ export const PresentationMode = ({
   const [highlightColor, setHighlightColor] = useState("#fef08a");
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [zoomSensitivity, setZoomSensitivity] = useState(1.0);
-  const hideControlsTimeout = useState<NodeJS.Timeout | null>(null)[1];
   const { user } = useAuth();
   
   // Paleta de cores para destaques

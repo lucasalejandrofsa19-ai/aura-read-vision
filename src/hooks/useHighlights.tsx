@@ -47,7 +47,7 @@ export const useHighlights = (bookId: string) => {
   ) => {
     if (!user) {
       toast.error("Você precisa estar logado");
-      return;
+      return null;
     }
 
     try {
@@ -72,6 +72,7 @@ export const useHighlights = (bookId: string) => {
     } catch (error) {
       captureError(error, { context: "add_highlight" });
       toast.error("Erro ao adicionar destaque");
+      return null;
     }
   };
 

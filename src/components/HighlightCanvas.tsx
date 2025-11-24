@@ -102,6 +102,24 @@ export const HighlightCanvas = ({
   useEffect(() => {
     if (!fabricCanvas) return;
 
+    const cleanup = () => {
+      fabricCanvas.off("mouse:down", handleMouseDown);
+      fabricCanvas.off("mouse:move", handleMouseMove);
+      fabricCanvas.off("mouse:up", handleMouseUp);
+      
+      if (isTouchDevice) {
+        const canvas = fabricCanvas.getElement();
+        if (canvas) {
+          canvas.removeEventListener('touchstart', handleTouchStart);
+          canvas.removeEventListener('touchmove', handleTouchMove);
+          canvas.removeEventListener('touchend', handleTouchEnd);
+        }
+      }
+    };
+
+    // Cleanup previous listeners first
+    cleanup();
+
     if (isDrawingMode) {
       // Enable drawing - both mouse and touch events
       fabricCanvas.on("mouse:down", handleMouseDown);
@@ -111,23 +129,13 @@ export const HighlightCanvas = ({
       // Add touch event listeners for better mobile support
       if (isTouchDevice) {
         const canvas = fabricCanvas.getElement();
-        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-        canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+        if (canvas) {
+          canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+          canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+          canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+        }
       }
     } else {
-      // Disable drawing
-      fabricCanvas.off("mouse:down", handleMouseDown);
-      fabricCanvas.off("mouse:move", handleMouseMove);
-      fabricCanvas.off("mouse:up", handleMouseUp);
-      
-      if (isTouchDevice) {
-        const canvas = fabricCanvas.getElement();
-        canvas.removeEventListener('touchstart', handleTouchStart);
-        canvas.removeEventListener('touchmove', handleTouchMove);
-        canvas.removeEventListener('touchend', handleTouchEnd);
-      }
-      
       setIsDrawing(false);
       setStartPoint(null);
       if (drawingRectRef.current) {
@@ -136,18 +144,7 @@ export const HighlightCanvas = ({
       }
     }
 
-    return () => {
-      fabricCanvas.off("mouse:down", handleMouseDown);
-      fabricCanvas.off("mouse:move", handleMouseMove);
-      fabricCanvas.off("mouse:up", handleMouseUp);
-      
-      if (isTouchDevice && fabricCanvas.getElement()) {
-        const canvas = fabricCanvas.getElement();
-        canvas.removeEventListener('touchstart', handleTouchStart);
-        canvas.removeEventListener('touchmove', handleTouchMove);
-        canvas.removeEventListener('touchend', handleTouchEnd);
-      }
-    };
+    return cleanup;
   }, [isDrawingMode, fabricCanvas, highlightColor, isTouchDevice]);
 
   const handleMouseDown = (e: any) => {
