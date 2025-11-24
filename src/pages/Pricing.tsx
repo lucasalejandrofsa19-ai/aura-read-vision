@@ -1,9 +1,12 @@
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowLeft, Sparkles, Zap, Crown } from "lucide-react";
+import { Check, ArrowLeft, Sparkles, Zap, Crown, Loader2 } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 interface PlanFeatures {
   name: string;
@@ -90,6 +93,35 @@ const PLANS: Record<string, PlanFeatures> = {
 
 export default function Pricing() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { createCheckout, openCustomerPortal, subscribed, product_id, loading, checkSubscription } = useSubscription();
+
+  useEffect(() => {
+    const success = searchParams.get("success");
+    const canceled = searchParams.get("canceled");
+
+    if (success) {
+      toast.success("Assinatura realizada com sucesso!");
+      checkSubscription();
+      window.history.replaceState({}, "", "/pricing");
+    } else if (canceled) {
+      toast.error("Assinatura cancelada");
+      window.history.replaceState({}, "", "/pricing");
+    }
+  }, [searchParams, checkSubscription]);
+
+  const handleSubscribe = async (priceId: string) => {
+    await createCheckout(priceId);
+  };
+
+  const isCurrentPlan = (key: string) => {
+    if (!subscribed) return key === "free";
+    const productMap: Record<string, string> = {
+      pro: "prod_RfVJArvA0fJgFM",
+      premium: "prod_RfVLqwOqGhJcIB"
+    };
+    return productMap[key] === product_id;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
@@ -168,9 +200,27 @@ export default function Pricing() {
                   </CardContent>
 
                   <CardFooter className="pt-6">
-                    <div className="w-full text-center text-sm text-muted-foreground">
-                      Em breve: Sistema de pagamento
-                    </div>
+                    {key !== "free" && plan.priceId && (
+                      <Button
+                        onClick={() => handleSubscribe(plan.priceId!)}
+                        disabled={loading || isCurrentPlan(key)}
+                        className="w-full"
+                        variant={isCurrentPlan(key) ? "outline" : "default"}
+                      >
+                        {loading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : isCurrentPlan(key) ? (
+                          "Plano Atual"
+                        ) : (
+                          "Assinar Agora"
+                        )}
+                      </Button>
+                    )}
+                    {key === "free" && (
+                      <div className="w-full text-center text-sm text-muted-foreground">
+                        Plano Gratuito
+                      </div>
+                    )}
                   </CardFooter>
                 </Card>
               </motion.div>
@@ -178,13 +228,33 @@ export default function Pricing() {
           })}
         </div>
 
+        {subscribed && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mt-12"
+          >
+            <Button
+              onClick={openCustomerPortal}
+              variant="outline"
+              size="lg"
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
+              Gerenciar Assinatura
+            </Button>
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
           className="mt-16 text-center text-muted-foreground"
         >
-          <p>Sistema de pagamento em breve.</p>
+          <p>Pagamentos processados de forma segura pelo Stripe</p>
         </motion.div>
       </div>
     </div>

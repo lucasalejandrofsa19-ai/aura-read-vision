@@ -1,5 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Check, Loader2 } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface SubscriptionDialogProps {
   open: boolean;
@@ -35,6 +37,21 @@ const SUBSCRIPTION_PLANS = {
 };
 
 const SubscriptionDialog = ({ open, onOpenChange }: SubscriptionDialogProps) => {
+  const { createCheckout, subscribed, product_id, loading } = useSubscription();
+
+  const handleSubscribe = async (priceId: string) => {
+    await createCheckout(priceId);
+  };
+
+  const isCurrentPlan = (key: string) => {
+    if (!subscribed) return false;
+    // Map plan keys to product IDs
+    const productMap: Record<string, string> = {
+      pro: "prod_RfVJArvA0fJgFM",
+      premium: "prod_RfVLqwOqGhJcIB"
+    };
+    return productMap[key] === product_id;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -66,9 +83,20 @@ const SubscriptionDialog = ({ open, onOpenChange }: SubscriptionDialogProps) => 
                 ))}
               </ul>
 
-              <div className="text-center text-sm text-muted-foreground">
-                Em breve: Sistema de pagamento
-              </div>
+              <Button
+                onClick={() => handleSubscribe(plan.priceId)}
+                disabled={loading || isCurrentPlan(key)}
+                className="w-full"
+                variant={isCurrentPlan(key) ? "outline" : "default"}
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : isCurrentPlan(key) ? (
+                  "Plano Atual"
+                ) : (
+                  "Assinar"
+                )}
+              </Button>
             </div>
           ))}
         </div>
