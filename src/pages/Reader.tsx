@@ -316,13 +316,20 @@ const Reader = () => {
   };
 
   const handleEnterPresentationMode = async () => {
-    const fullscreenSuccess = await enterFullscreen();
+    // Ativa o modo de apresentação primeiro
     setIsPresentationMode(true);
     
-    if (fullscreenSuccess) {
+    // Tenta entrar em fullscreen (opcional, pode falhar no mobile)
+    try {
+      const fullscreenSuccess = await enterFullscreen();
+      if (fullscreenSuccess) {
+        toast.success("Modo apresentação ativado");
+      } else {
+        toast.success("Modo apresentação ativado");
+      }
+    } catch (error) {
+      console.error("Erro ao ativar fullscreen:", error);
       toast.success("Modo apresentação ativado");
-    } else {
-      toast.success("Modo apresentação ativado (tela cheia não disponível)");
     }
   };
 
