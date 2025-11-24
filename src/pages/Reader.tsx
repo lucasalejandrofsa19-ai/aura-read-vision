@@ -470,29 +470,6 @@ const Reader = () => {
           setCurrentPage(page);
           handlePageChange(page);
         }}
-        highlightCount={highlights.length}
-        onOpenHighlights={() => {
-          handleExitPresentationMode();
-          toast.info("Ver lista de destaques");
-        }}
-        highlights={highlights
-          .filter(h => h.page_number === currentPage && h.position_data)
-          .map(h => ({
-            id: h.id,
-            text: h.text,
-            x: (h.position_data as any).x,
-            y: (h.position_data as any).y,
-            width: (h.position_data as any).width,
-            height: (h.position_data as any).height,
-            color: h.color || "#fef08a",
-          }))}
-        onHighlightAdded={async (coords) => {
-          const result = await addHighlight(currentPage, "", highlightColor, coords);
-          if (result) {
-            playSound('highlight');
-          }
-        }}
-        extractedText={book?.extracted_text || ""}
       />
     );
   }
