@@ -18,6 +18,8 @@ import { TextToSpeechControls } from "@/components/TextToSpeechControls";
 import { HighlightImageDialog } from "@/components/HighlightImageDialog";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -66,6 +68,38 @@ export const PresentationMode = ({
   const [highlightColor, setHighlightColor] = useState("#fef08a");
   const [zoomSensitivity, setZoomSensitivity] = useState(1.0);
   const hideControlsTimeout = useState<NodeJS.Timeout | null>(null)[1];
+  const { user } = useAuth();
+  
+  // Load zoom sensitivity from profile
+  useEffect(() => {
+    const loadZoomSensitivity = async () => {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("zoom_sensitivity")
+        .eq("id", user.id)
+        .single();
+      
+      if (!error && data?.zoom_sensitivity) {
+        setZoomSensitivity(data.zoom_sensitivity);
+      }
+    };
+    
+    loadZoomSensitivity();
+  }, [user]);
+  
+  // Save zoom sensitivity to profile
+  const handleZoomSensitivityChange = async (value: number) => {
+    setZoomSensitivity(value);
+    
+    if (!user) return;
+    
+    await supabase
+      .from("profiles")
+      .update({ zoom_sensitivity: value })
+      .eq("id", user.id);
+  };
   
   // Text-to-speech
   const tts = useTextToSpeech();
@@ -309,7 +343,7 @@ export const PresentationMode = ({
                 max="2"
                 step="0.1"
                 value={zoomSensitivity}
-                onChange={(e) => setZoomSensitivity(parseFloat(e.target.value))}
+                onChange={(e) => handleZoomSensitivityChange(parseFloat(e.target.value))}
                 className="w-full accent-primary"
               />
               <div className="flex justify-between text-xs text-white/60 mt-1">
