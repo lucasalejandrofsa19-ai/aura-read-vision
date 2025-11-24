@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useIsMobile } from "./use-mobile";
+import { usePerformanceMode } from "./usePerformanceMode";
 
 interface MobileOptimizationConfig {
   isMobile: boolean;
@@ -11,6 +12,7 @@ interface MobileOptimizationConfig {
 
 export const useMobileOptimization = (): MobileOptimizationConfig => {
   const isMobile = useIsMobile();
+  const { isUltraPerformanceMode, loading } = usePerformanceMode();
   const [config, setConfig] = useState<MobileOptimizationConfig>({
     isMobile: false,
     shouldReduceAnimations: false,
@@ -23,14 +25,17 @@ export const useMobileOptimization = (): MobileOptimizationConfig => {
     // Detecta se é mobile ou dispositivo com baixo desempenho
     const isLowPerformance = isMobile || navigator.hardwareConcurrency <= 4;
     
+    // Se modo ultra performance está ativo, força todas as otimizações
+    const forceOptimizations = isUltraPerformanceMode;
+    
     setConfig({
       isMobile,
-      shouldReduceAnimations: isLowPerformance,
-      shouldReduceEffects: isLowPerformance,
-      pdfScale: isMobile ? 0.8 : 1.0, // Reduz escala do PDF em mobile
-      imageQuality: isMobile ? 0.8 : 1.0,
+      shouldReduceAnimations: forceOptimizations || isLowPerformance,
+      shouldReduceEffects: forceOptimizations || isLowPerformance,
+      pdfScale: forceOptimizations || isMobile ? 0.8 : 1.0,
+      imageQuality: forceOptimizations || isMobile ? 0.8 : 1.0,
     });
-  }, [isMobile]);
+  }, [isMobile, isUltraPerformanceMode, loading]);
 
   return config;
 };

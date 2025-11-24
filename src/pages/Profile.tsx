@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Camera, Save, Crown, CreditCard, Shield, Volume2 } from "lucide-react";
+import { ArrowLeft, Camera, Save, Crown, CreditCard, Shield, Volume2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { usePerformanceMode } from "@/hooks/usePerformanceMode";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LazyLoadWrapper } from "@/components/LazyLoadWrapper";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,6 +36,7 @@ const Profile = () => {
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const { soundSettings, updateSoundSetting } = useSoundEffects();
+  const { isUltraPerformanceMode, togglePerformanceMode, loading: perfLoading } = usePerformanceMode();
 
   useEffect(() => {
     if (user) {
@@ -468,6 +470,48 @@ const Profile = () => {
                     }}
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Ultra Performance Mode Card */}
+            <Card className="border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-primary" />
+                  Modo Ultra Performance
+                </CardTitle>
+                <CardDescription>
+                  Desabilita todas as animações e efeitos visuais para máxima performance
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5 flex-1">
+                    <Label htmlFor="ultra-performance">Ativar Modo Ultra Performance</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Remove animações, transições e efeitos visuais complexos. 
+                      Recomendado para dispositivos mais antigos ou com desempenho limitado.
+                    </p>
+                  </div>
+                  <Switch
+                    id="ultra-performance"
+                    checked={isUltraPerformanceMode}
+                    onCheckedChange={togglePerformanceMode}
+                    disabled={perfLoading}
+                  />
+                </div>
+                
+                {isUltraPerformanceMode && (
+                  <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                    <p className="text-sm font-medium text-primary flex items-center gap-2">
+                      <Zap className="w-4 h-4" />
+                      Modo Ultra Performance Ativo
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Todas as animações e efeitos visuais estão desabilitados para melhor desempenho
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
