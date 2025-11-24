@@ -60,14 +60,20 @@ const SubscriptionDialog = ({ open, onOpenChange }: SubscriptionDialogProps) => 
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao criar checkout:", error);
+        throw error;
+      }
 
       if (data?.url) {
         window.open(data.url, "_blank");
+      } else {
+        throw new Error("URL de checkout não retornada");
       }
     } catch (error) {
+      console.error("Erro completo:", error);
       captureError(error, { context: "subscription_checkout" });
-      toast.error("Erro ao iniciar assinatura");
+      toast.error("Erro ao iniciar assinatura. Verifique o console para mais detalhes.");
     } finally {
       setLoading(null);
     }

@@ -22,10 +22,23 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
-    if (!user?.email) throw new Error("User not authenticated");
+    
+    if (!user?.email) {
+      console.error("User not authenticated or email not available");
+      throw new Error("User not authenticated");
+    }
 
     const { priceId } = await req.json();
-    if (!priceId) throw new Error("Price ID required");
+    if (!priceId) {
+      console.error("Price ID not provided");
+      throw new Error("Price ID required");
+    }
+
+    console.log("Creating checkout session for:", { 
+      userId: user.id, 
+      email: user.email, 
+      priceId 
+    });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -36,6 +49,7 @@ serve(async (req) => {
     
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
+      console.log("Existing customer found:", customerId);
     } else {
       // Create customer if doesn't exist
       const customer = await stripe.customers.create({
@@ -45,6 +59,7 @@ serve(async (req) => {
         },
       });
       customerId = customer.id;
+      console.log("New customer created:", customerId);
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -54,6 +69,8 @@ serve(async (req) => {
       success_url: `${req.headers.get("origin")}/library?checkout=success`,
       cancel_url: `${req.headers.get("origin")}/library?checkout=canceled`,
     });
+
+    console.log("Checkout session created:", session.id);
 
     return new Response(
       JSON.stringify({ url: session.url }),

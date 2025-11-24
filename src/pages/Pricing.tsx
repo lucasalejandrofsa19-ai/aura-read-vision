@@ -107,18 +107,35 @@ export default function Pricing() {
 
     setLoadingPlan(planName);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        navigate("/auth");
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: { priceId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao criar checkout:", error);
+        throw error;
+      }
 
       if (data?.url) {
         window.open(data.url, "_blank");
+      } else {
+        throw new Error("URL de checkout não retornada");
       }
     } catch (error) {
+      console.error("Erro completo:", error);
       captureError(error, { context: "create-checkout", priceId, planName });
-      toast.error("Erro ao processar assinatura. Tente novamente.");
+      toast.error("Erro ao processar assinatura. Verifique o console para mais detalhes.");
     } finally {
       setLoadingPlan(null);
     }
