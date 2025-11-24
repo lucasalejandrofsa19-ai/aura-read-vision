@@ -11,6 +11,7 @@ import {
   Highlighter,
   Image,
   Volume2,
+  Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HighlightCanvas } from "@/components/HighlightCanvas";
@@ -66,9 +67,22 @@ export const PresentationMode = ({
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
   const [isHighlightMode, setIsHighlightMode] = useState(false);
   const [highlightColor, setHighlightColor] = useState("#fef08a");
+  const [showColorPicker, setShowColorPicker] = useState(false);
   const [zoomSensitivity, setZoomSensitivity] = useState(1.0);
   const hideControlsTimeout = useState<NodeJS.Timeout | null>(null)[1];
   const { user } = useAuth();
+  
+  // Paleta de cores para destaques
+  const highlightColors = [
+    { color: "#fef08a", name: "Amarelo" },
+    { color: "#86efac", name: "Verde" },
+    { color: "#93c5fd", name: "Azul" },
+    { color: "#fda4af", name: "Rosa" },
+    { color: "#fbbf24", name: "Laranja" },
+    { color: "#c4b5fd", name: "Roxo" },
+    { color: "#fb923c", name: "Coral" },
+    { color: "#67e8f9", name: "Ciano" },
+  ];
   
   // Load zoom sensitivity from profile
   useEffect(() => {
@@ -489,6 +503,26 @@ export const PresentationMode = ({
                 title={isHighlightMode ? "Desativar modo destaque (H)" : "Ativar modo destaque (H)"}
               >
                 <Highlighter className="w-5 h-5" />
+                {isHighlightMode && (
+                  <div 
+                    className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white"
+                    style={{ backgroundColor: highlightColor }}
+                  />
+                )}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowColorPicker(!showColorPicker)}
+                className="text-white hover:bg-white/20 relative"
+                title="Escolher cor do destaque"
+              >
+                <Palette className="w-5 h-5" />
+                <div 
+                  className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white"
+                  style={{ backgroundColor: highlightColor }}
+                />
               </Button>
 
               <Button
@@ -547,6 +581,40 @@ export const PresentationMode = ({
                   {pageNumber} / {numPages}
                 </span>
               </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Color Picker */}
+      <AnimatePresence>
+        {showColorPicker && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 glass-dark p-4 rounded-lg"
+          >
+            <h3 className="text-white text-sm font-semibold mb-3 text-center">
+              Escolha a Cor do Destaque
+            </h3>
+            <div className="grid grid-cols-4 gap-3">
+              {highlightColors.map(({ color, name }) => (
+                <button
+                  key={color}
+                  onClick={() => {
+                    setHighlightColor(color);
+                    setShowColorPicker(false);
+                  }}
+                  className={`w-12 h-12 rounded-lg border-2 transition-all hover:scale-110 ${
+                    highlightColor === color 
+                      ? "border-white shadow-lg scale-105" 
+                      : "border-white/30"
+                  }`}
+                  style={{ backgroundColor: color }}
+                  title={name}
+                />
+              ))}
             </div>
           </motion.div>
         )}
