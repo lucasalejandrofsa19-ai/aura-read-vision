@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Document, Page, pdfjs } from "react-pdf";
 import {
@@ -9,10 +9,15 @@ import {
   ZoomOut,
   Info,
   Highlighter,
+  Image,
+  Volume2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HighlightCanvas } from "@/components/HighlightCanvas";
+import { TextToSpeechControls } from "@/components/TextToSpeechControls";
+import { HighlightImageDialog } from "@/components/HighlightImageDialog";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -28,6 +33,7 @@ interface PresentationModeProps {
   onOpenHighlights?: () => void;
   highlights?: Array<{
     id: string;
+    text: string;
     x: number;
     y: number;
     width: number;
@@ -35,6 +41,7 @@ interface PresentationModeProps {
     color: string;
   }>;
   onHighlightAdded?: (highlight: { x: number; y: number; width: number; height: number }) => void;
+  extractedText?: string;
 }
 
 export const PresentationMode = ({
@@ -47,6 +54,7 @@ export const PresentationMode = ({
   onOpenHighlights,
   highlights = [],
   onHighlightAdded,
+  extractedText = "",
 }: PresentationModeProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
@@ -57,6 +65,13 @@ export const PresentationMode = ({
   const [isHighlightMode, setIsHighlightMode] = useState(false);
   const [highlightColor, setHighlightColor] = useState("#fef08a");
   const hideControlsTimeout = useState<NodeJS.Timeout | null>(null)[1];
+  
+  // Text-to-speech
+  const tts = useTextToSpeech();
+  
+  // Touch gesture support for pinch-to-zoom
+  const touchStartRef = useRef<{ dist: number; scale: number } | null>(null);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
 
   const goToPrevPage = useCallback(() => {
     if (pageNumber > 1) {
@@ -81,6 +96,57 @@ export const PresentationMode = ({
   const zoomOut = () => {
     setScale((prev) => Math.max(prev - 0.2, 0.5));
   };
+
+  // Handle text-to-speech
+  const handleSpeak = () => {
+    if (extractedText) {
+      tts.speak(extractedText);
+    }
+  };
+
+  // Touch gesture handlers for pinch-to-zoom
+  const handleTouchStart = (e: TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      touchStartRef.current = { dist, scale };
+    }
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (e.touches.length === 2 && touchStartRef.current) {
+      e.preventDefault();
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const ratio = dist / touchStartRef.current.dist;
+      const newScale = Math.min(Math.max(touchStartRef.current.scale * ratio, 0.5), 3.0);
+      setScale(newScale);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartRef.current = null;
+  };
+
+  // Add touch event listeners
+  useEffect(() => {
+    const container = pdfContainerRef.current;
+    if (!container) return;
+
+    container.addEventListener('touchstart', handleTouchStart);
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [scale]);
 
   // Swipe gestures
   useSwipeGesture({
@@ -221,18 +287,20 @@ export const PresentationMode = ({
               <p>Espaço : Próxima página</p>
               <p>+ / - : Zoom</p>
               <p>H : Destacar texto</p>
+              <p>Ctrl+Shift+R : Ler em voz alta</p>
               <p>I : Mostrar/ocultar info</p>
               <p>ESC : Sair</p>
               <p className="pt-2 border-t border-white/20">
                 Deslize para navegar
               </p>
+              <p>Pinça para zoom (touch)</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* PDF Document */}
-      <div className="w-full h-full flex items-center justify-center overflow-auto">
+      <div ref={pdfContainerRef} className="w-full h-full flex items-center justify-center overflow-auto">
         <div className="relative">
           <Document
             file={fileUrl}
@@ -380,6 +448,40 @@ export const PresentationMode = ({
                   </span>
                 )}
               </Button>
+
+              {highlights.length > 0 && (
+                <HighlightImageDialog
+                  text={highlights[highlights.length - 1]?.text || ""}
+                  highlightId={highlights[highlights.length - 1]?.id || ""}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-white hover:bg-white/20"
+                      title="Gerar imagem do destaque"
+                    >
+                      <Image className="w-5 h-5" />
+                    </Button>
+                  }
+                />
+              )}
+
+              <div className="h-8 w-px bg-white/20 mx-2" />
+
+              <TextToSpeechControls
+                isSpeaking={tts.isSpeaking}
+                isPaused={tts.isPaused}
+                onSpeak={handleSpeak}
+                onStop={tts.stop}
+                onTogglePause={tts.togglePause}
+                voices={tts.voices}
+                selectedVoice={tts.selectedVoice}
+                onVoiceChange={tts.setSelectedVoice}
+                rate={tts.rate}
+                onRateChange={tts.setRate}
+                pitch={tts.pitch}
+                onPitchChange={tts.setPitch}
+              />
 
               <div className="h-8 w-px bg-white/20 mx-2" />
 

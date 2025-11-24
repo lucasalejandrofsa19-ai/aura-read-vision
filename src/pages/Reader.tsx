@@ -459,6 +459,7 @@ const Reader = () => {
           .filter(h => h.position_data)
           .map(h => ({
             id: h.id,
+            text: h.text,
             x: (h.position_data as any).x,
             y: (h.position_data as any).y,
             width: (h.position_data as any).width,
@@ -470,6 +471,7 @@ const Reader = () => {
           playSound('highlight');
           toast.success("Destaque adicionado!");
         }}
+        extractedText={book?.extracted_text || ""}
       />
     );
   }
