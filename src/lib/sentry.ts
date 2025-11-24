@@ -15,6 +15,8 @@ export const initSentry = () => {
     return;
   }
 
+  const isProduction = import.meta.env.MODE === 'production';
+  
   Sentry.init({
     dsn,
     integrations: [
@@ -31,11 +33,14 @@ export const initSentry = () => {
       }),
     ],
     // Performance Monitoring
-    tracesSampleRate: 1.0, // Capture 100% of transactions for performance monitoring
-    tracePropagationTargets: ["localhost", /^https:\/\/.*\.supabase\.co/],
+    // Produção: 10% das transações | Desenvolvimento: 100%
+    tracesSampleRate: isProduction ? 0.1 : 1.0,
+    tracePropagationTargets: ["localhost", /^https:\/\/.*\.supabase\.co/, /^https:\/\/.*\.lovable\.app/],
     
     // Session Replay
-    replaysSessionSampleRate: 0.1,
+    // Produção: 5% das sessões normais | Desenvolvimento: 20%
+    replaysSessionSampleRate: isProduction ? 0.05 : 0.2,
+    // Sempre captura 100% dos erros com replay
     replaysOnErrorSampleRate: 1.0,
     
     environment: import.meta.env.MODE,
