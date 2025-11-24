@@ -8,6 +8,7 @@ import { Check, ArrowLeft, Sparkles, Zap, Crown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { captureError } from "@/lib/sentry";
 
 interface PlanFeatures {
   name: string;
@@ -116,7 +117,7 @@ export default function Pricing() {
         window.open(data.url, "_blank");
       }
     } catch (error) {
-      console.error("Erro ao criar checkout:", error);
+      captureError(error, { context: "create-checkout", priceId, planName });
       toast.error("Erro ao processar assinatura. Tente novamente.");
     } finally {
       setLoadingPlan(null);
