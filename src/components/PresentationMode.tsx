@@ -63,7 +63,7 @@ export const PresentationMode = ({
   const mobileConfig = useMobileOptimization();
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
-  const [scale, setScale] = useState<number>(mobileConfig.isMobile ? 1.0 : 1.2);
+  const [scale, setScale] = useState<number>(mobileConfig.isMobile ? 0.7 : 1.2);
   const [showControls, setShowControls] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
@@ -412,7 +412,14 @@ export const PresentationMode = ({
       </AnimatePresence>
 
       {/* PDF Document */}
-      <div ref={pdfContainerRef} className="w-full h-full flex items-center justify-center overflow-auto">
+      <div 
+        ref={pdfContainerRef} 
+        className="w-full h-full flex items-center justify-center overflow-hidden"
+        style={{
+          paddingTop: mobileConfig.isMobile ? '80px' : '0',
+          paddingBottom: mobileConfig.isMobile ? '120px' : '0',
+        }}
+      >
         <div className="relative">
           <Document
             file={fileUrl}
