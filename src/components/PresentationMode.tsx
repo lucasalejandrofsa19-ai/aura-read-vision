@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMobileOptimization } from "@/hooks/useMobileOptimization";
 import { Document, Page, pdfjs } from "react-pdf";
@@ -27,7 +27,7 @@ interface PresentationModeProps {
   onPageChange?: (page: number) => void;
 }
 
-export const PresentationMode = ({
+export const PresentationMode = memo(({
   fileUrl,
   initialPage = 1,
   bookTitle,
@@ -41,7 +41,9 @@ export const PresentationMode = ({
   const [showControls, setShowControls] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const [zoomSensitivity, setZoomSensitivity] = useState(1.0);
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
+  const hideControlsTimeoutRef = useRef<NodeJS.Timeout>();
   
   // Load zoom sensitivity from profile
   useEffect(() => {
@@ -195,35 +197,52 @@ export const PresentationMode = ({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [goToPrevPage, goToNextPage, onClose]);
 
-  // Auto-hide controls
+  // Auto-hide controls com debounce
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
-
     const resetTimeout = () => {
       setShowControls(true);
-      clearTimeout(timeout);
-      timeout = setTimeout(() => {
+      if (hideControlsTimeoutRef.current) {
+        clearTimeout(hideControlsTimeoutRef.current);
+      }
+      hideControlsTimeoutRef.current = setTimeout(() => {
         setShowControls(false);
       }, 3000);
     };
 
-    const handleMouseMove = () => resetTimeout();
+    let mouseMoveTimeout: NodeJS.Timeout;
+    const handleMouseMove = () => {
+      clearTimeout(mouseMoveTimeout);
+      mouseMoveTimeout = setTimeout(resetTimeout, 100);
+    };
+    
     const handleTouchStart = () => resetTimeout();
 
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("touchstart", handleTouchStart);
+    document.addEventListener("mousemove", handleMouseMove, { passive: true });
+    document.addEventListener("touchstart", handleTouchStart, { passive: true });
     resetTimeout();
 
     return () => {
-      clearTimeout(timeout);
+      clearTimeout(mouseMoveTimeout);
+      if (hideControlsTimeoutRef.current) {
+        clearTimeout(hideControlsTimeoutRef.current);
+      }
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("touchstart", handleTouchStart);
     };
   }, []);
 
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+  const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
-  };
+    setIsLoading(false);
+  }, []);
+
+  const onPageLoadStart = useCallback(() => {
+    setIsLoading(true);
+  }, []);
+
+  const onPageLoadSuccess = useCallback(() => {
+    setIsLoading(false);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center" style={{ 
@@ -236,81 +255,38 @@ export const PresentationMode = ({
       height: '100vh',
       overflow: 'hidden'
     }}>
-      {/* Top Controls */}
-      {mobileConfig.shouldReduceAnimations ? (
-        showControls && (
-          <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4">
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <h1 className="text-white font-semibold text-lg truncate max-w-md">
-                  {bookTitle}
-                </h1>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowInfo(!showInfo)}
-                  className="text-white hover:bg-white/20"
-                >
-                  <Info className="w-5 h-5" />
-                </Button>
-              </div>
+      {/* Top Controls - Sempre sem animação para melhor performance */}
+      {showControls && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4 transition-opacity duration-200">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h1 className="text-white font-semibold text-lg truncate max-w-md">
+                {bookTitle}
+              </h1>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={onClose}
+                onClick={() => setShowInfo(!showInfo)}
                 className="text-white hover:bg-white/20"
               >
-                <X className="w-6 h-6" />
+                <Info className="w-5 h-5" />
               </Button>
             </div>
-          </div>
-        )
-      ) : (
-        <AnimatePresence>
-          {showControls && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/80 to-transparent p-4"
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="text-white hover:bg-white/20"
             >
-              <div className="max-w-7xl mx-auto flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <h1 className="text-white font-semibold text-lg truncate max-w-md">
-                    {bookTitle}
-                  </h1>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowInfo(!showInfo)}
-                    className="text-white hover:bg-white/20"
-                  >
-                    <Info className="w-5 h-5" />
-                  </Button>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  className="text-white hover:bg-white/20"
-                >
-                  <X className="w-6 h-6" />
-                </Button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <X className="w-6 h-6" />
+            </Button>
+          </div>
+        </div>
       )}
 
-      {/* Info Panel */}
-      <AnimatePresence>
-        {showInfo && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="fixed top-20 right-4 z-50 glass-dark p-4 rounded-lg max-w-xs"
-          >
+      {/* Info Panel - Sem animação */}
+      {showInfo && (
+        <div className="fixed top-20 right-4 z-50 glass-dark p-4 rounded-lg max-w-xs transition-opacity duration-200">
             <h3 className="text-white font-semibold mb-2">Atalhos</h3>
             <div className="space-y-1 text-sm text-white/80">
               <p>← → : Navegar páginas</p>
@@ -343,9 +319,8 @@ export const PresentationMode = ({
                 <span>Rápido</span>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       {/* PDF Document */}
       <div 
@@ -353,6 +328,11 @@ export const PresentationMode = ({
         className="w-full h-full flex items-center justify-center overflow-auto"
       >
         <div className="relative">
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+              <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
           <Document
             file={fileUrl}
             onLoadSuccess={onDocumentLoadSuccess}
@@ -370,171 +350,84 @@ export const PresentationMode = ({
             <Page
               pageNumber={pageNumber}
               scale={scale}
-              renderTextLayer={true}
+              renderTextLayer={false}
               renderAnnotationLayer={false}
               className="shadow-2xl"
+              onLoadStart={onPageLoadStart}
+              onLoadSuccess={onPageLoadSuccess}
             />
           </Document>
         </div>
       </div>
 
-      {/* Navigation Arrows - Left */}
-      {mobileConfig.shouldReduceAnimations ? (
-        showControls && pageNumber > 1 && (
-          <div className="fixed left-4 top-1/2 -translate-y-1/2 z-50">
+      {/* Navigation Arrows - Left - Sem animação */}
+      {showControls && pageNumber > 1 && (
+        <div className="fixed left-4 top-1/2 -translate-y-1/2 z-50 transition-opacity duration-200">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToPrevPage}
+            disabled={isLoading}
+            className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm disabled:opacity-50"
+          >
+            <ChevronLeft className="w-8 h-8" />
+          </Button>
+        </div>
+      )}
+
+      {/* Navigation Arrows - Right - Sem animação */}
+      {showControls && pageNumber < numPages && (
+        <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 transition-opacity duration-200">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToNextPage}
+            disabled={isLoading}
+            className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm disabled:opacity-50"
+          >
+            <ChevronRight className="w-8 h-8" />
+          </Button>
+        </div>
+      )}
+
+      {/* Bottom Controls - Sem animação */}
+      {showControls && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-200">
+          <div className="max-w-7xl mx-auto flex items-center justify-center gap-4 flex-wrap">
             <Button
               variant="ghost"
               size="icon"
-              onClick={goToPrevPage}
-              className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
+              onClick={zoomOut}
+              disabled={scale <= 0.5 || isLoading}
+              className="text-white hover:bg-white/20 disabled:opacity-50"
             >
-              <ChevronLeft className="w-8 h-8" />
+              <ZoomOut className="w-5 h-5" />
             </Button>
-          </div>
-        )
-      ) : (
-        <AnimatePresence>
-          {showControls && pageNumber > 1 && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="fixed left-4 top-1/2 -translate-y-1/2 z-50"
-            >
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={goToPrevPage}
-                className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
-              >
-                <ChevronLeft className="w-8 h-8" />
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
 
-      {/* Navigation Arrows - Right */}
-      {mobileConfig.shouldReduceAnimations ? (
-        showControls && pageNumber < numPages && (
-          <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50">
+            <div className="glass-dark px-4 py-2 rounded-full text-white font-medium">
+              <span className="text-lg">{Math.round(scale * 100)}%</span>
+            </div>
+
             <Button
               variant="ghost"
               size="icon"
-              onClick={goToNextPage}
-              className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
+              onClick={zoomIn}
+              disabled={scale >= 3.0 || isLoading}
+              className="text-white hover:bg-white/20 disabled:opacity-50"
             >
-              <ChevronRight className="w-8 h-8" />
+              <ZoomIn className="w-5 h-5" />
             </Button>
-          </div>
-        )
-      ) : (
-        <AnimatePresence>
-          {showControls && pageNumber < numPages && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="fixed right-4 top-1/2 -translate-y-1/2 z-50"
-            >
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={goToNextPage}
-                className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
-              >
-                <ChevronRight className="w-8 h-8" />
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
 
-      {/* Bottom Controls */}
-      {mobileConfig.shouldReduceAnimations ? (
-        showControls && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4">
-            <div className="max-w-7xl mx-auto flex items-center justify-center gap-4 flex-wrap">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={zoomOut}
-                disabled={scale <= 0.5}
-                className="text-white hover:bg-white/20"
-              >
-                <ZoomOut className="w-5 h-5" />
-              </Button>
+            <div className="h-8 w-px bg-white/20 mx-2" />
 
-              <div className="glass-dark px-4 py-2 rounded-full text-white font-medium">
-                <span className="text-lg">{Math.round(scale * 100)}%</span>
-              </div>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={zoomIn}
-                disabled={scale >= 3.0}
-                className="text-white hover:bg-white/20"
-              >
-                <ZoomIn className="w-5 h-5" />
-              </Button>
-
-              <div className="h-8 w-px bg-white/20 mx-2" />
-
-              <div className="glass-dark px-6 py-2 rounded-full text-white font-medium">
-                <span className="text-lg">
-                  {pageNumber} / {numPages}
-                </span>
-              </div>
+            <div className="glass-dark px-6 py-2 rounded-full text-white font-medium">
+              <span className="text-lg">
+                {pageNumber} / {numPages}
+              </span>
             </div>
           </div>
-        )
-      ) : (
-        <AnimatePresence>
-          {showControls && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/80 to-transparent p-4"
-            >
-            <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={zoomOut}
-                disabled={scale <= 0.5}
-                className="text-white hover:bg-white/20"
-              >
-                <ZoomOut className="w-5 h-5" />
-              </Button>
-
-              <div className="glass-dark px-4 py-2 rounded-full text-white font-medium">
-                <span className="text-lg">{Math.round(scale * 100)}%</span>
-              </div>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={zoomIn}
-                disabled={scale >= 3.0}
-                className="text-white hover:bg-white/20"
-              >
-                <ZoomIn className="w-5 h-5" />
-              </Button>
-
-              <div className="h-8 w-px bg-white/20 mx-2" />
-
-              <div className="glass-dark px-6 py-2 rounded-full text-white font-medium">
-                <span className="text-lg">
-                  {pageNumber} / {numPages}
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
       )}
     </div>
   );
-};
+});
