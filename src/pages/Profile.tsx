@@ -191,13 +191,11 @@ const Profile = () => {
                           stiffness: 200,
                           damping: 15
                         }}
-                        className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 overflow-hidden cursor-help"
+                         className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 overflow-hidden cursor-help"
                       >
                         <Crown className="w-3.5 h-3.5 text-purple-500 relative z-10" />
                         <span className="text-xs font-semibold text-purple-500 relative z-10">Premium</span>
-                        <div className="absolute inset-0 w-full h-full animate-card-swipe">
-                          <div className="absolute inset-0 w-[200%] h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full" />
-                        </div>
+                        <div className="absolute inset-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-card-swipe" />
                       </motion.div>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-xs">
