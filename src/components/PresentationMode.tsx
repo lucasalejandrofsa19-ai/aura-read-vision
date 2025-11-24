@@ -9,17 +9,9 @@ import {
   ZoomIn,
   ZoomOut,
   Info,
-  Highlighter,
-  Image,
-  Volume2,
-  Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HighlightCanvas } from "@/components/HighlightCanvas";
-import { TextToSpeechControls } from "@/components/TextToSpeechControls";
-import { HighlightImageDialog } from "@/components/HighlightImageDialog";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
-import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -33,19 +25,6 @@ interface PresentationModeProps {
   bookTitle: string;
   onClose: () => void;
   onPageChange?: (page: number) => void;
-  highlightCount?: number;
-  onOpenHighlights?: () => void;
-  highlights?: Array<{
-    id: string;
-    text: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    color: string;
-  }>;
-  onHighlightAdded?: (highlight: { x: number; y: number; width: number; height: number }) => void;
-  extractedText?: string;
 }
 
 export const PresentationMode = ({
@@ -54,11 +33,6 @@ export const PresentationMode = ({
   bookTitle,
   onClose,
   onPageChange,
-  highlightCount = 0,
-  onOpenHighlights,
-  highlights = [],
-  onHighlightAdded,
-  extractedText = "",
 }: PresentationModeProps) => {
   const mobileConfig = useMobileOptimization();
   const [numPages, setNumPages] = useState<number>(0);
@@ -66,24 +40,8 @@ export const PresentationMode = ({
   const [scale, setScale] = useState<number>(mobileConfig.isMobile ? 1.0 : 1.2);
   const [showControls, setShowControls] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
-  const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
-  const [isHighlightMode, setIsHighlightMode] = useState(false);
-  const [highlightColor, setHighlightColor] = useState("#fef08a");
-  const [showColorPicker, setShowColorPicker] = useState(false);
   const [zoomSensitivity, setZoomSensitivity] = useState(1.0);
   const { user } = useAuth();
-  
-  // Paleta de cores para destaques
-  const highlightColors = [
-    { color: "#fef08a", name: "Amarelo" },
-    { color: "#86efac", name: "Verde" },
-    { color: "#93c5fd", name: "Azul" },
-    { color: "#fda4af", name: "Rosa" },
-    { color: "#fbbf24", name: "Laranja" },
-    { color: "#c4b5fd", name: "Roxo" },
-    { color: "#fb923c", name: "Coral" },
-    { color: "#67e8f9", name: "Ciano" },
-  ];
   
   // Load zoom sensitivity from profile
   useEffect(() => {
@@ -116,9 +74,6 @@ export const PresentationMode = ({
       .eq("id", user.id);
   };
   
-  // Text-to-speech
-  const tts = useTextToSpeech();
-  
   // Touch gesture support for pinch-to-zoom
   const touchStartRef = useRef<{ dist: number; scale: number } | null>(null);
   const pdfContainerRef = useRef<HTMLDivElement>(null);
@@ -145,13 +100,6 @@ export const PresentationMode = ({
 
   const zoomOut = () => {
     setScale((prev) => Math.max(prev - 0.2, 0.5));
-  };
-
-  // Handle text-to-speech
-  const handleSpeak = () => {
-    if (extractedText) {
-      tts.speak(extractedText);
-    }
   };
 
   // Touch gesture handlers for pinch-to-zoom
@@ -224,11 +172,7 @@ export const PresentationMode = ({
           break;
         case "Escape":
           e.preventDefault();
-          if (isHighlightMode) {
-            setIsHighlightMode(false);
-          } else {
-            onClose();
-          }
+          onClose();
           break;
         case "+":
         case "=":
@@ -238,11 +182,6 @@ export const PresentationMode = ({
         case "-":
           e.preventDefault();
           zoomOut();
-          break;
-        case "h":
-        case "H":
-          e.preventDefault();
-          setIsHighlightMode((prev) => !prev);
           break;
         case "i":
         case "I":
@@ -254,7 +193,7 @@ export const PresentationMode = ({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [goToPrevPage, goToNextPage, onClose, isHighlightMode]);
+  }, [goToPrevPage, goToNextPage, onClose]);
 
   // Auto-hide controls
   useEffect(() => {
@@ -377,8 +316,6 @@ export const PresentationMode = ({
               <p>← → : Navegar páginas</p>
               <p>Espaço : Próxima página</p>
               <p>+ / - : Zoom</p>
-              <p>H : Destacar texto</p>
-              <p>Ctrl+Shift+R : Ler em voz alta</p>
               <p>I : Mostrar/ocultar info</p>
               <p>ESC : Sair</p>
               <p className="pt-2 border-t border-white/20">
@@ -436,27 +373,8 @@ export const PresentationMode = ({
               renderTextLayer={true}
               renderAnnotationLayer={false}
               className="shadow-2xl"
-              onLoadSuccess={(page) => {
-                setPageSize({
-                  width: page.width,
-                  height: page.height,
-                });
-              }}
             />
           </Document>
-          
-          {/* Highlight Canvas Overlay */}
-          {pageSize.width > 0 && pageSize.height > 0 && (
-            <HighlightCanvas
-              pageNumber={pageNumber}
-              highlights={highlights}
-              isDrawingMode={isHighlightMode}
-              highlightColor={highlightColor}
-              canvasWidth={pageSize.width}
-              canvasHeight={pageSize.height}
-              onHighlightAdded={onHighlightAdded}
-            />
-          )}
         </div>
       </div>
 
@@ -563,68 +481,11 @@ export const PresentationMode = ({
 
               <div className="h-8 w-px bg-white/20 mx-2" />
 
-              <Button
-                variant={isHighlightMode ? "default" : "ghost"}
-                size="icon"
-                onClick={() => setIsHighlightMode(!isHighlightMode)}
-                className="text-white hover:bg-white/20"
-                title="Destacar (H)"
-              >
-                <Highlighter className="w-5 h-5" />
-              </Button>
-
-              {isHighlightMode && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowColorPicker(!showColorPicker)}
-                    className="text-white hover:bg-white/20"
-                    title="Cor do destaque"
-                  >
-                    <Palette className="w-5 h-5" style={{ color: highlightColor }} />
-                  </Button>
-
-                  {showColorPicker && (
-                    <div className="glass-dark p-2 rounded-lg flex gap-2">
-                      {highlightColors.map(({ color, name }) => (
-                        <button
-                          key={color}
-                          onClick={() => {
-                            setHighlightColor(color);
-                            setShowColorPicker(false);
-                          }}
-                          className={`w-8 h-8 rounded-full border-2 ${
-                            highlightColor === color ? "border-white" : "border-transparent"
-                          }`}
-                          style={{ backgroundColor: color }}
-                          title={name}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleSpeak}
-                className="text-white hover:bg-white/20"
-                title="Ler em voz alta"
-              >
-                <Volume2 className="w-5 h-5" />
-              </Button>
-
-              {highlightCount > 0 && onOpenHighlights && (
-                <Button
-                  variant="ghost"
-                  onClick={onOpenHighlights}
-                  className="text-white hover:bg-white/20 px-4"
-                >
-                  {highlightCount} {highlightCount === 1 ? "Destaque" : "Destaques"}
-                </Button>
-              )}
+              <div className="glass-dark px-6 py-2 rounded-full text-white font-medium">
+                <span className="text-lg">
+                  {pageNumber} / {numPages}
+                </span>
+              </div>
             </div>
           </div>
         )
@@ -664,87 +525,6 @@ export const PresentationMode = ({
 
               <div className="h-8 w-px bg-white/20 mx-2" />
 
-              <Button
-                variant={isHighlightMode ? "default" : "ghost"}
-                size="icon"
-                onClick={() => setIsHighlightMode(!isHighlightMode)}
-                className={`${isHighlightMode ? "bg-primary text-primary-foreground" : "text-white hover:bg-white/20"} relative`}
-                title={isHighlightMode ? "Desativar modo destaque (H)" : "Ativar modo destaque (H)"}
-              >
-                <Highlighter className="w-5 h-5" />
-                {isHighlightMode && (
-                  <div 
-                    className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white"
-                    style={{ backgroundColor: highlightColor }}
-                  />
-                )}
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowColorPicker(!showColorPicker)}
-                className="text-white hover:bg-white/20 relative"
-                title="Escolher cor do destaque"
-              >
-                <Palette className="w-5 h-5" />
-                <div 
-                  className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white"
-                  style={{ backgroundColor: highlightColor }}
-                />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onOpenHighlights}
-                className="text-white hover:bg-white/20 relative"
-                title="Ver destaques"
-              >
-                <Highlighter className="w-5 h-5" />
-                {highlightCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-                    {highlightCount > 9 ? '9+' : highlightCount}
-                  </span>
-                )}
-              </Button>
-
-              {highlights.length > 0 && (
-                <HighlightImageDialog
-                  text={highlights[highlights.length - 1]?.text || ""}
-                  highlightId={highlights[highlights.length - 1]?.id || ""}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-white hover:bg-white/20"
-                      title="Gerar imagem do destaque"
-                    >
-                      <Image className="w-5 h-5" />
-                    </Button>
-                  }
-                />
-              )}
-
-              <div className="h-8 w-px bg-white/20 mx-2" />
-
-              <TextToSpeechControls
-                isSpeaking={tts.isSpeaking}
-                isPaused={tts.isPaused}
-                onSpeak={handleSpeak}
-                onStop={tts.stop}
-                onTogglePause={tts.togglePause}
-                voices={tts.voices}
-                selectedVoice={tts.selectedVoice}
-                onVoiceChange={tts.setSelectedVoice}
-                rate={tts.rate}
-                onRateChange={tts.setRate}
-                pitch={tts.pitch}
-                onPitchChange={tts.setPitch}
-              />
-
-              <div className="h-8 w-px bg-white/20 mx-2" />
-
               <div className="glass-dark px-6 py-2 rounded-full text-white font-medium">
                 <span className="text-lg">
                   {pageNumber} / {numPages}
@@ -755,40 +535,6 @@ export const PresentationMode = ({
         )}
       </AnimatePresence>
       )}
-
-      {/* Color Picker */}
-      <AnimatePresence>
-        {showColorPicker && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 glass-dark p-4 rounded-lg"
-          >
-            <h3 className="text-white text-sm font-semibold mb-3 text-center">
-              Escolha a Cor do Destaque
-            </h3>
-            <div className="grid grid-cols-4 gap-3">
-              {highlightColors.map(({ color, name }) => (
-                <button
-                  key={color}
-                  onClick={() => {
-                    setHighlightColor(color);
-                    setShowColorPicker(false);
-                  }}
-                  className={`w-12 h-12 rounded-lg border-2 transition-all hover:scale-110 ${
-                    highlightColor === color 
-                      ? "border-white shadow-lg scale-105" 
-                      : "border-white/30"
-                  }`}
-                  style={{ backgroundColor: color }}
-                  title={name}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
