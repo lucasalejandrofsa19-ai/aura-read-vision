@@ -64,6 +64,7 @@ export const PresentationMode = ({
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
   const [isHighlightMode, setIsHighlightMode] = useState(false);
   const [highlightColor, setHighlightColor] = useState("#fef08a");
+  const [zoomSensitivity, setZoomSensitivity] = useState(1.0);
   const hideControlsTimeout = useState<NodeJS.Timeout | null>(null)[1];
   
   // Text-to-speech
@@ -122,7 +123,9 @@ export const PresentationMode = ({
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      const ratio = dist / touchStartRef.current.dist;
+      const rawRatio = dist / touchStartRef.current.dist;
+      // Apply sensitivity: adjust the ratio based on sensitivity factor
+      const ratio = 1 + (rawRatio - 1) * zoomSensitivity;
       const newScale = Math.min(Math.max(touchStartRef.current.scale * ratio, 0.5), 3.0);
       setScale(newScale);
     }
@@ -146,7 +149,7 @@ export const PresentationMode = ({
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [scale]);
+  }, [scale, zoomSensitivity]);
 
   // Swipe gestures
   useSwipeGesture({
@@ -294,6 +297,26 @@ export const PresentationMode = ({
                 Deslize para navegar
               </p>
               <p>Pinça para zoom (touch)</p>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-white/20">
+              <label className="text-white text-sm font-medium mb-2 block">
+                Velocidade do Zoom
+              </label>
+              <input
+                type="range"
+                min="0.5"
+                max="2"
+                step="0.1"
+                value={zoomSensitivity}
+                onChange={(e) => setZoomSensitivity(parseFloat(e.target.value))}
+                className="w-full accent-primary"
+              />
+              <div className="flex justify-between text-xs text-white/60 mt-1">
+                <span>Lento</span>
+                <span>{zoomSensitivity.toFixed(1)}x</span>
+                <span>Rápido</span>
+              </div>
             </div>
           </motion.div>
         )}
