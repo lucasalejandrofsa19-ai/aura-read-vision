@@ -78,10 +78,6 @@ export const PresentationMode = memo(({
       .update({ zoom_sensitivity: value })
       .eq("id", user.id);
   };
-  
-  // Touch gesture support for pinch-to-zoom
-  const touchStartRef = useRef<{ dist: number; scale: number } | null>(null);
-  const pdfContainerRef = useRef<HTMLDivElement>(null);
 
   const goToPrevPage = useCallback(() => {
     if (pageNumber > 1) {
@@ -106,52 +102,6 @@ export const PresentationMode = memo(({
   const zoomOut = () => {
     setScale((prev) => Math.max(prev - 0.2, 0.5));
   };
-
-  // Touch gesture handlers for pinch-to-zoom
-  const handleTouchStart = (e: TouchEvent) => {
-    if (e.touches.length === 2) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      touchStartRef.current = { dist, scale };
-    }
-  };
-
-  const handleTouchMove = (e: TouchEvent) => {
-    if (e.touches.length === 2 && touchStartRef.current) {
-      e.preventDefault();
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      const rawRatio = dist / touchStartRef.current.dist;
-      // Apply sensitivity: adjust the ratio based on sensitivity factor
-      const ratio = 1 + (rawRatio - 1) * zoomSensitivity;
-      const newScale = Math.min(Math.max(touchStartRef.current.scale * ratio, 0.5), 3.0);
-      setScale(newScale);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    touchStartRef.current = null;
-  };
-
-  // Add touch event listeners
-  useEffect(() => {
-    const container = pdfContainerRef.current;
-    if (!container) return;
-
-    container.addEventListener('touchstart', handleTouchStart);
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [scale, zoomSensitivity]);
 
   // Swipe gestures
   useSwipeGesture({
@@ -300,7 +250,6 @@ export const PresentationMode = memo(({
               <p className="pt-2 border-t border-white/20">
                 Deslize para navegar
               </p>
-              <p>Pinça para zoom (touch)</p>
             </div>
             
             <div className="mt-4 pt-4 border-t border-white/20">
@@ -327,7 +276,6 @@ export const PresentationMode = memo(({
 
       {/* PDF Document */}
       <div 
-        ref={pdfContainerRef} 
         className="w-full h-full flex items-center justify-center overflow-auto"
       >
         <div className="relative">

@@ -57,9 +57,6 @@ export const PDFViewer = ({
   const [pageTexts, setPageTexts] = useState<Map<number, string>>(new Map());
   const [isPrefetching, setIsPrefetching] = useState(false);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
-  
-  // Touch gesture state for pinch-to-zoom
-  const [touchStart, setTouchStart] = useState<{ distance: number; scale: number } | null>(null);
 
   // Prefetch hook para carregar próximas páginas
   const { isPageCached, cache } = usePDFPrefetch({
@@ -237,57 +234,6 @@ export const PDFViewer = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [autoFit]);
-
-  // Helper function to calculate distance between two touch points
-  const getTouchDistance = (touches: TouchList) => {
-    const touch1 = touches[0];
-    const touch2 = touches[1];
-    const dx = touch2.clientX - touch1.clientX;
-    const dy = touch2.clientY - touch1.clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
-  // Handle pinch-to-zoom gestures
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        const distance = getTouchDistance(e.touches);
-        setTouchStart({ distance, scale });
-        setAutoFit(false);
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && touchStart) {
-        e.preventDefault();
-        const currentDistance = getTouchDistance(e.touches);
-        const distanceChange = currentDistance / touchStart.distance;
-        const newScale = Math.max(0.5, Math.min(3.0, touchStart.scale * distanceChange));
-        setScale(newScale);
-        onScaleChange?.(newScale);
-      }
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (e.touches.length < 2) {
-        setTouchStart(null);
-      }
-    };
-
-    container.addEventListener('touchstart', handleTouchStart, { passive: false });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [scale, touchStart, onScaleChange]);
 
   return (
     <div ref={containerRef} className="flex flex-col items-center gap-4 w-full">
