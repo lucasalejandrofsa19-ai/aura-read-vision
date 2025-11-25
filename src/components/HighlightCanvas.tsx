@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Canvas as FabricCanvas, Rect } from "fabric";
 
 interface HighlightCanvasProps {
@@ -98,63 +98,14 @@ export const HighlightCanvas = ({
     fabricCanvas.renderAll();
   }, [highlights, fabricCanvas, pageNumber, isDrawingMode, onHighlightDeleted]);
 
-  // Handle drawing mode
-  useEffect(() => {
-    if (!fabricCanvas) return;
-
-    const cleanup = () => {
-      fabricCanvas.off("mouse:down", handleMouseDown);
-      fabricCanvas.off("mouse:move", handleMouseMove);
-      fabricCanvas.off("mouse:up", handleMouseUp);
-      
-      if (isTouchDevice) {
-        const canvas = fabricCanvas.getElement();
-        if (canvas) {
-          canvas.removeEventListener('touchstart', handleTouchStart);
-          canvas.removeEventListener('touchmove', handleTouchMove);
-          canvas.removeEventListener('touchend', handleTouchEnd);
-        }
-      }
-    };
-
-    // Cleanup previous listeners first
-    cleanup();
-
-    if (isDrawingMode) {
-      // Enable drawing - both mouse and touch events
-      fabricCanvas.on("mouse:down", handleMouseDown);
-      fabricCanvas.on("mouse:move", handleMouseMove);
-      fabricCanvas.on("mouse:up", handleMouseUp);
-      
-      // Add touch event listeners for better mobile support
-      if (isTouchDevice) {
-        const canvas = fabricCanvas.getElement();
-        if (canvas) {
-          canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-          canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-          canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-        }
-      }
-    } else {
-      setIsDrawing(false);
-      setStartPoint(null);
-      if (drawingRectRef.current) {
-        fabricCanvas.remove(drawingRectRef.current);
-        drawingRectRef.current = null;
-      }
-    }
-
-    return cleanup;
-  }, [isDrawingMode, fabricCanvas, highlightColor, isTouchDevice]);
-
-  const handleMouseDown = (e: any) => {
+  // Handle drawing mode - Memoize handlers to prevent recreation
+  const handleMouseDown = useCallback((e: any) => {
     if (!fabricCanvas) return;
 
     const pointer = fabricCanvas.getPointer(e.e);
     setIsDrawing(true);
     setStartPoint({ x: pointer.x, y: pointer.y });
 
-    // Create temporary rectangle
     const rect = new Rect({
       left: pointer.x,
       top: pointer.y,
@@ -169,9 +120,9 @@ export const HighlightCanvas = ({
     fabricCanvas.add(rect);
     drawingRectRef.current = rect;
     fabricCanvas.renderAll();
-  };
+  }, [fabricCanvas, highlightColor]);
 
-  const handleMouseMove = (e: any) => {
+  const handleMouseMove = useCallback((e: any) => {
     if (!isDrawing || !startPoint || !drawingRectRef.current || !fabricCanvas) return;
 
     const pointer = fabricCanvas.getPointer(e.e);
@@ -186,16 +137,15 @@ export const HighlightCanvas = ({
     });
 
     fabricCanvas.renderAll();
-  };
+  }, [isDrawing, startPoint, fabricCanvas]);
 
-  const handleMouseUp = (e: any) => {
+  const handleMouseUp = useCallback((e: any) => {
     if (!isDrawing || !startPoint || !drawingRectRef.current || !fabricCanvas) return;
 
     const pointer = fabricCanvas.getPointer(e.e);
     const width = Math.abs(pointer.x - startPoint.x);
     const height = Math.abs(pointer.y - startPoint.y);
 
-    // Only save if the highlight is large enough
     if (width > 10 && height > 10) {
       const highlight = {
         x: Math.min(startPoint.x, pointer.x),
@@ -206,7 +156,6 @@ export const HighlightCanvas = ({
 
       onHighlightAdded?.(highlight);
     } else {
-      // Remove the rectangle if it's too small
       fabricCanvas.remove(drawingRectRef.current);
       fabricCanvas.renderAll();
     }
@@ -214,10 +163,9 @@ export const HighlightCanvas = ({
     setIsDrawing(false);
     setStartPoint(null);
     drawingRectRef.current = null;
-  };
+  }, [isDrawing, startPoint, fabricCanvas, onHighlightAdded]);
 
-  // Touch event handlers for mobile devices
-  const handleTouchStart = (e: TouchEvent) => {
+  const handleTouchStart = useCallback((e: TouchEvent) => {
     if (!fabricCanvas) return;
     e.preventDefault();
     
@@ -229,7 +177,6 @@ export const HighlightCanvas = ({
     setIsDrawing(true);
     setStartPoint({ x, y });
 
-    // Create temporary rectangle
     const tempRect = new Rect({
       left: x,
       top: y,
@@ -244,9 +191,9 @@ export const HighlightCanvas = ({
     fabricCanvas.add(tempRect);
     drawingRectRef.current = tempRect;
     fabricCanvas.renderAll();
-  };
+  }, [fabricCanvas, highlightColor]);
 
-  const handleTouchMove = (e: TouchEvent) => {
+  const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isDrawing || !startPoint || !drawingRectRef.current || !fabricCanvas) return;
     e.preventDefault();
 
@@ -266,9 +213,9 @@ export const HighlightCanvas = ({
     });
 
     fabricCanvas.renderAll();
-  };
+  }, [isDrawing, startPoint, fabricCanvas]);
 
-  const handleTouchEnd = (e: TouchEvent) => {
+  const handleTouchEnd = useCallback((e: TouchEvent) => {
     if (!isDrawing || !startPoint || !drawingRectRef.current || !fabricCanvas) return;
     e.preventDefault();
 
@@ -280,7 +227,6 @@ export const HighlightCanvas = ({
     const width = Math.abs(x - startPoint.x);
     const height = Math.abs(y - startPoint.y);
 
-    // Only save if the highlight is large enough
     if (width > 10 && height > 10) {
       const highlight = {
         x: Math.min(startPoint.x, x),
@@ -291,7 +237,6 @@ export const HighlightCanvas = ({
 
       onHighlightAdded?.(highlight);
     } else {
-      // Remove the rectangle if it's too small
       fabricCanvas.remove(drawingRectRef.current);
       fabricCanvas.renderAll();
     }
@@ -299,7 +244,54 @@ export const HighlightCanvas = ({
     setIsDrawing(false);
     setStartPoint(null);
     drawingRectRef.current = null;
-  };
+  }, [isDrawing, startPoint, fabricCanvas, onHighlightAdded]);
+
+  // Handle drawing mode
+  useEffect(() => {
+    if (!fabricCanvas) return;
+
+    const cleanup = () => {
+      fabricCanvas.off("mouse:down");
+      fabricCanvas.off("mouse:move");
+      fabricCanvas.off("mouse:up");
+      
+      if (isTouchDevice) {
+        const canvas = fabricCanvas.getElement();
+        if (canvas) {
+          canvas.removeEventListener('touchstart', handleTouchStart);
+          canvas.removeEventListener('touchmove', handleTouchMove);
+          canvas.removeEventListener('touchend', handleTouchEnd);
+        }
+      }
+    };
+
+    cleanup();
+
+    if (isDrawingMode) {
+      fabricCanvas.on("mouse:down", handleMouseDown);
+      fabricCanvas.on("mouse:move", handleMouseMove);
+      fabricCanvas.on("mouse:up", handleMouseUp);
+      
+      if (isTouchDevice) {
+        const canvas = fabricCanvas.getElement();
+        if (canvas) {
+          canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+          canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+          canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+        }
+      }
+    } else {
+      setIsDrawing(false);
+      setStartPoint(null);
+      if (drawingRectRef.current) {
+        fabricCanvas.remove(drawingRectRef.current);
+        drawingRectRef.current = null;
+      }
+    }
+
+    return cleanup;
+  }, [isDrawingMode, fabricCanvas, isTouchDevice, handleMouseDown, handleMouseMove, handleMouseUp, handleTouchStart, handleTouchMove, handleTouchEnd]);
+
 
   return (
     <canvas
