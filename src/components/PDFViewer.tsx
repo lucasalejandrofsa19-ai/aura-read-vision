@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
@@ -196,6 +196,7 @@ export const PDFViewer = ({
   const zoomIn = () => {
     setAutoFit(false);
     const newScale = Math.min(scale + 0.2, 3.0);
+    console.log("[PDFViewer] Zoom in:", newScale);
     setScale(newScale);
     onScaleChange?.(newScale);
   };
@@ -203,11 +204,12 @@ export const PDFViewer = ({
   const zoomOut = () => {
     setAutoFit(false);
     const newScale = Math.max(scale - 0.2, 0.5);
+    console.log("[PDFViewer] Zoom out:", newScale);
     setScale(newScale);
     onScaleChange?.(newScale);
   };
 
-  const fitToWidth = () => {
+  const fitToWidth = useCallback(() => {
     setAutoFit(true);
     if (containerRef.current) {
       // Calculate scale to fit width (accounting for padding)
@@ -216,13 +218,13 @@ export const PDFViewer = ({
       const newScale = containerWidth / pageWidth;
       setScale(Math.max(0.5, Math.min(newScale, 3.0)));
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (autoFit) {
       fitToWidth();
     }
-  }, [autoFit, pageNumber]);
+  }, [autoFit, pageNumber, fitToWidth]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -233,7 +235,7 @@ export const PDFViewer = ({
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [autoFit]);
+  }, [autoFit, fitToWidth]);
 
   return (
     <div ref={containerRef} className="flex flex-col items-center gap-4 w-full">
