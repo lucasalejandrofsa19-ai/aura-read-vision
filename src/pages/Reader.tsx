@@ -157,32 +157,49 @@ const Reader = () => {
   }, [id, currentPage]);
 
   const loadBook = async () => {
-    if (!id) return;
+    if (!id) {
+      console.error("[Reader] No book ID provided");
+      return;
+    }
+
+    console.log("[Reader] Loading book with ID:", id);
 
     try {
+      console.log("[Reader] Fetching book data from database...");
       const { data, error } = await supabase
         .from("books")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("[Reader] Database error:", error);
+        throw error;
+      }
+      
+      console.log("[Reader] Book data loaded:", data);
       setBook(data);
       
       // Set current page from database
       if (data.current_page) {
+        console.log("[Reader] Setting current page to:", data.current_page);
         setCurrentPage(data.current_page);
       }
 
       // Get public URL for the PDF
       if (data.file_path) {
+        console.log("[Reader] Getting PDF URL for path:", data.file_path);
         const { data: urlData } = supabase.storage
           .from("pdfs")
           .getPublicUrl(data.file_path);
         
+        console.log("[Reader] PDF URL obtained:", urlData.publicUrl);
         setPdfUrl(urlData.publicUrl);
+      } else {
+        console.error("[Reader] No file_path found in book data");
       }
     } catch (error) {
+      console.error("[Reader] Error loading book:", error);
       captureError(error, { context: "load_book" });
       toast.error("Erro ao carregar livro");
       navigate("/library");
