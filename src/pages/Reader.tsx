@@ -11,7 +11,6 @@ import {
   BookmarkCheck,
   Maximize,
   Eye,
-  Volume2,
   FileDown,
   StickyNote,
   Palette,
@@ -31,14 +30,12 @@ import { HighlightsList } from "@/components/HighlightsList";
 import { PresentationMode } from "@/components/PresentationMode";
 import { FocusedReaderMode } from "@/components/FocusedReaderMode";
 import { ThemeSelector } from "@/components/ThemeSelector";
-import { TextToSpeechControls } from "@/components/TextToSpeechControls";
 import { NotesPanel } from "@/components/NotesPanel";
 import { ExportDialog } from "@/components/ExportDialog";
 import { PremiumActionButton } from "@/components/PremiumActionButton";
 import { FloatingControls } from "@/components/FloatingControls";
 import { useHighlights } from "@/hooks/useHighlights";
 import { useFullscreen } from "@/hooks/useFullscreen";
-import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { useNotes } from "@/hooks/useNotes";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePremiumValidation } from "@/hooks/usePremiumValidation";
@@ -109,21 +106,6 @@ const Reader = () => {
   const { validatePremiumAccess } = usePremiumValidation();
   const { playSound } = useSoundEffects();
   const { startSession, endSession, updateSession, isSessionActive } = useReadingSession(id || "");
-  
-  const {
-    speak,
-    stop,
-    togglePause,
-    isSpeaking,
-    isPaused,
-    voices,
-    selectedVoice,
-    setSelectedVoice,
-    rate,
-    setRate,
-    pitch,
-    setPitch,
-  } = useTextToSpeech();
 
   useEffect(() => {
     loadBook();
@@ -352,88 +334,6 @@ const Reader = () => {
     setIsFocusedMode(false);
   };
 
-  const handleReadAloud = async () => {
-    if (!user) {
-      toast.error("Faça login para usar este recurso");
-      return;
-    }
-
-    // Server-side validation with rate limiting
-    const { hasPremiumAccess, rateLimitReached } = await validatePremiumAccess();
-
-    if (rateLimitReached) {
-      return; // Toast already shown by hook
-    }
-
-    if (!hasPremiumAccess) {
-      // Audit log for denied access attempt
-      await supabase.from('premium_access_audit').insert({
-        user_id: user.id,
-        action: 'access_attempt',
-        feature: 'text_to_speech',
-        granted: false,
-        reason: 'no_premium_access',
-      });
-
-      toast.error("Recurso disponível apenas para assinantes Premium", {
-        action: {
-          label: "Assinar",
-          onClick: () => navigate("/pricing"),
-        },
-      });
-      return;
-    }
-
-    // Audit log for successful access
-    await supabase.from('premium_access_audit').insert({
-      user_id: user.id,
-      action: 'access_granted',
-      feature: 'text_to_speech',
-      granted: true,
-      reason: 'premium_access_verified',
-    });
-
-    if (!book?.extracted_text) {
-      toast.error("Texto não disponível para leitura");
-      return;
-    }
-
-    const startIndex = book.current_page || 1;
-    const textToRead = book.extracted_text
-      .split(/Página \d+/)
-      .slice(startIndex)
-      .join(" ");
-
-    if (textToRead.trim()) {
-      speak(textToRead);
-      playSound('page-turn');
-    }
-  };
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      // Ctrl+Shift+R to read aloud
-      if (e.ctrlKey && e.shiftKey && e.key === 'R') {
-        e.preventDefault();
-        handleReadAloud();
-      }
-      // Space to pause/resume
-      if (e.code === 'Space' && isSpeaking) {
-        e.preventDefault();
-        togglePause();
-      }
-      // Escape to stop
-      if (e.key === 'Escape' && isSpeaking) {
-        e.preventDefault();
-        stop();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isSpeaking, book]);
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -560,10 +460,6 @@ const Reader = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="glass w-56">
-                <DropdownMenuItem onClick={handleReadAloud}>
-                  <Volume2 className="w-4 h-4 mr-2" />
-                  Ler em voz alta
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleEnterFocusedMode}>
                   <Eye className="w-4 h-4 mr-2" />
                   Modo Leitura Focada
@@ -588,21 +484,6 @@ const Reader = () => {
 
           {/* Desktop: Linha 2 com todos os ícones de função em fila */}
           <div className="hidden md:flex items-center gap-2 flex-wrap ml-14">
-            <TextToSpeechControls
-              isSpeaking={isSpeaking}
-              isPaused={isPaused}
-              onSpeak={handleReadAloud}
-              onStop={stop}
-              onTogglePause={togglePause}
-              voices={voices}
-              selectedVoice={selectedVoice}
-              onVoiceChange={setSelectedVoice}
-              rate={rate}
-              onRateChange={setRate}
-              pitch={pitch}
-              onPitchChange={setPitch}
-            />
-
             <ThemeSelector />
 
             <ExportDialog
