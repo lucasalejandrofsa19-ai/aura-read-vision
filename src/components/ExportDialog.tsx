@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, FileText, File, Hash, Calendar } from "lucide-react";
+import { Download, FileText, File, Hash, Calendar, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -13,8 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Badge } from "@/components/ui/badge";
 import { useExport, type ExportFormat } from "@/hooks/useExport";
 import { usePremiumValidation } from "@/hooks/usePremiumValidation";
+import { useUserData } from "@/hooks/useUserData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -30,6 +32,7 @@ interface ExportDialogProps {
 export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { hasPremiumAccess } = useUserData();
   const [open, setOpen] = useState(false);
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [includeHighlights, setIncludeHighlights] = useState(true);
@@ -41,6 +44,10 @@ export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps
 
   const { exportData } = useExport();
   const { validatePremiumAccess } = usePremiumValidation();
+
+  const isPremiumFormat = (fmt: ExportFormat) => {
+    return ["word", "notion"].includes(fmt);
+  };
 
   const handleExport = async () => {
     if (!user) {
@@ -64,25 +71,15 @@ export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps
         return; // Toast already shown by hook
       }
 
-      if (!hasPremiumAccess) {
-        // Audit log for denied access attempt
-        await supabase.from('premium_access_audit').insert({
-          user_id: user.id,
-          action: 'access_attempt',
-          feature: `export_${format}`,
-          granted: false,
-          reason: 'no_premium_access',
-          metadata: { format, bookTitle },
-        });
-
-        toast.error("Recurso disponível apenas para assinantes Premium", {
-          action: {
-            label: "Ver Planos",
-            onClick: () => navigate("/pricing"),
-          },
-        });
-        return;
-      }
+        if (!hasPremiumAccess) {
+          toast.error("Recurso disponível apenas para assinantes Premium/Pro", {
+            action: {
+              label: "Ver Planos",
+              onClick: () => navigate("/pricing"),
+            },
+          });
+          return;
+        }
 
       // Audit log for successful access
       await supabase.from('premium_access_audit').insert({
@@ -166,20 +163,34 @@ export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps
             >
               {(Object.keys(formatIcons) as ExportFormat[]).map((fmt) => {
                 const FmtIcon = formatIcons[fmt];
+                const isPremium = isPremiumFormat(fmt);
+                const isLocked = isPremium && !hasPremiumAccess;
+                
                 return (
-                  <div key={fmt}>
+                  <div key={fmt} className="relative">
                     <RadioGroupItem
                       value={fmt}
                       id={fmt}
                       className="peer sr-only"
+                      disabled={isLocked}
                     />
                     <Label
                       htmlFor={fmt}
-                      className="flex flex-col gap-2 p-4 border-2 rounded-lg cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 hover:bg-accent/50"
+                      className={`flex flex-col gap-2 p-4 border-2 rounded-lg cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 hover:bg-accent/50 ${
+                        isLocked ? "opacity-60 cursor-not-allowed" : ""
+                      }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <FmtIcon className="w-5 h-5" />
-                        <span className="font-medium">{formatLabels[fmt]}</span>
+                      <div className="flex items-center gap-2 justify-between">
+                        <div className="flex items-center gap-2">
+                          <FmtIcon className="w-5 h-5" />
+                          <span className="font-medium">{formatLabels[fmt]}</span>
+                        </div>
+                        {isPremium && (
+                          <Badge className="h-5 px-1.5 flex items-center gap-1 bg-gradient-to-r from-purple-500 to-purple-700 border-0">
+                            <Crown className="w-3 h-3 text-white" />
+                            <span className="text-[10px] text-white">PRO</span>
+                          </Badge>
+                        )}
                       </div>
                       <span className="text-xs text-muted-foreground">
                         {formatDescriptions[fmt]}
