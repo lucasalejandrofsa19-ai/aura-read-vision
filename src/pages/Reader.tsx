@@ -661,8 +661,18 @@ const Reader = () => {
 
       {/* Floating Controls for Mobile */}
       <FloatingControls
-        onZoomIn={() => setScale(prev => Math.min(prev + 0.2, 3.0))}
-        onZoomOut={() => setScale(prev => Math.max(prev - 0.2, 0.5))}
+        onZoomIn={() => {
+          setScale(prev => {
+            const newScale = Math.min(prev + 0.2, 3.0);
+            return newScale;
+          });
+        }}
+        onZoomOut={() => {
+          setScale(prev => {
+            const newScale = Math.max(prev - 0.2, 0.5);
+            return newScale;
+          });
+        }}
         onBookmark={handleBookmark}
         onPrevPage={() => {
           const newPage = Math.max(currentPage - 1, 1);

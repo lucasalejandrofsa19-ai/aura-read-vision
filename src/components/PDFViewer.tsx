@@ -193,21 +193,25 @@ export const PDFViewer = ({
     changePage(newPage);
   };
 
-  const zoomIn = () => {
+  const zoomIn = useCallback(() => {
     setAutoFit(false);
-    const newScale = Math.min(scale + 0.2, 3.0);
-    console.log("[PDFViewer] Zoom in:", newScale);
-    setScale(newScale);
-    onScaleChange?.(newScale);
-  };
+    setScale((prevScale) => {
+      const newScale = Math.min(prevScale + 0.2, 3.0);
+      console.log("[PDFViewer] Zoom in:", newScale);
+      onScaleChange?.(newScale);
+      return newScale;
+    });
+  }, [onScaleChange]);
 
-  const zoomOut = () => {
+  const zoomOut = useCallback(() => {
     setAutoFit(false);
-    const newScale = Math.max(scale - 0.2, 0.5);
-    console.log("[PDFViewer] Zoom out:", newScale);
-    setScale(newScale);
-    onScaleChange?.(newScale);
-  };
+    setScale((prevScale) => {
+      const newScale = Math.max(prevScale - 0.2, 0.5);
+      console.log("[PDFViewer] Zoom out:", newScale);
+      onScaleChange?.(newScale);
+      return newScale;
+    });
+  }, [onScaleChange]);
 
   const fitToWidth = useCallback(() => {
     setAutoFit(true);
@@ -216,9 +220,11 @@ export const PDFViewer = ({
       const containerWidth = containerRef.current.clientWidth - 40;
       const pageWidth = 595; // Standard PDF page width in points
       const newScale = containerWidth / pageWidth;
-      setScale(Math.max(0.5, Math.min(newScale, 3.0)));
+      const clampedScale = Math.max(0.5, Math.min(newScale, 3.0));
+      setScale(clampedScale);
+      onScaleChange?.(clampedScale);
     }
-  }, []);
+  }, [onScaleChange]);
 
   useEffect(() => {
     if (autoFit) {
