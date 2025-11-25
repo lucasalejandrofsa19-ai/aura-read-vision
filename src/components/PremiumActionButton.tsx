@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -10,6 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useUserData } from "@/hooks/useUserData";
 
 interface PremiumActionButtonProps {
   icon: React.ReactNode;
@@ -29,13 +29,11 @@ export const PremiumActionButton = ({
   className = "",
 }: PremiumActionButtonProps) => {
   const navigate = useNavigate();
-  const isPremium = false;
+  const { hasPremiumAccess } = useUserData();
 
   const handleClick = () => {
-    // UI-level check for immediate feedback
-    // Actual premium operations must validate server-side
-    if (requiresPremium && !isPremium) {
-      toast.error("Recurso disponível apenas para assinantes Premium", {
+    if (requiresPremium && !hasPremiumAccess) {
+      toast.error("Recurso disponível apenas para assinantes Premium/Pro", {
         action: {
           label: "Ver Planos",
           onClick: () => navigate("/pricing"),
@@ -62,7 +60,7 @@ export const PremiumActionButton = ({
               {icon}
               <span className="hidden sm:inline ml-2 text-xs">{label}</span>
             </Button>
-            {requiresPremium && !isPremium && (
+            {requiresPremium && !hasPremiumAccess && (
               <Badge 
                 className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-700 border-0 pointer-events-none"
                 variant="secondary"
@@ -74,8 +72,8 @@ export const PremiumActionButton = ({
         </TooltipTrigger>
         <TooltipContent>
           <p>{label}</p>
-          {requiresPremium && !isPremium && (
-            <p className="text-xs text-purple-400 mt-1">Requer Premium</p>
+          {requiresPremium && !hasPremiumAccess && (
+            <p className="text-xs text-purple-400 mt-1">Requer Premium/Pro</p>
           )}
         </TooltipContent>
       </Tooltip>

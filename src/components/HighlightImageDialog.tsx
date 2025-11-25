@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,8 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserData } from "@/hooks/useUserData";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Image, Download, Loader2, Trash2, Images, AlertCircle, Crown, X, Maximize2 } from "lucide-react";
 import { format } from "date-fns";
@@ -47,6 +50,8 @@ const stylePrompts: Record<ImageStyle, string> = {
 };
 
 export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightImageDialogProps) => {
+  const navigate = useNavigate();
+  const { hasPremiumAccess } = useUserData();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -202,17 +207,31 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {trigger ? (
-        <div onClick={() => setOpen(true)}>{trigger}</div>
+        <div onClick={() => setOpen(true)} className="relative">
+          {trigger}
+          {!hasPremiumAccess && imageCount >= FREE_IMAGE_LIMIT && (
+            <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-700 border-0 pointer-events-none">
+              <Crown className="w-2.5 h-2.5 text-white" />
+            </Badge>
+          )}
+        </div>
       ) : (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setOpen(true)}
-          className="h-8 w-8"
-          title="Gerar imagem com IA"
-        >
-          <Image className="w-3 h-3" />
-        </Button>
+        <div className="relative inline-block">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setOpen(true)}
+            className="h-8 w-8"
+            title={imageCount >= FREE_IMAGE_LIMIT && !hasPremiumAccess ? "Gerar imagem com IA (Premium/Pro)" : "Gerar imagem com IA"}
+          >
+            <Image className="w-3 h-3" />
+          </Button>
+          {!hasPremiumAccess && imageCount >= FREE_IMAGE_LIMIT && (
+            <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-700 border-0 pointer-events-none">
+              <Crown className="w-2.5 h-2.5 text-white" />
+            </Badge>
+          )}
+        </div>
       )}
 
       <DialogContent className="max-w-2xl">
@@ -236,20 +255,20 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
                   <AlertCircle className="h-4 w-4 text-amber-500" />
                   <AlertDescription className="text-sm">
                     Você já usou {imageCount} de {FREE_IMAGE_LIMIT} imagens gratuitas.
-                    {imageCount >= FREE_IMAGE_LIMIT ? (
+                    {imageCount >= FREE_IMAGE_LIMIT && !hasPremiumAccess ? (
                       <>
                         {" "}Para gerar mais imagens, 
                         <Button 
                           variant="link" 
                           className="h-auto p-0 ml-1 text-amber-500 hover:text-amber-600 inline-flex items-center gap-1"
-                          onClick={() => window.location.href = '/pricing'}
+                          onClick={() => navigate('/pricing')}
                         >
                           <Crown className="w-3 h-3" />
-                          assine o plano Premium
+                          assine o plano Premium/Pro
                         </Button>
                       </>
                     ) : (
-                      <> Restam {FREE_IMAGE_LIMIT - imageCount} imagens gratuitas.</>
+                      " Imagens geradas consomem o seu limite mensal."
                     )}
                   </AlertDescription>
                 </Alert>

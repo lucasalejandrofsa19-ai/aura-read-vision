@@ -1,10 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { Highlighter, Trash2, Pen, X } from "lucide-react";
+import { Highlighter, Trash2, Pen, X, Crown } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import { useUserData } from "@/hooks/useUserData";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface HighlightToolbarProps {
   selectedColor: string;
@@ -36,6 +40,23 @@ export const HighlightToolbar = ({
   isQuickMode = false,
   onToggleQuickMode,
 }: HighlightToolbarProps) => {
+  const { hasPremiumAccess } = useUserData();
+  const navigate = useNavigate();
+
+  const handleColorChange = (color: string) => {
+    // Amarelo é grátis, outras cores requerem premium
+    if (color !== "#fef08a" && !hasPremiumAccess) {
+      toast.error("Cores personalizadas disponíveis apenas para assinantes Premium/Pro", {
+        action: {
+          label: "Ver Planos",
+          onClick: () => navigate("/pricing"),
+        },
+      });
+      return;
+    }
+    onColorChange(color);
+  };
+
   return (
     <div className="glass rounded-lg p-2 flex items-center gap-2">
       {isDrawMode ? (
@@ -97,24 +118,37 @@ export const HighlightToolbar = ({
                 <div>
                   <p className="text-sm font-medium mb-3">Escolha a cor do destaque</p>
                   <div className="grid grid-cols-3 gap-2">
-                    {HIGHLIGHT_COLORS.map((color) => (
-                      <button
-                        key={color.value}
-                        onClick={() => onColorChange(color.value)}
-                        className={`${color.class} h-12 rounded-md border-2 transition-all hover:scale-105 relative ${
-                          selectedColor === color.value
-                            ? "border-primary ring-2 ring-primary ring-offset-2 shadow-lg"
-                            : "border-border"
-                        }`}
-                        title={color.name}
-                      >
-                        {selectedColor === color.value && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Highlighter className="w-5 h-5 text-primary drop-shadow-md" />
-                          </div>
-                        )}
-                      </button>
-                    ))}
+                    {HIGHLIGHT_COLORS.map((color, index) => {
+                      const isPremiumColor = color.value !== "#fef08a";
+                      const isLocked = isPremiumColor && !hasPremiumAccess;
+                      
+                      return (
+                        <button
+                          key={color.value}
+                          onClick={() => handleColorChange(color.value)}
+                          disabled={isLocked}
+                          className={`${color.class} h-12 rounded-md border-2 transition-all hover:scale-105 relative ${
+                            selectedColor === color.value
+                              ? "border-primary ring-2 ring-primary ring-offset-2 shadow-lg"
+                              : "border-border"
+                          } ${isLocked ? "opacity-50 cursor-not-allowed" : ""}`}
+                          title={isLocked ? `${color.name} (Premium/Pro)` : color.name}
+                        >
+                          {selectedColor === color.value && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Highlighter className="w-5 h-5 text-primary drop-shadow-md" />
+                            </div>
+                          )}
+                          {isLocked && (
+                            <div className="absolute top-0 right-0 -mt-1 -mr-1">
+                              <Badge className="h-4 w-4 p-0 flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-700 border-0">
+                                <Crown className="w-2.5 h-2.5 text-white" />
+                              </Badge>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
