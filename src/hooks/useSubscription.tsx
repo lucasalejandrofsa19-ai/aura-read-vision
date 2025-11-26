@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { captureError } from "@/lib/sentry";
 
 interface SubscriptionStatus {
   subscribed: boolean;
@@ -120,7 +121,10 @@ export const useSubscription = () => {
         window.open(data.url, "_blank");
       }
     } catch (error) {
-      console.error("Error opening customer portal:", error);
+      captureError(error, { context: "customer_portal" });
+      if (import.meta.env.DEV) {
+        console.error("Error opening customer portal:", error);
+      }
       toast.error("Erro ao abrir portal de gerenciamento");
     }
   };

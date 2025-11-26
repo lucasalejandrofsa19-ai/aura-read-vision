@@ -18,6 +18,7 @@ import { useExport, type ExportFormat } from "@/hooks/useExport";
 import { usePremiumValidation } from "@/hooks/usePremiumValidation";
 import { useUserData } from "@/hooks/useUserData";
 import { supabase } from "@/integrations/supabase/client";
+import { captureError } from "@/lib/sentry";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Highlight } from "@/hooks/useHighlights";
@@ -106,7 +107,10 @@ export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps
       toast.success("Exportação realizada com sucesso!");
       setOpen(false);
     } catch (error) {
-      console.error('Export error:', error);
+      captureError(error, { context: "export_highlights" });
+      if (import.meta.env.DEV) {
+        console.error('Export error:', error);
+      }
       toast.error("Erro ao exportar dados");
     } finally {
       setIsExporting(false);
