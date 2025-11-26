@@ -13,6 +13,7 @@ import {
   Eye,
   MoreVertical,
   Highlighter,
+  List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +35,15 @@ import { useNotes } from "@/hooks/useNotes";
 import { useAuth } from "@/contexts/AuthContext";
 import { useReadingSession } from "@/hooks/useReadingSession";
 import { useHighlights } from "@/hooks/useHighlights";
+import { HighlightsList } from "@/components/HighlightsList";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { captureError } from "@/lib/sentry";
 
 const Reader = () => {
@@ -52,7 +62,7 @@ const Reader = () => {
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const mobileConfig = useMobileOptimization();
 
-  const { highlights, addHighlight } = useHighlights(id || "", currentPage);
+  const { highlights, allHighlights, addHighlight, deleteHighlight } = useHighlights(id || "", currentPage);
 
   const {
     notes,
@@ -343,6 +353,39 @@ const Reader = () => {
               <Highlighter className="w-5 h-5" />
             </Button>
 
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="aura-soft transition-aura"
+                  title="Ver destaques"
+                >
+                  <List className="w-5 h-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Destaques</SheetTitle>
+                  <SheetDescription>
+                    {allHighlights.length} destaque{allHighlights.length !== 1 ? "s" : ""} neste livro
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6">
+                  <HighlightsList
+                    highlights={allHighlights}
+                    currentPage={currentPage}
+                    onDelete={(highlightId) => {
+                      deleteHighlight(highlightId);
+                    }}
+                    onNavigate={(pageNumber) => {
+                      handlePageChange(pageNumber);
+                    }}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -427,6 +470,39 @@ const Reader = () => {
             >
               <Highlighter className="w-5 h-5" />
             </Button>
+
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="aura-soft transition-aura"
+                  title="Ver destaques"
+                >
+                  <List className="w-5 h-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Destaques</SheetTitle>
+                  <SheetDescription>
+                    {allHighlights.length} destaque{allHighlights.length !== 1 ? "s" : ""} neste livro
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6">
+                  <HighlightsList
+                    highlights={allHighlights}
+                    currentPage={currentPage}
+                    onDelete={(highlightId) => {
+                      deleteHighlight(highlightId);
+                    }}
+                    onNavigate={(pageNumber) => {
+                      handlePageChange(pageNumber);
+                    }}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

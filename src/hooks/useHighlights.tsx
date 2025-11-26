@@ -23,6 +23,7 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Query para highlights da página atual
   const { data: highlights = [], isLoading } = useQuery({
     queryKey: ["highlights", bookId, pageNumber],
     queryFn: async () => {
@@ -32,6 +33,21 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
         .eq("book_id", bookId)
         .eq("page_number", pageNumber)
         .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data as Highlight[];
+    },
+  });
+
+  // Query para todos os highlights do livro
+  const { data: allHighlights = [] } = useQuery({
+    queryKey: ["highlights", bookId, "all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("highlights")
+        .select("*")
+        .eq("book_id", bookId)
+        .order("page_number", { ascending: true });
 
       if (error) throw error;
       return data as Highlight[];
@@ -61,6 +77,7 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["highlights", bookId, pageNumber] });
+      queryClient.invalidateQueries({ queryKey: ["highlights", bookId, "all"] });
       toast({
         title: "Destaque adicionado",
         description: "Seu destaque foi salvo com sucesso",
@@ -86,6 +103,7 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["highlights", bookId, pageNumber] });
+      queryClient.invalidateQueries({ queryKey: ["highlights", bookId, "all"] });
       toast({
         title: "Destaque removido",
         description: "Seu destaque foi excluído",
@@ -109,6 +127,7 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
 
   return {
     highlights,
+    allHighlights,
     isLoading,
     addHighlight,
     deleteHighlight,
