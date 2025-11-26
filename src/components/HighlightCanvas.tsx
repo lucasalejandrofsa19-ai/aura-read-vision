@@ -296,10 +296,11 @@ export const HighlightCanvas = ({
   return (
     <canvas
       ref={canvasRef}
-      className="absolute top-0 left-0 pointer-events-auto z-10"
+      className="absolute top-0 left-0 z-50"
       style={{
         cursor: isDrawingMode ? "crosshair" : "default",
         touchAction: isDrawingMode ? "none" : "auto",
+        pointerEvents: isDrawingMode ? "auto" : "none",
       }}
     />
   );
