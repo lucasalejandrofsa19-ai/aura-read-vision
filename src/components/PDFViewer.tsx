@@ -341,8 +341,7 @@ export const PDFViewer = ({
           }
         >
           <div className="relative">
-            <div style={{ pointerEvents: isHighlightMode ? 'none' : 'auto' }}>
-              <Page
+            <Page
                 pageNumber={pageNumber}
                 scale={scale}
                 renderTextLayer={false}
@@ -374,7 +373,6 @@ export const PDFViewer = ({
                 return text;
               }}
               />
-            </div>
             
             {/* Highlight Canvas Overlay */}
             {pageSize.width > 0 && pageSize.height > 0 && (
