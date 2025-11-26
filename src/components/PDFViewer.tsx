@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { PDFSearchBar } from "@/components/PDFSearchBar";
 import { usePDFPrefetch } from "@/hooks/usePDFPrefetch";
+import { HighlightCanvas } from "@/components/HighlightCanvas";
 import type { TextItem } from "pdfjs-dist/types/src/display/api";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -18,6 +19,15 @@ interface PDFViewerProps {
   bookmarkIndicator?: React.ReactNode;
   externalScale?: number;
   onScaleChange?: (scale: number) => void;
+  highlights?: Array<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    color: string;
+  }>;
+  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number }) => void;
+  isDrawingMode?: boolean;
 }
 
 export const PDFViewer = ({ 
@@ -28,6 +38,9 @@ export const PDFViewer = ({
   bookmarkIndicator,
   externalScale,
   onScaleChange,
+  highlights = [],
+  onHighlightDrawn,
+  isDrawingMode = false,
 }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
@@ -357,6 +370,31 @@ export const PDFViewer = ({
               }}
               />
             
+            {pageSize.width > 0 && pageSize.height > 0 && (
+              <HighlightCanvas
+                key={`canvas-${pageNumber}-${Math.round(pageSize.width)}-${Math.round(pageSize.height)}`}
+                width={pageSize.width}
+                height={pageSize.height}
+                highlights={highlights.map(h => ({
+                  ...h,
+                  x: h.x * scale,
+                  y: h.y * scale,
+                  width: h.width * scale,
+                  height: h.height * scale,
+                }))}
+                onHighlightAdded={(coords) => {
+                  const realScale = pageSize.width / 595;
+                  const originalCoords = {
+                    x: coords.x / realScale,
+                    y: coords.y / realScale,
+                    width: coords.width / realScale,
+                    height: coords.height / realScale,
+                  };
+                  onHighlightDrawn?.(originalCoords);
+                }}
+                isDrawing={isDrawingMode}
+              />
+            )}
           </div>
         </Document>
       </div>

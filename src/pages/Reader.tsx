@@ -12,6 +12,7 @@ import {
   Maximize,
   Eye,
   MoreVertical,
+  Highlighter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,7 @@ import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
 import { useAuth } from "@/contexts/AuthContext";
 import { useReadingSession } from "@/hooks/useReadingSession";
+import { useHighlights } from "@/hooks/useHighlights";
 import { captureError } from "@/lib/sentry";
 
 const Reader = () => {
@@ -47,7 +49,10 @@ const Reader = () => {
   const [isFocusedMode, setIsFocusedMode] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
+  const [isDrawingMode, setIsDrawingMode] = useState(false);
   const mobileConfig = useMobileOptimization();
+
+  const { highlights, addHighlight } = useHighlights(id || "", currentPage);
 
   const {
     notes,
@@ -328,6 +333,16 @@ const Reader = () => {
               notes={notes}
             />
 
+            <Button
+              variant={isDrawingMode ? "default" : "ghost"}
+              size="icon"
+              onClick={() => setIsDrawingMode(!isDrawingMode)}
+              className="aura-soft transition-aura"
+              title={isDrawingMode ? "Desativar marca texto" : "Ativar marca texto"}
+            >
+              <Highlighter className="w-5 h-5" />
+            </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -402,6 +417,16 @@ const Reader = () => {
               onDeleteNote={deleteNote}
               onNavigateToPage={handleNavigateToPage}
             />
+
+            <Button
+              variant={isDrawingMode ? "default" : "ghost"}
+              size="icon"
+              onClick={() => setIsDrawingMode(!isDrawingMode)}
+              className="aura-soft transition-aura"
+              title={isDrawingMode ? "Desativar marca texto" : "Ativar marca texto"}
+            >
+              <Highlighter className="w-5 h-5" />
+            </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -481,6 +506,15 @@ const Reader = () => {
             onTextSelect={handleTextSelect}
             externalScale={scale}
             onScaleChange={setScale}
+            highlights={highlights.map(h => ({
+              x: h.position_data.x,
+              y: h.position_data.y,
+              width: h.position_data.width,
+              height: h.position_data.height,
+              color: h.color,
+            }))}
+            onHighlightDrawn={addHighlight}
+            isDrawingMode={isDrawingMode}
             bookmarkIndicator={
               bookmarkedPage === currentPage && !mobileConfig.shouldReduceAnimations ? (
                 <motion.div
