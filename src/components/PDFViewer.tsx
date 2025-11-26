@@ -340,17 +340,18 @@ export const PDFViewer = ({
           }
         >
           <div className="relative">
-            <Page
-              pageNumber={pageNumber}
-              scale={scale}
-              renderTextLayer={false}
-              renderAnnotationLayer={false}
-              onLoadSuccess={(page) => {
-                setPageSize({
-                  width: page.width,
-                  height: page.height,
-                });
-              }}
+            <div style={{ pointerEvents: isHighlightMode ? 'none' : 'auto' }}>
+              <Page
+                pageNumber={pageNumber}
+                scale={scale}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                onLoadSuccess={(page) => {
+                  setPageSize({
+                    width: page.width,
+                    height: page.height,
+                  });
+                }}
               loading={
                 <div className="flex items-center justify-center p-12">
                   <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -370,7 +371,8 @@ export const PDFViewer = ({
                 }
                 return text;
               }}
-            />
+              />
+            </div>
             
             {/* Highlight Canvas Overlay */}
             {pageSize.width > 0 && pageSize.height > 0 && (
