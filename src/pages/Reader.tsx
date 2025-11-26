@@ -38,7 +38,6 @@ import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePremiumValidation } from "@/hooks/usePremiumValidation";
-import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { useReadingSession } from "@/hooks/useReadingSession";
 import { captureError } from "@/lib/sentry";
 
@@ -85,33 +84,22 @@ const Reader = () => {
     deleteNote: deleteNoteOriginal,
   } = useNotes(id || "");
 
-  // Wrapper functions to play sounds
+  // Wrapper functions (sound removed)
   const addNote = async (pageNumber: number, noteText: string) => {
-    const result = await addNoteOriginal(pageNumber, noteText);
-    if (result) {
-      playSound('note');
-    }
-    return result;
+    return await addNoteOriginal(pageNumber, noteText);
   };
 
   const deleteNote = async (noteId: string) => {
-    const success = await deleteNoteOriginal(noteId);
-    if (success) {
-      playSound('delete');
-    }
+    return await deleteNoteOriginal(noteId);
   };
 
   const handleDeleteHighlight = async (highlightId: string) => {
-    const success = await deleteHighlight(highlightId);
-    if (success) {
-      playSound('delete');
-    }
+    await deleteHighlight(highlightId);
   };
 
   const { enterFullscreen } = useFullscreen();
   const { user } = useAuth();
   const { validatePremiumAccess } = usePremiumValidation();
-  const { playSound } = useSoundEffects();
   const { startSession, endSession, updateSession, isSessionActive } = useReadingSession(id || "");
 
   useEffect(() => {
@@ -242,12 +230,10 @@ const Reader = () => {
     if (bookmarkedPage === currentPage) {
       // Remove bookmark
       setBookmarkedPage(null);
-      playSound('delete');
       toast.success("Marcador removido");
     } else {
       // Set bookmark to current page
       setBookmarkedPage(currentPage);
-      playSound('bookmark');
       toast.success(`Página ${currentPage} marcada!`);
     }
   };
@@ -264,7 +250,6 @@ const Reader = () => {
     setCurrentPage(page);
     saveCurrentPage(page);
     setSelectedText(""); // Clear selection when changing pages
-    playSound('page-turn');
     
     // Update reading session
     if (isSessionActive) {
@@ -283,7 +268,6 @@ const Reader = () => {
     console.log("[Highlight] Add result:", result);
     
     if (result) {
-      playSound('highlight');
       toast.success("Destaque adicionado!");
     } else {
       console.error("[Highlight] Failed to add highlight");
@@ -294,7 +278,6 @@ const Reader = () => {
   const handleHighlightDeleted = async (highlightId: string) => {
     try {
       await deleteHighlight(highlightId);
-      playSound('delete');
       toast.success("Destaque apagado!");
     } catch (error) {
       console.error("Error deleting highlight:", error);
