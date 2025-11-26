@@ -47,7 +47,7 @@ export const HighlightCanvas = ({
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    console.log("[HighlightCanvas] Initializing canvas with dimensions:", { canvasWidth, canvasHeight });
+    console.log("[HighlightCanvas] Initializing canvas with dimensions:", { canvasWidth, canvasHeight, isDrawingMode });
 
     // Ensure canvas element is ready
     const canvasElement = canvasRef.current;
@@ -131,9 +131,12 @@ export const HighlightCanvas = ({
 
   // Handle drawing mode - Memoize handlers to prevent recreation
   const handleMouseDown = useCallback((e: any) => {
-    if (!fabricCanvas) return;
+    if (!fabricCanvas) {
+      console.log("[HighlightCanvas] Mouse down ignorado - canvas não existe");
+      return;
+    }
 
-    console.log("[HighlightCanvas] Mouse down event triggered");
+    console.log("[HighlightCanvas] Mouse down event triggered. Drawing mode:", isDrawingMode);
 
     const pointer = fabricCanvas.getPointer(e.e);
     console.log("[HighlightCanvas] Pointer position:", pointer);

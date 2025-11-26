@@ -67,6 +67,7 @@ export const PDFViewer = ({
 
   useEffect(() => {
     if (externalScale !== undefined) {
+      console.log('[PDFViewer] Escala externa aplicada:', externalScale);
       setScale(externalScale);
       setAutoFit(false);
     }
@@ -347,6 +348,7 @@ export const PDFViewer = ({
                 renderTextLayer={false}
                 renderAnnotationLayer={false}
                 onLoadSuccess={(page) => {
+                  console.log('[PDFViewer] Página carregada. Dimensões:', page.width, 'x', page.height, 'Escala:', scale);
                   setPageSize({
                     width: page.width,
                     height: page.height,
@@ -378,14 +380,30 @@ export const PDFViewer = ({
             {pageSize.width > 0 && pageSize.height > 0 && (
               <HighlightCanvas
                 pageNumber={pageNumber}
-                highlights={highlightedAreas}
-                onHighlightAdded={onHighlightDrawn}
+                highlights={highlightedAreas.map(h => ({
+                  ...h,
+                  x: h.x * scale,
+                  y: h.y * scale,
+                  width: h.width * scale,
+                  height: h.height * scale,
+                }))}
+                onHighlightAdded={(coords) => {
+                  console.log('[PDFViewer] Highlight desenhado em escala:', scale, coords);
+                  const originalCoords = {
+                    x: coords.x / scale,
+                    y: coords.y / scale,
+                    width: coords.width / scale,
+                    height: coords.height / scale,
+                  };
+                  console.log('[PDFViewer] Coordenadas originais:', originalCoords);
+                  onHighlightDrawn?.(originalCoords);
+                }}
                 onHighlightDeleted={onHighlightDeleted}
                 onHighlightClicked={onHighlightClicked}
                 isDrawingMode={isHighlightMode}
                 highlightColor={highlightColor}
-                canvasWidth={pageSize.width}
-                canvasHeight={pageSize.height}
+                canvasWidth={pageSize.width * scale}
+                canvasHeight={pageSize.height * scale}
               />
             )}
           </div>
