@@ -63,6 +63,10 @@ const Reader = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
   const [isHighlightDrawMode] = useState(true); // Sempre ativo
+  
+  useEffect(() => {
+    console.log("[Reader] Highlight mode initialized:", { isHighlightDrawMode, bookId: id });
+  }, [isHighlightDrawMode, id]);
   const [showEditHighlightDialog, setShowEditHighlightDialog] = useState(false);
   const [editingHighlight, setEditingHighlight] = useState<{ id: string; color: string } | null>(null);
   const mobileConfig = useMobileOptimization();
@@ -596,6 +600,17 @@ const Reader = () => {
         />
 
         {pdfUrl ? (
+          <>
+            {/* Indicador visual de modo de destaque ativo */}
+            <div className="mb-4 p-3 bg-primary/10 border-2 border-primary/30 rounded-lg animate-pulse">
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
+                <span className="text-sm font-medium text-primary">
+                  Modo de destaque ativo - Clique e arraste no PDF para destacar
+                </span>
+              </div>
+            </div>
+            
             <PDFViewer 
               fileUrl={pdfUrl} 
               initialPage={currentPage}
@@ -636,6 +651,7 @@ const Reader = () => {
                 ) : null
               }
             />
+          </>
         ) : (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Nenhum arquivo PDF disponível</p>
