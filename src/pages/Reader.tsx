@@ -277,6 +277,18 @@ const Reader = () => {
         bookTitle={book.title}
         onClose={handleExitFocusedMode}
         onPageChange={handlePageChange}
+        highlights={highlights.map(h => ({
+          x: h.position_data.x,
+          y: h.position_data.y,
+          width: h.position_data.width,
+          height: h.position_data.height,
+          color: h.color,
+        }))}
+        onHighlightDrawn={(coords) => {
+          addHighlight(coords);
+        }}
+        isDrawingMode={isDrawingMode}
+        onDrawingModeChange={setIsDrawingMode}
       />
     );
   }
