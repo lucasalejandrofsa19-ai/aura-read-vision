@@ -64,7 +64,6 @@ const Reader = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
   const [isHighlightDrawMode, setIsHighlightDrawMode] = useState(false);
-  const [isQuickHighlightMode, setIsQuickHighlightMode] = useState(false);
   const [showEditHighlightDialog, setShowEditHighlightDialog] = useState(false);
   const [editingHighlight, setEditingHighlight] = useState<{ id: string; color: string } | null>(null);
   const mobileConfig = useMobileOptimization();
@@ -276,10 +275,9 @@ const Reader = () => {
   };
 
   const handleAddHighlight = async () => {
-    // Sempre ativa o modo de desenho quando clicar em "Destacar"
+    // Ativa o modo de desenho automático
     setIsHighlightDrawMode(true);
-    const modeText = isQuickHighlightMode ? "Modo Rápido ativado! Toque para destacar múltiplas áreas" : "Toque na área do PDF que deseja destacar";
-    toast.info(modeText);
+    toast.info("Toque nas áreas do PDF que deseja destacar. Clique em Cancelar quando terminar.");
   };
 
   const handleHighlightDrawn = async (coords: { x: number; y: number; width: number; height: number }) => {
@@ -290,27 +288,16 @@ const Reader = () => {
     
     if (result) {
       playSound('highlight');
-      
-      // Se não estiver em modo rápido, desativa o modo de desenho
-      if (!isQuickHighlightMode) {
-        setIsHighlightDrawMode(false);
-        toast.success("Destaque adicionado!");
-      } else {
-        toast.success("Destaque adicionado! Continue destacando ou clique em Cancelar");
-      }
+      toast.success("Destaque adicionado! Continue destacando ou clique em Cancelar");
     } else {
       console.error("[Highlight] Failed to add highlight");
       toast.error("Erro ao adicionar destaque");
     }
   };
 
-  const handleToggleQuickMode = () => {
-    setIsQuickHighlightMode(!isQuickHighlightMode);
-    if (!isQuickHighlightMode) {
-      toast.success("Modo Rápido ativado! Você pode adicionar vários destaques seguidos");
-    } else {
-      toast.info("Modo Único ativado");
-    }
+  const handleCancelHighlight = () => {
+    setIsHighlightDrawMode(false);
+    toast.info("Modo de destaque desativado");
   };
 
   const handleHighlightDeleted = async (highlightId: string) => {
@@ -639,13 +626,7 @@ const Reader = () => {
           onHighlight={handleAddHighlight}
           isHighlightMode={isHighlightDrawMode}
           isDrawMode={isHighlightDrawMode}
-          isQuickMode={isQuickHighlightMode}
-          onToggleQuickMode={handleToggleQuickMode}
-          onCancelDraw={() => {
-            setIsHighlightDrawMode(false);
-            setIsQuickHighlightMode(false);
-            toast.info("Modo de destaque cancelado");
-          }}
+          onCancelDraw={handleCancelHighlight}
         />
 
         {pdfUrl ? (
