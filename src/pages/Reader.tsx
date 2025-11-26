@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { PDFViewer } from "@/components/PDFViewer";
-import { HighlightToolbar } from "@/components/HighlightToolbar";
 import { HighlightsList } from "@/components/HighlightsList";
 import { PresentationMode } from "@/components/PresentationMode";
 import { FocusedReaderMode } from "@/components/FocusedReaderMode";
@@ -63,7 +62,7 @@ const Reader = () => {
   const [showNotesPanel, setShowNotesPanel] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
-  const [isHighlightDrawMode, setIsHighlightDrawMode] = useState(false);
+  const [isHighlightDrawMode] = useState(true); // Sempre ativo
   const [showEditHighlightDialog, setShowEditHighlightDialog] = useState(false);
   const [editingHighlight, setEditingHighlight] = useState<{ id: string; color: string } | null>(null);
   const mobileConfig = useMobileOptimization();
@@ -273,12 +272,6 @@ const Reader = () => {
     setSelectedText(text);
   };
 
-  const handleAddHighlight = async () => {
-    console.log("[Highlight] Activating highlight mode");
-    setIsHighlightDrawMode(true);
-    toast.info("Toque nas áreas do PDF que deseja destacar");
-  };
-
   const handleHighlightDrawn = async (coords: { x: number; y: number; width: number; height: number }) => {
     console.log("[Highlight] Drawing highlight:", { coords, currentPage, highlightColor, bookId: id });
     const result = await addHighlight(currentPage, "", highlightColor, coords);
@@ -287,17 +280,11 @@ const Reader = () => {
     
     if (result) {
       playSound('highlight');
-      toast.success("Destaque adicionado! Continue destacando ou clique em Cancelar");
+      toast.success("Destaque adicionado!");
     } else {
       console.error("[Highlight] Failed to add highlight");
       toast.error("Erro ao adicionar destaque");
     }
-  };
-
-  const handleCancelHighlight = () => {
-    console.log("[Highlight] Canceling highlight mode");
-    setIsHighlightDrawMode(false);
-    toast.info("Modo de destaque desativado");
   };
 
   const handleHighlightDeleted = async (highlightId: string) => {
@@ -606,13 +593,6 @@ const Reader = () => {
           highlights={highlights}
           onDelete={handleDeleteHighlight}
           onNavigate={handleNavigateToHighlight}
-        />
-
-        {/* Highlight Toolbar */}
-        <HighlightToolbar
-          onAddHighlight={handleAddHighlight}
-          onCancel={handleCancelHighlight}
-          isDrawingMode={isHighlightDrawMode}
         />
 
         {pdfUrl ? (
