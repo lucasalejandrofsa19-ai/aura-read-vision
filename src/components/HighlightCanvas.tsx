@@ -41,6 +41,7 @@ export const HighlightCanvas = ({
       height,
       selection: false,
       backgroundColor: "transparent",
+      renderOnAddRemove: false, // Prevent automatic renders
     });
 
     fabricCanvasRef.current = canvas;
@@ -48,21 +49,16 @@ export const HighlightCanvas = ({
     return () => {
       isMountedRef.current = false;
       
-      // Clean up in a way that doesn't conflict with React
       const currentCanvas = fabricCanvasRef.current;
       if (currentCanvas) {
+        // Don't call dispose() - let React handle DOM cleanup
+        // Just remove event listeners and clear references
         try {
-          // Remove all event listeners first
           currentCanvas.off();
-          // Clear all objects
-          currentCanvas.clear();
-          // Dispose without letting it manipulate DOM
-          currentCanvas.dispose();
-        } catch (error) {
-          // Silently handle cleanup errors
-        } finally {
-          fabricCanvasRef.current = null;
+        } catch (e) {
+          // Ignore errors
         }
+        fabricCanvasRef.current = null;
       }
     };
   }, [width, height]);
@@ -88,7 +84,7 @@ export const HighlightCanvas = ({
         canvas.add(rect);
       });
 
-      canvas.renderAll();
+      canvas.requestRenderAll();
     } catch (error) {
       // Silently handle render errors during unmount
     }
@@ -137,7 +133,7 @@ export const HighlightCanvas = ({
           top: height < 0 ? pointer.y : drawingRef.current.startY,
         });
 
-        canvas.renderAll();
+        canvas.requestRenderAll();
       };
 
       const handleMouseUp = () => {
@@ -156,7 +152,7 @@ export const HighlightCanvas = ({
 
         try {
           canvas.remove(rect);
-          canvas.renderAll();
+          canvas.requestRenderAll();
         } catch (error) {
           // Silently handle errors during unmount
         }
