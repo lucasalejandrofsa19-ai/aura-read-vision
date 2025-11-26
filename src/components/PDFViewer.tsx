@@ -26,6 +26,7 @@ interface PDFViewerProps {
   highlightColor?: string;
   onHighlightDrawn?: (highlight: { x: number; y: number; width: number; height: number }) => void;
   onHighlightDeleted?: (highlightId: string) => void;
+  onHighlightClicked?: (highlightId: string, currentColor: string) => void;
 }
 
 export const PDFViewer = ({ 
@@ -40,7 +41,8 @@ export const PDFViewer = ({
   isHighlightMode = false,
   highlightColor = "#fef08a",
   onHighlightDrawn,
-  onHighlightDeleted
+  onHighlightDeleted,
+  onHighlightClicked
 }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
@@ -403,6 +405,7 @@ export const PDFViewer = ({
                 highlights={highlightedAreas}
                 onHighlightAdded={onHighlightDrawn}
                 onHighlightDeleted={onHighlightDeleted}
+                onHighlightClicked={onHighlightClicked}
                 isDrawingMode={isHighlightMode}
                 highlightColor={highlightColor}
                 canvasWidth={pageSize.width}
