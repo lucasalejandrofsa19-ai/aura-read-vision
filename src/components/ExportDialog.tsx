@@ -21,8 +21,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { captureError } from "@/lib/sentry";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import type { Highlight } from "@/hooks/useHighlights";
 import type { Note } from "@/hooks/useNotes";
+
+interface Highlight {
+  id: string;
+  page_number: number;
+  text: string;
+  color: string | null;
+  created_at: string;
+}
 
 interface ExportDialogProps {
   bookTitle: string;

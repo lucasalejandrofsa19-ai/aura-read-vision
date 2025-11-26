@@ -2,12 +2,19 @@ import { toast } from "sonner";
 import { pdf } from "@react-pdf/renderer";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
 import { saveAs } from "file-saver";
-import type { Highlight } from "@/hooks/useHighlights";
 import type { Note } from "@/hooks/useNotes";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export type ExportFormat = "pdf" | "word" | "markdown" | "notion";
+
+interface Highlight {
+  id: string;
+  page_number: number;
+  text: string;
+  color: string | null;
+  created_at: string;
+}
 
 interface ExportOptions {
   includeHighlights: boolean;

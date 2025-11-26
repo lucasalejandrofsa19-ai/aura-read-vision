@@ -3,7 +3,6 @@ import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { PDFSearchBar } from "@/components/PDFSearchBar";
-import { HighlightCanvas } from "@/components/HighlightCanvas";
 import { usePDFPrefetch } from "@/hooks/usePDFPrefetch";
 import type { TextItem } from "pdfjs-dist/types/src/display/api";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -16,15 +15,9 @@ interface PDFViewerProps {
   initialPage?: number;
   onPageChange?: (page: number) => void;
   onTextSelect?: (text: string) => void;
-  highlightedAreas?: Array<{ id: string; x: number; y: number; width: number; height: number; color: string }>;
   bookmarkIndicator?: React.ReactNode;
   externalScale?: number;
   onScaleChange?: (scale: number) => void;
-  isHighlightMode?: boolean;
-  highlightColor?: string;
-  onHighlightDrawn?: (highlight: { x: number; y: number; width: number; height: number }) => void;
-  onHighlightDeleted?: (highlightId: string) => void;
-  onHighlightClicked?: (highlightId: string, currentColor: string) => void;
 }
 
 export const PDFViewer = ({ 
@@ -32,15 +25,9 @@ export const PDFViewer = ({
   initialPage = 1, 
   onPageChange,
   onTextSelect,
-  highlightedAreas = [],
   bookmarkIndicator,
   externalScale,
   onScaleChange,
-  isHighlightMode = false,
-  highlightColor = "#fef08a",
-  onHighlightDrawn,
-  onHighlightDeleted,
-  onHighlightClicked
 }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
@@ -370,39 +357,6 @@ export const PDFViewer = ({
               }}
               />
             
-            {/* Highlight Canvas Overlay */}
-            {pageSize.width > 0 && pageSize.height > 0 && (
-              <HighlightCanvas
-                key={`canvas-${pageNumber}-${Math.round(pageSize.width)}-${Math.round(pageSize.height)}`}
-                pageNumber={pageNumber}
-                highlights={highlightedAreas.map(h => {
-                  const realScale = pageSize.width / 595;
-                  return {
-                    ...h,
-                    x: h.x * realScale,
-                    y: h.y * realScale,
-                    width: h.width * realScale,
-                    height: h.height * realScale,
-                  };
-                })}
-                onHighlightAdded={(coords) => {
-                  const realScale = pageSize.width / 595;
-                  const originalCoords = {
-                    x: coords.x / realScale,
-                    y: coords.y / realScale,
-                    width: coords.width / realScale,
-                    height: coords.height / realScale,
-                  };
-                  onHighlightDrawn?.(originalCoords);
-                }}
-                onHighlightDeleted={onHighlightDeleted}
-                onHighlightClicked={onHighlightClicked}
-                isDrawingMode={isHighlightMode}
-                highlightColor={highlightColor}
-                canvasWidth={pageSize.width}
-                canvasHeight={pageSize.height}
-              />
-            )}
           </div>
         </Document>
       </div>
