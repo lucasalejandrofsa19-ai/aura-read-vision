@@ -67,7 +67,6 @@ export const PDFViewer = ({
 
   useEffect(() => {
     if (externalScale !== undefined) {
-      console.log('[PDFViewer] Escala externa aplicada:', externalScale);
       setScale(externalScale);
       setAutoFit(false);
     }
@@ -190,7 +189,6 @@ export const PDFViewer = ({
     setAutoFit(false);
     setScale((prevScale) => {
       const newScale = Math.min(prevScale + 0.2, 3.0);
-      console.log("[PDFViewer] Zoom in:", newScale);
       onScaleChange?.(newScale);
       return newScale;
     });
@@ -200,7 +198,6 @@ export const PDFViewer = ({
     setAutoFit(false);
     setScale((prevScale) => {
       const newScale = Math.max(prevScale - 0.2, 0.5);
-      console.log("[PDFViewer] Zoom out:", newScale);
       onScaleChange?.(newScale);
       return newScale;
     });
@@ -347,7 +344,6 @@ export const PDFViewer = ({
                 renderTextLayer={false}
                 renderAnnotationLayer={false}
                 onLoadSuccess={(page) => {
-                  console.log('[PDFViewer] Página carregada. Dimensões:', page.width, 'x', page.height, 'Escala:', scale);
                   setPageSize({
                     width: page.width,
                     height: page.height,
@@ -377,31 +373,34 @@ export const PDFViewer = ({
             {/* Highlight Canvas Overlay */}
             {pageSize.width > 0 && pageSize.height > 0 && (
               <HighlightCanvas
+                key={`canvas-${pageNumber}-${Math.round(pageSize.width)}-${Math.round(pageSize.height)}`}
                 pageNumber={pageNumber}
-                highlights={highlightedAreas.map(h => ({
-                  ...h,
-                  x: h.x * scale,
-                  y: h.y * scale,
-                  width: h.width * scale,
-                  height: h.height * scale,
-                }))}
-                onHighlightAdded={(coords) => {
-                  console.log('[PDFViewer] Highlight desenhado em escala:', scale, coords);
-                  const originalCoords = {
-                    x: coords.x / scale,
-                    y: coords.y / scale,
-                    width: coords.width / scale,
-                    height: coords.height / scale,
+                highlights={highlightedAreas.map(h => {
+                  const realScale = pageSize.width / 595;
+                  return {
+                    ...h,
+                    x: h.x * realScale,
+                    y: h.y * realScale,
+                    width: h.width * realScale,
+                    height: h.height * realScale,
                   };
-                  console.log('[PDFViewer] Coordenadas originais:', originalCoords);
+                })}
+                onHighlightAdded={(coords) => {
+                  const realScale = pageSize.width / 595;
+                  const originalCoords = {
+                    x: coords.x / realScale,
+                    y: coords.y / realScale,
+                    width: coords.width / realScale,
+                    height: coords.height / realScale,
+                  };
                   onHighlightDrawn?.(originalCoords);
                 }}
                 onHighlightDeleted={onHighlightDeleted}
                 onHighlightClicked={onHighlightClicked}
                 isDrawingMode={isHighlightMode}
                 highlightColor={highlightColor}
-                canvasWidth={pageSize.width * scale}
-                canvasHeight={pageSize.height * scale}
+                canvasWidth={pageSize.width}
+                canvasHeight={pageSize.height}
               />
             )}
           </div>
