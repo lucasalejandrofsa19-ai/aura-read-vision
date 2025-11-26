@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Camera, Save, Crown, CreditCard, Shield, Volume2, Zap } from "lucide-react";
+import { ArrowLeft, Camera, Save, Crown, CreditCard, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +19,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { usePerformanceMode } from "@/hooks/usePerformanceMode";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LazyLoadWrapper } from "@/components/LazyLoadWrapper";
@@ -35,7 +34,6 @@ const Profile = () => {
   const [uploading, setUploading] = useState(false);
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const { soundSettings, updateSoundSetting } = useSoundEffects();
   const { isUltraPerformanceMode, togglePerformanceMode, loading: perfLoading } = usePerformanceMode();
 
   useEffect(() => {
@@ -354,124 +352,6 @@ const Profile = () => {
               </CardContent>
             </Card>
 
-            {/* Sound Settings Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Volume2 className="w-5 h-5" />
-                  Preferências de Som
-                </CardTitle>
-                <CardDescription>
-                  Configure efeitos sonoros durante a leitura
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="page-turn-sound">Som de virada de página</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Reproduz um som ao mudar de página
-                    </p>
-                  </div>
-                  <Switch
-                    id="page-turn-sound"
-                    checked={soundSettings.pageTurnSoundEnabled}
-                    onCheckedChange={async (checked) => {
-                      try {
-                        await updateSoundSetting('pageTurnSoundEnabled', checked);
-                        toast.success(checked ? "Som ativado" : "Som desativado");
-                      } catch (error) {
-                        toast.error("Erro ao atualizar configuração");
-                      }
-                    }}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="highlight-sound">Som ao destacar texto</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Reproduz um som ao adicionar um destaque
-                    </p>
-                  </div>
-                  <Switch
-                    id="highlight-sound"
-                    checked={soundSettings.highlightSoundEnabled}
-                    onCheckedChange={async (checked) => {
-                      try {
-                        await updateSoundSetting('highlightSoundEnabled', checked);
-                        toast.success(checked ? "Som ativado" : "Som desativado");
-                      } catch (error) {
-                        toast.error("Erro ao atualizar configuração");
-                      }
-                    }}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="note-sound">Som ao adicionar nota</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Reproduz um som ao criar uma nova nota
-                    </p>
-                  </div>
-                  <Switch
-                    id="note-sound"
-                    checked={soundSettings.noteSoundEnabled}
-                    onCheckedChange={async (checked) => {
-                      try {
-                        await updateSoundSetting('noteSoundEnabled', checked);
-                        toast.success(checked ? "Som ativado" : "Som desativado");
-                      } catch (error) {
-                        toast.error("Erro ao atualizar configuração");
-                      }
-                    }}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="bookmark-sound">Som ao marcar página</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Reproduz um som ao adicionar um marcador
-                    </p>
-                  </div>
-                  <Switch
-                    id="bookmark-sound"
-                    checked={soundSettings.bookmarkSoundEnabled}
-                    onCheckedChange={async (checked) => {
-                      try {
-                        await updateSoundSetting('bookmarkSoundEnabled', checked);
-                        toast.success(checked ? "Som ativado" : "Som desativado");
-                      } catch (error) {
-                        toast.error("Erro ao atualizar configuração");
-                      }
-                    }}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="delete-sound">Som ao deletar</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Reproduz um som ao excluir destaques ou notas
-                    </p>
-                  </div>
-                  <Switch
-                    id="delete-sound"
-                    checked={soundSettings.deleteSoundEnabled}
-                    onCheckedChange={async (checked) => {
-                      try {
-                        await updateSoundSetting('deleteSoundEnabled', checked);
-                        toast.success(checked ? "Som ativado" : "Som desativado");
-                      } catch (error) {
-                        toast.error("Erro ao atualizar configuração");
-                      }
-                    }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Ultra Performance Mode Card */}
             <Card className="border-primary/20">
