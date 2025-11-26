@@ -371,13 +371,15 @@ export const HighlightCanvas = ({
   return (
     <canvas
       ref={canvasRef}
-      className="absolute top-0 left-0 z-10"
+      className="absolute top-0 left-0"
       style={{
-        cursor: isDrawingMode ? "crosshair" : "default",
+        cursor: "crosshair",
         touchAction: "none",
         pointerEvents: "auto",
-        border: isDrawingMode ? "2px dashed rgba(34, 197, 94, 0.5)" : "none",
+        border: "2px solid rgba(34, 197, 94, 0.8)",
+        zIndex: 100,
       }}
+      onClick={(e) => console.log("[HighlightCanvas] Canvas clicked:", e)}
     />
   );
 };
