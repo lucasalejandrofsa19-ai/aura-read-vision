@@ -35,14 +35,48 @@ export const useSubscription = () => {
 
     try {
       setChecking(true);
+      
+      // Verify session is still valid before making the call
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.warn("Session invalid or expired, skipping subscription check");
+        setStatus({
+          subscribed: false,
+          product_id: null,
+          subscription_end: null,
+          role: null,
+        });
+        setLoading(false);
+        setChecking(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("check-subscription");
 
-      if (error) throw error;
-
-      setStatus(data);
+      if (error) {
+        // If error is about authentication, don't show toast
+        if (error.message?.includes("session") || error.message?.includes("auth")) {
+          console.warn("Authentication error in subscription check:", error);
+          setStatus({
+            subscribed: false,
+            product_id: null,
+            subscription_end: null,
+            role: null,
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        setStatus(data);
+      }
     } catch (error) {
       console.error("Error checking subscription:", error);
-      toast.error("Erro ao verificar assinatura");
+      // Only show error toast if it's not an auth issue
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (!errorMessage.includes("session") && !errorMessage.includes("auth")) {
+        toast.error("Erro ao verificar assinatura");
+      }
     } finally {
       setLoading(false);
       setChecking(false);
