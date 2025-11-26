@@ -272,7 +272,7 @@ export const HighlightCanvas = ({
     drawingRectRef.current = null;
   }, [isDrawing, startPoint, fabricCanvas, onHighlightAdded]);
 
-  // Handle drawing mode
+  // Handle drawing mode - attach listeners to parent container
   useEffect(() => {
     if (!fabricCanvas) return;
 
@@ -290,11 +290,12 @@ export const HighlightCanvas = ({
       fabricCanvas.off("mouse:up");
       
       if (isTouchDevice) {
-        const canvas = fabricCanvas.getElement();
-        if (canvas) {
-          canvas.removeEventListener('touchstart', handleTouchStart);
-          canvas.removeEventListener('touchmove', handleTouchMove);
-          canvas.removeEventListener('touchend', handleTouchEnd);
+        const canvasElement = fabricCanvas.getElement();
+        const parentElement = canvasElement?.parentElement;
+        if (parentElement) {
+          parentElement.removeEventListener('touchstart', handleTouchStart);
+          parentElement.removeEventListener('touchmove', handleTouchMove);
+          parentElement.removeEventListener('touchend', handleTouchEnd);
         }
       }
     };
@@ -308,12 +309,13 @@ export const HighlightCanvas = ({
       fabricCanvas.on("mouse:up", handleMouseUp);
       
       if (isTouchDevice) {
-        console.log("[HighlightCanvas] Touch device detected, adding touch listeners");
-        const canvas = fabricCanvas.getElement();
-        if (canvas) {
-          canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-          canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-          canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+        console.log("[HighlightCanvas] Touch device detected, adding touch listeners to parent");
+        const canvasElement = fabricCanvas.getElement();
+        const parentElement = canvasElement?.parentElement;
+        if (parentElement) {
+          parentElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+          parentElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+          parentElement.addEventListener('touchend', handleTouchEnd, { passive: false });
         }
       }
     } else {
@@ -332,11 +334,11 @@ export const HighlightCanvas = ({
   return (
     <canvas
       ref={canvasRef}
-      className="absolute top-0 left-0 z-50"
+      className="absolute top-0 left-0 z-10"
       style={{
         cursor: isDrawingMode ? "crosshair" : "default",
         touchAction: isDrawingMode ? "none" : "auto",
-        pointerEvents: isDrawingMode ? "auto" : "none",
+        pointerEvents: isDrawing ? "auto" : "none",
         border: isDrawingMode ? "2px dashed rgba(34, 197, 94, 0.5)" : "none",
       }}
     />
