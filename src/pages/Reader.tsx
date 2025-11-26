@@ -11,9 +11,6 @@ import {
   BookmarkCheck,
   Maximize,
   Eye,
-  FileDown,
-  StickyNote,
-  Palette,
   MoreVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,25 +22,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { PDFViewer } from "@/components/PDFViewer";
-import { HighlightsList } from "@/components/HighlightsList";
 import { PresentationMode } from "@/components/PresentationMode";
 import { FocusedReaderMode } from "@/components/FocusedReaderMode";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { NotesPanel } from "@/components/NotesPanel";
 import { ExportDialog } from "@/components/ExportDialog";
-import { PremiumActionButton } from "@/components/PremiumActionButton";
 import { FloatingControls } from "@/components/FloatingControls";
-import { useHighlights } from "@/hooks/useHighlights";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePremiumValidation } from "@/hooks/usePremiumValidation";
 import { useReadingSession } from "@/hooks/useReadingSession";
 import { captureError } from "@/lib/sentry";
-
-
-import { EditHighlightDialog } from "@/components/EditHighlightDialog";
-
 
 const Reader = () => {
   const { id } = useParams();
@@ -54,28 +43,11 @@ const Reader = () => {
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [selectedText, setSelectedText] = useState("");
-  const highlightColor = "#fef08a"; // Cor padrão amarelo
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [isFocusedMode, setIsFocusedMode] = useState(false);
-  const [showExportDialog, setShowExportDialog] = useState(false);
-  const [showNotesPanel, setShowNotesPanel] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
-  const [isHighlightDrawMode] = useState(true); // Sempre ativo
-  
-  useEffect(() => {
-    console.log("[Reader] Highlight mode initialized:", { isHighlightDrawMode, bookId: id });
-  }, [isHighlightDrawMode, id]);
-  const [showEditHighlightDialog, setShowEditHighlightDialog] = useState(false);
-  const [editingHighlight, setEditingHighlight] = useState<{ id: string; color: string } | null>(null);
   const mobileConfig = useMobileOptimization();
-
-  const {
-    highlights,
-    addHighlight,
-    deleteHighlight,
-    getHighlightsForPage,
-  } = useHighlights(id || "");
 
   const {
     notes,
@@ -84,7 +56,6 @@ const Reader = () => {
     deleteNote: deleteNoteOriginal,
   } = useNotes(id || "");
 
-  // Wrapper functions (sound removed)
   const addNote = async (pageNumber: number, noteText: string) => {
     return await addNoteOriginal(pageNumber, noteText);
   };
@@ -93,27 +64,20 @@ const Reader = () => {
     return await deleteNoteOriginal(noteId);
   };
 
-  const handleDeleteHighlight = async (highlightId: string) => {
-    await deleteHighlight(highlightId);
-  };
-
   const { enterFullscreen } = useFullscreen();
   const { user } = useAuth();
-  const { validatePremiumAccess } = usePremiumValidation();
   const { startSession, endSession, updateSession, isSessionActive } = useReadingSession(id || "");
 
   useEffect(() => {
     loadBook();
   }, [id]);
 
-  // Start reading session when book loads
   useEffect(() => {
     if (book && currentPage && !isSessionActive) {
       startSession(currentPage);
     }
   }, [book]);
 
-  // End session when component unmounts
   useEffect(() => {
     return () => {
       if (isSessionActive && currentPage) {
@@ -122,7 +86,6 @@ const Reader = () => {
     };
   }, [isSessionActive, currentPage]);
 
-  // Realtime sync for reading position
   useEffect(() => {
     if (!id) return;
 
@@ -157,41 +120,27 @@ const Reader = () => {
       return;
     }
 
-    console.log("[Reader] Loading book with ID:", id);
-
     try {
-      console.log("[Reader] Fetching book data from database...");
       const { data, error } = await supabase
         .from("books")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (error) {
-        console.error("[Reader] Database error:", error);
-        throw error;
-      }
+      if (error) throw error;
       
-      console.log("[Reader] Book data loaded:", data);
       setBook(data);
       
-      // Set current page from database
       if (data.current_page) {
-        console.log("[Reader] Setting current page to:", data.current_page);
         setCurrentPage(data.current_page);
       }
 
-      // Get public URL for the PDF
       if (data.file_path) {
-        console.log("[Reader] Getting PDF URL for path:", data.file_path);
         const { data: urlData } = supabase.storage
           .from("pdfs")
           .getPublicUrl(data.file_path);
         
-        console.log("[Reader] PDF URL obtained:", urlData.publicUrl);
         setPdfUrl(urlData.publicUrl);
-      } else {
-        console.error("[Reader] No file_path found in book data");
       }
     } catch (error) {
       console.error("[Reader] Error loading book:", error);
@@ -207,7 +156,6 @@ const Reader = () => {
     if (!id) return;
     
     try {
-      // Calculate progress percentage based on current page and total pages
       const progress = book?.total_pages 
         ? Math.round((page / book.total_pages) * 100)
         : 0;
@@ -228,11 +176,9 @@ const Reader = () => {
 
   const handleBookmark = () => {
     if (bookmarkedPage === currentPage) {
-      // Remove bookmark
       setBookmarkedPage(null);
       toast.success("Marcador removido");
     } else {
-      // Set bookmark to current page
       setBookmarkedPage(currentPage);
       toast.success(`Página ${currentPage} marcada!`);
     }
@@ -249,9 +195,8 @@ const Reader = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     saveCurrentPage(page);
-    setSelectedText(""); // Clear selection when changing pages
+    setSelectedText("");
     
-    // Update reading session
     if (isSessionActive) {
       updateSession(page);
     }
@@ -261,56 +206,14 @@ const Reader = () => {
     setSelectedText(text);
   };
 
-  const handleHighlightDrawn = async (coords: { x: number; y: number; width: number; height: number }) => {
-    console.log("[Highlight] Drawing highlight:", { coords, currentPage, highlightColor, bookId: id });
-    const result = await addHighlight(currentPage, "", highlightColor, coords);
-    
-    console.log("[Highlight] Add result:", result);
-    
-    if (result) {
-      toast.success("Destaque adicionado!");
-    } else {
-      console.error("[Highlight] Failed to add highlight");
-      toast.error("Erro ao adicionar destaque");
-    }
-  };
-
-  const handleHighlightDeleted = async (highlightId: string) => {
-    try {
-      await deleteHighlight(highlightId);
-      toast.success("Destaque apagado!");
-    } catch (error) {
-      captureError(error, { context: "delete_highlight" });
-      if (import.meta.env.DEV) {
-        console.error("Error deleting highlight:", error);
-      }
-      toast.error("Erro ao apagar destaque");
-    }
-  };
-
-  const handleHighlightClicked = (highlightId: string, currentColor: string) => {
-    // Removida a funcionalidade de editar cor de destaque
-    toast.info("Destaque selecionado");
-  };
-
-  const handleUpdateHighlightColor = async (newColor: string) => {
-    // Removida a funcionalidade de editar cor de destaque
-  };
-
-  const handleDeleteHighlightFromDialog = async () => {
-    // Removida a funcionalidade de editar cor de destaque
-  };
-
-  const handleNavigateToHighlight = (pageNumber: number) => {
+  const handleNavigateToPage = (pageNumber: number) => {
     setCurrentPage(pageNumber);
     saveCurrentPage(pageNumber);
   };
 
   const handleEnterPresentationMode = async () => {
-    // Ativa o modo de apresentação primeiro
     setIsPresentationMode(true);
     
-    // Tenta entrar em fullscreen (opcional, pode falhar no mobile)
     try {
       const fullscreenSuccess = await enterFullscreen();
       if (fullscreenSuccess) {
@@ -350,7 +253,6 @@ const Reader = () => {
 
   if (!book) return null;
 
-  // Focused Reading Mode
   if (isFocusedMode && pdfUrl) {
     return (
       <FocusedReaderMode
@@ -364,7 +266,6 @@ const Reader = () => {
     );
   }
 
-  // Presentation Mode
   if (isPresentationMode && pdfUrl) {
     return (
       <PresentationMode
@@ -391,13 +292,11 @@ const Reader = () => {
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-500">
-      {/* Toolbar */}
       <MotionHeader
         {...headerProps}
         className="glass sticky top-0 z-50 border-b border-border/50"
       >
         <div className="max-w-6xl mx-auto px-4 py-4">
-          {/* Linha 1: Botão voltar e título do livro */}
           <div className="flex items-center gap-4 mb-3">
             <Button
               variant="ghost"
@@ -413,7 +312,6 @@ const Reader = () => {
             </div>
           </div>
 
-          {/* Mobile: Ícones essenciais + Menu "Mais opções" */}
           <div className="flex md:hidden items-center gap-2 ml-14 flex-wrap">
             <NotesPanel
               notes={notes}
@@ -421,12 +319,12 @@ const Reader = () => {
               onAddNote={addNote}
               onUpdateNote={updateNote}
               onDeleteNote={deleteNote}
-              onNavigateToPage={handleNavigateToHighlight}
+              onNavigateToPage={handleNavigateToPage}
             />
 
             <ExportDialog
               bookTitle={book.title}
-              highlights={highlights}
+              highlights={[]}
               notes={notes}
             />
 
@@ -453,7 +351,6 @@ const Reader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Dropdown "Mais opções" para funções secundárias */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -488,13 +385,12 @@ const Reader = () => {
             <ThemeSelector />
           </div>
 
-          {/* Desktop: Linha 2 com todos os ícones de função em fila */}
           <div className="hidden md:flex items-center gap-2 flex-wrap ml-14">
             <ThemeSelector />
 
             <ExportDialog
               bookTitle={book.title}
-              highlights={highlights}
+              highlights={[]}
               notes={notes}
             />
 
@@ -504,7 +400,7 @@ const Reader = () => {
               onAddNote={addNote}
               onUpdateNote={updateNote}
               onDeleteNote={deleteNote}
-              onNavigateToPage={handleNavigateToHighlight}
+              onNavigateToPage={handleNavigateToPage}
             />
 
             <DropdownMenu>
@@ -573,71 +469,36 @@ const Reader = () => {
         </div>
       </MotionHeader>
 
-      {/* Content */}
       <MotionMain
         {...mainProps}
         className="max-w-5xl mx-auto px-6 py-12 space-y-6"
       >
-        {/* Highlights List */}
-        <HighlightsList
-          highlights={highlights}
-          onDelete={handleDeleteHighlight}
-          onNavigate={handleNavigateToHighlight}
-        />
-
         {pdfUrl ? (
-          <>
-            {/* Indicador visual de modo de destaque ativo */}
-            <div className="mb-4 p-3 bg-primary/10 border-2 border-primary/30 rounded-lg animate-pulse">
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
-                <span className="text-sm font-medium text-primary">
-                  Modo de destaque ativo - Clique e arraste no PDF para destacar
-                </span>
-              </div>
-            </div>
-            
-            <PDFViewer 
-              fileUrl={pdfUrl} 
-              initialPage={currentPage}
-              onPageChange={handlePageChange}
-              onTextSelect={handleTextSelect}
-              externalScale={scale}
-              onScaleChange={setScale}
-              isHighlightMode={isHighlightDrawMode}
-              highlightColor={highlightColor}
-              onHighlightDrawn={handleHighlightDrawn}
-              onHighlightDeleted={handleHighlightDeleted}
-              onHighlightClicked={handleHighlightClicked}
-              highlightedAreas={getHighlightsForPage(currentPage)
-                .filter(h => h.position_data)
-                .map(h => ({
-                  id: h.id,
-                  x: (h.position_data as any).x,
-                  y: (h.position_data as any).y,
-                  width: (h.position_data as any).width,
-                  height: (h.position_data as any).height,
-                  color: h.color || "#fef08a",
-                }))}
-              bookmarkIndicator={
-                bookmarkedPage === currentPage && !mobileConfig.shouldReduceAnimations ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-accent/90 backdrop-blur text-accent-foreground px-6 py-3 rounded-full shadow-xl border-2 border-accent flex items-center gap-3 font-semibold"
-                  >
-                    <BookmarkCheck className="w-6 h-6" />
-                    <span className="text-base">Página marcada</span>
-                  </motion.div>
-                ) : bookmarkedPage === currentPage ? (
-                  <div className="bg-accent/90 backdrop-blur text-accent-foreground px-6 py-3 rounded-full shadow-xl border-2 border-accent flex items-center gap-3 font-semibold">
-                    <BookmarkCheck className="w-6 h-6" />
-                    <span className="text-base">Página marcada</span>
-                  </div>
-                ) : null
-              }
-            />
-          </>
+          <PDFViewer 
+            fileUrl={pdfUrl} 
+            initialPage={currentPage}
+            onPageChange={handlePageChange}
+            onTextSelect={handleTextSelect}
+            externalScale={scale}
+            onScaleChange={setScale}
+            bookmarkIndicator={
+              bookmarkedPage === currentPage && !mobileConfig.shouldReduceAnimations ? (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-accent/90 backdrop-blur text-accent-foreground px-6 py-3 rounded-full shadow-xl border-2 border-accent flex items-center gap-3 font-semibold"
+                >
+                  <BookmarkCheck className="w-6 h-6" />
+                  <span className="text-base">Página marcada</span>
+                </motion.div>
+              ) : bookmarkedPage === currentPage ? (
+                <div className="bg-accent/90 backdrop-blur text-accent-foreground px-6 py-3 rounded-full shadow-xl border-2 border-accent flex items-center gap-3 font-semibold">
+                  <BookmarkCheck className="w-6 h-6" />
+                  <span className="text-base">Página marcada</span>
+                </div>
+              ) : null
+            }
+          />
         ) : (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Nenhum arquivo PDF disponível</p>
@@ -645,7 +506,6 @@ const Reader = () => {
         )}
       </MotionMain>
 
-      {/* Floating Controls for Mobile */}
       <FloatingControls
         onZoomIn={() => {
           setScale(prev => {
@@ -676,15 +536,6 @@ const Reader = () => {
         canGoNext={currentPage < (book.total_pages || 1)}
         currentPage={currentPage}
         totalPages={book.total_pages || 1}
-      />
-
-      {/* Edit Highlight Dialog */}
-      <EditHighlightDialog
-        open={showEditHighlightDialog}
-        onOpenChange={setShowEditHighlightDialog}
-        currentColor={editingHighlight?.color || "#fef08a"}
-        onColorChange={handleUpdateHighlightColor}
-        onDelete={handleDeleteHighlightFromDialog}
       />
     </div>
   );

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Highlight } from "@/hooks/useHighlights";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Book, Trash2 } from "lucide-react";
@@ -10,6 +9,14 @@ import { pdf } from "@react-pdf/renderer";
 import { HighlightsPDFDocument } from "./HighlightsPDFDocument";
 import { captureError } from "@/lib/sentry";
 import { motion } from "framer-motion";
+
+interface Highlight {
+  id: string;
+  page_number: number;
+  text: string;
+  color: string | null;
+  created_at: string;
+}
 
 interface BookWithHighlights {
   id: string;
