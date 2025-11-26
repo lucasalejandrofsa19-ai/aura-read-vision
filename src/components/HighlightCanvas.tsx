@@ -49,7 +49,16 @@ export const HighlightCanvas = ({
 
     console.log("[HighlightCanvas] Initializing canvas with dimensions:", { canvasWidth, canvasHeight });
 
-    const canvas = new FabricCanvas(canvasRef.current, {
+    // Ensure canvas element is ready
+    const canvasElement = canvasRef.current;
+    const context = canvasElement.getContext('2d');
+    
+    if (!context) {
+      console.error("[HighlightCanvas] Failed to get 2D context");
+      return;
+    }
+
+    const canvas = new FabricCanvas(canvasElement, {
       width: canvasWidth,
       height: canvasHeight,
       selection: false,
@@ -59,7 +68,11 @@ export const HighlightCanvas = ({
     setFabricCanvas(canvas);
 
     return () => {
-      canvas.dispose();
+      try {
+        canvas.dispose();
+      } catch (error) {
+        console.warn("[HighlightCanvas] Error disposing canvas:", error);
+      }
     };
   }, [canvasWidth, canvasHeight]);
 
@@ -75,8 +88,16 @@ export const HighlightCanvas = ({
       canvasHeight
     });
 
-    // Clear all objects
-    fabricCanvas.clear();
+    // Safely clear all objects - check if canvas context exists
+    try {
+      const canvasElement = fabricCanvas.getElement();
+      if (canvasElement && canvasElement.getContext('2d')) {
+        fabricCanvas.clear();
+      }
+    } catch (error) {
+      console.warn("[HighlightCanvas] Error clearing canvas:", error);
+      return;
+    }
 
     // Render all highlights for this page
     highlights.forEach((highlight) => {
