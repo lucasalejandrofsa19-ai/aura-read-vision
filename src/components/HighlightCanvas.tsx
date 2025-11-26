@@ -112,7 +112,11 @@ export const HighlightCanvas = ({
   const handleMouseDown = useCallback((e: any) => {
     if (!fabricCanvas) return;
 
+    console.log("[HighlightCanvas] Mouse down event triggered");
+
     const pointer = fabricCanvas.getPointer(e.e);
+    console.log("[HighlightCanvas] Pointer position:", pointer);
+    
     setIsDrawing(true);
     setStartPoint({ x: pointer.x, y: pointer.y });
 
@@ -183,10 +187,14 @@ export const HighlightCanvas = ({
     if (!fabricCanvas) return;
     e.preventDefault();
     
+    console.log("[HighlightCanvas] Touch start event triggered");
+    
     const touch = e.touches[0];
     const rect = fabricCanvas.getElement().getBoundingClientRect();
     const x = touch.clientX - rect.left;
     const y = touch.clientY - rect.top;
+    
+    console.log("[HighlightCanvas] Touch position:", { x, y });
     
     setIsDrawing(true);
     setStartPoint({ x, y });
@@ -233,6 +241,8 @@ export const HighlightCanvas = ({
     if (!isDrawing || !startPoint || !drawingRectRef.current || !fabricCanvas) return;
     e.preventDefault();
 
+    console.log("[HighlightCanvas] Touch end event triggered");
+
     const touch = e.changedTouches[0];
     const rect = fabricCanvas.getElement().getBoundingClientRect();
     const x = touch.clientX - rect.left;
@@ -240,6 +250,8 @@ export const HighlightCanvas = ({
     
     const width = Math.abs(x - startPoint.x);
     const height = Math.abs(y - startPoint.y);
+
+    console.log("[HighlightCanvas] Touch drawing complete:", { width, height, startPoint, x, y });
 
     if (width > 10 && height > 10) {
       const highlight = {
@@ -267,7 +279,9 @@ export const HighlightCanvas = ({
     console.log("[HighlightCanvas] Drawing mode changed:", { 
       isDrawingMode, 
       hasCanvas: !!fabricCanvas,
-      isTouchDevice 
+      isTouchDevice,
+      canvasWidth,
+      canvasHeight
     });
 
     const cleanup = () => {
@@ -288,11 +302,13 @@ export const HighlightCanvas = ({
     cleanup();
 
     if (isDrawingMode) {
+      console.log("[HighlightCanvas] Activating drawing mode - attaching event listeners");
       fabricCanvas.on("mouse:down", handleMouseDown);
       fabricCanvas.on("mouse:move", handleMouseMove);
       fabricCanvas.on("mouse:up", handleMouseUp);
       
       if (isTouchDevice) {
+        console.log("[HighlightCanvas] Touch device detected, adding touch listeners");
         const canvas = fabricCanvas.getElement();
         if (canvas) {
           canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
