@@ -43,8 +43,15 @@ export const HighlightCanvas = ({
     fabricCanvasRef.current = canvas;
 
     return () => {
-      canvas.dispose();
-      fabricCanvasRef.current = null;
+      try {
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.dispose();
+          fabricCanvasRef.current = null;
+        }
+      } catch (error) {
+        // Suppress errors if DOM node was already removed
+        console.debug('Canvas cleanup error:', error);
+      }
     };
   }, [width, height]);
 
