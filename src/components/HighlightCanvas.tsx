@@ -376,8 +376,7 @@ export const HighlightCanvas = ({
         cursor: "crosshair",
         touchAction: "none",
         pointerEvents: "auto",
-        border: "2px solid rgba(34, 197, 94, 0.8)",
-        zIndex: 100,
+        zIndex: 999,
       }}
       onClick={(e) => console.log("[HighlightCanvas] Canvas clicked:", e)}
     />
