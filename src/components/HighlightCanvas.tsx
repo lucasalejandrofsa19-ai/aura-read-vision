@@ -337,8 +337,8 @@ export const HighlightCanvas = ({
       className="absolute top-0 left-0 z-10"
       style={{
         cursor: isDrawingMode ? "crosshair" : "default",
-        touchAction: isDrawingMode ? "none" : "auto",
-        pointerEvents: isDrawing ? "auto" : "none",
+        touchAction: "none",
+        pointerEvents: "auto",
         border: isDrawingMode ? "2px dashed rgba(34, 197, 94, 0.5)" : "none",
       }}
     />
