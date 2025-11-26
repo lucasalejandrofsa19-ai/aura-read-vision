@@ -47,6 +47,8 @@ export const HighlightCanvas = ({
   useEffect(() => {
     if (!canvasRef.current) return;
 
+    console.log("[HighlightCanvas] Initializing canvas with dimensions:", { canvasWidth, canvasHeight });
+
     const canvas = new FabricCanvas(canvasRef.current, {
       width: canvasWidth,
       height: canvasHeight,
@@ -65,6 +67,14 @@ export const HighlightCanvas = ({
   useEffect(() => {
     if (!fabricCanvas) return;
 
+    console.log("[HighlightCanvas] Rendering highlights:", {
+      count: highlights.length,
+      pageNumber,
+      highlights: highlights.map(h => ({ id: h.id, x: h.x, y: h.y, width: h.width, height: h.height, color: h.color })),
+      canvasWidth,
+      canvasHeight
+    });
+
     // Clear all objects
     fabricCanvas.clear();
 
@@ -82,6 +92,8 @@ export const HighlightCanvas = ({
         hoverCursor: isDrawingMode ? 'crosshair' : 'pointer',
       });
       
+      console.log("[HighlightCanvas] Adding rect:", { left: highlight.x, top: highlight.y, width: highlight.width, height: highlight.height });
+      
       // Add click event (only when not in drawing mode)
       if (!isDrawingMode) {
         rect.on('mousedown', () => {
@@ -93,7 +105,8 @@ export const HighlightCanvas = ({
     });
 
     fabricCanvas.renderAll();
-  }, [highlights, fabricCanvas, pageNumber, isDrawingMode, onHighlightClicked]);
+    console.log("[HighlightCanvas] Render complete");
+  }, [highlights, fabricCanvas, pageNumber, isDrawingMode, onHighlightClicked, canvasWidth, canvasHeight]);
 
   // Handle drawing mode - Memoize handlers to prevent recreation
   const handleMouseDown = useCallback((e: any) => {
@@ -143,6 +156,8 @@ export const HighlightCanvas = ({
     const width = Math.abs(pointer.x - startPoint.x);
     const height = Math.abs(pointer.y - startPoint.y);
 
+    console.log("[HighlightCanvas] Mouse up - drawing complete:", { width, height, startPoint, pointer });
+
     if (width > 10 && height > 10) {
       const highlight = {
         x: Math.min(startPoint.x, pointer.x),
@@ -151,8 +166,10 @@ export const HighlightCanvas = ({
         height,
       };
 
+      console.log("[HighlightCanvas] Calling onHighlightAdded with:", highlight);
       onHighlightAdded?.(highlight);
     } else {
+      console.log("[HighlightCanvas] Highlight too small, removing");
       fabricCanvas.remove(drawingRectRef.current);
       fabricCanvas.renderAll();
     }
@@ -298,6 +315,7 @@ export const HighlightCanvas = ({
         cursor: isDrawingMode ? "crosshair" : "default",
         touchAction: isDrawingMode ? "none" : "auto",
         pointerEvents: isDrawingMode ? "auto" : "none",
+        border: isDrawingMode ? "2px dashed rgba(34, 197, 94, 0.5)" : "none",
       }}
     />
   );
