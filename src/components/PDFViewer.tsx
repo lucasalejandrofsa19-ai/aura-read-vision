@@ -6,7 +6,6 @@ import { PDFSearchBar } from "@/components/PDFSearchBar";
 import { HighlightCanvas } from "@/components/HighlightCanvas";
 import { usePDFPrefetch } from "@/hooks/usePDFPrefetch";
 import type { TextItem } from "pdfjs-dist/types/src/display/api";
-import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
 // Configure PDF.js worker
@@ -345,7 +344,6 @@ export const PDFViewer = ({
               pageNumber={pageNumber}
               scale={scale}
               renderTextLayer={false}
-              renderAnnotationLayer={false}
               onLoadSuccess={(page) => {
                 setPageSize({
                   width: page.width,
