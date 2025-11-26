@@ -283,7 +283,10 @@ const Reader = () => {
   };
 
   const handleHighlightDrawn = async (coords: { x: number; y: number; width: number; height: number }) => {
+    console.log("[Highlight] Drawing highlight:", { coords, currentPage, highlightColor, bookId: id });
     const result = await addHighlight(currentPage, "", highlightColor, coords);
+    
+    console.log("[Highlight] Add result:", result);
     
     if (result) {
       playSound('highlight');
@@ -295,6 +298,9 @@ const Reader = () => {
       } else {
         toast.success("Destaque adicionado! Continue destacando ou clique em Cancelar");
       }
+    } else {
+      console.error("[Highlight] Failed to add highlight");
+      toast.error("Erro ao adicionar destaque");
     }
   };
 
