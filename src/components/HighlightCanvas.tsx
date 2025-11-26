@@ -272,9 +272,9 @@ export const HighlightCanvas = ({
     drawingRectRef.current = null;
   }, [isDrawing, startPoint, fabricCanvas, onHighlightAdded]);
 
-  // Handle drawing mode - attach listeners to parent container
+  // Handle drawing mode - Simplified event handling
   useEffect(() => {
-    if (!fabricCanvas) return;
+    if (!fabricCanvas || !canvasRef.current) return;
 
     console.log("[HighlightCanvas] Drawing mode changed:", { 
       isDrawingMode, 
@@ -289,14 +289,14 @@ export const HighlightCanvas = ({
       fabricCanvas.off("mouse:move");
       fabricCanvas.off("mouse:up");
       
-      if (isTouchDevice) {
-        const canvasElement = fabricCanvas.getElement();
-        const parentElement = canvasElement?.parentElement;
-        if (parentElement) {
-          parentElement.removeEventListener('touchstart', handleTouchStart);
-          parentElement.removeEventListener('touchmove', handleTouchMove);
-          parentElement.removeEventListener('touchend', handleTouchEnd);
-        }
+      const canvasElement = canvasRef.current;
+      if (canvasElement) {
+        canvasElement.removeEventListener('touchstart', handleTouchStart as any);
+        canvasElement.removeEventListener('touchmove', handleTouchMove as any);
+        canvasElement.removeEventListener('touchend', handleTouchEnd as any);
+        canvasElement.removeEventListener('mousedown', handleMouseDown as any);
+        canvasElement.removeEventListener('mousemove', handleMouseMove as any);
+        canvasElement.removeEventListener('mouseup', handleMouseUp as any);
       }
     };
 
@@ -304,19 +304,35 @@ export const HighlightCanvas = ({
 
     if (isDrawingMode) {
       console.log("[HighlightCanvas] Activating drawing mode - attaching event listeners");
+      
+      // Use both Fabric.js events AND native events for redundancy
       fabricCanvas.on("mouse:down", handleMouseDown);
       fabricCanvas.on("mouse:move", handleMouseMove);
       fabricCanvas.on("mouse:up", handleMouseUp);
       
-      if (isTouchDevice) {
-        console.log("[HighlightCanvas] Touch device detected, adding touch listeners to parent");
-        const canvasElement = fabricCanvas.getElement();
-        const parentElement = canvasElement?.parentElement;
-        if (parentElement) {
-          parentElement.addEventListener('touchstart', handleTouchStart, { passive: false });
-          parentElement.addEventListener('touchmove', handleTouchMove, { passive: false });
-          parentElement.addEventListener('touchend', handleTouchEnd, { passive: false });
-        }
+      const canvasElement = canvasRef.current;
+      if (canvasElement) {
+        // Add native mouse events directly to canvas element
+        canvasElement.addEventListener('mousedown', (e) => {
+          console.log("[HighlightCanvas] Native mousedown event:", e);
+          handleMouseDown({ e });
+        });
+        
+        canvasElement.addEventListener('mousemove', (e) => {
+          handleMouseMove({ e });
+        });
+        
+        canvasElement.addEventListener('mouseup', (e) => {
+          console.log("[HighlightCanvas] Native mouseup event:", e);
+          handleMouseUp({ e });
+        });
+        
+        // Touch events
+        canvasElement.addEventListener('touchstart', handleTouchStart as any, { passive: false });
+        canvasElement.addEventListener('touchmove', handleTouchMove as any, { passive: false });
+        canvasElement.addEventListener('touchend', handleTouchEnd as any, { passive: false });
+        
+        console.log("[HighlightCanvas] Event listeners attached to canvas element");
       }
     } else {
       setIsDrawing(false);
