@@ -44,9 +44,30 @@ serve(async (req) => {
     logStep("Authenticating user with token");
     
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    if (userError) {
+      logStep("Authentication failed", { error: userError.message });
+      // Return a proper response for auth errors instead of throwing
+      return new Response(JSON.stringify({ 
+        subscribed: false,
+        error: "Session expired or invalid",
+        auth_error: true 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Return 200 instead of 500 for auth errors
+      });
+    }
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user?.email) {
+      logStep("No user or email found");
+      return new Response(JSON.stringify({ 
+        subscribed: false,
+        error: "User not authenticated",
+        auth_error: true 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
