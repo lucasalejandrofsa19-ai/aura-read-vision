@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Rect } from "fabric";
 
 interface HighlightCanvasProps {
@@ -24,6 +24,7 @@ export const HighlightCanvas = ({
 }: HighlightCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const isMountedRef = useRef(true);
   const drawingRef = useRef<{ startX: number; startY: number; rect: Rect | null }>({
     startX: 0,
     startY: 0,
@@ -31,6 +32,8 @@ export const HighlightCanvas = ({
   });
 
   useEffect(() => {
+    isMountedRef.current = true;
+    
     if (!canvasRef.current) return;
 
     const canvas = new FabricCanvas(canvasRef.current, {
@@ -43,49 +46,64 @@ export const HighlightCanvas = ({
     fabricCanvasRef.current = canvas;
 
     return () => {
-      try {
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.dispose();
+      isMountedRef.current = false;
+      
+      // Clean up in a way that doesn't conflict with React
+      const currentCanvas = fabricCanvasRef.current;
+      if (currentCanvas) {
+        try {
+          // Remove all event listeners first
+          currentCanvas.off();
+          // Clear all objects
+          currentCanvas.clear();
+          // Dispose without letting it manipulate DOM
+          currentCanvas.dispose();
+        } catch (error) {
+          // Silently handle cleanup errors
+        } finally {
           fabricCanvasRef.current = null;
         }
-      } catch (error) {
-        // Suppress errors if DOM node was already removed
-        console.debug('Canvas cleanup error:', error);
       }
     };
   }, [width, height]);
 
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !isMountedRef.current) return;
 
-    canvas.clear();
+    try {
+      canvas.clear();
 
-    highlights.forEach((h) => {
-      const rect = new Rect({
-        left: h.x,
-        top: h.y,
-        width: h.width,
-        height: h.height,
-        fill: h.color,
-        opacity: 0.3,
-        selectable: false,
-        evented: false,
+      highlights.forEach((h) => {
+        const rect = new Rect({
+          left: h.x,
+          top: h.y,
+          width: h.width,
+          height: h.height,
+          fill: h.color,
+          opacity: 0.3,
+          selectable: false,
+          evented: false,
+        });
+        canvas.add(rect);
       });
-      canvas.add(rect);
-    });
 
-    canvas.renderAll();
+      canvas.renderAll();
+    } catch (error) {
+      // Silently handle render errors during unmount
+    }
   }, [highlights]);
 
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !isMountedRef.current) return;
 
     if (isDrawing) {
       canvas.defaultCursor = "crosshair";
       
       const handleMouseDown = (e: any) => {
+        if (!isMountedRef.current) return;
+        
         const pointer = canvas.getPointer(e.e);
         drawingRef.current.startX = pointer.x;
         drawingRef.current.startY = pointer.y;
@@ -106,7 +124,7 @@ export const HighlightCanvas = ({
       };
 
       const handleMouseMove = (e: any) => {
-        if (!drawingRef.current.rect) return;
+        if (!drawingRef.current.rect || !isMountedRef.current) return;
 
         const pointer = canvas.getPointer(e.e);
         const width = pointer.x - drawingRef.current.startX;
@@ -123,7 +141,7 @@ export const HighlightCanvas = ({
       };
 
       const handleMouseUp = () => {
-        if (!drawingRef.current.rect) return;
+        if (!drawingRef.current.rect || !isMountedRef.current) return;
 
         const rect = drawingRef.current.rect;
         
@@ -136,8 +154,12 @@ export const HighlightCanvas = ({
           });
         }
 
-        canvas.remove(rect);
-        canvas.renderAll();
+        try {
+          canvas.remove(rect);
+          canvas.renderAll();
+        } catch (error) {
+          // Silently handle errors during unmount
+        }
         drawingRef.current.rect = null;
       };
 
@@ -146,9 +168,11 @@ export const HighlightCanvas = ({
       canvas.on("mouse:up", handleMouseUp);
 
       return () => {
-        canvas.off("mouse:down", handleMouseDown);
-        canvas.off("mouse:move", handleMouseMove);
-        canvas.off("mouse:up", handleMouseUp);
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.off("mouse:down", handleMouseDown);
+          fabricCanvasRef.current.off("mouse:move", handleMouseMove);
+          fabricCanvasRef.current.off("mouse:up", handleMouseUp);
+        }
       };
     } else {
       canvas.defaultCursor = "default";
