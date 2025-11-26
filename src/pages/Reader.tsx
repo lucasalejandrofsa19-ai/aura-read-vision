@@ -56,7 +56,7 @@ const Reader = () => {
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [selectedText, setSelectedText] = useState("");
-  const [highlightColor, setHighlightColor] = useState("#fef08a");
+  const highlightColor = "#fef08a"; // Cor padrão amarelo
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [isFocusedMode, setIsFocusedMode] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -72,7 +72,6 @@ const Reader = () => {
     highlights,
     addHighlight,
     deleteHighlight,
-    updateHighlightColor,
     getHighlightsForPage,
   } = useHighlights(id || "");
 
@@ -313,27 +312,16 @@ const Reader = () => {
   };
 
   const handleHighlightClicked = (highlightId: string, currentColor: string) => {
-    setEditingHighlight({ id: highlightId, color: currentColor });
-    setShowEditHighlightDialog(true);
+    // Removida a funcionalidade de editar cor de destaque
+    toast.info("Destaque selecionado");
   };
 
   const handleUpdateHighlightColor = async (newColor: string) => {
-    if (!editingHighlight) return;
-    
-    const success = await updateHighlightColor(editingHighlight.id, newColor);
-    if (success) {
-      playSound('highlight');
-    }
-    setEditingHighlight(null);
+    // Removida a funcionalidade de editar cor de destaque
   };
 
   const handleDeleteHighlightFromDialog = async () => {
-    if (!editingHighlight) return;
-    
-    await deleteHighlight(editingHighlight.id);
-    playSound('delete');
-    setEditingHighlight(null);
-    toast.success("Destaque removido!");
+    // Removida a funcionalidade de editar cor de destaque
   };
 
   const handleNavigateToHighlight = (pageNumber: number) => {
@@ -622,12 +610,9 @@ const Reader = () => {
 
         {/* Highlight Toolbar */}
         <HighlightToolbar
-          selectedColor={highlightColor}
-          onColorChange={setHighlightColor}
-          onHighlight={handleAddHighlight}
-          isHighlightMode={isHighlightDrawMode}
-          isDrawMode={isHighlightDrawMode}
-          onCancelDraw={handleCancelHighlight}
+          onAddHighlight={handleAddHighlight}
+          onCancel={handleCancelHighlight}
+          isDrawingMode={isHighlightDrawMode}
         />
 
         {pdfUrl ? (

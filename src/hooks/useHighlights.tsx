@@ -95,26 +95,6 @@ export const useHighlights = (bookId: string) => {
     }
   };
 
-  const updateHighlightColor = async (highlightId: string, newColor: string) => {
-    try {
-      const { error } = await supabase
-        .from("highlights")
-        .update({ color: newColor })
-        .eq("id", highlightId);
-
-      if (error) throw error;
-
-      setHighlights((prev) =>
-        prev.map((h) => (h.id === highlightId ? { ...h, color: newColor } : h))
-      );
-      toast.success("Cor do destaque atualizada!");
-      return true;
-    } catch (error) {
-      captureError(error, { context: "update_highlight_color" });
-      toast.error("Erro ao atualizar cor do destaque");
-      return false;
-    }
-  };
 
   const getHighlightsForPage = (pageNumber: number) => {
     return highlights.filter((h) => h.page_number === pageNumber);
@@ -125,7 +105,6 @@ export const useHighlights = (bookId: string) => {
     loading,
     addHighlight,
     deleteHighlight,
-    updateHighlightColor,
     getHighlightsForPage,
     refreshHighlights: loadHighlights,
   };
