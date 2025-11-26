@@ -344,7 +344,7 @@ export const PDFViewer = ({
             <Page
               pageNumber={pageNumber}
               scale={scale}
-              renderTextLayer={!isHighlightMode}
+              renderTextLayer={false}
               renderAnnotationLayer={true}
               onLoadSuccess={(page) => {
                 setPageSize({
@@ -352,7 +352,6 @@ export const PDFViewer = ({
                   height: page.height,
                 });
               }}
-              className={isHighlightMode ? "pointer-events-none" : ""}
               loading={
                 <div className="flex items-center justify-center p-12">
                   <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
