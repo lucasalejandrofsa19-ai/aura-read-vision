@@ -44,6 +44,9 @@ import { useReadingSession } from "@/hooks/useReadingSession";
 import { captureError } from "@/lib/sentry";
 
 
+import { EditHighlightDialog } from "@/components/EditHighlightDialog";
+
+
 const Reader = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -62,12 +65,15 @@ const Reader = () => {
   const [scale, setScale] = useState(1.0);
   const [isHighlightDrawMode, setIsHighlightDrawMode] = useState(false);
   const [isQuickHighlightMode, setIsQuickHighlightMode] = useState(false);
+  const [showEditHighlightDialog, setShowEditHighlightDialog] = useState(false);
+  const [editingHighlight, setEditingHighlight] = useState<{ id: string; color: string } | null>(null);
   const mobileConfig = useMobileOptimization();
 
   const {
     highlights,
     addHighlight,
     deleteHighlight,
+    updateHighlightColor,
     getHighlightsForPage,
   } = useHighlights(id || "");
 
@@ -310,6 +316,30 @@ const Reader = () => {
       console.error("Error deleting highlight:", error);
       toast.error("Erro ao apagar destaque");
     }
+  };
+
+  const handleHighlightClicked = (highlightId: string, currentColor: string) => {
+    setEditingHighlight({ id: highlightId, color: currentColor });
+    setShowEditHighlightDialog(true);
+  };
+
+  const handleUpdateHighlightColor = async (newColor: string) => {
+    if (!editingHighlight) return;
+    
+    const success = await updateHighlightColor(editingHighlight.id, newColor);
+    if (success) {
+      playSound('highlight');
+    }
+    setEditingHighlight(null);
+  };
+
+  const handleDeleteHighlightFromDialog = async () => {
+    if (!editingHighlight) return;
+    
+    await deleteHighlight(editingHighlight.id);
+    playSound('delete');
+    setEditingHighlight(null);
+    toast.success("Destaque removido!");
   };
 
   const handleNavigateToHighlight = (pageNumber: number) => {
@@ -624,6 +654,7 @@ const Reader = () => {
               highlightColor={highlightColor}
               onHighlightDrawn={handleHighlightDrawn}
               onHighlightDeleted={handleHighlightDeleted}
+              onHighlightClicked={handleHighlightClicked}
               highlightedAreas={getHighlightsForPage(currentPage)
                 .filter(h => h.position_data)
                 .map(h => ({
@@ -690,6 +721,15 @@ const Reader = () => {
         canGoNext={currentPage < (book.total_pages || 1)}
         currentPage={currentPage}
         totalPages={book.total_pages || 1}
+      />
+
+      {/* Edit Highlight Dialog */}
+      <EditHighlightDialog
+        open={showEditHighlightDialog}
+        onOpenChange={setShowEditHighlightDialog}
+        currentColor={editingHighlight?.color || "#fef08a"}
+        onColorChange={handleUpdateHighlightColor}
+        onDelete={handleDeleteHighlightFromDialog}
       />
     </div>
   );

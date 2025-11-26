@@ -13,6 +13,7 @@ interface HighlightCanvasProps {
   }>;
   onHighlightAdded?: (highlight: { x: number; y: number; width: number; height: number }) => void;
   onHighlightDeleted?: (highlightId: string) => void;
+  onHighlightClicked?: (highlightId: string, currentColor: string) => void;
   isDrawingMode: boolean;
   highlightColor: string;
   canvasWidth: number;
@@ -24,6 +25,7 @@ export const HighlightCanvas = ({
   highlights,
   onHighlightAdded,
   onHighlightDeleted,
+  onHighlightClicked,
   isDrawingMode,
   highlightColor,
   canvasWidth,
@@ -80,15 +82,10 @@ export const HighlightCanvas = ({
         hoverCursor: isDrawingMode ? 'crosshair' : 'pointer',
       });
       
-      // Store highlight id in the rect for deletion
-      rect.set('data', { highlightId: highlight.id });
-      
-      // Add click event for deletion (only when not in drawing mode)
+      // Add click event (only when not in drawing mode)
       if (!isDrawingMode) {
         rect.on('mousedown', () => {
-          if (onHighlightDeleted && confirm('Deseja apagar este destaque?')) {
-            onHighlightDeleted(highlight.id);
-          }
+          onHighlightClicked?.(highlight.id, highlight.color);
         });
       }
       
@@ -96,7 +93,7 @@ export const HighlightCanvas = ({
     });
 
     fabricCanvas.renderAll();
-  }, [highlights, fabricCanvas, pageNumber, isDrawingMode, onHighlightDeleted]);
+  }, [highlights, fabricCanvas, pageNumber, isDrawingMode, onHighlightClicked]);
 
   // Handle drawing mode - Memoize handlers to prevent recreation
   const handleMouseDown = useCallback((e: any) => {
