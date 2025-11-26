@@ -345,7 +345,7 @@ export const PDFViewer = ({
               pageNumber={pageNumber}
               scale={scale}
               renderTextLayer={false}
-              renderAnnotationLayer={true}
+              renderAnnotationLayer={false}
               onLoadSuccess={(page) => {
                 setPageSize({
                   width: page.width,
