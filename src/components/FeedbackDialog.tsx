@@ -23,6 +23,7 @@ import { MessageSquare, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { captureError } from "@/lib/sentry";
 
 export const FeedbackDialog = () => {
   const { user } = useAuth();
@@ -66,7 +67,10 @@ export const FeedbackDialog = () => {
       setCategory("general");
       setOpen(false);
     } catch (error) {
-      console.error("Error submitting feedback:", error);
+      captureError(error, { context: "submit_feedback" });
+      if (import.meta.env.DEV) {
+        console.error("Error submitting feedback:", error);
+      }
       toast.error("Erro ao enviar sugestão");
     } finally {
       setLoading(false);

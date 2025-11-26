@@ -280,7 +280,10 @@ const Reader = () => {
       await deleteHighlight(highlightId);
       toast.success("Destaque apagado!");
     } catch (error) {
-      console.error("Error deleting highlight:", error);
+      captureError(error, { context: "delete_highlight" });
+      if (import.meta.env.DEV) {
+        console.error("Error deleting highlight:", error);
+      }
       toast.error("Erro ao apagar destaque");
     }
   };
