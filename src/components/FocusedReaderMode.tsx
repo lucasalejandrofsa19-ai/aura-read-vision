@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { X, Eye, Moon, Sun, Contrast } from "lucide-react";
+import { X, Eye, Moon, Sun, Contrast, Highlighter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Document, Page, pdfjs } from "react-pdf";
+import { HighlightCanvas } from "@/components/HighlightCanvas";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -16,6 +17,16 @@ interface FocusedReaderModeProps {
   bookTitle: string;
   onClose: () => void;
   onPageChange: (page: number) => void;
+  highlights?: Array<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    color: string;
+  }>;
+  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number }) => void;
+  isDrawingMode?: boolean;
+  onDrawingModeChange?: (isDrawing: boolean) => void;
 }
 
 const readingModeStyles: Record<ReadingMode, { bg: string; text: string; label: string; icon: typeof Eye }> = {
@@ -52,11 +63,16 @@ export const FocusedReaderMode = ({
   bookTitle,
   onClose,
   onPageChange,
+  highlights = [],
+  onHighlightDrawn,
+  isDrawingMode = false,
+  onDrawingModeChange,
 }: FocusedReaderModeProps) => {
   const [pageNumber, setPageNumber] = useState(initialPage);
   const [readingMode, setReadingMode] = useState<ReadingMode>("default");
   const [showControls, setShowControls] = useState(true);
   const [scale, setScale] = useState(1.2);
+  const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -121,6 +137,17 @@ export const FocusedReaderMode = ({
               </div>
 
               <div className="flex items-center gap-2">
+                <Button
+                  variant={isDrawingMode ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => onDrawingModeChange?.(!isDrawingMode)}
+                  className="gap-2"
+                  title={isDrawingMode ? "Desativar marca texto" : "Ativar marca texto"}
+                >
+                  <Highlighter className="w-4 h-4" />
+                  Destaque
+                </Button>
+                
                 {(Object.keys(readingModeStyles) as ReadingMode[]).map((mode) => {
                   const Icon = readingModeStyles[mode].icon;
                   return (
@@ -157,18 +184,52 @@ export const FocusedReaderMode = ({
               </div>
             }
           >
-            <Page
-              pageNumber={pageNumber}
-              scale={scale}
-              renderTextLayer={true}
-              renderAnnotationLayer={false}
-              loading={
-                <div className="flex items-center justify-center p-12">
-                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                </div>
-              }
-              className="shadow-2xl"
-            />
+            <div className="relative">
+              <Page
+                pageNumber={pageNumber}
+                scale={scale}
+                renderTextLayer={true}
+                renderAnnotationLayer={false}
+                onLoadSuccess={(page) => {
+                  setPageSize({
+                    width: page.width,
+                    height: page.height,
+                  });
+                }}
+                loading={
+                  <div className="flex items-center justify-center p-12">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                }
+                className="shadow-2xl"
+              />
+              
+              {pageSize.width > 0 && pageSize.height > 0 && (
+                <HighlightCanvas
+                  key={`canvas-${pageNumber}-${Math.round(pageSize.width)}-${Math.round(pageSize.height)}`}
+                  width={pageSize.width}
+                  height={pageSize.height}
+                  highlights={highlights.map(h => ({
+                    ...h,
+                    x: h.x * scale,
+                    y: h.y * scale,
+                    width: h.width * scale,
+                    height: h.height * scale,
+                  }))}
+                  onHighlightAdded={(coords) => {
+                    const realScale = pageSize.width / 595;
+                    const originalCoords = {
+                      x: coords.x / realScale,
+                      y: coords.y / realScale,
+                      width: coords.width / realScale,
+                      height: coords.height / realScale,
+                    };
+                    onHighlightDrawn?.(originalCoords);
+                  }}
+                  isDrawing={isDrawingMode}
+                />
+              )}
+            </div>
           </Document>
         </div>
       </div>
