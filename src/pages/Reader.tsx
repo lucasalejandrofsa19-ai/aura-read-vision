@@ -275,9 +275,9 @@ const Reader = () => {
   };
 
   const handleAddHighlight = async () => {
-    // Ativa o modo de desenho automático
+    console.log("[Highlight] Activating highlight mode");
     setIsHighlightDrawMode(true);
-    toast.info("Toque nas áreas do PDF que deseja destacar. Clique em Cancelar quando terminar.");
+    toast.info("Toque nas áreas do PDF que deseja destacar");
   };
 
   const handleHighlightDrawn = async (coords: { x: number; y: number; width: number; height: number }) => {
@@ -296,6 +296,7 @@ const Reader = () => {
   };
 
   const handleCancelHighlight = () => {
+    console.log("[Highlight] Canceling highlight mode");
     setIsHighlightDrawMode(false);
     toast.info("Modo de destaque desativado");
   };

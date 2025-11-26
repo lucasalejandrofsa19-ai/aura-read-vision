@@ -3,7 +3,6 @@ import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { PDFSearchBar } from "@/components/PDFSearchBar";
-import { PrefetchIndicator } from "@/components/PrefetchIndicator";
 import { HighlightCanvas } from "@/components/HighlightCanvas";
 import { usePDFPrefetch } from "@/hooks/usePDFPrefetch";
 import type { TextItem } from "pdfjs-dist/types/src/display/api";
@@ -57,7 +56,6 @@ export const PDFViewer = ({
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const [pageTexts, setPageTexts] = useState<Map<number, string>>(new Map());
-  const [isPrefetching, setIsPrefetching] = useState(false);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
 
   // Prefetch hook para carregar próximas páginas
@@ -65,15 +63,8 @@ export const PDFViewer = ({
     fileUrl,
     currentPage: pageNumber,
     numPages,
-    prefetchCount: 3, // Prefetch de 3 páginas à frente
+    prefetchCount: 3,
   });
-
-  // Detectar quando está fazendo prefetch
-  useEffect(() => {
-    setIsPrefetching(true);
-    const timer = setTimeout(() => setIsPrefetching(false), 1000);
-    return () => clearTimeout(timer);
-  }, [pageNumber]);
 
   useEffect(() => {
     if (externalScale !== undefined) {
@@ -334,21 +325,6 @@ export const PDFViewer = ({
         ref={pageRef}
         className="border border-border rounded-lg overflow-auto shadow-lg bg-muted/20 relative"
       >
-        {/* Indicador de prefetch */}
-        <PrefetchIndicator 
-          isActive={isPrefetching} 
-          cachedPagesCount={cache.size}
-        />
-        
-        {/* Indicador de página pronta */}
-        {isPageCached(pageNumber + 1) && (
-          <div className="absolute top-2 right-2 z-10 px-2 py-1 rounded-md bg-green-500/20 border border-green-500/30 backdrop-blur-sm">
-            <span className="text-xs text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              Próxima página pronta
-            </span>
-          </div>
-        )}
         
         <Document
           file={fileUrl}

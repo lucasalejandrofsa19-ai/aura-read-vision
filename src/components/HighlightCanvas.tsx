@@ -264,6 +264,12 @@ export const HighlightCanvas = ({
   useEffect(() => {
     if (!fabricCanvas) return;
 
+    console.log("[HighlightCanvas] Drawing mode changed:", { 
+      isDrawingMode, 
+      hasCanvas: !!fabricCanvas,
+      isTouchDevice 
+    });
+
     const cleanup = () => {
       fabricCanvas.off("mouse:down");
       fabricCanvas.off("mouse:move");
