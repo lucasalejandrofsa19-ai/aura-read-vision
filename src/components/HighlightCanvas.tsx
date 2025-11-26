@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Rect } from "fabric";
+import { useEffect, useRef } from "react";
 
 interface HighlightCanvasProps {
   width: number;
@@ -23,165 +22,143 @@ export const HighlightCanvas = ({
   isDrawing,
 }: HighlightCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const isMountedRef = useRef(true);
-  const drawingRef = useRef<{ startX: number; startY: number; rect: Rect | null }>({
+  const drawingRef = useRef<{
+    isDrawing: boolean;
+    startX: number;
+    startY: number;
+  }>({
+    isDrawing: false,
     startX: 0,
     startY: 0,
-    rect: null,
   });
 
+  // Render existing highlights
   useEffect(() => {
-    isMountedRef.current = true;
-    
-    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const canvas = new FabricCanvas(canvasRef.current, {
-      width,
-      height,
-      selection: false,
-      backgroundColor: "transparent",
-      renderOnAddRemove: false, // Prevent automatic renders
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+
+    // Draw all highlights
+    highlights.forEach((h) => {
+      ctx.fillStyle = h.color;
+      ctx.globalAlpha = 0.3;
+      ctx.fillRect(h.x, h.y, h.width, h.height);
     });
 
-    fabricCanvasRef.current = canvas;
+    ctx.globalAlpha = 1.0;
+  }, [highlights, width, height]);
 
-    return () => {
-      isMountedRef.current = false;
-      
-      const currentCanvas = fabricCanvasRef.current;
-      if (currentCanvas) {
-        // Don't call dispose() - let React handle DOM cleanup
-        // Just remove event listeners and clear references
-        try {
-          currentCanvas.off();
-        } catch (e) {
-          // Ignore errors
-        }
-        fabricCanvasRef.current = null;
-      }
-    };
-  }, [width, height]);
-
+  // Handle drawing mode
   useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !isMountedRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas || !isDrawing) return;
 
-    try {
-      canvas.clear();
+    let currentRect: { x: number; y: number; width: number; height: number } | null = null;
 
+    const handleMouseDown = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      drawingRef.current = {
+        isDrawing: true,
+        startX: x,
+        startY: y,
+      };
+      currentRect = null;
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!drawingRef.current.isDrawing) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      // Clear and redraw
+      ctx.clearRect(0, 0, width, height);
+
+      // Redraw existing highlights
       highlights.forEach((h) => {
-        const rect = new Rect({
-          left: h.x,
-          top: h.y,
-          width: h.width,
-          height: h.height,
-          fill: h.color,
-          opacity: 0.3,
-          selectable: false,
-          evented: false,
-        });
-        canvas.add(rect);
+        ctx.fillStyle = h.color;
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(h.x, h.y, h.width, h.height);
       });
 
-      canvas.requestRenderAll();
-    } catch (error) {
-      // Silently handle render errors during unmount
-    }
-  }, [highlights]);
+      // Draw current selection
+      const rectWidth = x - drawingRef.current.startX;
+      const rectHeight = y - drawingRef.current.startY;
+      const rectX = rectWidth < 0 ? x : drawingRef.current.startX;
+      const rectY = rectHeight < 0 ? y : drawingRef.current.startY;
 
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !isMountedRef.current) return;
+      ctx.fillStyle = "#fef08a";
+      ctx.globalAlpha = 0.3;
+      ctx.fillRect(rectX, rectY, Math.abs(rectWidth), Math.abs(rectHeight));
+      ctx.globalAlpha = 1.0;
 
-    if (isDrawing) {
-      canvas.defaultCursor = "crosshair";
-      
-      const handleMouseDown = (e: any) => {
-        if (!isMountedRef.current) return;
-        
-        const pointer = canvas.getPointer(e.e);
-        drawingRef.current.startX = pointer.x;
-        drawingRef.current.startY = pointer.y;
+      currentRect = {
+        x: rectX,
+        y: rectY,
+        width: Math.abs(rectWidth),
+        height: Math.abs(rectHeight),
+      };
+    };
 
-        const rect = new Rect({
-          left: pointer.x,
-          top: pointer.y,
-          width: 0,
-          height: 0,
-          fill: "#fef08a",
-          opacity: 0.3,
-          selectable: false,
-          evented: false,
+    const handleMouseUp = () => {
+      if (!drawingRef.current.isDrawing) return;
+
+      drawingRef.current.isDrawing = false;
+
+      if (currentRect && currentRect.width > 5 && currentRect.height > 5) {
+        onHighlightAdded?.(currentRect);
+      }
+
+      // Clear temporary drawing
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.clearRect(0, 0, width, height);
+        highlights.forEach((h) => {
+          ctx.fillStyle = h.color;
+          ctx.globalAlpha = 0.3;
+          ctx.fillRect(h.x, h.y, h.width, h.height);
         });
+        ctx.globalAlpha = 1.0;
+      }
 
-        canvas.add(rect);
-        drawingRef.current.rect = rect;
-      };
+      currentRect = null;
+    };
 
-      const handleMouseMove = (e: any) => {
-        if (!drawingRef.current.rect || !isMountedRef.current) return;
+    canvas.addEventListener("mousedown", handleMouseDown);
+    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("mouseup", handleMouseUp);
+    canvas.addEventListener("mouseleave", handleMouseUp);
 
-        const pointer = canvas.getPointer(e.e);
-        const width = pointer.x - drawingRef.current.startX;
-        const height = pointer.y - drawingRef.current.startY;
-
-        drawingRef.current.rect.set({
-          width: Math.abs(width),
-          height: Math.abs(height),
-          left: width < 0 ? pointer.x : drawingRef.current.startX,
-          top: height < 0 ? pointer.y : drawingRef.current.startY,
-        });
-
-        canvas.requestRenderAll();
-      };
-
-      const handleMouseUp = () => {
-        if (!drawingRef.current.rect || !isMountedRef.current) return;
-
-        const rect = drawingRef.current.rect;
-        
-        if (rect.width! > 5 && rect.height! > 5) {
-          onHighlightAdded?.({
-            x: rect.left!,
-            y: rect.top!,
-            width: rect.width!,
-            height: rect.height!,
-          });
-        }
-
-        try {
-          canvas.remove(rect);
-          canvas.requestRenderAll();
-        } catch (error) {
-          // Silently handle errors during unmount
-        }
-        drawingRef.current.rect = null;
-      };
-
-      canvas.on("mouse:down", handleMouseDown);
-      canvas.on("mouse:move", handleMouseMove);
-      canvas.on("mouse:up", handleMouseUp);
-
-      return () => {
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.off("mouse:down", handleMouseDown);
-          fabricCanvasRef.current.off("mouse:move", handleMouseMove);
-          fabricCanvasRef.current.off("mouse:up", handleMouseUp);
-        }
-      };
-    } else {
-      canvas.defaultCursor = "default";
-    }
-  }, [isDrawing, onHighlightAdded]);
+    return () => {
+      canvas.removeEventListener("mousedown", handleMouseDown);
+      canvas.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener("mouseup", handleMouseUp);
+      canvas.removeEventListener("mouseleave", handleMouseUp);
+    };
+  }, [isDrawing, highlights, width, height, onHighlightAdded]);
 
   return (
     <canvas
       ref={canvasRef}
+      width={width}
+      height={height}
       style={{
         position: "absolute",
         top: 0,
         left: 0,
+        cursor: isDrawing ? "crosshair" : "default",
         pointerEvents: isDrawing ? "auto" : "none",
       }}
     />
