@@ -442,8 +442,10 @@ export const PDFViewer = ({
                   height: h.height * scale,
                 }))}
                 onHighlightAdded={async (coords) => {
+                  console.log("[PDFViewer] onHighlightAdded - coords recebidas:", coords);
                   // Extrair texto usando as coordenadas escaladas (o viewport usa scale atual)
                   const text = await extractTextFromCoordinates(coords);
+                  console.log("[PDFViewer] Texto extraído:", text ? text.substring(0, 50) + "..." : "VAZIO");
                   
                   // Salvar coordenadas normalizadas (para persistência)
                   const originalCoords = {
@@ -453,6 +455,7 @@ export const PDFViewer = ({
                     height: coords.height / scale,
                   };
                   
+                  console.log("[PDFViewer] Chamando onHighlightDrawn com texto:", text ? "SIM" : "NÃO");
                   onHighlightDrawn?.({ ...originalCoords, text });
                 }}
                 isDrawing={isDrawingMode}
