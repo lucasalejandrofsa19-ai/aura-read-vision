@@ -117,6 +117,7 @@ export const PDFViewer = ({
       const pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(pageNumber);
       const textContent = await page.getTextContent();
+      const viewport = page.getViewport({ scale: 1 });
       
       const extractedTexts: string[] = [];
       
@@ -126,12 +127,17 @@ export const PDFViewer = ({
           const itemHeight = item.height || 12;
           const itemWidth = item.width || 0;
           
-          // Check if text item overlaps with highlighted area
+          // Convert PDF coordinates (bottom-left origin) to canvas coordinates (top-left origin)
+          const canvasY = viewport.height - itemY;
+          const canvasItemY = canvasY - itemHeight;
+          
+          // Check if text item overlaps with highlighted area (with some tolerance)
+          const tolerance = 5;
           if (
-            itemX >= coords.x &&
-            itemX + itemWidth <= coords.x + coords.width &&
-            itemY - itemHeight >= coords.y &&
-            itemY <= coords.y + coords.height
+            itemX >= coords.x - tolerance &&
+            itemX <= coords.x + coords.width + tolerance &&
+            canvasItemY >= coords.y - tolerance &&
+            canvasItemY <= coords.y + coords.height + tolerance
           ) {
             extractedTexts.push(item.str);
           }
@@ -376,7 +382,7 @@ export const PDFViewer = ({
             <Page
                 pageNumber={pageNumber}
                 scale={scale}
-                renderTextLayer={false}
+                renderTextLayer={true}
                 renderAnnotationLayer={false}
                 onLoadSuccess={(page) => {
                   setPageSize({
