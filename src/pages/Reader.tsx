@@ -262,17 +262,17 @@ const Reader = () => {
   };
 
   const handleHighlightDrawn = (data: { x: number; y: number; width: number; height: number; text: string }) => {
-    console.log("[Reader] handleHighlightDrawn chamado com:", data);
     const { text, ...coords } = data;
     
-    if (!text || text.trim().length === 0) {
-      console.log("[Reader] Texto vazio, mostrando erro");
-      toast.error("⚠️ Nenhum texto foi extraído desta área");
+    // Usar texto selecionado se disponível, senão usar texto extraído
+    const finalText = selectedText.trim() || text.trim();
+    
+    if (!finalText) {
+      toast.error("⚠️ Selecione o texto antes de marcar ou desenhe sobre o texto");
       return;
     }
     
-    console.log("[Reader] Abrindo dialog de edição com texto:", text.substring(0, 50) + "...");
-    setPendingHighlight({ coords, text });
+    setPendingHighlight({ coords, text: finalText });
     setEditDialogOpen(true);
   };
 
@@ -280,6 +280,7 @@ const Reader = () => {
     if (pendingHighlight) {
       addHighlight(pendingHighlight.coords, editedText);
       setPendingHighlight(null);
+      setSelectedText(""); // Limpar texto selecionado
     }
   };
 
