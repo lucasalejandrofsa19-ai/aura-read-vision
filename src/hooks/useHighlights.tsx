@@ -79,23 +79,41 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
       queryClient.invalidateQueries({ queryKey: ["highlights", bookId, pageNumber] });
       queryClient.invalidateQueries({ queryKey: ["highlights", bookId, "all"] });
       
-      // Copiar texto automaticamente para área de transferência
+      // Copiar texto automaticamente para área de transferência e mostrar preview
       if (text && text.trim()) {
         navigator.clipboard.writeText(text).then(() => {
+          // Preview do texto extraído (máximo 150 caracteres)
+          const preview = text.length > 150 ? text.substring(0, 150) + "..." : text;
+          
           toast({
-            title: "Destaque adicionado e copiado",
-            description: "Texto copiado para área de transferência",
+            title: "✨ Destaque criado com sucesso",
+            description: (
+              <div className="space-y-2 mt-2">
+                <div className="text-xs text-muted-foreground">Texto extraído e copiado:</div>
+                <div className="bg-muted/50 rounded p-2 text-sm border border-border/50 max-h-32 overflow-y-auto">
+                  "{preview}"
+                </div>
+                <div className="text-xs text-muted-foreground italic">
+                  📋 Colado automaticamente na área de transferência
+                </div>
+              </div>
+            ),
+            duration: 5000,
           });
         }).catch(() => {
           toast({
             title: "Destaque adicionado",
-            description: "Seu destaque foi salvo com sucesso",
+            description: text.length > 100 
+              ? `"${text.substring(0, 100)}..."` 
+              : `"${text}"`,
+            duration: 4000,
           });
         });
       } else {
         toast({
           title: "Destaque adicionado",
-          description: "Seu destaque foi salvo com sucesso",
+          description: "⚠️ Nenhum texto foi extraído desta área",
+          duration: 3000,
         });
       }
     },
