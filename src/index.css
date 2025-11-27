@@ -306,5 +306,10 @@ All colors MUST be HSL.
   .writing-mode-vertical {
     writing-mode: vertical-rl;
   }
+
+  /* Desabilitar pointer-events na text layer quando em modo desenho */
+  .drawing-mode .react-pdf__Page__textContent {
+    pointer-events: none !important;
+  }
 }
 

@@ -117,28 +117,33 @@ export const PDFViewer = ({
       const pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(pageNumber);
       const textContent = await page.getTextContent();
-      const viewport = page.getViewport({ scale: 1 });
+      const viewport = page.getViewport({ scale: scale });
       
       const extractedTexts: string[] = [];
       
       textContent.items.forEach((item: any) => {
         if ('str' in item && 'transform' in item) {
-          const [, , , , itemX, itemY] = item.transform;
-          const itemHeight = item.height || 12;
-          const itemWidth = item.width || 0;
+          const [scaleX, , , scaleY, itemX, itemY] = item.transform;
+          const itemHeight = Math.abs(scaleY) || 12;
+          const itemWidth = item.width * Math.abs(scaleX) || 0;
           
-          // Convert PDF coordinates (bottom-left origin) to canvas coordinates (top-left origin)
-          const canvasY = viewport.height - itemY;
-          const canvasItemY = canvasY - itemHeight;
+          // Converter coordenadas PDF (origem bottom-left) para canvas (origem top-left)
+          const canvasItemY = viewport.height - itemY;
           
-          // Check if text item overlaps with highlighted area (with some tolerance)
-          const tolerance = 5;
-          if (
-            itemX >= coords.x - tolerance &&
-            itemX <= coords.x + coords.width + tolerance &&
-            canvasItemY >= coords.y - tolerance &&
-            canvasItemY <= coords.y + coords.height + tolerance
-          ) {
+          // Verificar overlap com área destacada (tolerância aumentada)
+          const tolerance = 15;
+          const itemRight = itemX + itemWidth;
+          const itemTop = canvasItemY - itemHeight;
+          const itemBottom = canvasItemY;
+          
+          const highlightRight = coords.x + coords.width;
+          const highlightBottom = coords.y + coords.height;
+          
+          // Checar se há interseção
+          const xOverlap = itemX < highlightRight + tolerance && itemRight > coords.x - tolerance;
+          const yOverlap = itemTop < highlightBottom + tolerance && itemBottom > coords.y - tolerance;
+          
+          if (xOverlap && yOverlap) {
             extractedTexts.push(item.str);
           }
         }
@@ -361,7 +366,7 @@ export const PDFViewer = ({
       {/* PDF Document */}
       <div 
         ref={pageRef}
-        className="border border-border rounded-lg overflow-auto shadow-lg bg-muted/20 relative"
+        className={`border border-border rounded-lg overflow-auto shadow-lg bg-muted/20 relative ${isDrawingMode ? 'drawing-mode' : ''}`}
       >
         
         <Document
@@ -424,15 +429,17 @@ export const PDFViewer = ({
                   height: h.height * scale,
                 }))}
                 onHighlightAdded={async (coords) => {
-                  const realScale = pageSize.width / 595;
+                  // Extrair texto usando as coordenadas escaladas (o viewport usa scale atual)
+                  const text = await extractTextFromCoordinates(coords);
+                  
+                  // Salvar coordenadas normalizadas (para persistência)
                   const originalCoords = {
-                    x: coords.x / realScale,
-                    y: coords.y / realScale,
-                    width: coords.width / realScale,
-                    height: coords.height / realScale,
+                    x: coords.x / scale,
+                    y: coords.y / scale,
+                    width: coords.width / scale,
+                    height: coords.height / scale,
                   };
                   
-                  const text = await extractTextFromCoordinates(originalCoords);
                   onHighlightDrawn?.({ ...originalCoords, text });
                 }}
                 isDrawing={isDrawingMode}
