@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Highlight } from "@/hooks/useHighlights";
+import { ExportDialog } from "@/components/ExportDialog";
 
 const Summary = () => {
   const { id } = useParams();
@@ -14,6 +15,8 @@ const Summary = () => {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<string>("");
   const [generatingSummary, setGeneratingSummary] = useState(false);
+  const [bookTitle, setBookTitle] = useState<string>("");
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   useEffect(() => {
     loadHighlights();
@@ -23,6 +26,15 @@ const Summary = () => {
     if (!id) return;
 
     try {
+      const { data: bookData, error: bookError } = await supabase
+        .from("books")
+        .select("title")
+        .eq("id", id)
+        .single();
+
+      if (bookError) throw bookError;
+      setBookTitle(bookData.title);
+
       const { data, error } = await supabase
         .from("highlights")
         .select("*")
@@ -74,7 +86,7 @@ const Summary = () => {
   };
 
   const handleExport = () => {
-    toast.success("Resumo exportado com sucesso!");
+    setExportDialogOpen(true);
   };
 
   const handleShare = () => {
@@ -245,6 +257,23 @@ const Summary = () => {
           </p>
         </motion.div>
       )}
+
+      {/* Export Dialog */}
+      <ExportDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        bookTitle={bookTitle}
+        highlights={highlights}
+        notes={summary ? [{ 
+          id: "summary", 
+          note_text: summary, 
+          page_number: 1,
+          book_id: id!,
+          user_id: "",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }] : []}
+      />
     </div>
   );
 };
