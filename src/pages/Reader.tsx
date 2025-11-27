@@ -284,8 +284,9 @@ const Reader = () => {
           height: h.position_data.height,
           color: h.color,
         }))}
-        onHighlightDrawn={(coords) => {
-          addHighlight(coords);
+        onHighlightDrawn={(data) => {
+          const { text, ...coords } = data;
+          addHighlight(coords, text);
         }}
         isDrawingMode={isDrawingMode}
         onDrawingModeChange={setIsDrawingMode}

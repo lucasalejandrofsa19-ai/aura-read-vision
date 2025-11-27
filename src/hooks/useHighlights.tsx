@@ -55,7 +55,7 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
   });
 
   const addHighlightMutation = useMutation({
-    mutationFn: async (position: { x: number; y: number; width: number; height: number }) => {
+    mutationFn: async ({ position, text }: { position: { x: number; y: number; width: number; height: number }, text: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
@@ -64,7 +64,7 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
         .insert({
           book_id: bookId,
           page_number: pageNumber,
-          text: "",
+          text: text || "",
           color: "#fef08a",
           position_data: position,
           user_id: user.id,
@@ -112,8 +112,8 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
   });
 
   const addHighlight = useCallback(
-    (position: { x: number; y: number; width: number; height: number }) => {
-      addHighlightMutation.mutate(position);
+    (position: { x: number; y: number; width: number; height: number }, text: string = "") => {
+      addHighlightMutation.mutate({ position, text });
     },
     [addHighlightMutation]
   );

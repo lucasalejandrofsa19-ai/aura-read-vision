@@ -10,7 +10,7 @@ interface HighlightCanvasProps {
     height: number;
     color: string;
   }>;
-  onHighlightAdded?: (highlight: { x: number; y: number; width: number; height: number }) => void;
+  onHighlightAdded?: (highlight: { x: number; y: number; width: number; height: number }) => Promise<void> | void;
   isDrawing: boolean;
 }
 

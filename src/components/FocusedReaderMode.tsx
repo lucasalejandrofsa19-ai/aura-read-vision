@@ -24,7 +24,7 @@ interface FocusedReaderModeProps {
     height: number;
     color: string;
   }>;
-  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number }) => void;
+  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string }) => void;
   isDrawingMode?: boolean;
   onDrawingModeChange?: (isDrawing: boolean) => void;
 }
@@ -216,7 +216,7 @@ export const FocusedReaderMode = ({
                     width: h.width * scale,
                     height: h.height * scale,
                   }))}
-                  onHighlightAdded={(coords) => {
+                  onHighlightAdded={async (coords) => {
                     const realScale = pageSize.width / 595;
                     const originalCoords = {
                       x: coords.x / realScale,
@@ -224,7 +224,8 @@ export const FocusedReaderMode = ({
                       width: coords.width / realScale,
                       height: coords.height / realScale,
                     };
-                    onHighlightDrawn?.(originalCoords);
+                    // For FocusedReaderMode, we pass empty text since we don't have text extraction here yet
+                    onHighlightDrawn?.({ ...originalCoords, text: "" });
                   }}
                   isDrawing={isDrawingMode}
                 />
