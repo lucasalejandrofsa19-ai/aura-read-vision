@@ -160,6 +160,7 @@ export const HighlightCanvas = ({
         left: 0,
         cursor: isDrawing ? "crosshair" : "default",
         pointerEvents: isDrawing ? "auto" : "none",
+        zIndex: isDrawing ? 10 : 1,
       }}
     />
   );

@@ -169,7 +169,7 @@ export const FocusedReaderMode = ({
       )}
 
       {/* PDF Content */}
-      <div className="h-full flex items-center justify-center p-8 overflow-auto">
+      <div className={`h-full flex items-center justify-center p-8 overflow-auto ${isDrawingMode ? 'drawing-mode' : ''}`}>
         <div className="max-w-4xl mx-auto">
           <Document
             file={fileUrl}
