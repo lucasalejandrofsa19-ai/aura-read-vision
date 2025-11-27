@@ -35,13 +35,17 @@ interface ExportDialogProps {
   bookTitle: string;
   highlights: Highlight[];
   notes: Note[];
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const ExportDialog = ({ bookTitle, highlights, notes }: ExportDialogProps) => {
+export const ExportDialog = ({ bookTitle, highlights, notes, open: controlledOpen, onOpenChange }: ExportDialogProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { hasPremiumAccess } = useUserData();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [includeHighlights, setIncludeHighlights] = useState(true);
   const [includeNotes, setIncludeNotes] = useState(true);
