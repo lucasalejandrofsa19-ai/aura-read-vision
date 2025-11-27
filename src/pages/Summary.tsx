@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Highlight } from "@/hooks/useHighlights";
 import { ExportDialog } from "@/components/ExportDialog";
+import { HighlightImageDialog } from "@/components/HighlightImageDialog";
 
 const Summary = () => {
   const { id } = useParams();
@@ -233,7 +234,20 @@ const Summary = () => {
               />
             </div>
             {highlight.text ? (
-              <p className="text-foreground leading-relaxed">{highlight.text}</p>
+              <div>
+                <p className="text-foreground leading-relaxed mb-4">{highlight.text}</p>
+                
+                <HighlightImageDialog 
+                  text={highlight.text} 
+                  highlightId={highlight.id}
+                  trigger={
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      Gerar Imagem
+                    </Button>
+                  }
+                />
+              </div>
             ) : (
               <p className="text-muted-foreground italic text-sm">
                 Destaque visual (sem texto extraído)

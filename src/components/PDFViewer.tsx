@@ -26,7 +26,7 @@ interface PDFViewerProps {
     height: number;
     color: string;
   }>;
-  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number }) => void;
+  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string }) => void;
   isDrawingMode?: boolean;
 }
 
@@ -56,6 +56,7 @@ export const PDFViewer = ({
   const [isSearching, setIsSearching] = useState(false);
   const [pageTexts, setPageTexts] = useState<Map<number, string>>(new Map());
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
+  const [currentPageTextItems, setCurrentPageTextItems] = useState<any[]>([]);
 
   // Prefetch hook para carregar próximas páginas
   const { isPageCached, cache } = usePDFPrefetch({
@@ -106,6 +107,40 @@ export const PDFViewer = ({
       return text;
     } catch (error) {
       console.error(`Error extracting text from page ${pageNum}:`, error);
+      return '';
+    }
+  };
+
+  const extractTextFromCoordinates = async (coords: { x: number; y: number; width: number; height: number }) => {
+    try {
+      const loadingTask = pdfjs.getDocument(fileUrl);
+      const pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(pageNumber);
+      const textContent = await page.getTextContent();
+      
+      const extractedTexts: string[] = [];
+      
+      textContent.items.forEach((item: any) => {
+        if ('str' in item && 'transform' in item) {
+          const [, , , , itemX, itemY] = item.transform;
+          const itemHeight = item.height || 12;
+          const itemWidth = item.width || 0;
+          
+          // Check if text item overlaps with highlighted area
+          if (
+            itemX >= coords.x &&
+            itemX + itemWidth <= coords.x + coords.width &&
+            itemY - itemHeight >= coords.y &&
+            itemY <= coords.y + coords.height
+          ) {
+            extractedTexts.push(item.str);
+          }
+        }
+      });
+      
+      return extractedTexts.join(' ').trim();
+    } catch (error) {
+      console.error("Error extracting text from coordinates:", error);
       return '';
     }
   };
@@ -382,7 +417,7 @@ export const PDFViewer = ({
                   width: h.width * scale,
                   height: h.height * scale,
                 }))}
-                onHighlightAdded={(coords) => {
+                onHighlightAdded={async (coords) => {
                   const realScale = pageSize.width / 595;
                   const originalCoords = {
                     x: coords.x / realScale,
@@ -390,7 +425,9 @@ export const PDFViewer = ({
                     width: coords.width / realScale,
                     height: coords.height / realScale,
                   };
-                  onHighlightDrawn?.(originalCoords);
+                  
+                  const text = await extractTextFromCoordinates(originalCoords);
+                  onHighlightDrawn?.({ ...originalCoords, text });
                 }}
                 isDrawing={isDrawingMode}
               />
