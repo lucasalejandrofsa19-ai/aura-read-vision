@@ -73,15 +73,31 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
         .single();
 
       if (error) throw error;
-      return data;
+      return { data, text };
     },
-    onSuccess: () => {
+    onSuccess: ({ data, text }) => {
       queryClient.invalidateQueries({ queryKey: ["highlights", bookId, pageNumber] });
       queryClient.invalidateQueries({ queryKey: ["highlights", bookId, "all"] });
-      toast({
-        title: "Destaque adicionado",
-        description: "Seu destaque foi salvo com sucesso",
-      });
+      
+      // Copiar texto automaticamente para área de transferência
+      if (text && text.trim()) {
+        navigator.clipboard.writeText(text).then(() => {
+          toast({
+            title: "Destaque adicionado e copiado",
+            description: "Texto copiado para área de transferência",
+          });
+        }).catch(() => {
+          toast({
+            title: "Destaque adicionado",
+            description: "Seu destaque foi salvo com sucesso",
+          });
+        });
+      } else {
+        toast({
+          title: "Destaque adicionado",
+          description: "Seu destaque foi salvo com sucesso",
+        });
+      }
     },
     onError: () => {
       toast({
