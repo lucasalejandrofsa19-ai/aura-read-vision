@@ -117,7 +117,11 @@ export const PDFViewer = ({
       const pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(pageNumber);
       const textContent = await page.getTextContent();
-      const viewport = page.getViewport({ scale: scale });
+      // Use scale 1 viewport para coordenadas normalizadas
+      const viewport = page.getViewport({ scale: 1 });
+      
+      console.log("[extractText] Coords recebidas:", coords);
+      console.log("[extractText] Viewport height:", viewport.height);
       
       const extractedTexts: string[] = [];
       
@@ -131,7 +135,7 @@ export const PDFViewer = ({
           const canvasItemY = viewport.height - itemY;
           
           // Verificar overlap com área destacada (tolerância aumentada)
-          const tolerance = 15;
+          const tolerance = 20;
           const itemRight = itemX + itemWidth;
           const itemTop = canvasItemY - itemHeight;
           const itemBottom = canvasItemY;
@@ -144,12 +148,21 @@ export const PDFViewer = ({
           const yOverlap = itemTop < highlightBottom + tolerance && itemBottom > coords.y - tolerance;
           
           if (xOverlap && yOverlap) {
+            console.log("[extractText] Texto encontrado:", item.str, {
+              itemX,
+              itemY: canvasItemY,
+              itemWidth,
+              itemHeight,
+              highlightCoords: coords
+            });
             extractedTexts.push(item.str);
           }
         }
       });
       
-      return extractedTexts.join(' ').trim();
+      const result = extractedTexts.join(' ').trim();
+      console.log("[extractText] Resultado final:", result);
+      return result;
     } catch (error) {
       console.error("Error extracting text from coordinates:", error);
       return '';

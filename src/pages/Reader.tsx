@@ -30,6 +30,7 @@ import { ThemeSelector } from "@/components/ThemeSelector";
 import { NotesPanel } from "@/components/NotesPanel";
 import { ExportDialog } from "@/components/ExportDialog";
 import { FloatingControls } from "@/components/FloatingControls";
+import { EditHighlightDialog } from "@/components/EditHighlightDialog";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
 import { useAuth } from "@/contexts/AuthContext";
@@ -60,6 +61,8 @@ const Reader = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [pendingHighlight, setPendingHighlight] = useState<{ coords: any; text: string } | null>(null);
   const mobileConfig = useMobileOptimization();
 
   const { highlights, allHighlights, addHighlight, deleteHighlight } = useHighlights(id || "", currentPage);
@@ -258,6 +261,30 @@ const Reader = () => {
     setIsFocusedMode(false);
   };
 
+  const handleHighlightDrawn = (data: { x: number; y: number; width: number; height: number; text: string }) => {
+    const { text, ...coords } = data;
+    
+    if (!text || text.trim().length === 0) {
+      toast.error("⚠️ Nenhum texto foi extraído desta área");
+      return;
+    }
+    
+    setPendingHighlight({ coords, text });
+    setEditDialogOpen(true);
+  };
+
+  const handleConfirmHighlight = (editedText: string) => {
+    if (pendingHighlight) {
+      addHighlight(pendingHighlight.coords, editedText);
+      setPendingHighlight(null);
+    }
+  };
+
+  const handleCancelHighlight = () => {
+    setPendingHighlight(null);
+    toast.info("Destaque cancelado");
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -284,10 +311,7 @@ const Reader = () => {
           height: h.position_data.height,
           color: h.color,
         }))}
-        onHighlightDrawn={(data) => {
-          const { text, ...coords } = data;
-          addHighlight(coords, text);
-        }}
+        onHighlightDrawn={handleHighlightDrawn}
         isDrawingMode={isDrawingMode}
         onDrawingModeChange={setIsDrawingMode}
       />
@@ -602,7 +626,7 @@ const Reader = () => {
               height: h.position_data.height,
               color: h.color,
             }))}
-            onHighlightDrawn={addHighlight}
+            onHighlightDrawn={handleHighlightDrawn}
             isDrawingMode={isDrawingMode}
             bookmarkIndicator={
               bookmarkedPage === currentPage && !mobileConfig.shouldReduceAnimations ? (
@@ -659,6 +683,14 @@ const Reader = () => {
         canGoNext={currentPage < (book.total_pages || 1)}
         currentPage={currentPage}
         totalPages={book.total_pages || 1}
+      />
+
+      <EditHighlightDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        extractedText={pendingHighlight?.text || ""}
+        onConfirm={handleConfirmHighlight}
+        onCancel={handleCancelHighlight}
       />
     </div>
   );
