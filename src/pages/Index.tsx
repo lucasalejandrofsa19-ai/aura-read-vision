@@ -144,34 +144,12 @@ const Index = () => {
         {/* PWA Promo Banner */}
         <PWAPromoBanner />
 
-        {/* Features */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.6 }}
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-16 max-w-5xl px-4 w-full"
-        >
-          {features.map((feature, index) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 + index * 0.1 }}
-              className="glass rounded-xl p-6 aura-soft transition-aura hover:aura-safira"
-            >
-              <feature.icon className="w-10 h-10 text-primary mb-4 mx-auto" />
-              <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-              <p className="text-sm text-muted-foreground">{feature.description}</p>
-            </motion.div>
-          ))}
-        </motion.div>
-
         {/* Premium Features Section */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.2, duration: 0.6 }}
-          className="mt-24 max-w-6xl px-4 w-full"
+          transition={{ delay: 0.6, duration: 0.6 }}
+          className="mt-16 max-w-6xl px-4 w-full"
         >
           <div className="text-center mb-12">
             <motion.div
@@ -238,9 +216,31 @@ const Index = () => {
               <ArrowRight className="w-5 h-5" />
             </Button>
             <p className="text-sm text-muted-foreground mt-4">
-              A partir de R$ 9,90/mês • Cancele quando quiser
+              A partir de R$ 19,90/mês • Cancele quando quiser
             </p>
           </motion.div>
+        </motion.div>
+
+        {/* Features */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2, duration: 0.6 }}
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-24 max-w-5xl px-4 w-full"
+        >
+          {features.map((feature, index) => (
+            <motion.div
+              key={feature.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.4 + index * 0.1 }}
+              className="glass rounded-xl p-6 aura-soft transition-aura hover:aura-safira"
+            >
+              <feature.icon className="w-10 h-10 text-primary mb-4 mx-auto" />
+              <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+              <p className="text-sm text-muted-foreground">{feature.description}</p>
+            </motion.div>
+          ))}
         </motion.div>
       </div>
     </div>
