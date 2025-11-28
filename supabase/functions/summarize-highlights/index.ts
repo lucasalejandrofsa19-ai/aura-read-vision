@@ -60,15 +60,20 @@ serve(async (req) => {
       );
     }
 
-    // Registrar acesso permitido
-    await supabaseClient.from("premium_access_audit").insert({
-      user_id: user.id,
-      feature: "ai_summary",
-      action: "generate_summary",
-      granted: true
-    });
-
-    const { highlights } = await req.json();
+    const { highlights, preview } = await req.json();
+    
+    // Preview é permitido para todos, resumo completo só para premium
+    const isPreview = preview === true;
+    
+    if (!isPreview) {
+      // Registrar acesso premium ao resumo completo
+      await supabaseClient.from("premium_access_audit").insert({
+        user_id: user.id,
+        feature: "ai_summary",
+        action: "generate_full_summary",
+        granted: true
+      });
+    }
     
     if (!highlights || highlights.length === 0) {
       return new Response(
@@ -87,7 +92,9 @@ serve(async (req) => {
       .map((h: any, i: number) => `[Página ${h.page_number}]: ${h.text || "Sem texto extraído"}`)
       .join("\n\n");
 
-    const systemPrompt = `Você é um assistente especializado em criar resumos concisos e informativos. 
+    const systemPrompt = isPreview 
+      ? `Você é um assistente especializado em criar resumos concisos. Crie um resumo MUITO BREVE (máximo 50 palavras) dos trechos destacados, focando apenas na ideia central principal.`
+      : `Você é um assistente especializado em criar resumos concisos e informativos. 
 Seu trabalho é analisar os trechos destacados de um livro e criar um resumo coerente que:
 1. Identifique os temas principais presentes nos destaques
 2. Agrupe ideias relacionadas
@@ -97,11 +104,9 @@ Seu trabalho é analisar os trechos destacados de um livro e criar um resumo coe
 
 O resumo deve ajudar o leitor a entender rapidamente os pontos principais que ele considerou importantes no livro.`;
 
-    const userPrompt = `Por favor, crie um resumo dos seguintes trechos destacados de um livro:
-
-${highlightTexts}
-
-Forneça um resumo coeso e bem estruturado destes destaques.`;
+    const userPrompt = isPreview
+      ? `Crie um resumo MUITO BREVE (máximo 50 palavras) dos seguintes destaques:\n\n${highlightTexts}\n\nApenas a ideia central principal.`
+      : `Por favor, crie um resumo dos seguintes trechos destacados de um livro:\n\n${highlightTexts}\n\nForneça um resumo coeso e bem estruturado destes destaques.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -141,7 +146,7 @@ Forneça um resumo coeso e bem estruturado destes destaques.`;
     const summary = data.choices[0].message.content;
 
     return new Response(
-      JSON.stringify({ summary }),
+      JSON.stringify({ summary, isPreview }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
