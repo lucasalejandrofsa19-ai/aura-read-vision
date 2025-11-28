@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
-import { Book, Sparkles, ArrowRight, Highlighter, BookmarkCheck, Share2, Wand2, FileDown, Image, Infinity as InfinityIcon, Library } from "lucide-react";
+import { Book, Sparkles, ArrowRight, Highlighter, BookmarkCheck, Share2, Wand2, FileDown, Image, Infinity as InfinityIcon, Library, Star, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import PWAPromoBanner from "@/components/PWAPromoBanner";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -57,6 +58,30 @@ const Index = () => {
       title: "Livros Premium",
       description: "Acesso exclusivo à coleção de livros premium selecionados especialmente.",
       highlight: "Catálogo exclusivo",
+    },
+  ];
+
+  const testimonials = [
+    {
+      name: "Ana Silva",
+      role: "Estudante de Medicina",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ana",
+      rating: 5,
+      text: "Revolucionou minha forma de estudar! Os resumos com IA me economizam horas de trabalho e consigo revisar todo o conteúdo muito mais rápido.",
+    },
+    {
+      name: "Carlos Mendes",
+      role: "Pesquisador",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos",
+      rating: 5,
+      text: "A exportação para Word facilita muito na hora de escrever artigos. Consigo organizar todas minhas anotações de forma profissional.",
+    },
+    {
+      name: "Juliana Costa",
+      role: "Designer",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Juliana",
+      rating: 5,
+      text: "As imagens geradas por IA são incríveis! Transformo meus insights em visuais inspiradores para compartilhar com minha equipe.",
     },
   ];
 
@@ -221,11 +246,70 @@ const Index = () => {
           </motion.div>
         </motion.div>
 
+        {/* Testimonials Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 2.2, duration: 0.6 }}
+          className="mt-24 max-w-6xl px-4 w-full"
+        >
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              O que dizem nossos usuários <span className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">Premium</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Milhares de leitores já transformaram sua experiência de leitura
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {testimonials.map((testimonial, index) => (
+              <motion.div
+                key={testimonial.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 2.4 + index * 0.1 }}
+              >
+                <Card className="glass border-border/50 hover:border-amber-500/30 transition-all h-full group">
+                  <CardHeader>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-12 h-12 border-2 border-amber-500/20">
+                          <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
+                          <AvatarFallback>{testimonial.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-semibold text-foreground">{testimonial.name}</h3>
+                          <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                        </div>
+                      </div>
+                      <PremiumBadge variant="icon-only" />
+                    </div>
+                    <div className="flex gap-1 mb-3">
+                      {Array.from({ length: testimonial.rating }).map((_, i) => (
+                        <Star key={i} className="w-4 h-4 fill-amber-500 text-amber-500" />
+                      ))}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="relative">
+                      <Quote className="absolute -top-2 -left-2 w-8 h-8 text-amber-500/20" />
+                      <p className="text-sm text-muted-foreground pl-6 italic">
+                        "{testimonial.text}"
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
         {/* Features */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.2, duration: 0.6 }}
+          transition={{ delay: 2.8, duration: 0.6 }}
           className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-24 max-w-5xl px-4 w-full"
         >
           {features.map((feature, index) => (
@@ -233,7 +317,7 @@ const Index = () => {
               key={feature.title}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.4 + index * 0.1 }}
+              transition={{ delay: 3.0 + index * 0.1 }}
               className="glass rounded-xl p-6 aura-soft transition-aura hover:aura-safira"
             >
               <feature.icon className="w-10 h-10 text-primary mb-4 mx-auto" />
