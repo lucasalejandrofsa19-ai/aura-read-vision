@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Camera, Save, Crown, CreditCard, Shield, Zap } from "lucide-react";
+import { ArrowLeft, Camera, Save, CreditCard, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ import { usePerformanceMode } from "@/hooks/usePerformanceMode";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LazyLoadWrapper } from "@/components/LazyLoadWrapper";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PremiumBadge } from "@/components/PremiumBadge";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -196,18 +197,17 @@ const Profile = () => {
                           damping: 15
                         }}
                          className={`relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 ${!isMobile ? 'overflow-hidden' : ''} cursor-help`}
-                      >
-                        <Crown className="w-3.5 h-3.5 text-purple-500 relative z-10" />
-                        <span className="text-xs font-semibold text-purple-500 relative z-10">Premium</span>
-                        {!isMobile && (
-                          <div className="absolute inset-0 -left-full w-[150%] h-full bg-gradient-to-r from-transparent via-white/70 to-transparent animate-card-swipe will-change-transform" />
-                        )}
-                      </motion.div>
+                       >
+                         <PremiumBadge variant="compact" className="relative z-10" />
+                         {!isMobile && (
+                           <div className="absolute inset-0 -left-full w-[150%] h-full bg-gradient-to-r from-transparent via-white/70 to-transparent animate-card-swipe will-change-transform" />
+                         )}
+                       </motion.div>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-xs">
                       <div className="space-y-2">
                         <p className="font-semibold text-sm flex items-center gap-1">
-                          <Crown className="w-4 h-4 text-purple-500" />
+                          <PremiumBadge variant="icon-only" />
                           Benefícios Premium
                         </p>
                         <ul className="text-xs space-y-1 text-muted-foreground">
@@ -288,10 +288,7 @@ const Profile = () => {
                         </div>
                       )}
                       {hasPremiumAccess && (
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30">
-                          <Crown className="w-3.5 h-3.5 text-purple-500" />
-                          <span className="text-xs font-semibold text-purple-500">Premium</span>
-                        </div>
+                        <PremiumBadge variant="default" />
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground mb-1">
@@ -432,8 +429,8 @@ const Profile = () => {
                 {/* Current Plan */}
                 <div className="flex items-start justify-between p-4 rounded-lg border bg-card">
                   <div className="flex items-start gap-4">
-                    <div className="p-3 rounded-full bg-gradient-to-br from-slate-500 to-slate-700">
-                      <Crown className="w-6 h-6 text-white" />
+                    <div className="p-3 rounded-full bg-gradient-to-br from-amber-500 to-orange-500">
+                      <PremiumBadge variant="icon-only" className="w-6 h-6 text-white" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg mb-1">
@@ -454,9 +451,9 @@ const Profile = () => {
                 <div className="flex gap-3">
                   <Button
                     onClick={() => navigate("/pricing")}
-                    className="flex-1 bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                    className="flex-1 bg-gradient-to-r from-primary to-accent hover:opacity-90 gap-2"
                   >
-                    <Crown className="w-4 h-4 mr-2" />
+                    <PremiumBadge variant="icon-only" />
                     Ver Planos Premium
                   </Button>
                 </div>

@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -10,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useUserData } from "@/hooks/useUserData";
+import { PremiumBadge } from "@/components/PremiumBadge";
 
 interface PremiumActionButtonProps {
   icon: React.ReactNode;
@@ -61,12 +61,9 @@ export const PremiumActionButton = ({
               <span className="hidden sm:inline ml-2 text-xs">{label}</span>
             </Button>
             {requiresPremium && !hasPremiumAccess && (
-              <Badge 
-                className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-700 border-0 pointer-events-none"
-                variant="secondary"
-              >
-                <Crown className="w-2.5 h-2.5 text-white" />
-              </Badge>
+              <div className="absolute -top-1 -right-1">
+                <PremiumBadge variant="icon-only" />
+              </div>
             )}
           </div>
         </TooltipTrigger>

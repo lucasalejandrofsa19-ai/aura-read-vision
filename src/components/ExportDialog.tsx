@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Download, FileText, File, Hash, Calendar, Crown } from "lucide-react";
+import { Download, FileText, File, Hash, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { PremiumBadge } from "@/components/PremiumBadge";
 import {
   Dialog,
   DialogContent,
@@ -201,10 +202,7 @@ export const ExportDialog = ({ bookTitle, highlights, notes, open: controlledOpe
                           <span className="font-medium">{formatLabels[fmt]}</span>
                         </div>
                         {isPremium && (
-                          <Badge className="h-5 px-1.5 flex items-center gap-1 bg-gradient-to-r from-purple-500 to-purple-700 border-0">
-                            <Crown className="w-3 h-3 text-white" />
-                            <span className="text-[10px] text-white">PRO</span>
-                          </Badge>
+                          <PremiumBadge variant="compact" icon="crown" />
                         )}
                       </div>
                       <span className="text-xs text-muted-foreground">
