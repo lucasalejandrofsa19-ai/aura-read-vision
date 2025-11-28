@@ -7,7 +7,6 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SentryUserContext } from "./components/SentryUserContext";
 import { usePWAInstallPrompt } from "@/hooks/usePWAInstallPrompt";
-import { usePWAAutoUpdate } from "@/hooks/usePWAAutoUpdate";
 import { UpdateNotification } from "@/components/UpdateNotification";
 import { AppHealthMonitor } from "@/components/AppHealthMonitor";
 import * as Sentry from "@sentry/react";
@@ -37,9 +36,6 @@ const SentryRoutes = Sentry.withSentryRouting(Routes);
 const AppContent = () => {
   // Hook para detectar e gerenciar instalação PWA
   usePWAInstallPrompt();
-  
-  // Hook para auto-update do PWA em background
-  usePWAAutoUpdate();
 
   return (
     <SentryRoutes>
