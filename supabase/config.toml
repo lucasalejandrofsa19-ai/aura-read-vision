@@ -33,3 +33,6 @@ verify_jwt = false
 [functions.check-ip-reputation]
 verify_jwt = false
 
+[functions.summarize-highlights]
+verify_jwt = true
+

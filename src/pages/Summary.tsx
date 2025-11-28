@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Download, Share2, Sparkles, Loader2, FileDown } from "lucide-react";
+import { ArrowLeft, Download, Share2, Sparkles, Loader2, FileDown, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,20 +10,32 @@ import { ExportDialog } from "@/components/ExportDialog";
 import { HighlightImageDialog } from "@/components/HighlightImageDialog";
 import { pdf } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePremiumValidation } from "@/hooks/usePremiumValidation";
 
 const Summary = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { validatePremiumAccess } = usePremiumValidation();
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<string>("");
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [bookTitle, setBookTitle] = useState<string>("");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [hasPremium, setHasPremium] = useState(false);
 
   useEffect(() => {
     loadHighlights();
+    checkPremiumAccess();
   }, [id]);
+
+  const checkPremiumAccess = async () => {
+    if (!user) return;
+    const result = await validatePremiumAccess();
+    setHasPremium(result.hasPremiumAccess);
+  };
 
   const loadHighlights = async () => {
     if (!id) return;
@@ -60,6 +72,12 @@ const Summary = () => {
       return;
     }
 
+    if (!hasPremium) {
+      toast.error("Recurso premium. Assine um plano para gerar resumos com IA.");
+      navigate("/pricing");
+      return;
+    }
+
     setGeneratingSummary(true);
     try {
       const { data, error } = await supabase.functions.invoke("summarize-highlights", {
@@ -71,6 +89,9 @@ const Summary = () => {
           toast.error("Limite de requisições excedido. Tente novamente mais tarde.");
         } else if (error.message?.includes("402")) {
           toast.error("Créditos insuficientes. Adicione créditos ao seu workspace.");
+        } else if (error.message?.includes("403") || error.message?.includes("premium")) {
+          toast.error("Recurso premium. Assine um plano para gerar resumos com IA.");
+          navigate("/pricing");
         } else {
           toast.error("Erro ao gerar resumo");
         }
@@ -208,23 +229,31 @@ const Summary = () => {
                 Resumo Inteligente
               </h2>
               {!summary && (
-                <Button
-                  onClick={generateSummary}
-                  disabled={generatingSummary}
-                  className="gap-2"
-                >
-                  {generatingSummary ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Gerando...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      Gerar Resumo
-                    </>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={generateSummary}
+                    disabled={generatingSummary}
+                    className="gap-2"
+                  >
+                    {generatingSummary ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Gerando...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        Gerar Resumo
+                        {!hasPremium && <Lock className="w-4 h-4 ml-1" />}
+                      </>
+                    )}
+                  </Button>
+                  {!hasPremium && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Recurso premium - Assine para desbloquear
+                    </p>
                   )}
-                </Button>
+                </div>
               )}
             </div>
             

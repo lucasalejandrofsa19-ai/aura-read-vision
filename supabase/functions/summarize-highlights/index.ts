@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,62 @@ serve(async (req) => {
   }
 
   try {
+    // Criar cliente Supabase para autenticação
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    // Verificar autenticação
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Não autenticado" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+    
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Token inválido" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verificar acesso premium
+    const { data: hasPremium, error: premiumError } = await supabaseClient.rpc(
+      "has_premium_access",
+      { _user_id: user.id }
+    );
+
+    if (premiumError || !hasPremium) {
+      // Registrar auditoria
+      await supabaseClient.from("premium_access_audit").insert({
+        user_id: user.id,
+        feature: "ai_summary",
+        action: "generate_summary",
+        granted: false,
+        reason: "No premium access"
+      });
+
+      return new Response(
+        JSON.stringify({ error: "Recurso premium. Assine um plano premium para gerar resumos com IA." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Registrar acesso permitido
+    await supabaseClient.from("premium_access_audit").insert({
+      user_id: user.id,
+      feature: "ai_summary",
+      action: "generate_summary",
+      granted: true
+    });
+
     const { highlights } = await req.json();
     
     if (!highlights || highlights.length === 0) {
