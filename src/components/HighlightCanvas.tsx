@@ -60,10 +60,25 @@ export const HighlightCanvas = ({
 
     let currentRect: { x: number; y: number; width: number; height: number } | null = null;
 
-    const handleMouseDown = (e: MouseEvent) => {
+    const getCoordinates = (e: MouseEvent | TouchEvent) => {
       const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      if ('touches' in e) {
+        const touch = e.touches[0];
+        return {
+          x: touch.clientX - rect.left,
+          y: touch.clientY - rect.top,
+        };
+      } else {
+        return {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        };
+      }
+    };
+
+    const handleStart = (e: MouseEvent | TouchEvent) => {
+      e.preventDefault();
+      const { x, y } = getCoordinates(e);
 
       drawingRef.current = {
         isDrawing: true,
@@ -73,12 +88,11 @@ export const HighlightCanvas = ({
       currentRect = null;
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMove = (e: MouseEvent | TouchEvent) => {
       if (!drawingRef.current.isDrawing) return;
+      e.preventDefault();
 
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const { x, y } = getCoordinates(e);
 
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
@@ -112,8 +126,9 @@ export const HighlightCanvas = ({
       };
     };
 
-    const handleMouseUp = () => {
+    const handleEnd = (e: MouseEvent | TouchEvent) => {
       if (!drawingRef.current.isDrawing) return;
+      e.preventDefault();
 
       drawingRef.current.isDrawing = false;
 
@@ -136,16 +151,28 @@ export const HighlightCanvas = ({
       currentRect = null;
     };
 
-    canvas.addEventListener("mousedown", handleMouseDown);
-    canvas.addEventListener("mousemove", handleMouseMove);
-    canvas.addEventListener("mouseup", handleMouseUp);
-    canvas.addEventListener("mouseleave", handleMouseUp);
+    // Mouse events
+    canvas.addEventListener("mousedown", handleStart as EventListener);
+    canvas.addEventListener("mousemove", handleMove as EventListener);
+    canvas.addEventListener("mouseup", handleEnd as EventListener);
+    canvas.addEventListener("mouseleave", handleEnd as EventListener);
+
+    // Touch events
+    canvas.addEventListener("touchstart", handleStart as EventListener, { passive: false });
+    canvas.addEventListener("touchmove", handleMove as EventListener, { passive: false });
+    canvas.addEventListener("touchend", handleEnd as EventListener, { passive: false });
+    canvas.addEventListener("touchcancel", handleEnd as EventListener, { passive: false });
 
     return () => {
-      canvas.removeEventListener("mousedown", handleMouseDown);
-      canvas.removeEventListener("mousemove", handleMouseMove);
-      canvas.removeEventListener("mouseup", handleMouseUp);
-      canvas.removeEventListener("mouseleave", handleMouseUp);
+      canvas.removeEventListener("mousedown", handleStart as EventListener);
+      canvas.removeEventListener("mousemove", handleMove as EventListener);
+      canvas.removeEventListener("mouseup", handleEnd as EventListener);
+      canvas.removeEventListener("mouseleave", handleEnd as EventListener);
+      
+      canvas.removeEventListener("touchstart", handleStart as EventListener);
+      canvas.removeEventListener("touchmove", handleMove as EventListener);
+      canvas.removeEventListener("touchend", handleEnd as EventListener);
+      canvas.removeEventListener("touchcancel", handleEnd as EventListener);
     };
   }, [isDrawing, highlights, width, height, onHighlightAdded]);
 
