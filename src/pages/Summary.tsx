@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Download, Share2, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Share2, Sparkles, Loader2, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Highlight } from "@/hooks/useHighlights";
 import { ExportDialog } from "@/components/ExportDialog";
 import { HighlightImageDialog } from "@/components/HighlightImageDialog";
+import { pdf } from "@react-pdf/renderer";
+import { saveAs } from "file-saver";
 
 const Summary = () => {
   const { id } = useParams();
@@ -92,6 +94,47 @@ const Summary = () => {
 
   const handleShare = () => {
     navigate(`/share/${id}`);
+  };
+
+  const exportSummaryToPDF = async () => {
+    if (!summary) {
+      toast.error("Nenhum resumo para exportar");
+      return;
+    }
+
+    try {
+      const { HighlightsPDFDocument } = await import("@/components/HighlightsPDFDocument");
+      
+      const doc = (
+        <HighlightsPDFDocument
+          bookTitle={`${bookTitle} - Resumo IA`}
+          highlights={[]}
+          notes={[{
+            id: "summary",
+            note_text: summary,
+            page_number: 1,
+            book_id: id!,
+            user_id: "",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }]}
+          options={{
+            includeHighlights: false,
+            includeNotes: true,
+            groupByPage: false,
+            includeTimestamps: false,
+            includeColors: false
+          }}
+        />
+      );
+
+      const blob = await pdf(doc).toBlob();
+      saveAs(blob, `${bookTitle}-resumo-${Date.now()}.pdf`);
+      toast.success("Resumo exportado para PDF!");
+    } catch (error) {
+      console.error("Erro ao exportar resumo:", error);
+      toast.error("Erro ao exportar resumo");
+    }
   };
 
   if (loading) {
@@ -188,22 +231,32 @@ const Summary = () => {
             {summary ? (
               <div className="prose prose-sm max-w-none">
                 <p className="text-foreground leading-relaxed whitespace-pre-wrap">{summary}</p>
-                <Button
-                  onClick={generateSummary}
-                  disabled={generatingSummary}
-                  variant="outline"
-                  size="sm"
-                  className="mt-4"
-                >
-                  {generatingSummary ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Gerando...
-                    </>
-                  ) : (
-                    "Gerar Novo Resumo"
-                  )}
-                </Button>
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    onClick={generateSummary}
+                    disabled={generatingSummary}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {generatingSummary ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        Gerando...
+                      </>
+                    ) : (
+                      "Gerar Novo Resumo"
+                    )}
+                  </Button>
+                  <Button
+                    onClick={exportSummaryToPDF}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <FileDown className="w-4 h-4" />
+                    Exportar Resumo PDF
+                  </Button>
+                </div>
               </div>
             ) : (
               <p className="text-muted-foreground text-sm">
