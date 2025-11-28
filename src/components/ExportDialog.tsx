@@ -71,7 +71,8 @@ export const ExportDialog = ({ bookTitle, highlights, notes, open: controlledOpe
       groupByPage?: boolean;
       includeTimestamps?: boolean;
       includeColors?: boolean;
-    }
+    },
+    editedHighlights?: Highlight[]
   ) => {
     if (!user) {
       toast.error("Faça login para exportar");
@@ -85,6 +86,8 @@ export const ExportDialog = ({ bookTitle, highlights, notes, open: controlledOpe
       includeTimestamps,
       includeColors,
     };
+
+    const highlightsToExport = editedHighlights || highlights;
 
     if (!options.includeHighlights && !options.includeNotes) {
       toast.error("Selecione pelo menos uma opção para exportar");
@@ -126,7 +129,7 @@ export const ExportDialog = ({ bookTitle, highlights, notes, open: controlledOpe
     setIsExporting(true);
 
     try {
-      await exportData(format, bookTitle, highlights, notes, {
+      await exportData(format, bookTitle, highlightsToExport, notes, {
         includeHighlights: options.includeHighlights ?? true,
         includeNotes: options.includeNotes ?? true,
         groupByPage: options.groupByPage ?? true,
@@ -380,8 +383,8 @@ export const ExportDialog = ({ bookTitle, highlights, notes, open: controlledOpe
       bookTitle={bookTitle}
       highlights={highlights}
       notes={notes}
-      onDownload={(options) => {
-        handleExport(options);
+      onDownload={(options, editedHighlights) => {
+        handleExport({ ...options }, editedHighlights);
       }}
     />
   </>
