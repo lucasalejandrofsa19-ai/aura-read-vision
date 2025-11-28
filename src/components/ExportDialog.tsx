@@ -23,6 +23,7 @@ import { captureError } from "@/lib/sentry";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Note } from "@/hooks/useNotes";
+import { HighlightsPDFPreviewDialog } from "./HighlightsPDFPreviewDialog";
 
 interface Highlight {
   id: string;
@@ -54,6 +55,7 @@ export const ExportDialog = ({ bookTitle, highlights, notes, open: controlledOpe
   const [includeTimestamps, setIncludeTimestamps] = useState(true);
   const [includeColors, setIncludeColors] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
 
   const { exportData } = useExport();
   const { validatePremiumAccess } = usePremiumValidation();
@@ -62,13 +64,29 @@ export const ExportDialog = ({ bookTitle, highlights, notes, open: controlledOpe
     return ["word", "notion"].includes(fmt);
   };
 
-  const handleExport = async () => {
+  const handleExport = async (
+    overrideOptions?: {
+      includeHighlights?: boolean;
+      includeNotes?: boolean;
+      groupByPage?: boolean;
+      includeTimestamps?: boolean;
+      includeColors?: boolean;
+    }
+  ) => {
     if (!user) {
       toast.error("Faça login para exportar");
       return;
     }
 
-    if (!includeHighlights && !includeNotes) {
+    const options = overrideOptions || {
+      includeHighlights,
+      includeNotes,
+      groupByPage,
+      includeTimestamps,
+      includeColors,
+    };
+
+    if (!options.includeHighlights && !options.includeNotes) {
       toast.error("Selecione pelo menos uma opção para exportar");
       return;
     }
@@ -109,11 +127,11 @@ export const ExportDialog = ({ bookTitle, highlights, notes, open: controlledOpe
 
     try {
       await exportData(format, bookTitle, highlights, notes, {
-        includeHighlights,
-        includeNotes,
-        groupByPage,
-        includeTimestamps,
-        includeColors,
+        includeHighlights: options.includeHighlights ?? true,
+        includeNotes: options.includeNotes ?? true,
+        groupByPage: options.groupByPage ?? true,
+        includeTimestamps: options.includeTimestamps ?? true,
+        includeColors: options.includeColors ?? true,
       });
       
       toast.success("Exportação realizada com sucesso!");
@@ -152,8 +170,17 @@ export const ExportDialog = ({ bookTitle, highlights, notes, open: controlledOpe
 
   const Icon = formatIcons[format];
 
+  const handlePreviewOrExport = () => {
+    if (format === "pdf") {
+      setShowPDFPreview(true);
+    } else {
+      handleExport();
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
           <Download className="w-4 h-4" />
@@ -327,7 +354,7 @@ export const ExportDialog = ({ bookTitle, highlights, notes, open: controlledOpe
             Cancelar
           </Button>
           <Button
-            onClick={handleExport}
+            onClick={handlePreviewOrExport}
             disabled={isExporting || (!includeHighlights && !includeNotes)}
             className="flex-1 gap-2"
           >
@@ -339,12 +366,24 @@ export const ExportDialog = ({ bookTitle, highlights, notes, open: controlledOpe
             ) : (
               <>
                 <Download className="w-4 h-4" />
-                Exportar {formatLabels[format]}
+                {format === "pdf" ? "Pré-visualizar" : `Exportar ${formatLabels[format]}`}
               </>
             )}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
+
+    <HighlightsPDFPreviewDialog
+      open={showPDFPreview}
+      onOpenChange={setShowPDFPreview}
+      bookTitle={bookTitle}
+      highlights={highlights}
+      notes={notes}
+      onDownload={(options) => {
+        handleExport(options);
+      }}
+    />
+  </>
   );
 };
