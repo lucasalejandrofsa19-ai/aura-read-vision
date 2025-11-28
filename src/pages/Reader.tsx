@@ -30,7 +30,7 @@ import { ThemeSelector } from "@/components/ThemeSelector";
 import { NotesPanel } from "@/components/NotesPanel";
 import { ExportDialog } from "@/components/ExportDialog";
 import { FloatingControls } from "@/components/FloatingControls";
-import { EditHighlightDialog } from "@/components/EditHighlightDialog";
+
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
 import { useAuth } from "@/contexts/AuthContext";
@@ -61,8 +61,6 @@ const Reader = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [pendingHighlight, setPendingHighlight] = useState<{ coords: any; text: string } | null>(null);
   const mobileConfig = useMobileOptimization();
 
   const { highlights, allHighlights, addHighlight, deleteHighlight } = useHighlights(id || "", currentPage);
@@ -263,30 +261,8 @@ const Reader = () => {
 
   const handleHighlightDrawn = (data: { x: number; y: number; width: number; height: number; text: string }) => {
     const { text, ...coords } = data;
-    
-    // Usar texto selecionado se disponível, senão usar texto extraído
-    const finalText = selectedText.trim() || text.trim();
-    
-    if (!finalText) {
-      toast.error("⚠️ Selecione o texto antes de marcar ou desenhe sobre o texto");
-      return;
-    }
-    
-    setPendingHighlight({ coords, text: finalText });
-    setEditDialogOpen(true);
-  };
-
-  const handleConfirmHighlight = (editedText: string) => {
-    if (pendingHighlight) {
-      addHighlight(pendingHighlight.coords, editedText);
-      setPendingHighlight(null);
-      setSelectedText(""); // Limpar texto selecionado
-    }
-  };
-
-  const handleCancelHighlight = () => {
-    setPendingHighlight(null);
-    toast.info("Destaque cancelado");
+    // Adicionar destaque diretamente com texto extraído - cópia automática no useHighlights
+    addHighlight(coords, text);
   };
 
   if (loading) {
@@ -689,13 +665,6 @@ const Reader = () => {
         totalPages={book.total_pages || 1}
       />
 
-      <EditHighlightDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        extractedText={pendingHighlight?.text || ""}
-        onConfirm={handleConfirmHighlight}
-        onCancel={handleCancelHighlight}
-      />
     </div>
   );
 };

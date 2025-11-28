@@ -442,6 +442,9 @@ export const PDFViewer = ({
                   height: h.height * scale,
                 }))}
                 onHighlightAdded={async (coords) => {
+                  // Extrair texto automaticamente das coordenadas
+                  const text = await extractTextFromCoordinates(coords);
+                  
                   // Salvar coordenadas normalizadas (para persistência)
                   const originalCoords = {
                     x: coords.x / scale,
@@ -450,8 +453,7 @@ export const PDFViewer = ({
                     height: coords.height / scale,
                   };
                   
-                  // Enviar coordenadas sem texto - o Reader usará o texto selecionado
-                  onHighlightDrawn?.({ ...originalCoords, text: "" });
+                  onHighlightDrawn?.({ ...originalCoords, text });
                 }}
                 isDrawing={isDrawingMode}
               />
