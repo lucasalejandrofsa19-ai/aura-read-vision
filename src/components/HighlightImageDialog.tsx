@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PremiumBadge } from "@/components/PremiumBadge";
 import {
   Dialog,
   DialogContent,
@@ -210,9 +211,9 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
         <div onClick={() => setOpen(true)} className="relative">
           {trigger}
           {!hasPremiumAccess && imageCount >= FREE_IMAGE_LIMIT && (
-            <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-700 border-0 pointer-events-none">
-              <Crown className="w-2.5 h-2.5 text-white" />
-            </Badge>
+            <div className="absolute -top-1 -right-1">
+              <PremiumBadge variant="icon-only" icon="crown" />
+            </div>
           )}
         </div>
       ) : (
@@ -227,9 +228,9 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
             <Image className="w-3 h-3" />
           </Button>
           {!hasPremiumAccess && imageCount >= FREE_IMAGE_LIMIT && (
-            <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-700 border-0 pointer-events-none">
-              <Crown className="w-2.5 h-2.5 text-white" />
-            </Badge>
+            <div className="absolute -top-1 -right-1">
+              <PremiumBadge variant="icon-only" icon="crown" />
+            </div>
           )}
         </div>
       )}
@@ -263,7 +264,7 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
                           className="h-auto p-0 ml-1 text-amber-500 hover:text-amber-600 inline-flex items-center gap-1"
                           onClick={() => navigate('/pricing')}
                         >
-                          <Crown className="w-3 h-3" />
+                          <PremiumBadge variant="icon-only" icon="crown" className="mr-1" />
                           assine o plano Premium/Pro
                         </Button>
                       </>

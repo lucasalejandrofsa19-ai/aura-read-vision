@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, memo, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, User, CreditCard, Shield, Crown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { LibraryTour } from "@/components/LibraryTour";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { LazyLoadWrapper } from "@/components/LazyLoadWrapper";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PremiumBadge } from "@/components/PremiumBadge";
 
 // Memoizar BookCard para evitar re-renders desnecessários
 const MemoizedBookCard = memo(BookCard);
@@ -116,10 +117,7 @@ const Library = () => {
                 </div>
               )}
               {hasPremiumAccess && !isAdmin && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30">
-                  <Crown className="w-3.5 h-3.5 text-purple-500" />
-                  <span className="text-xs font-semibold text-purple-500">Premium</span>
-                </div>
+                <PremiumBadge variant="compact" />
               )}
             </div>
           </div>

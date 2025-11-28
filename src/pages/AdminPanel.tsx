@@ -10,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect, useMemo } from "react";
-import { Shield, Users, ArrowLeft, Crown, Star, TrendingUp, Search, UserPlus, Filter, X, MessageSquare, Ban } from "lucide-react";
+import { Shield, Users, ArrowLeft, Star, TrendingUp, Search, UserPlus, Filter, X, MessageSquare, Ban } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { PremiumBadge } from "@/components/PremiumBadge";
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -356,7 +357,7 @@ const AdminPanel = () => {
           <TabsContent value="assign">
             <Card className="glass p-8">
               <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                <Crown className="w-6 h-6 text-primary" />
+                <PremiumBadge variant="icon-only" className="w-6 h-6" />
                 Atribuir Role para Usuário
               </h2>
               
