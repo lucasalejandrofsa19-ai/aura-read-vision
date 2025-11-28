@@ -21,6 +21,7 @@ const Summary = () => {
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<string>("");
+  const [isPreview, setIsPreview] = useState(false);
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [bookTitle, setBookTitle] = useState<string>("");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -66,14 +67,15 @@ const Summary = () => {
     }
   };
 
-  const generateSummary = async () => {
+  const generateSummary = async (preview: boolean = false) => {
     if (highlights.length === 0) {
       toast.error("Não há destaques para resumir");
       return;
     }
 
-    if (!hasPremium) {
-      toast.error("Recurso premium. Assine um plano para gerar resumos com IA.");
+    // Preview é permitido para todos, resumo completo só para premium
+    if (!preview && !hasPremium) {
+      toast.error("Recurso premium. Assine um plano para gerar resumos completos com IA.");
       navigate("/pricing");
       return;
     }
@@ -81,7 +83,7 @@ const Summary = () => {
     setGeneratingSummary(true);
     try {
       const { data, error } = await supabase.functions.invoke("summarize-highlights", {
-        body: { highlights },
+        body: { highlights, preview },
       });
 
       if (error) {
@@ -100,7 +102,8 @@ const Summary = () => {
       }
 
       setSummary(data.summary);
-      toast.success("Resumo gerado com sucesso!");
+      setIsPreview(data.isPreview || false);
+      toast.success(preview ? "Preview gerado com sucesso!" : "Resumo gerado com sucesso!");
     } catch (error) {
       console.error("Erro ao gerar resumo:", error);
       toast.error("Erro ao gerar resumo");
@@ -230,28 +233,48 @@ const Summary = () => {
               </h2>
               {!summary && (
                 <div className="flex flex-col gap-2">
-                  <Button
-                    onClick={generateSummary}
-                    disabled={generatingSummary}
-                    className="gap-2"
-                  >
-                    {generatingSummary ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Gerando...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        Gerar Resumo
-                        {!hasPremium && <Lock className="w-4 h-4 ml-1" />}
-                      </>
-                    )}
-                  </Button>
-                  {!hasPremium && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      Recurso premium - Assine para desbloquear
-                    </p>
+                  {hasPremium ? (
+                    <Button
+                      onClick={() => generateSummary(false)}
+                      disabled={generatingSummary}
+                      className="gap-2"
+                    >
+                      {generatingSummary ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Gerando...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          Gerar Resumo Completo
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        onClick={() => generateSummary(true)}
+                        disabled={generatingSummary}
+                        variant="outline"
+                        className="gap-2"
+                      >
+                        {generatingSummary ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Gerando...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4" />
+                            Ver Preview Grátis (50 palavras)
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center">
+                        Experimente grátis! Resumo completo disponível no plano premium
+                      </p>
+                    </>
                   )}
                 </div>
               )}
@@ -259,33 +282,64 @@ const Summary = () => {
             
             {summary ? (
               <div className="prose prose-sm max-w-none">
+                {isPreview && (
+                  <div className="mb-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                    <p className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
+                      <Lock className="w-4 h-4" />
+                      Preview Gratuito (50 palavras)
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Este é um preview limitado. Assine o plano premium para resumos completos e detalhados!
+                    </p>
+                  </div>
+                )}
+                
                 <p className="text-foreground leading-relaxed whitespace-pre-wrap">{summary}</p>
-                <div className="flex gap-2 mt-4">
-                  <Button
-                    onClick={generateSummary}
-                    disabled={generatingSummary}
-                    variant="outline"
-                    size="sm"
-                  >
-                    {generatingSummary ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        Gerando...
-                      </>
-                    ) : (
-                      "Gerar Novo Resumo"
-                    )}
-                  </Button>
-                  <Button
-                    onClick={exportSummaryToPDF}
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <FileDown className="w-4 h-4" />
-                    Exportar Resumo PDF
-                  </Button>
-                </div>
+                
+                {isPreview && (
+                  <div className="mt-6 p-6 bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-lg text-center">
+                    <h3 className="font-semibold mb-2">✨ Quer o resumo completo?</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Assine o plano premium e tenha acesso a resumos completos com até 300 palavras
+                    </p>
+                    <Button
+                      onClick={() => navigate("/pricing")}
+                      className="gap-2"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Ver Planos Premium
+                    </Button>
+                  </div>
+                )}
+                
+                {!isPreview && (
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      onClick={() => generateSummary(false)}
+                      disabled={generatingSummary}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {generatingSummary ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          Gerando...
+                        </>
+                      ) : (
+                        "Gerar Novo Resumo"
+                      )}
+                    </Button>
+                    <Button
+                      onClick={exportSummaryToPDF}
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                    >
+                      <FileDown className="w-4 h-4" />
+                      Exportar Resumo PDF
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-muted-foreground text-sm">
