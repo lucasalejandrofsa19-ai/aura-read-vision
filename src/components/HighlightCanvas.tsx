@@ -132,7 +132,7 @@ export const HighlightCanvas = ({
 
       drawingRef.current.isDrawing = false;
 
-      if (currentRect && currentRect.width > 5 && currentRect.height > 5) {
+      if (currentRect && currentRect.width > 20 && currentRect.height > 20) {
         onHighlightAdded?.(currentRect);
       }
 
