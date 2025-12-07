@@ -328,6 +328,7 @@ export type Database = {
           full_name: string | null
           has_seen_library_tour: boolean
           has_seen_welcome: boolean
+          highlight_sensitivity: number | null
           highlight_sound_enabled: boolean | null
           id: string
           note_sound_enabled: boolean | null
@@ -349,6 +350,7 @@ export type Database = {
           full_name?: string | null
           has_seen_library_tour?: boolean
           has_seen_welcome?: boolean
+          highlight_sensitivity?: number | null
           highlight_sound_enabled?: boolean | null
           id: string
           note_sound_enabled?: boolean | null
@@ -370,6 +372,7 @@ export type Database = {
           full_name?: string | null
           has_seen_library_tour?: boolean
           has_seen_welcome?: boolean
+          highlight_sensitivity?: number | null
           highlight_sound_enabled?: boolean | null
           id?: string
           note_sound_enabled?: boolean | null
