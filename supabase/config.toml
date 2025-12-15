@@ -36,3 +36,5 @@ verify_jwt = false
 [functions.summarize-highlights]
 verify_jwt = true
 
+[functions.text-to-speech-audiobook]
+verify_jwt = true
