@@ -28,6 +28,7 @@ interface PDFViewerProps {
   }>;
   onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string }) => void;
   isDrawingMode?: boolean;
+  highlightSensitivity?: number;
 }
 
 export const PDFViewer = ({ 
@@ -41,6 +42,7 @@ export const PDFViewer = ({
   highlights = [],
   onHighlightDrawn,
   isDrawingMode = false,
+  highlightSensitivity = 20,
 }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
@@ -492,6 +494,7 @@ export const PDFViewer = ({
                   onHighlightDrawn?.({ ...originalCoords, text });
                 }}
                 isDrawing={isDrawingMode}
+                minSelectionSize={highlightSensitivity}
               />
             )}
           </div>
