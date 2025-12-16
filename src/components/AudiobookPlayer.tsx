@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Progress } from "@/components/ui/progress";
 import { 
   Play, 
   Pause, 
@@ -12,7 +13,8 @@ import {
   X,
   Loader2,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Download
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +54,8 @@ const SLEEP_TIMER_OPTIONS = [
   { value: 60, label: "1 hora" },
 ];
 
+const CHUNK_SIZE = 4500; // Characters per chunk (leaving room for ElevenLabs limit)
+
 export const AudiobookPlayer = ({
   bookId,
   bookTitle,
@@ -66,7 +70,7 @@ export const AudiobookPlayer = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -76,43 +80,50 @@ export const AudiobookPlayer = ({
   const [sleepTimer, setSleepTimer] = useState(0);
   const [sleepTimeRemaining, setSleepTimeRemaining] = useState(0);
   const [isExpanded, setIsExpanded] = useState(true);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  
+  // Full audiobook state
+  const [audioChunks, setAudioChunks] = useState<string[]>([]);
+  const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [totalChunks, setTotalChunks] = useState(0);
+  const [isAudioReady, setIsAudioReady] = useState(false);
   
   const sleepTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Split text into pages (approximate)
-  const getPageText = useCallback((pageNum: number) => {
-    if (!extractedText) return "";
-    const charsPerPage = Math.ceil(extractedText.length / totalPages);
-    const start = (pageNum - 1) * charsPerPage;
-    const end = start + charsPerPage;
-    return extractedText.slice(start, end);
-  }, [extractedText, totalPages]);
-
-  // Generate audio for current page
-  const generateAudio = async () => {
-    const pageText = getPageText(currentPage);
-    if (!pageText.trim()) {
-      toast({
-        title: "Sem texto",
-        description: "Esta página não possui texto extraído",
-        variant: "destructive",
-      });
-      return;
+  // Split text into chunks for processing
+  const splitTextIntoChunks = useCallback((text: string): string[] => {
+    const chunks: string[] = [];
+    let currentIndex = 0;
+    
+    while (currentIndex < text.length) {
+      let endIndex = Math.min(currentIndex + CHUNK_SIZE, text.length);
+      
+      // Try to break at sentence or paragraph boundary
+      if (endIndex < text.length) {
+        const lastPeriod = text.lastIndexOf('.', endIndex);
+        const lastNewline = text.lastIndexOf('\n', endIndex);
+        const breakPoint = Math.max(lastPeriod, lastNewline);
+        
+        if (breakPoint > currentIndex + CHUNK_SIZE * 0.5) {
+          endIndex = breakPoint + 1;
+        }
+      }
+      
+      const chunk = text.slice(currentIndex, endIndex).trim();
+      if (chunk.length > 0) {
+        chunks.push(chunk);
+      }
+      currentIndex = endIndex;
     }
+    
+    return chunks;
+  }, []);
 
-    setIsLoading(true);
-
+  // Generate audio for a single chunk
+  const generateChunkAudio = async (text: string, previousText?: string, nextText?: string): Promise<string | null> => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          title: "Erro",
-          description: "Você precisa estar logado",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (!session) return null;
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/text-to-speech-audiobook`,
@@ -123,8 +134,10 @@ export const AudiobookPlayer = ({
             Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            text: pageText,
+            text,
             voiceId: selectedVoice,
+            previousText: previousText?.slice(-500), // Last 500 chars of previous
+            nextText: nextText?.slice(0, 500), // First 500 chars of next
           }),
         }
       );
@@ -135,32 +148,88 @@ export const AudiobookPlayer = ({
       }
 
       const audioBlob = await response.blob();
-      const url = URL.createObjectURL(audioBlob);
-      
-      // Cleanup previous URL
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
-      }
-      
-      setAudioUrl(url);
-      
-      if (audioRef.current) {
-        audioRef.current.src = url;
-        audioRef.current.playbackRate = playbackRate;
-        await audioRef.current.play();
-        setIsPlaying(true);
-      }
-    } catch (error: any) {
-      console.error("Error generating audio:", error);
-      toast({
-        title: "Erro",
-        description: error.message || "Falha ao gerar áudio",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      return URL.createObjectURL(audioBlob);
+    } catch (error) {
+      console.error("Error generating chunk audio:", error);
+      return null;
     }
   };
+
+  // Generate full audiobook
+  const generateFullAudiobook = async () => {
+    if (!extractedText || extractedText.trim().length === 0) {
+      toast({
+        title: "Sem texto",
+        description: "Este livro não possui texto extraído",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    setGenerationProgress(0);
+    setAudioChunks([]);
+    setCurrentChunkIndex(0);
+    setIsAudioReady(false);
+
+    const chunks = splitTextIntoChunks(extractedText);
+    setTotalChunks(chunks.length);
+
+    console.log(`Generating audiobook with ${chunks.length} chunks`);
+
+    const generatedUrls: string[] = [];
+
+    for (let i = 0; i < chunks.length; i++) {
+      const previousText = i > 0 ? chunks[i - 1] : undefined;
+      const nextText = i < chunks.length - 1 ? chunks[i + 1] : undefined;
+      
+      const audioUrl = await generateChunkAudio(chunks[i], previousText, nextText);
+      
+      if (audioUrl) {
+        generatedUrls.push(audioUrl);
+        setGenerationProgress(((i + 1) / chunks.length) * 100);
+      } else {
+        toast({
+          title: "Erro",
+          description: `Falha ao gerar parte ${i + 1} de ${chunks.length}`,
+          variant: "destructive",
+        });
+        // Continue with next chunk
+      }
+
+      // Small delay to avoid rate limiting
+      if (i < chunks.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    setAudioChunks(generatedUrls);
+    setIsGenerating(false);
+    setIsAudioReady(generatedUrls.length > 0);
+
+    if (generatedUrls.length > 0) {
+      toast({
+        title: "Audiobook gerado",
+        description: `${generatedUrls.length} partes prontas para reprodução`,
+      });
+    }
+  };
+
+  // Play current chunk
+  const playCurrentChunk = useCallback(async () => {
+    if (audioChunks.length === 0 || currentChunkIndex >= audioChunks.length) return;
+
+    if (audioRef.current) {
+      audioRef.current.src = audioChunks[currentChunkIndex];
+      audioRef.current.playbackRate = playbackRate;
+      try {
+        await audioRef.current.play();
+        setIsPlaying(true);
+      } catch (error) {
+        console.error("Error playing audio:", error);
+      }
+    }
+  }, [audioChunks, currentChunkIndex, playbackRate]);
 
   // Play/Pause toggle
   const togglePlayPause = async () => {
@@ -170,39 +239,48 @@ export const AudiobookPlayer = ({
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      if (!audioUrl) {
-        await generateAudio();
+      if (!isAudioReady) {
+        await generateFullAudiobook();
       } else {
-        await audioRef.current.play();
-        setIsPlaying(true);
+        await playCurrentChunk();
       }
     }
   };
 
-  // Navigate pages
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setAudioUrl(null);
-      setProgress(0);
-      onPageChange(currentPage - 1);
+  // Handle chunk end - play next chunk
+  const handleAudioEnd = useCallback(() => {
+    if (currentChunkIndex < audioChunks.length - 1) {
+      setCurrentChunkIndex(prev => prev + 1);
+    } else {
+      setIsPlaying(false);
+      setCurrentChunkIndex(0);
+      toast({
+        title: "Audiobook concluído",
+        description: "A reprodução do livro foi finalizada",
+      });
+    }
+  }, [currentChunkIndex, audioChunks.length, toast]);
+
+  // Auto-play next chunk when index changes
+  useEffect(() => {
+    if (isPlaying && audioChunks.length > 0 && currentChunkIndex < audioChunks.length) {
+      playCurrentChunk();
+    }
+  }, [currentChunkIndex, isPlaying, audioChunks.length, playCurrentChunk]);
+
+  // Skip backward
+  const skipBackward = () => {
+    if (currentChunkIndex > 0) {
+      setCurrentChunkIndex(prev => prev - 1);
+    } else if (audioRef.current) {
+      audioRef.current.currentTime = 0;
     }
   };
 
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setAudioUrl(null);
-      setProgress(0);
-      onPageChange(currentPage + 1);
-    }
-  };
-
-  // Handle audio end - auto next page
-  const handleAudioEnd = () => {
-    setIsPlaying(false);
-    if (currentPage < totalPages) {
-      goToNextPage();
-      // Auto-play next page
-      setTimeout(() => generateAudio(), 500);
+  // Skip forward
+  const skipForward = () => {
+    if (currentChunkIndex < audioChunks.length - 1) {
+      setCurrentChunkIndex(prev => prev + 1);
     }
   };
 
@@ -297,25 +375,25 @@ export const AudiobookPlayer = ({
       audio.removeEventListener("loadedmetadata", updateProgress);
       audio.removeEventListener("ended", handleAudioEnd);
     };
-  }, [currentPage, totalPages]);
+  }, [handleAudioEnd]);
 
   // Cleanup
   useEffect(() => {
     return () => {
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
-      }
+      audioChunks.forEach(url => URL.revokeObjectURL(url));
       if (sleepTimerRef.current) {
         clearInterval(sleepTimerRef.current);
       }
     };
-  }, [audioUrl]);
+  }, [audioChunks]);
 
-  // Regenerate when voice changes
+  // Reset when voice changes
   useEffect(() => {
-    if (audioUrl) {
-      setAudioUrl(null);
-      setProgress(0);
+    if (audioChunks.length > 0) {
+      audioChunks.forEach(url => URL.revokeObjectURL(url));
+      setAudioChunks([]);
+      setCurrentChunkIndex(0);
+      setIsAudioReady(false);
       setIsPlaying(false);
     }
   }, [selectedVoice]);
@@ -334,6 +412,8 @@ export const AudiobookPlayer = ({
       </div>
     );
   }
+
+  const estimatedChunks = Math.ceil(extractedText.length / CHUNK_SIZE);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t shadow-lg z-50">
@@ -356,9 +436,9 @@ export const AudiobookPlayer = ({
                 variant="ghost"
                 size="icon"
                 onClick={togglePlayPause}
-                disabled={isLoading}
+                disabled={isGenerating}
               >
-                {isLoading ? (
+                {isGenerating ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : isPlaying ? (
                   <Pause className="h-5 w-5" />
@@ -371,7 +451,7 @@ export const AudiobookPlayer = ({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">
-                Página {currentPage}/{totalPages}
+                {isAudioReady ? `Parte ${currentChunkIndex + 1}/${audioChunks.length}` : "Pronto"}
               </span>
               <Button variant="ghost" size="icon" onClick={onClose}>
                 <X className="h-4 w-4" />
@@ -394,33 +474,62 @@ export const AudiobookPlayer = ({
               </Button>
             </div>
 
-            {/* Progress bar */}
-            <div className="mb-4">
-              <Slider
-                value={[progress]}
-                max={duration || 100}
-                step={1}
-                onValueChange={(value) => {
-                  if (audioRef.current) {
-                    audioRef.current.currentTime = value[0];
-                    setProgress(value[0]);
-                  }
-                }}
-                className="cursor-pointer"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>{formatTime(progress)}</span>
-                <span>{formatTime(duration)}</span>
+            {/* Generation progress */}
+            {isGenerating && (
+              <div className="mb-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Gerando audiobook...</span>
+                  <span className="font-medium">{Math.round(generationProgress)}%</span>
+                </div>
+                <Progress value={generationProgress} className="h-2" />
+                <p className="text-xs text-muted-foreground text-center">
+                  Parte {Math.ceil((generationProgress / 100) * totalChunks)} de {totalChunks}
+                </p>
               </div>
-            </div>
+            )}
+
+            {/* Audio progress bar */}
+            {isAudioReady && (
+              <div className="mb-4">
+                <Slider
+                  value={[progress]}
+                  max={duration || 100}
+                  step={1}
+                  onValueChange={(value) => {
+                    if (audioRef.current) {
+                      audioRef.current.currentTime = value[0];
+                      setProgress(value[0]);
+                    }
+                  }}
+                  className="cursor-pointer"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <span>{formatTime(progress)}</span>
+                  <span>Parte {currentChunkIndex + 1}/{audioChunks.length}</span>
+                  <span>{formatTime(duration)}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Info when not ready */}
+            {!isAudioReady && !isGenerating && (
+              <div className="mb-4 p-4 bg-muted/50 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground mb-2">
+                  {extractedText.length.toLocaleString()} caracteres • ~{estimatedChunks} partes
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Clique em play para gerar o audiobook completo
+                </p>
+              </div>
+            )}
 
             {/* Main controls */}
             <div className="flex items-center justify-center gap-4 mb-4">
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={goToPreviousPage}
-                disabled={currentPage <= 1 || isLoading}
+                onClick={skipBackward}
+                disabled={isGenerating || (!isAudioReady && currentChunkIndex === 0)}
               >
                 <SkipBack className="h-5 w-5" />
               </Button>
@@ -430,9 +539,9 @@ export const AudiobookPlayer = ({
                 size="lg"
                 className="rounded-full w-14 h-14"
                 onClick={togglePlayPause}
-                disabled={isLoading}
+                disabled={isGenerating}
               >
-                {isLoading ? (
+                {isGenerating ? (
                   <Loader2 className="h-6 w-6 animate-spin" />
                 ) : isPlaying ? (
                   <Pause className="h-6 w-6" />
@@ -444,16 +553,11 @@ export const AudiobookPlayer = ({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={goToNextPage}
-                disabled={currentPage >= totalPages || isLoading}
+                onClick={skipForward}
+                disabled={isGenerating || currentChunkIndex >= audioChunks.length - 1}
               >
                 <SkipForward className="h-5 w-5" />
               </Button>
-            </div>
-
-            {/* Page indicator */}
-            <div className="text-center text-sm text-muted-foreground mb-4">
-              Página {currentPage} de {totalPages}
             </div>
 
             {/* Secondary controls */}
@@ -473,7 +577,7 @@ export const AudiobookPlayer = ({
               </div>
 
               {/* Voice selector */}
-              <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+              <Select value={selectedVoice} onValueChange={setSelectedVoice} disabled={isGenerating}>
                 <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder="Voz" />
                 </SelectTrigger>
@@ -504,8 +608,11 @@ export const AudiobookPlayer = ({
               {/* Sleep timer */}
               <div className="flex items-center gap-2">
                 <Timer className="h-4 w-4 text-muted-foreground" />
-                <Select value={sleepTimer.toString()} onValueChange={handleSleepTimerChange}>
-                  <SelectTrigger className="w-[120px]">
+                <Select 
+                  value={sleepTimer.toString()} 
+                  onValueChange={handleSleepTimerChange}
+                >
+                  <SelectTrigger className="w-[130px]">
                     <SelectValue placeholder="Timer" />
                   </SelectTrigger>
                   <SelectContent>
