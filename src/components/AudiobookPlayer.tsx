@@ -30,6 +30,7 @@ import { useAudiobook } from '@/hooks/useAudiobook';
 import { PremiumBadge } from '@/components/PremiumBadge';
 
 interface AudiobookPlayerProps {
+  bookId: string;
   extractedText?: string | null;
   totalPages: number;
   currentPage: number;
@@ -44,6 +45,7 @@ const formatTime = (seconds: number): string => {
 };
 
 export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
+  bookId,
   extractedText,
   totalPages,
   currentPage,
@@ -61,6 +63,7 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     sleepTimer,
     sleepTimerRemaining,
     currentAudioPage,
+    savedProgress,
     togglePlayPause,
     stop,
     seekTo,
@@ -69,7 +72,9 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     skipBackward,
     startSleepTimer,
     cancelSleepTimer,
+    playPage,
   } = useAudiobook({
+    bookId,
     extractedText,
     totalPages,
     currentPage,
@@ -111,6 +116,20 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
         </SheetHeader>
 
         <div className="py-6 space-y-6">
+          {/* Resume from saved progress */}
+          {savedProgress && !isPlaying && currentAudioPage !== savedProgress.page && (
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                onPageChange(savedProgress.page);
+                playPage(savedProgress.page);
+              }}
+            >
+              Continuar da página {savedProgress.page}
+            </Button>
+          )}
+
           {/* Book Info */}
           <div className="text-center">
             <h3 className="font-medium text-lg truncate">{bookTitle}</h3>

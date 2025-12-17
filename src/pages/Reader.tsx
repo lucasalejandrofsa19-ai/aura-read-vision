@@ -461,6 +461,7 @@ const Reader = () => {
             <ThemeSelector />
 
             <AudiobookPlayer
+              bookId={id || ""}
               extractedText={book.extracted_text}
               totalPages={book.total_pages || 1}
               currentPage={currentPage}
@@ -594,6 +595,7 @@ const Reader = () => {
             </Button>
 
             <AudiobookPlayer
+              bookId={id || ""}
               extractedText={book.extracted_text}
               totalPages={book.total_pages || 1}
               currentPage={currentPage}
