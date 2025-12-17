@@ -30,6 +30,7 @@ import { ThemeSelector } from "@/components/ThemeSelector";
 import { NotesPanel } from "@/components/NotesPanel";
 import { ExportDialog } from "@/components/ExportDialog";
 import { FloatingControls } from "@/components/FloatingControls";
+import { AudiobookPlayer } from "@/components/AudiobookPlayer";
 
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
@@ -458,6 +459,14 @@ const Reader = () => {
             </DropdownMenu>
 
             <ThemeSelector />
+
+            <AudiobookPlayer
+              extractedText={book.extracted_text}
+              totalPages={book.total_pages || 1}
+              currentPage={currentPage}
+              onPageChange={handlePageChange}
+              bookTitle={book.title}
+            />
           </div>
 
           <div className="hidden md:flex items-center gap-2 flex-wrap ml-14">
@@ -583,6 +592,14 @@ const Reader = () => {
             >
               <Maximize className="w-5 h-5" />
             </Button>
+
+            <AudiobookPlayer
+              extractedText={book.extracted_text}
+              totalPages={book.total_pages || 1}
+              currentPage={currentPage}
+              onPageChange={handlePageChange}
+              bookTitle={book.title}
+            />
           </div>
         </div>
       </MotionHeader>
