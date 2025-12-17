@@ -4,14 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Camera, Save, CreditCard, Shield, Zap, Highlighter } from "lucide-react";
+import { ArrowLeft, Camera, Save, CreditCard, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { ProfileHighlights } from "@/components/ProfileHighlights";
 import { ReadingStatsCard } from "@/components/ReadingStatsCard";
@@ -36,7 +35,6 @@ const Profile = () => {
   const [uploading, setUploading] = useState(false);
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [highlightSensitivity, setHighlightSensitivity] = useState(20);
   const { isUltraPerformanceMode, togglePerformanceMode, loading: perfLoading } = usePerformanceMode();
 
   useEffect(() => {
@@ -51,7 +49,7 @@ const Profile = () => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("full_name, avatar_url, highlight_sensitivity")
+        .select("full_name, avatar_url")
         .eq("id", user.id)
         .single();
 
@@ -59,22 +57,8 @@ const Profile = () => {
 
       setFullName(data?.full_name || "");
       setAvatarUrl(data?.avatar_url || "");
-      setHighlightSensitivity(data?.highlight_sensitivity || 20);
     } catch (error) {
       captureError(error, { context: "load_profile" });
-    }
-  };
-
-  const updateHighlightSensitivity = async (value: number) => {
-    if (!user) return;
-    setHighlightSensitivity(value);
-    try {
-      await supabase
-        .from("profiles")
-        .update({ highlight_sensitivity: value })
-        .eq("id", user.id);
-    } catch (error) {
-      captureError(error, { context: "update_highlight_sensitivity" });
     }
   };
 
@@ -405,41 +389,6 @@ const Profile = () => {
                     </p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Highlight Sensitivity Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Highlighter className="w-5 h-5 text-yellow-500" />
-                  Sensibilidade do Marca Texto
-                </CardTitle>
-                <CardDescription>
-                  Ajuste o tamanho mínimo da seleção para criar destaques
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Tamanho mínimo: {highlightSensitivity}px</Label>
-                  </div>
-                  <Slider
-                    value={[highlightSensitivity]}
-                    onValueChange={(value) => updateHighlightSensitivity(value[0])}
-                    min={5}
-                    max={50}
-                    step={5}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Mais sensível (5px)</span>
-                    <span>Menos sensível (50px)</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Valores menores permitem criar destaques menores, mas podem causar seleções acidentais em dispositivos móveis.
-                  </p>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>

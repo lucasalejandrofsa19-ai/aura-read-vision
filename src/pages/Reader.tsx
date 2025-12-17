@@ -14,7 +14,6 @@ import {
   MoreVertical,
   Highlighter,
   List,
-  Headphones,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,8 +37,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useReadingSession } from "@/hooks/useReadingSession";
 import { useHighlights } from "@/hooks/useHighlights";
 import { HighlightsList } from "@/components/HighlightsList";
-import { AudiobookPlayer } from "@/components/AudiobookPlayer";
-import { PremiumBadge } from "@/components/PremiumBadge";
 import {
   Sheet,
   SheetContent,
@@ -64,8 +61,6 @@ const Reader = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
-  const [showAudiobook, setShowAudiobook] = useState(false);
-  const [highlightSensitivity, setHighlightSensitivity] = useState(20);
   const mobileConfig = useMobileOptimization();
 
   const { highlights, allHighlights, addHighlight, deleteHighlight } = useHighlights(id || "", currentPage);
@@ -92,22 +87,6 @@ const Reader = () => {
   useEffect(() => {
     loadBook();
   }, [id]);
-
-  // Load highlight sensitivity from profile
-  useEffect(() => {
-    const loadHighlightSensitivity = async () => {
-      if (!user) return;
-      const { data } = await supabase
-        .from("profiles")
-        .select("highlight_sensitivity")
-        .eq("id", user.id)
-        .single();
-      if (data?.highlight_sensitivity) {
-        setHighlightSensitivity(data.highlight_sensitivity);
-      }
-    };
-    loadHighlightSensitivity();
-  }, [user]);
 
   useEffect(() => {
     if (book && currentPage && !isSessionActive) {
@@ -459,11 +438,6 @@ const Reader = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="glass w-56">
-                <DropdownMenuItem onClick={() => setShowAudiobook(true)}>
-                  <Headphones className="w-4 h-4 mr-2" />
-                  Audiobook
-                  <PremiumBadge className="ml-auto" />
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleEnterFocusedMode}>
                   <Eye className="w-4 h-4 mr-2" />
                   Modo Leitura Focada
@@ -593,16 +567,6 @@ const Reader = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowAudiobook(true)}
-              className="aura-soft transition-aura"
-              title="Audiobook"
-            >
-              <Headphones className="w-5 h-5" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
               onClick={handleEnterFocusedMode}
               className="aura-soft transition-aura"
               title="Modo Leitura Focada"
@@ -644,7 +608,6 @@ const Reader = () => {
             }))}
             onHighlightDrawn={handleHighlightDrawn}
             isDrawingMode={isDrawingMode}
-            highlightSensitivity={highlightSensitivity}
             bookmarkIndicator={
               bookmarkedPage === currentPage && !mobileConfig.shouldReduceAnimations ? (
                 <motion.div
@@ -702,17 +665,6 @@ const Reader = () => {
         totalPages={book.total_pages || 1}
       />
 
-      {showAudiobook && (
-        <AudiobookPlayer
-          bookId={id || ""}
-          bookTitle={book.title}
-          extractedText={book.extracted_text}
-          totalPages={book.total_pages || 1}
-          currentPage={currentPage}
-          onPageChange={handlePageChange}
-          onClose={() => setShowAudiobook(false)}
-        />
-      )}
     </div>
   );
 };

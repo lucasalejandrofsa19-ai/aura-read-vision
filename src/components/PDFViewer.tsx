@@ -28,7 +28,6 @@ interface PDFViewerProps {
   }>;
   onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string }) => void;
   isDrawingMode?: boolean;
-  highlightSensitivity?: number;
 }
 
 export const PDFViewer = ({ 
@@ -42,7 +41,6 @@ export const PDFViewer = ({
   highlights = [],
   onHighlightDrawn,
   isDrawingMode = false,
-  highlightSensitivity = 20,
 }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
@@ -113,93 +111,57 @@ export const PDFViewer = ({
     }
   };
 
-  const extractTextFromCoordinates = async (scaledCoords: { x: number; y: number; width: number; height: number }) => {
+  const extractTextFromCoordinates = async (coords: { x: number; y: number; width: number; height: number }) => {
     try {
       const loadingTask = pdfjs.getDocument(fileUrl);
       const pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(pageNumber);
       const textContent = await page.getTextContent();
+      // Use scale 1 viewport para coordenadas normalizadas
       const viewport = page.getViewport({ scale: 1 });
       
-      // IMPORTANTE: Converter coordenadas do canvas (escaladas) para coordenadas PDF (escala 1)
-      const coords = {
-        x: scaledCoords.x / scale,
-        y: scaledCoords.y / scale,
-        width: scaledCoords.width / scale,
-        height: scaledCoords.height / scale,
-      };
+      console.log("[extractText] Coords recebidas:", coords);
+      console.log("[extractText] Viewport height:", viewport.height);
       
-      console.log("[extractText] Coords originais (scaled):", scaledCoords);
-      console.log("[extractText] Coords convertidas (scale 1):", coords);
-      console.log("[extractText] Scale atual:", scale);
-      
-      // Coletar todos os itens de texto com suas posições
-      const textItems: Array<{
-        str: string;
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-      }> = [];
+      const extractedTexts: string[] = [];
       
       textContent.items.forEach((item: any) => {
-        if ('str' in item && 'transform' in item && item.str.trim()) {
+        if ('str' in item && 'transform' in item) {
           const [scaleX, , , scaleY, itemX, itemY] = item.transform;
           const itemHeight = Math.abs(scaleY) || 12;
-          const itemWidth = item.width || (item.str.length * Math.abs(scaleX) * 0.6);
+          const itemWidth = item.width * Math.abs(scaleX) || 0;
           
-          // Converter Y do PDF (origem bottom-left) para canvas (origem top-left)
-          const canvasY = viewport.height - itemY;
+          // Converter coordenadas PDF (origem bottom-left) para canvas (origem top-left)
+          const canvasItemY = viewport.height - itemY;
           
-          textItems.push({
-            str: item.str,
-            x: itemX,
-            y: canvasY - itemHeight, // Top do item
-            width: itemWidth,
-            height: itemHeight,
-          });
+          // Verificar overlap com área destacada (tolerância aumentada)
+          const tolerance = 20;
+          const itemRight = itemX + itemWidth;
+          const itemTop = canvasItemY - itemHeight;
+          const itemBottom = canvasItemY;
+          
+          const highlightRight = coords.x + coords.width;
+          const highlightBottom = coords.y + coords.height;
+          
+          // Checar se há interseção
+          const xOverlap = itemX < highlightRight + tolerance && itemRight > coords.x - tolerance;
+          const yOverlap = itemTop < highlightBottom + tolerance && itemBottom > coords.y - tolerance;
+          
+          if (xOverlap && yOverlap) {
+            console.log("[extractText] Texto encontrado:", item.str, {
+              itemX,
+              itemY: canvasItemY,
+              itemWidth,
+              itemHeight,
+              highlightCoords: coords
+            });
+            extractedTexts.push(item.str);
+          }
         }
       });
       
-      // Filtrar itens que estão dentro da área destacada
-      const tolerance = 5; // Tolerância menor para precisão
-      const highlightRight = coords.x + coords.width;
-      const highlightBottom = coords.y + coords.height;
-      
-      const matchedItems = textItems.filter(item => {
-        const itemRight = item.x + item.width;
-        const itemBottom = item.y + item.height;
-        
-        // Verificar se o centro do item está dentro da área ou há overlap significativo
-        const itemCenterX = item.x + item.width / 2;
-        const itemCenterY = item.y + item.height / 2;
-        
-        const centerInside = 
-          itemCenterX >= coords.x - tolerance &&
-          itemCenterX <= highlightRight + tolerance &&
-          itemCenterY >= coords.y - tolerance &&
-          itemCenterY <= highlightBottom + tolerance;
-        
-        // Ou verificar overlap significativo (mais de 50% do item)
-        const overlapX = Math.max(0, Math.min(itemRight, highlightRight) - Math.max(item.x, coords.x));
-        const overlapY = Math.max(0, Math.min(itemBottom, highlightBottom) - Math.max(item.y, coords.y));
-        const overlapArea = overlapX * overlapY;
-        const itemArea = item.width * item.height;
-        const significantOverlap = itemArea > 0 && (overlapArea / itemArea) > 0.3;
-        
-        return centerInside || significantOverlap;
-      });
-      
-      // Ordenar por posição (top-to-bottom, left-to-right)
-      matchedItems.sort((a, b) => {
-        const yDiff = a.y - b.y;
-        if (Math.abs(yDiff) > 5) return yDiff; // Linhas diferentes
-        return a.x - b.x; // Mesma linha, ordenar por X
-      });
-      
-      const result = matchedItems.map(item => item.str).join(' ').trim();
-      console.log("[extractText] Items encontrados:", matchedItems.length);
-      console.log("[extractText] Resultado:", result);
+      const result = extractedTexts.join(' ').trim();
+      console.log("[extractText] Resultado final:", result);
       return result;
     } catch (error) {
       console.error("Error extracting text from coordinates:", error);
@@ -494,7 +456,6 @@ export const PDFViewer = ({
                   onHighlightDrawn?.({ ...originalCoords, text });
                 }}
                 isDrawing={isDrawingMode}
-                minSelectionSize={highlightSensitivity}
               />
             )}
           </div>

@@ -311,19 +311,5 @@ All colors MUST be HSL.
   .drawing-mode .react-pdf__Page__textContent {
     pointer-events: none !important;
   }
-
-  /* Shimmer animation for image loading - exceto da regra global */
-  @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
-  }
-
-  .animate-\[shimmer_2s_infinite\] {
-    animation: shimmer 2s infinite !important;
-  }
 }
 
