@@ -1,8 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UseAudiobookProps {
+  bookId: string;
   extractedText?: string | null;
   totalPages: number;
   currentPage: number;
@@ -10,14 +12,17 @@ interface UseAudiobookProps {
 }
 
 export const useAudiobook = ({ 
+  bookId,
   extractedText, 
   totalPages, 
   currentPage,
   onPageChange 
 }: UseAudiobookProps) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +32,59 @@ export const useAudiobook = ({
   const [sleepTimer, setSleepTimer] = useState<number | null>(null);
   const [sleepTimerRemaining, setSleepTimerRemaining] = useState<number | null>(null);
   const [currentAudioPage, setCurrentAudioPage] = useState(currentPage);
+  const [savedProgress, setSavedProgress] = useState<{ page: number; position: number } | null>(null);
+
+  // Load saved progress on mount
+  useEffect(() => {
+    if (!user || !bookId) return;
+    
+    const loadProgress = async () => {
+      const { data, error } = await supabase
+        .from('audiobook_progress')
+        .select('current_page, playback_position, playback_rate')
+        .eq('user_id', user.id)
+        .eq('book_id', bookId)
+        .maybeSingle();
+
+      if (data && !error) {
+        setSavedProgress({ page: data.current_page, position: Number(data.playback_position) });
+        setPlaybackRate(Number(data.playback_rate));
+        setCurrentAudioPage(data.current_page);
+      }
+    };
+
+    loadProgress();
+  }, [user, bookId]);
+
+  // Save progress to database (debounced)
+  const saveProgress = useCallback(async (page: number, position: number, rate: number) => {
+    if (!user || !bookId) return;
+
+    // Clear previous timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Debounce save to avoid too many writes
+    saveTimeoutRef.current = setTimeout(async () => {
+      const { error } = await supabase
+        .from('audiobook_progress')
+        .upsert({
+          user_id: user.id,
+          book_id: bookId,
+          current_page: page,
+          playback_position: position,
+          playback_rate: rate,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,book_id'
+        });
+
+      if (error) {
+        console.error('Error saving audiobook progress:', error);
+      }
+    }, 2000);
+  }, [user, bookId]);
 
   // Split text into pages (approximate)
   const getPageText = useCallback((pageNum: number) => {
@@ -127,6 +185,8 @@ export const useAudiobook = ({
 
     audio.addEventListener('timeupdate', () => {
       setProgress(audio.currentTime);
+      // Save progress periodically
+      saveProgress(pageNum, audio.currentTime, playbackRate);
     });
 
     audio.addEventListener('ended', () => {
@@ -268,6 +328,9 @@ export const useAudiobook = ({
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -280,6 +343,7 @@ export const useAudiobook = ({
     sleepTimer,
     sleepTimerRemaining,
     currentAudioPage,
+    savedProgress,
     play,
     pause,
     togglePlayPause,
