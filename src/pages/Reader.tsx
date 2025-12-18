@@ -462,6 +462,7 @@ const Reader = () => {
 
             <AudiobookPlayer
               bookId={id || ""}
+              pdfUrl={pdfUrl}
               extractedText={book.extracted_text}
               totalPages={book.total_pages || 1}
               currentPage={currentPage}
@@ -596,6 +597,7 @@ const Reader = () => {
 
             <AudiobookPlayer
               bookId={id || ""}
+              pdfUrl={pdfUrl}
               extractedText={book.extracted_text}
               totalPages={book.total_pages || 1}
               currentPage={currentPage}
