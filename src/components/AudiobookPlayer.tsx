@@ -31,6 +31,7 @@ import { PremiumBadge } from '@/components/PremiumBadge';
 
 interface AudiobookPlayerProps {
   bookId: string;
+  pdfUrl?: string;
   extractedText?: string | null;
   totalPages: number;
   currentPage: number;
@@ -46,6 +47,7 @@ const formatTime = (seconds: number): string => {
 
 export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
   bookId,
+  pdfUrl,
   extractedText,
   totalPages,
   currentPage,
@@ -75,6 +77,7 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     playPage,
   } = useAudiobook({
     bookId,
+    pdfUrl,
     extractedText,
     totalPages,
     currentPage,
@@ -169,7 +172,7 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
               size="lg"
               className="h-14 w-14 rounded-full"
               onClick={togglePlayPause}
-              disabled={isLoading || !extractedText}
+              disabled={isLoading || (!extractedText && !pdfUrl)}
             >
               {isLoading ? (
                 <Loader2 className="h-6 w-6 animate-spin" />
@@ -258,7 +261,7 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
           )}
 
           {/* No text warning */}
-          {!extractedText && (
+          {!extractedText && !pdfUrl && (
             <p className="text-center text-sm text-muted-foreground">
               Este livro não possui texto extraído para reprodução em áudio.
             </p>

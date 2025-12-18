@@ -2,9 +2,14 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface UseAudiobookProps {
   bookId: string;
+  pdfUrl?: string;
   extractedText?: string | null;
   totalPages: number;
   currentPage: number;
@@ -13,6 +18,7 @@ interface UseAudiobookProps {
 
 export const useAudiobook = ({ 
   bookId,
+  pdfUrl,
   extractedText, 
   totalPages, 
   currentPage,
@@ -23,6 +29,7 @@ export const useAudiobook = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,6 +40,31 @@ export const useAudiobook = ({
   const [sleepTimerRemaining, setSleepTimerRemaining] = useState<number | null>(null);
   const [currentAudioPage, setCurrentAudioPage] = useState(currentPage);
   const [savedProgress, setSavedProgress] = useState<{ page: number; position: number } | null>(null);
+  const [pageTexts, setPageTexts] = useState<Map<number, string>>(new Map());
+
+  // Load PDF document for text extraction
+  useEffect(() => {
+    if (!pdfUrl || extractedText) return;
+    
+    const loadPdf = async () => {
+      try {
+        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        pdfDocRef.current = await loadingTask.promise;
+        console.log('PDF loaded for audiobook text extraction');
+      } catch (error) {
+        console.error('Error loading PDF for audiobook:', error);
+      }
+    };
+
+    loadPdf();
+
+    return () => {
+      if (pdfDocRef.current) {
+        pdfDocRef.current.destroy();
+        pdfDocRef.current = null;
+      }
+    };
+  }, [pdfUrl, extractedText]);
 
   // Load saved progress on mount
   useEffect(() => {
@@ -86,16 +118,44 @@ export const useAudiobook = ({
     }, 2000);
   }, [user, bookId]);
 
-  // Split text into pages (approximate)
-  const getPageText = useCallback((pageNum: number) => {
-    if (!extractedText) return '';
-    
-    const avgCharsPerPage = Math.ceil(extractedText.length / totalPages);
-    const start = (pageNum - 1) * avgCharsPerPage;
-    const end = pageNum * avgCharsPerPage;
-    
-    return extractedText.slice(start, end);
-  }, [extractedText, totalPages]);
+  // Extract text from a specific PDF page
+  const extractPageText = useCallback(async (pageNum: number): Promise<string> => {
+    // Check cached text first
+    if (pageTexts.has(pageNum)) {
+      return pageTexts.get(pageNum) || '';
+    }
+
+    // If we have pre-extracted text from DB, use that
+    if (extractedText) {
+      const avgCharsPerPage = Math.ceil(extractedText.length / totalPages);
+      const start = (pageNum - 1) * avgCharsPerPage;
+      const end = pageNum * avgCharsPerPage;
+      return extractedText.slice(start, end);
+    }
+
+    // Extract from PDF directly
+    if (!pdfDocRef.current) {
+      return '';
+    }
+
+    try {
+      const page = await pdfDocRef.current.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const text = textContent.items
+        .map((item: any) => item.str)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      // Cache the extracted text
+      setPageTexts(prev => new Map(prev).set(pageNum, text));
+      
+      return text;
+    } catch (error) {
+      console.error(`Error extracting text from page ${pageNum}:`, error);
+      return '';
+    }
+  }, [extractedText, totalPages, pageTexts]);
 
   const generateAudio = useCallback(async (text: string): Promise<string | null> => {
     try {
@@ -149,9 +209,13 @@ export const useAudiobook = ({
   }, [toast]);
 
   const playPage = useCallback(async (pageNum: number) => {
-    const text = getPageText(pageNum);
+    setIsLoading(true);
+    setCurrentAudioPage(pageNum);
+
+    const text = await extractPageText(pageNum);
     
     if (!text.trim()) {
+      setIsLoading(false);
       toast({
         title: "Aviso",
         description: "Não há texto disponível nesta página",
@@ -159,9 +223,6 @@ export const useAudiobook = ({
       });
       return;
     }
-
-    setIsLoading(true);
-    setCurrentAudioPage(pageNum);
 
     const audioUrl = await generateAudio(text);
     
@@ -216,7 +277,7 @@ export const useAudiobook = ({
     }
     
     setIsLoading(false);
-  }, [getPageText, generateAudio, playbackRate, totalPages, onPageChange, toast]);
+  }, [extractPageText, generateAudio, playbackRate, totalPages, onPageChange, toast, saveProgress]);
 
   const play = useCallback(() => {
     if (audioRef.current && audioRef.current.paused) {
