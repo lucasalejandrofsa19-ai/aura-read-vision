@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Progress } from '@/components/ui/progress';
 import {
   Sheet,
   SheetContent,
@@ -59,6 +60,8 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
   const {
     isPlaying,
     isLoading,
+    isProcessing,
+    processingProgress,
     playbackRate,
     progress,
     duration,
@@ -66,6 +69,9 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     sleepTimerRemaining,
     currentAudioPage,
     savedProgress,
+    hasFullText,
+    totalChunks,
+    currentChunk,
     togglePlayPause,
     stop,
     seekTo,
@@ -119,8 +125,19 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
         </SheetHeader>
 
         <div className="py-6 space-y-6">
+          {/* Processing Progress */}
+          {isProcessing && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Processando audiobook...</span>
+                <span className="font-medium">{processingProgress}%</span>
+              </div>
+              <Progress value={processingProgress} className="h-2" />
+            </div>
+          )}
+
           {/* Resume from saved progress */}
-          {savedProgress && !isPlaying && currentAudioPage !== savedProgress.page && (
+          {savedProgress && !isPlaying && !isProcessing && currentAudioPage !== savedProgress.page && (
             <Button
               variant="outline"
               className="w-full"
@@ -138,6 +155,9 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
             <h3 className="font-medium text-lg truncate">{bookTitle}</h3>
             <p className="text-sm text-muted-foreground">
               Página {currentAudioPage} de {totalPages}
+              {totalChunks > 0 && (
+                <span className="ml-2">• Parte {currentChunk}/{totalChunks}</span>
+              )}
             </p>
           </div>
 
@@ -149,7 +169,7 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
               step={1}
               onValueChange={(value) => seekTo(value[0])}
               className="w-full"
-              disabled={!duration}
+              disabled={!duration || isProcessing}
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{formatTime(progress)}</span>
@@ -163,7 +183,7 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
               variant="ghost"
               size="icon"
               onClick={skipBackward}
-              disabled={currentAudioPage <= 1 || isLoading}
+              disabled={currentChunk <= 1 || isLoading || isProcessing}
             >
               <SkipBack className="h-6 w-6" />
             </Button>
@@ -172,9 +192,9 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
               size="lg"
               className="h-14 w-14 rounded-full"
               onClick={togglePlayPause}
-              disabled={isLoading || (!extractedText && !pdfUrl)}
+              disabled={isLoading || isProcessing || !hasFullText}
             >
-              {isLoading ? (
+              {isLoading || isProcessing ? (
                 <Loader2 className="h-6 w-6 animate-spin" />
               ) : isPlaying ? (
                 <Pause className="h-6 w-6" />
@@ -187,7 +207,7 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
               variant="ghost"
               size="icon"
               onClick={skipForward}
-              disabled={currentAudioPage >= totalPages || isLoading}
+              disabled={currentChunk >= totalChunks || isLoading || isProcessing}
             >
               <SkipForward className="h-6 w-6" />
             </Button>
@@ -261,7 +281,7 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
           )}
 
           {/* No text warning */}
-          {!extractedText && !pdfUrl && (
+          {!hasFullText && !extractedText && !pdfUrl && (
             <p className="text-center text-sm text-muted-foreground">
               Este livro não possui texto extraído para reprodução em áudio.
             </p>
