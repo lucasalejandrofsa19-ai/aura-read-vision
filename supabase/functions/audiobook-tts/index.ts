@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voiceId = "JBFqnCBsd6RMkjVDRZzb" } = await req.json();
+    const { text, voiceId = "JBFqnCBsd6RMkjVDRZzb", previousText, nextText } = await req.json();
     
     if (!text) {
       throw new Error('Text is required');
@@ -58,7 +58,29 @@ serve(async (req) => {
     // Limit text length to prevent very long requests
     const truncatedText = text.slice(0, 5000);
 
-    console.log(`Generating TTS for ${truncatedText.length} characters`);
+    console.log(`Generating TTS for ${truncatedText.length} characters with stitching: prev=${!!previousText}, next=${!!nextText}`);
+
+    // Build request body with optional request stitching
+    const requestBody: any = {
+      text: truncatedText,
+      model_id: 'eleven_multilingual_v2',
+      output_format: 'mp3_44100_128',
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.75,
+        style: 0.3,
+        use_speaker_boost: true,
+        speed: 1.0,
+      },
+    };
+
+    // Add request stitching context for smooth transitions
+    if (previousText) {
+      requestBody.previous_text = previousText.slice(-200);
+    }
+    if (nextText) {
+      requestBody.next_text = nextText.slice(0, 200);
+    }
 
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
@@ -68,18 +90,7 @@ serve(async (req) => {
           'xi-api-key': ELEVENLABS_API_KEY,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          text: truncatedText,
-          model_id: 'eleven_multilingual_v2',
-          output_format: 'mp3_44100_128',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            style: 0.3,
-            use_speaker_boost: true,
-            speed: 1.0,
-          },
-        }),
+        body: JSON.stringify(requestBody),
       }
     );
 

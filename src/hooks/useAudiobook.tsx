@@ -7,6 +7,8 @@ import * as pdfjsLib from 'pdfjs-dist';
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
+const CHUNK_SIZE = 4500; // Characters per chunk (ElevenLabs limit is 5000)
+
 interface UseAudiobookProps {
   bookId: string;
   pdfUrl?: string;
@@ -14,6 +16,13 @@ interface UseAudiobookProps {
   totalPages: number;
   currentPage: number;
   onPageChange: (page: number) => void;
+}
+
+interface AudioChunk {
+  text: string;
+  audioUrl?: string;
+  startPage: number;
+  endPage: number;
 }
 
 export const useAudiobook = ({ 
@@ -30,33 +39,56 @@ export const useAudiobook = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+  const chunksRef = useRef<AudioChunk[]>([]);
+  const currentChunkIndexRef = useRef(0);
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [totalDuration, setTotalDuration] = useState(0);
   const [sleepTimer, setSleepTimer] = useState<number | null>(null);
   const [sleepTimerRemaining, setSleepTimerRemaining] = useState<number | null>(null);
   const [currentAudioPage, setCurrentAudioPage] = useState(currentPage);
   const [savedProgress, setSavedProgress] = useState<{ page: number; position: number } | null>(null);
-  const [pageTexts, setPageTexts] = useState<Map<number, string>>(new Map());
+  const [fullText, setFullText] = useState<string>('');
 
-  // Load PDF document for text extraction
+  // Load PDF document and extract all text
   useEffect(() => {
-    if (!pdfUrl || extractedText) return;
-    
-    const loadPdf = async () => {
+    const loadAndExtractText = async () => {
+      if (extractedText) {
+        setFullText(extractedText);
+        return;
+      }
+
+      if (!pdfUrl) return;
+      
       try {
         const loadingTask = pdfjsLib.getDocument(pdfUrl);
-        pdfDocRef.current = await loadingTask.promise;
-        console.log('PDF loaded for audiobook text extraction');
+        const pdfDoc = await loadingTask.promise;
+        pdfDocRef.current = pdfDoc;
+        
+        let allText = '';
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+          const page = await pdfDoc.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item: any) => item.str)
+            .join(' ');
+          allText += pageText + '\n\n';
+        }
+        
+        setFullText(allText.replace(/\s+/g, ' ').trim());
+        console.log(`Extracted ${allText.length} characters from PDF`);
       } catch (error) {
         console.error('Error loading PDF for audiobook:', error);
       }
     };
 
-    loadPdf();
+    loadAndExtractText();
 
     return () => {
       if (pdfDocRef.current) {
@@ -92,12 +124,10 @@ export const useAudiobook = ({
   const saveProgress = useCallback(async (page: number, position: number, rate: number) => {
     if (!user || !bookId) return;
 
-    // Clear previous timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Debounce save to avoid too many writes
     saveTimeoutRef.current = setTimeout(async () => {
       const { error } = await supabase
         .from('audiobook_progress')
@@ -118,56 +148,57 @@ export const useAudiobook = ({
     }, 2000);
   }, [user, bookId]);
 
-  // Extract text from a specific PDF page
-  const extractPageText = useCallback(async (pageNum: number): Promise<string> => {
-    // Check cached text first
-    if (pageTexts.has(pageNum)) {
-      return pageTexts.get(pageNum) || '';
+  // Split text into chunks
+  const splitIntoChunks = useCallback((text: string): AudioChunk[] => {
+    const chunks: AudioChunk[] = [];
+    const sentences = text.split(/(?<=[.!?])\s+/);
+    let currentChunk = '';
+    let chunkIndex = 0;
+    
+    const charsPerPage = Math.ceil(text.length / totalPages);
+    
+    for (const sentence of sentences) {
+      if (currentChunk.length + sentence.length > CHUNK_SIZE && currentChunk.length > 0) {
+        const startChar = chunks.reduce((sum, c) => sum + c.text.length, 0);
+        const endChar = startChar + currentChunk.length;
+        
+        chunks.push({
+          text: currentChunk.trim(),
+          startPage: Math.floor(startChar / charsPerPage) + 1,
+          endPage: Math.floor(endChar / charsPerPage) + 1,
+        });
+        currentChunk = sentence;
+        chunkIndex++;
+      } else {
+        currentChunk += (currentChunk ? ' ' : '') + sentence;
+      }
     }
-
-    // If we have pre-extracted text from DB, use that
-    if (extractedText) {
-      const avgCharsPerPage = Math.ceil(extractedText.length / totalPages);
-      const start = (pageNum - 1) * avgCharsPerPage;
-      const end = pageNum * avgCharsPerPage;
-      return extractedText.slice(start, end);
-    }
-
-    // Extract from PDF directly
-    if (!pdfDocRef.current) {
-      return '';
-    }
-
-    try {
-      const page = await pdfDocRef.current.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      const text = textContent.items
-        .map((item: any) => item.str)
-        .join(' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-      // Cache the extracted text
-      setPageTexts(prev => new Map(prev).set(pageNum, text));
+    
+    if (currentChunk.trim()) {
+      const startChar = chunks.reduce((sum, c) => sum + c.text.length, 0);
+      const endChar = startChar + currentChunk.length;
       
-      return text;
-    } catch (error) {
-      console.error(`Error extracting text from page ${pageNum}:`, error);
-      return '';
+      chunks.push({
+        text: currentChunk.trim(),
+        startPage: Math.floor(startChar / charsPerPage) + 1,
+        endPage: Math.min(Math.floor(endChar / charsPerPage) + 1, totalPages),
+      });
     }
-  }, [extractedText, totalPages, pageTexts]);
+    
+    return chunks;
+  }, [totalPages]);
 
-  const generateAudio = useCallback(async (text: string): Promise<string | null> => {
+  // Generate audio for a chunk with request stitching
+  const generateChunkAudio = useCallback(async (
+    chunk: AudioChunk, 
+    prevChunk?: AudioChunk, 
+    nextChunk?: AudioChunk
+  ): Promise<string | null> => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        toast({
-          title: "Erro",
-          description: "Você precisa estar logado para usar o audiobook",
-          variant: "destructive"
-        });
-        return null;
+        throw new Error('Not authenticated');
       }
 
       const response = await fetch(
@@ -178,7 +209,11 @@ export const useAudiobook = ({
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ 
+            text: chunk.text,
+            previousText: prevChunk?.text?.slice(-200),
+            nextText: nextChunk?.text?.slice(0, 200),
+          }),
         }
       );
 
@@ -198,45 +233,78 @@ export const useAudiobook = ({
       const audioBlob = await response.blob();
       return URL.createObjectURL(audioBlob);
     } catch (error) {
-      console.error('Error generating audio:', error);
-      toast({
-        title: "Erro",
-        description: "Falha ao gerar áudio. Tente novamente.",
-        variant: "destructive"
-      });
+      console.error('Error generating chunk audio:', error);
       return null;
     }
   }, [toast]);
 
-  const playPage = useCallback(async (pageNum: number) => {
-    setIsLoading(true);
-    setCurrentAudioPage(pageNum);
-
-    const text = await extractPageText(pageNum);
+  // Process entire book
+  const processFullBook = useCallback(async () => {
+    if (!fullText || isProcessing) return;
     
-    if (!text.trim()) {
-      setIsLoading(false);
-      toast({
-        title: "Aviso",
-        description: "Não há texto disponível nesta página",
-        variant: "default"
-      });
-      return;
-    }
-
-    const audioUrl = await generateAudio(text);
+    setIsProcessing(true);
+    setProcessingProgress(0);
     
-    if (!audioUrl) {
-      setIsLoading(false);
-      return;
-    }
+    const chunks = splitIntoChunks(fullText);
+    chunksRef.current = chunks;
+    
+    toast({
+      title: "Processando audiobook",
+      description: `Gerando áudio para ${chunks.length} partes...`,
+    });
 
+    // Generate audio for all chunks sequentially with progress
+    for (let i = 0; i < chunks.length; i++) {
+      const audioUrl = await generateChunkAudio(
+        chunks[i],
+        i > 0 ? chunks[i - 1] : undefined,
+        i < chunks.length - 1 ? chunks[i + 1] : undefined
+      );
+      
+      if (!audioUrl) {
+        setIsProcessing(false);
+        toast({
+          title: "Erro",
+          description: "Falha ao processar audiobook. Tente novamente.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      chunks[i].audioUrl = audioUrl;
+      setProcessingProgress(Math.round(((i + 1) / chunks.length) * 100));
+    }
+    
+    chunksRef.current = chunks;
+    setIsProcessing(false);
+    
+    toast({
+      title: "Audiobook pronto",
+      description: "O audiobook foi processado com sucesso!",
+    });
+    
+    // Start playing immediately
+    playChunk(0);
+  }, [fullText, isProcessing, splitIntoChunks, generateChunkAudio, toast]);
+
+  // Play a specific chunk
+  const playChunk = useCallback((index: number) => {
+    const chunks = chunksRef.current;
+    if (index < 0 || index >= chunks.length) return;
+    
+    const chunk = chunks[index];
+    if (!chunk.audioUrl) return;
+    
+    currentChunkIndexRef.current = index;
+    setCurrentAudioPage(chunk.startPage);
+    onPageChange(chunk.startPage);
+    
     if (audioRef.current) {
       audioRef.current.pause();
       URL.revokeObjectURL(audioRef.current.src);
     }
 
-    const audio = new Audio(audioUrl);
+    const audio = new Audio(chunk.audioUrl);
     audio.playbackRate = playbackRate;
     audioRef.current = audio;
 
@@ -246,16 +314,30 @@ export const useAudiobook = ({
 
     audio.addEventListener('timeupdate', () => {
       setProgress(audio.currentTime);
-      // Save progress periodically
-      saveProgress(pageNum, audio.currentTime, playbackRate);
+      
+      // Calculate approximate page based on progress within chunk
+      const progressRatio = audio.currentTime / audio.duration;
+      const pageRange = chunk.endPage - chunk.startPage;
+      const currentPageEstimate = Math.floor(chunk.startPage + (progressRatio * pageRange));
+      
+      if (currentPageEstimate !== currentAudioPage && currentPageEstimate <= chunk.endPage) {
+        setCurrentAudioPage(currentPageEstimate);
+        onPageChange(currentPageEstimate);
+      }
+      
+      saveProgress(currentPageEstimate, audio.currentTime, playbackRate);
     });
 
     audio.addEventListener('ended', () => {
-      setIsPlaying(false);
-      // Auto-play next page
-      if (pageNum < totalPages) {
-        playPage(pageNum + 1);
-        onPageChange(pageNum + 1);
+      // Auto-play next chunk
+      if (index < chunks.length - 1) {
+        playChunk(index + 1);
+      } else {
+        setIsPlaying(false);
+        toast({
+          title: "Audiobook finalizado",
+          description: "Você chegou ao final do livro!",
+        });
       }
     });
 
@@ -269,24 +351,23 @@ export const useAudiobook = ({
       });
     });
 
-    try {
-      await audio.play();
+    audio.play().then(() => {
       setIsPlaying(true);
-    } catch (error) {
+      setIsLoading(false);
+    }).catch(error => {
       console.error('Error playing audio:', error);
-    }
-    
-    setIsLoading(false);
-  }, [extractPageText, generateAudio, playbackRate, totalPages, onPageChange, toast, saveProgress]);
+      setIsLoading(false);
+    });
+  }, [playbackRate, onPageChange, saveProgress, toast, currentAudioPage]);
 
   const play = useCallback(() => {
     if (audioRef.current && audioRef.current.paused) {
       audioRef.current.play();
       setIsPlaying(true);
-    } else if (!audioRef.current) {
-      playPage(currentPage);
+    } else if (!audioRef.current || chunksRef.current.length === 0) {
+      processFullBook();
     }
-  }, [currentPage, playPage]);
+  }, [processFullBook]);
 
   const pause = useCallback(() => {
     if (audioRef.current) {
@@ -310,6 +391,7 @@ export const useAudiobook = ({
       setIsPlaying(false);
       setProgress(0);
     }
+    currentChunkIndexRef.current = 0;
   }, []);
 
   const seekTo = useCallback((time: number) => {
@@ -327,22 +409,18 @@ export const useAudiobook = ({
   }, []);
 
   const skipForward = useCallback(() => {
-    if (currentAudioPage < totalPages) {
-      const nextPage = currentAudioPage + 1;
-      stop();
-      playPage(nextPage);
-      onPageChange(nextPage);
+    const nextIndex = currentChunkIndexRef.current + 1;
+    if (nextIndex < chunksRef.current.length) {
+      playChunk(nextIndex);
     }
-  }, [currentAudioPage, totalPages, stop, playPage, onPageChange]);
+  }, [playChunk]);
 
   const skipBackward = useCallback(() => {
-    if (currentAudioPage > 1) {
-      const prevPage = currentAudioPage - 1;
-      stop();
-      playPage(prevPage);
-      onPageChange(prevPage);
+    const prevIndex = currentChunkIndexRef.current - 1;
+    if (prevIndex >= 0) {
+      playChunk(prevIndex);
     }
-  }, [currentAudioPage, stop, playPage, onPageChange]);
+  }, [playChunk]);
 
   const startSleepTimer = useCallback((minutes: number) => {
     if (timerRef.current) {
@@ -379,6 +457,22 @@ export const useAudiobook = ({
     setSleepTimerRemaining(null);
   }, []);
 
+  // Play from a specific page
+  const playPage = useCallback(async (pageNum: number) => {
+    // Find chunk containing this page
+    const chunkIndex = chunksRef.current.findIndex(
+      c => pageNum >= c.startPage && pageNum <= c.endPage
+    );
+    
+    if (chunkIndex >= 0 && chunksRef.current[chunkIndex].audioUrl) {
+      playChunk(chunkIndex);
+    } else {
+      // Need to process first
+      setIsLoading(true);
+      await processFullBook();
+    }
+  }, [playChunk, processFullBook]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -386,6 +480,10 @@ export const useAudiobook = ({
         audioRef.current.pause();
         URL.revokeObjectURL(audioRef.current.src);
       }
+      // Cleanup all chunk audio URLs
+      chunksRef.current.forEach(chunk => {
+        if (chunk.audioUrl) URL.revokeObjectURL(chunk.audioUrl);
+      });
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
@@ -398,6 +496,8 @@ export const useAudiobook = ({
   return {
     isPlaying,
     isLoading,
+    isProcessing,
+    processingProgress,
     playbackRate,
     progress,
     duration,
@@ -405,6 +505,9 @@ export const useAudiobook = ({
     sleepTimerRemaining,
     currentAudioPage,
     savedProgress,
+    hasFullText: !!fullText,
+    totalChunks: chunksRef.current.length,
+    currentChunk: currentChunkIndexRef.current + 1,
     play,
     pause,
     togglePlayPause,
