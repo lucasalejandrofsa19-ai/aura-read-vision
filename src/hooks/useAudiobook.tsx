@@ -65,6 +65,15 @@ export const useAudiobook = ({
   const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
   const browserChunkIndexRef = useRef(0);
   const browserTTSPausedRef = useRef(false);
+  const isMountedRef = useRef(true);
+
+  // Track mounted state
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Load available browser voices - prioritize natural/premium voices
   useEffect(() => {
@@ -398,12 +407,14 @@ export const useAudiobook = ({
     let startTime = Date.now();
     
     utterance.onstart = () => {
+      if (!isMountedRef.current) return;
       startTime = Date.now();
       setIsPlaying(true);
       setIsLoading(false);
     };
     
     utterance.onend = () => {
+      if (!isMountedRef.current) return;
       // Auto-play next chunk
       if (index < chunks.length - 1) {
         playChunkWithBrowserTTS(index + 1);
@@ -424,6 +435,7 @@ export const useAudiobook = ({
         return;
       }
       
+      if (!isMountedRef.current) return;
       console.error('Browser TTS error:', event);
       setIsPlaying(false);
       setIsLoading(false);
@@ -436,6 +448,8 @@ export const useAudiobook = ({
     
     // Track progress (throttle UI updates to avoid freezes)
     utterance.onboundary = () => {
+      if (!isMountedRef.current) return;
+      
       const now = Date.now();
       if (now - lastBoundaryUpdateRef.current < 250) return;
       lastBoundaryUpdateRef.current = now;
@@ -459,7 +473,9 @@ export const useAudiobook = ({
 
     // Speak on next tick (helps after cancel in some browsers)
     setTimeout(() => {
-      window.speechSynthesis.speak(utterance);
+      if (isMountedRef.current) {
+        window.speechSynthesis.speak(utterance);
+      }
     }, 0);
   }, [playbackRate, voicePitch, browserVoices, selectedVoiceIndex, onPageChange, saveProgress, toast, currentAudioPage, enhanceTextWithAI]);
 
