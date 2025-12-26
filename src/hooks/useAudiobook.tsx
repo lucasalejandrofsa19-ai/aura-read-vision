@@ -346,12 +346,32 @@ export const useAudiobook = ({
             });
           }
         } else {
+          // OpenAI error handling
+          const isQuotaError = 
+            response.status === 429 || 
+            providerCode === 'insufficient_quota';
+          
           if (response.status === 401 && providerCode === 'invalid_api_key') {
             toast({
               title: "Chave OpenAI inválida",
               description:
                 "Atualize a chave OPENAI_API_KEY no backend e tente novamente.",
               variant: "destructive",
+            });
+          } else if (isQuotaError) {
+            toast({
+              title: "Créditos OpenAI esgotados",
+              description:
+                "A conta OpenAI excedeu a cota. Adicione créditos em platform.openai.com ou use ElevenLabs.",
+              variant: "destructive",
+              action: (
+                <button 
+                  onClick={() => changeTtsProvider('elevenlabs')}
+                  className="ml-2 rounded bg-primary px-3 py-1 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Usar ElevenLabs
+                </button>
+              ),
             });
           } else {
             toast({
