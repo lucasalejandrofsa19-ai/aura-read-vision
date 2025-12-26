@@ -35,6 +35,8 @@ export const useAudiobook = ({
   const { user } = useAuth();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingProgressRef = useRef<{ page: number; position: number; rate: number } | null>(null);
+  const lastBoundaryUpdateRef = useRef(0);
   const pdfDocRef = useRef<any>(null);
   const chunksRef = useRef<AudioChunk[]>([]);
   const currentChunkIndexRef = useRef(0);
@@ -176,27 +178,36 @@ export const useAudiobook = ({
     loadProgress();
   }, [user, bookId]);
 
-  // Save progress (debounced)
+  // Save progress (throttled: keep latest values, flush every ~2s)
   const saveProgress = useCallback((page: number, position: number, rate: number) => {
     if (!user || !bookId) return;
 
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
+    // Always keep the most recent progress
+    pendingProgressRef.current = { page, position, rate };
+
+    // If a flush is already scheduled, don't reschedule (prevents "debounce never fires")
+    if (saveTimeoutRef.current) return;
 
     saveTimeoutRef.current = setTimeout(async () => {
+      const payload = pendingProgressRef.current;
+      saveTimeoutRef.current = null;
+      if (!payload) return;
+
       await supabase
         .from('audiobook_progress')
-        .upsert({
-          book_id: bookId,
-          user_id: user.id,
-          current_page: page,
-          playback_position: position,
-          playback_rate: rate,
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'book_id,user_id'
-        });
+        .upsert(
+          {
+            book_id: bookId,
+            user_id: user.id,
+            current_page: payload.page,
+            playback_position: payload.position,
+            playback_rate: payload.rate,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'book_id,user_id',
+          }
+        );
     }, 2000);
   }, [user, bookId]);
 
@@ -343,8 +354,8 @@ export const useAudiobook = ({
     
     const chunk = chunks[index];
     
-    // Cancel any ongoing speech
-    if (window.speechSynthesis) {
+    // Cancel any ongoing speech (some browsers need a tick between cancel -> speak)
+    if (window.speechSynthesis && (window.speechSynthesis.speaking || window.speechSynthesis.pending)) {
       window.speechSynthesis.cancel();
     }
     
@@ -423,25 +434,33 @@ export const useAudiobook = ({
       });
     };
     
-    // Track progress
+    // Track progress (throttle UI updates to avoid freezes)
     utterance.onboundary = () => {
-      const elapsed = (Date.now() - startTime) / 1000;
+      const now = Date.now();
+      if (now - lastBoundaryUpdateRef.current < 250) return;
+      lastBoundaryUpdateRef.current = now;
+
+      const elapsed = (now - startTime) / 1000;
       setProgress(elapsed);
-      
+
       const progressRatio = elapsed / estimatedDuration;
       const pageRange = chunk.endPage - chunk.startPage;
       const currentPageEstimate = Math.floor(chunk.startPage + (progressRatio * pageRange));
-      
+
       if (currentPageEstimate !== currentAudioPage && currentPageEstimate <= chunk.endPage) {
         setCurrentAudioPage(currentPageEstimate);
         onPageChange(currentPageEstimate);
       }
-      
+
       saveProgress(currentPageEstimate, elapsed, playbackRate);
     };
-    
+
     speechSynthRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+
+    // Speak on next tick (helps after cancel in some browsers)
+    setTimeout(() => {
+      window.speechSynthesis.speak(utterance);
+    }, 0);
   }, [playbackRate, voicePitch, browserVoices, selectedVoiceIndex, onPageChange, saveProgress, toast, currentAudioPage, enhanceTextWithAI]);
 
   // Generate and play chunk
