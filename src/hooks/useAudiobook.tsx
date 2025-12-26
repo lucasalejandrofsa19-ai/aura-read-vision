@@ -8,6 +8,8 @@ import { pdfjs } from 'react-pdf';
 
 const CHUNK_SIZE = 4500; // Characters per chunk (ElevenLabs limit is 5000)
 
+export type TTSProvider = 'elevenlabs' | 'openai';
+
 interface UseAudiobookProps {
   bookId: string;
   pdfUrl?: string;
@@ -55,6 +57,51 @@ export const useAudiobook = ({
   const [fullText, setFullText] = useState<string>('');
   const [totalChunks, setTotalChunks] = useState(0);
   const [currentChunk, setCurrentChunk] = useState(0);
+  const [ttsProvider, setTtsProvider] = useState<TTSProvider>('elevenlabs');
+
+  // Load TTS provider preference from profile
+  useEffect(() => {
+    if (!user) return;
+    
+    const loadProviderPreference = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('tts_provider')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (data?.tts_provider && !error) {
+        setTtsProvider(data.tts_provider as TTSProvider);
+      }
+    };
+
+    loadProviderPreference();
+  }, [user]);
+
+  // Save TTS provider preference
+  const changeTtsProvider = useCallback(async (provider: TTSProvider) => {
+    setTtsProvider(provider);
+    
+    // Clear any cached chunks when switching providers
+    chunksRef.current.forEach(chunk => {
+      if (chunk.audioUrl) URL.revokeObjectURL(chunk.audioUrl);
+    });
+    chunksRef.current = [];
+    setTotalChunks(0);
+    setCurrentChunk(0);
+    
+    if (!user) return;
+    
+    await supabase
+      .from('profiles')
+      .update({ tts_provider: provider })
+      .eq('id', user.id);
+      
+    toast({
+      title: "Provedor alterado",
+      description: `Audiobook usará ${provider === 'elevenlabs' ? 'ElevenLabs' : 'OpenAI'} para síntese de voz`,
+    });
+  }, [user, toast]);
 
   // Load PDF document and extract all text
   useEffect(() => {
@@ -201,21 +248,28 @@ export const useAudiobook = ({
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/audiobook-tts`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
+      // Choose endpoint based on provider
+      const endpoint = ttsProvider === 'openai' 
+        ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-tts`
+        : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/audiobook-tts`;
+
+      // Build request body based on provider
+      const requestBody = ttsProvider === 'openai'
+        ? { text: chunk.text, voice: 'alloy' }
+        : {
             text: chunk.text,
             previousText: prevChunk?.text?.slice(-200),
             nextText: nextChunk?.text?.slice(0, 200),
-          }),
-        }
-      );
+          };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
 
       if (response.status === 403) {
         toast({
@@ -253,24 +307,32 @@ export const useAudiobook = ({
           // ignore
         }
 
-        // Friendly, actionable messaging for common ElevenLabs failures
-        if (response.status === 401 && providerStatus === 'detected_unusual_activity') {
-          toast({
-            title: "Serviço de voz indisponível",
-            description:
-              "O ElevenLabs bloqueou o uso no Free Tier por atividade incomum. Desative VPN/proxy ou use um plano pago e gere uma nova API key.",
-            variant: "destructive",
-          });
-        } else if (response.status === 401 && providerStatus === 'missing_permissions') {
-          toast({
-            title: "Permissão ausente",
-            description:
-              "Sua API key do ElevenLabs não tem permissão de Text to Speech. Crie/atualize a key com a permissão 'text_to_speech'.",
-            variant: "destructive",
-          });
+        // Friendly, actionable messaging for common failures
+        if (ttsProvider === 'elevenlabs') {
+          if (response.status === 401 && providerStatus === 'detected_unusual_activity') {
+            toast({
+              title: "ElevenLabs indisponível",
+              description:
+                "O ElevenLabs bloqueou o uso. Troque para OpenAI TTS nas configurações ou use um plano pago do ElevenLabs.",
+              variant: "destructive",
+            });
+          } else if (response.status === 401 && providerStatus === 'missing_permissions') {
+            toast({
+              title: "Permissão ausente",
+              description:
+                "API key do ElevenLabs sem permissão TTS. Troque para OpenAI TTS ou atualize sua key.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Erro ElevenLabs",
+              description: providerMessage ? `${edgeError}: ${providerMessage}` : edgeError,
+              variant: "destructive",
+            });
+          }
         } else {
           toast({
-            title: "Erro ao gerar áudio",
+            title: "Erro OpenAI TTS",
             description: providerMessage ? `${edgeError}: ${providerMessage}` : edgeError,
             variant: "destructive",
           });
@@ -290,7 +352,7 @@ export const useAudiobook = ({
       });
       return null;
     }
-  }, [toast]);
+  }, [toast, ttsProvider]);
 
   // Process entire book
   const processFullBook = useCallback(async () => {
@@ -560,6 +622,7 @@ export const useAudiobook = ({
     hasFullText: !!fullText,
     totalChunks,
     currentChunk,
+    ttsProvider,
     play,
     pause,
     togglePlayPause,
@@ -571,5 +634,6 @@ export const useAudiobook = ({
     startSleepTimer,
     cancelSleepTimer,
     playPage,
+    changeTtsProvider,
   };
 };

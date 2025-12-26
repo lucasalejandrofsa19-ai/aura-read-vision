@@ -8,7 +8,8 @@ import {
   Moon,
   X,
   Loader2,
-  Headphones
+  Headphones,
+  Settings2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -27,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAudiobook } from '@/hooks/useAudiobook';
+import { useAudiobook, TTSProvider } from '@/hooks/useAudiobook';
 import { PremiumBadge } from '@/components/PremiumBadge';
 
 interface AudiobookPlayerProps {
@@ -72,6 +73,7 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     hasFullText,
     totalChunks,
     currentChunk,
+    ttsProvider,
     togglePlayPause,
     stop,
     seekTo,
@@ -81,6 +83,7 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     startSleepTimer,
     cancelSleepTimer,
     playPage,
+    changeTtsProvider,
   } = useAudiobook({
     bookId,
     pdfUrl,
@@ -105,6 +108,11 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     { label: '1.25x', value: 1.25 },
     { label: '1.5x', value: 1.5 },
     { label: '2x', value: 2 },
+  ];
+
+  const providerOptions: { label: string; value: TTSProvider }[] = [
+    { label: 'ElevenLabs', value: 'elevenlabs' },
+    { label: 'OpenAI', value: 'openai' },
   ];
 
   return (
@@ -267,6 +275,30 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
                 </Select>
               )}
             </div>
+          </div>
+
+          {/* TTS Provider Selection */}
+          <div className="flex items-center justify-between gap-4 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Provedor de voz</span>
+            </div>
+            <Select
+              value={ttsProvider}
+              onValueChange={(value) => changeTtsProvider(value as TTSProvider)}
+              disabled={isPlaying || isProcessing}
+            >
+              <SelectTrigger className="w-32 h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {providerOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Stop Button */}
