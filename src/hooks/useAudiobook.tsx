@@ -417,9 +417,18 @@ export const useAudiobook = ({
     // If we "resume" but there's nothing left to say, just move to the next chunk
     if (shouldResumeWithinChunk && utteranceText.length === 0) {
       if (index < chunks.length - 1) {
-        playChunkWithBrowserTTS(index + 1);
+        // Defer to avoid calling setState during render
+        queueMicrotask(() => {
+          if (isMountedRef.current) {
+            playChunkWithBrowserTTS(index + 1);
+          }
+        });
       } else {
-        setIsPlaying(false);
+        queueMicrotask(() => {
+          if (isMountedRef.current) {
+            setIsPlaying(false);
+          }
+        });
       }
       return;
     }
@@ -456,20 +465,32 @@ export const useAudiobook = ({
     utterance.onstart = () => {
       if (!isMountedRef.current) return;
       startTime = Date.now() - startOffsetSeconds * 1000;
-      setIsPlaying(true);
-      setIsLoading(false);
+      queueMicrotask(() => {
+        if (isMountedRef.current) {
+          setIsPlaying(true);
+          setIsLoading(false);
+        }
+      });
     };
 
     utterance.onend = () => {
       if (!isMountedRef.current) return;
-      // Auto-play next chunk
+      // Auto-play next chunk - defer to avoid React queue issues
       if (index < chunks.length - 1) {
-        playChunkWithBrowserTTS(index + 1);
+        queueMicrotask(() => {
+          if (isMountedRef.current) {
+            playChunkWithBrowserTTS(index + 1);
+          }
+        });
       } else {
-        setIsPlaying(false);
-        toast({
-          title: 'Audiobook finalizado',
-          description: 'Você chegou ao final do livro!',
+        queueMicrotask(() => {
+          if (isMountedRef.current) {
+            setIsPlaying(false);
+            toast({
+              title: 'Audiobook finalizado',
+              description: 'Você chegou ao final do livro!',
+            });
+          }
         });
       }
     };
@@ -484,12 +505,16 @@ export const useAudiobook = ({
 
       if (!isMountedRef.current) return;
       console.error('Browser TTS error:', event);
-      setIsPlaying(false);
-      setIsLoading(false);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao reproduzir áudio com o navegador',
-        variant: 'destructive',
+      queueMicrotask(() => {
+        if (isMountedRef.current) {
+          setIsPlaying(false);
+          setIsLoading(false);
+          toast({
+            title: 'Erro',
+            description: 'Erro ao reproduzir áudio com o navegador',
+            variant: 'destructive',
+          });
+        }
       });
     };
 
@@ -509,7 +534,6 @@ export const useAudiobook = ({
       lastBoundaryCharIndexRef.current = absoluteCharIndex;
 
       const elapsed = (now - startTime) / 1000;
-      setProgress(elapsed);
 
       const progressRatio = estimatedDuration ? elapsed / estimatedDuration : 0;
       const pageRange = chunk.endPage - chunk.startPage;
@@ -519,12 +543,18 @@ export const useAudiobook = ({
         Math.max(chunk.startPage, Number.isFinite(rawPageEstimate) ? rawPageEstimate : chunk.startPage)
       );
 
-      if (currentPageEstimate !== currentAudioPage && currentPageEstimate <= chunk.endPage) {
-        setCurrentAudioPage(currentPageEstimate);
-        onPageChange(currentPageEstimate);
-      }
+      // Defer state updates to avoid React queue issues
+      queueMicrotask(() => {
+        if (!isMountedRef.current) return;
+        setProgress(elapsed);
 
-      saveProgress(currentPageEstimate, elapsed, playbackRate);
+        if (currentPageEstimate !== currentAudioPage && currentPageEstimate <= chunk.endPage) {
+          setCurrentAudioPage(currentPageEstimate);
+          onPageChange(currentPageEstimate);
+        }
+
+        saveProgress(currentPageEstimate, elapsed, playbackRate);
+      });
     };
 
     speechSynthRef.current = utterance;
