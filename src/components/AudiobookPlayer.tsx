@@ -119,6 +119,48 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     { label: '2x', value: 2 },
   ];
 
+  // Filter and categorize voices
+  const portugueseVoices = browserVoices.filter(v => 
+    v.lang.toLowerCase().startsWith('pt')
+  );
+  const otherVoices = browserVoices.filter(v => 
+    !v.lang.toLowerCase().startsWith('pt')
+  );
+
+  const getVoiceLabel = (voice: SpeechSynthesisVoice): string => {
+    const name = voice.name;
+    const lang = voice.lang.toLowerCase();
+    
+    // Extract just the voice name without system prefixes
+    let displayName = name
+      .replace('Microsoft ', '')
+      .replace('Google ', '')
+      .replace(' Online (Natural)', ' ✨')
+      .replace(' - Portuguese (Brazil)', '')
+      .replace(' - Portuguese (Portugal)', '')
+      .replace('Portuguese (Brazil)', 'PT-BR')
+      .replace('Portuguese (Portugal)', 'PT-PT');
+    
+    // Add quality indicator
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('natural') || nameLower.includes('neural')) {
+      displayName = displayName.includes('✨') ? displayName : displayName + ' ✨';
+    }
+    
+    // Add region indicator
+    if (lang === 'pt-br') {
+      displayName += ' 🇧🇷';
+    } else if (lang === 'pt-pt' || lang === 'pt') {
+      displayName += ' 🇵🇹';
+    }
+    
+    return displayName.length > 30 ? displayName.slice(0, 28) + '...' : displayName;
+  };
+
+  const getVoiceIndex = (voice: SpeechSynthesisVoice): number => {
+    return browserVoices.indexOf(voice);
+  };
+
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -300,24 +342,51 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
                     onValueChange={(value) => setSelectedVoiceIndex(parseInt(value))}
                     disabled={isPlaying}
                   >
-                    <SelectTrigger className="w-48 h-8">
-                      <SelectValue />
+                    <SelectTrigger className="w-56 h-8">
+                      <SelectValue>
+                        {browserVoices[selectedVoiceIndex] && getVoiceLabel(browserVoices[selectedVoiceIndex])}
+                      </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
-                      {browserVoices.map((voice, index) => (
-                        <SelectItem key={index} value={index.toString()}>
-                          {voice.name.length > 25 
-                            ? voice.name.slice(0, 25) + '...' 
-                            : voice.name}
-                        </SelectItem>
-                      ))}
+                    <SelectContent className="max-h-64">
+                      {portugueseVoices.length > 0 && (
+                        <>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted">
+                            Português ({portugueseVoices.length})
+                          </div>
+                          {portugueseVoices.map((voice) => (
+                            <SelectItem 
+                              key={getVoiceIndex(voice)} 
+                              value={getVoiceIndex(voice).toString()}
+                            >
+                              {getVoiceLabel(voice)}
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+                      {otherVoices.length > 0 && (
+                        <>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted mt-1">
+                            Outros idiomas ({otherVoices.length})
+                          </div>
+                          {otherVoices.slice(0, 10).map((voice) => (
+                            <SelectItem 
+                              key={getVoiceIndex(voice)} 
+                              value={getVoiceIndex(voice).toString()}
+                            >
+                              {voice.name.length > 25 
+                                ? voice.name.slice(0, 25) + '...' 
+                                : voice.name} ({voice.lang})
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-sm text-muted-foreground">Tom</span>
-                  <div className="flex items-center gap-2 w-48">
+                  <div className="flex items-center gap-2 w-56">
                     <span className="text-xs text-muted-foreground">Grave</span>
                     <Slider
                       value={[voicePitch]}
@@ -331,6 +400,12 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
                     <span className="text-xs text-muted-foreground">Agudo</span>
                   </div>
                 </div>
+
+                {portugueseVoices.length === 0 && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    Nenhuma voz em português encontrada. Instale vozes PT-BR nas configurações do sistema.
+                  </p>
+                )}
               </div>
             )}
           </div>
