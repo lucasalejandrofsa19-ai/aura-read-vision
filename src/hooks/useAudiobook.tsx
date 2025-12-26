@@ -6,11 +6,7 @@ import { pdfjs } from 'react-pdf';
 
 // Worker is configured globally in src/lib/pdfjsWorker.ts
 
-const OPENAI_CHUNK_SIZE = 1000;
-const ELEVENLABS_SAFE_CHUNK_SIZE = 450; // helps fit quota/low-credit situations better than large chunks
-const CHUNK_SIZE = ELEVENLABS_SAFE_CHUNK_SIZE; // default splitter size (safe for ElevenLabs)
-
-export type TTSProvider = 'elevenlabs' | 'openai' | 'browser';
+const CHUNK_SIZE = 1000; // characters per chunk for browser TTS
 
 interface UseAudiobookProps {
   bookId: string;
@@ -23,7 +19,6 @@ interface UseAudiobookProps {
 
 interface AudioChunk {
   text: string;
-  audioUrl?: string;
   startPage: number;
   endPage: number;
 }
@@ -38,7 +33,6 @@ export const useAudiobook = ({
 }: UseAudiobookProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pdfDocRef = useRef<any>(null);
@@ -59,18 +53,21 @@ export const useAudiobook = ({
   const [fullText, setFullText] = useState<string>('');
   const [totalChunks, setTotalChunks] = useState(0);
   const [currentChunk, setCurrentChunk] = useState(0);
-  const [ttsProvider, setTtsProvider] = useState<TTSProvider>('browser');
   const [enhanceNarration, setEnhanceNarration] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState<number>(0);
   const [voicePitch, setVoicePitch] = useState(1);
 
+  // Browser TTS refs
+  const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const browserChunkIndexRef = useRef(0);
+  const browserTTSPausedRef = useRef(false);
+
   // Load available browser voices
   useEffect(() => {
     const loadVoices = () => {
       const voices = window.speechSynthesis?.getVoices() || [];
-      // Prefer Portuguese voices, then any available
       const portugueseVoices = voices.filter(v => 
         v.lang.startsWith('pt') || v.lang.includes('Portuguese')
       );
@@ -80,7 +77,6 @@ export const useAudiobook = ({
       ];
       setBrowserVoices(sortedVoices);
       
-      // Auto-select best Portuguese voice
       if (sortedVoices.length > 0 && selectedVoiceIndex === 0) {
         const bestVoice = sortedVoices.findIndex(v => 
           v.lang === 'pt-BR' && v.name.toLowerCase().includes('google')
@@ -98,64 +94,6 @@ export const useAudiobook = ({
       window.speechSynthesis?.removeEventListener('voiceschanged', loadVoices);
     };
   }, [selectedVoiceIndex]);
-
-  // Load TTS provider preference from profile
-  useEffect(() => {
-    if (!user) return;
-    
-    const loadProviderPreference = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('tts_provider')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (data?.tts_provider && !error) {
-        setTtsProvider(data.tts_provider as TTSProvider);
-      }
-    };
-
-    loadProviderPreference();
-  }, [user]);
-
-  // Save TTS provider preference
-  const changeTtsProvider = useCallback(async (provider: TTSProvider) => {
-    // Cancel any ongoing browser speech
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    
-    setTtsProvider(provider);
-    setIsPlaying(false);
-    
-    // Clear any cached chunks when switching providers
-    chunksRef.current.forEach(chunk => {
-      if (chunk.audioUrl && chunk.audioUrl !== 'browser-tts') {
-        URL.revokeObjectURL(chunk.audioUrl);
-      }
-    });
-    chunksRef.current = [];
-    setTotalChunks(0);
-    setCurrentChunk(0);
-    
-    if (!user) return;
-    
-    await supabase
-      .from('profiles')
-      .update({ tts_provider: provider })
-      .eq('id', user.id);
-      
-    const providerNames: Record<TTSProvider, string> = {
-      elevenlabs: 'ElevenLabs',
-      openai: 'OpenAI',
-      browser: 'Navegador (gratuito)',
-    };
-    
-    toast({
-      title: "Provedor alterado",
-      description: `Audiobook usará ${providerNames[provider]} para síntese de voz`,
-    });
-  }, [user, toast]);
 
   // Load PDF document and extract all text
   useEffect(() => {
@@ -202,27 +140,26 @@ export const useAudiobook = ({
   // Load saved progress on mount
   useEffect(() => {
     if (!user || !bookId) return;
-    
+
     const loadProgress = async () => {
       const { data, error } = await supabase
         .from('audiobook_progress')
         .select('current_page, playback_position, playback_rate')
-        .eq('user_id', user.id)
         .eq('book_id', bookId)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (data && !error) {
-        setSavedProgress({ page: data.current_page, position: Number(data.playback_position) });
-        setPlaybackRate(Number(data.playback_rate));
-        setCurrentAudioPage(data.current_page);
+        setSavedProgress({ page: data.current_page, position: data.playback_position });
+        setPlaybackRate(data.playback_rate || 1);
       }
     };
 
     loadProgress();
   }, [user, bookId]);
 
-  // Save progress to database (debounced)
-  const saveProgress = useCallback(async (page: number, position: number, rate: number) => {
+  // Save progress (debounced)
+  const saveProgress = useCallback((page: number, position: number, rate: number) => {
     if (!user || !bookId) return;
 
     if (saveTimeoutRef.current) {
@@ -230,22 +167,18 @@ export const useAudiobook = ({
     }
 
     saveTimeoutRef.current = setTimeout(async () => {
-      const { error } = await supabase
+      await supabase
         .from('audiobook_progress')
         .upsert({
-          user_id: user.id,
           book_id: bookId,
+          user_id: user.id,
           current_page: page,
           playback_position: position,
           playback_rate: rate,
           updated_at: new Date().toISOString(),
         }, {
-          onConflict: 'user_id,book_id'
+          onConflict: 'book_id,user_id'
         });
-
-      if (error) {
-        console.error('Error saving audiobook progress:', error);
-      }
     }, 2000);
   }, [user, bookId]);
 
@@ -253,34 +186,32 @@ export const useAudiobook = ({
   const splitIntoChunks = useCallback((text: string): AudioChunk[] => {
     const chunks: AudioChunk[] = [];
     const sentences = text.split(/(?<=[.!?])\s+/);
-    let currentChunk = '';
-    let chunkIndex = 0;
+    let currentChunkText = '';
     
     const charsPerPage = Math.ceil(text.length / totalPages);
     
     for (const sentence of sentences) {
-      if (currentChunk.length + sentence.length > CHUNK_SIZE && currentChunk.length > 0) {
+      if (currentChunkText.length + sentence.length > CHUNK_SIZE && currentChunkText.length > 0) {
         const startChar = chunks.reduce((sum, c) => sum + c.text.length, 0);
-        const endChar = startChar + currentChunk.length;
+        const endChar = startChar + currentChunkText.length;
         
         chunks.push({
-          text: currentChunk.trim(),
+          text: currentChunkText.trim(),
           startPage: Math.floor(startChar / charsPerPage) + 1,
           endPage: Math.floor(endChar / charsPerPage) + 1,
         });
-        currentChunk = sentence;
-        chunkIndex++;
+        currentChunkText = sentence;
       } else {
-        currentChunk += (currentChunk ? ' ' : '') + sentence;
+        currentChunkText += (currentChunkText ? ' ' : '') + sentence;
       }
     }
     
-    if (currentChunk.trim()) {
+    if (currentChunkText.trim()) {
       const startChar = chunks.reduce((sum, c) => sum + c.text.length, 0);
-      const endChar = startChar + currentChunk.length;
+      const endChar = startChar + currentChunkText.length;
       
       chunks.push({
-        text: currentChunk.trim(),
+        text: currentChunkText.trim(),
         startPage: Math.floor(startChar / charsPerPage) + 1,
         endPage: Math.min(Math.floor(endChar / charsPerPage) + 1, totalPages),
       });
@@ -288,10 +219,6 @@ export const useAudiobook = ({
     
     return chunks;
   }, [totalPages]);
-
-  // Browser TTS state
-  const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const browserChunkIndexRef = useRef(0);
 
   // Enhance text with AI for better narration
   const enhanceTextWithAI = useCallback(async (text: string): Promise<string> => {
@@ -330,221 +257,55 @@ export const useAudiobook = ({
     }
   }, [enhanceNarration]);
 
-  // Generate audio for a chunk with request stitching (for ElevenLabs/OpenAI)
-  const generateChunkAudio = useCallback(async (
-    chunk: AudioChunk,
-    prevChunk?: AudioChunk,
-    nextChunk?: AudioChunk
-  ): Promise<string | null> => {
-    // Browser TTS doesn't pre-generate audio files, but we still keep premium/auth gating
-    if (ttsProvider === 'browser') {
-      try {
-        if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-          toast({
-            title: "TTS do navegador indisponível",
-            description: "Seu navegador não suporta leitura em voz alta (Web Speech API).",
-            variant: "destructive",
-          });
-          return null;
-        }
-
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session) {
-          toast({
-            title: "Faça login",
-            description: "Entre na sua conta para usar o audiobook.",
-            variant: "destructive",
-          });
-          return null;
-        }
-
-        const { data: hasAccess, error: accessError } = await supabase.rpc('has_premium_access', {
-          _user_id: session.user.id,
-        });
-
-        if (accessError || !hasAccess) {
-          toast({
-            title: "Acesso Premium",
-            description: "O audiobook está disponível apenas para assinantes premium",
-            variant: "destructive",
-          });
-          return null;
-        }
-
-        return 'browser-tts'; // Placeholder to indicate browser TTS
-      } catch (e) {
-        console.error('Browser TTS gating error:', e);
+  // Verify premium access
+  const verifyPremiumAccess = useCallback(async (): Promise<boolean> => {
+    try {
+      if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
         toast({
-          title: "Erro",
-          description: "Não foi possível iniciar o TTS do navegador.",
+          title: "TTS do navegador indisponível",
+          description: "Seu navegador não suporta leitura em voz alta (Web Speech API).",
           variant: "destructive",
         });
-        return null;
+        return false;
       }
-    }
 
-    try {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
-        throw new Error('Not authenticated');
+        toast({
+          title: "Faça login",
+          description: "Entre na sua conta para usar o audiobook.",
+          variant: "destructive",
+        });
+        return false;
       }
 
-      // Enhance text with AI if enabled
-      const textToSpeak = await enhanceTextWithAI(chunk.text);
-
-      // Choose endpoint based on provider
-      const endpoint = ttsProvider === 'openai' 
-        ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-tts`
-        : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/audiobook-tts`;
-
-      // Build request body based on provider
-      const requestBody = ttsProvider === 'openai'
-        ? { text: textToSpeak, voice: 'alloy' }
-        : {
-            text: textToSpeak,
-            previousText: prevChunk?.text?.slice(-200),
-            nextText: nextChunk?.text?.slice(0, 200),
-          };
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify(requestBody),
+      const { data: hasAccess, error: accessError } = await supabase.rpc('has_premium_access', {
+        _user_id: session.user.id,
       });
 
-      if (response.status === 403) {
+      if (accessError || !hasAccess) {
         toast({
           title: "Acesso Premium",
           description: "O audiobook está disponível apenas para assinantes premium",
           variant: "destructive",
         });
-        return null;
+        return false;
       }
 
-      if (!response.ok) {
-        let serverError: any = null;
-        const contentType = response.headers.get('content-type') ?? '';
-
-        if (contentType.includes('application/json')) {
-          serverError = await response.json().catch(() => null);
-        } else {
-          const text = await response.text().catch(() => '');
-          serverError = { error: `HTTP ${response.status}`, details: text };
-        }
-
-        const edgeError = typeof serverError?.error === 'string'
-          ? serverError.error
-          : `Falha ao gerar áudio (HTTP ${response.status})`;
-
-        const rawDetails = typeof serverError?.details === 'string' ? serverError.details : '';
-
-        let providerStatus: string | null = null;
-        let providerMessage: string | null = null;
-        let providerCode: string | null = null;
-        try {
-          const parsed = rawDetails ? JSON.parse(rawDetails) : null;
-          providerStatus = parsed?.detail?.status ?? null;
-          providerMessage = parsed?.detail?.message ?? parsed?.error?.message ?? null;
-          providerCode = parsed?.error?.code ?? null;
-        } catch {
-          // ignore
-        }
-
-        // Friendly, actionable messaging for common failures
-        if (ttsProvider === 'elevenlabs') {
-          const shouldSuggestAlternative = 
-            providerStatus === 'detected_unusual_activity' ||
-            providerStatus === 'quota_exceeded' ||
-            providerStatus === 'missing_permissions';
-
-          if (shouldSuggestAlternative) {
-            const statusMessages: Record<string, string> = {
-              detected_unusual_activity: "O ElevenLabs bloqueou o uso por atividade incomum.",
-              quota_exceeded: "Créditos insuficientes no ElevenLabs.",
-              missing_permissions: "API key do ElevenLabs sem permissão TTS.",
-            };
-            
-            toast({
-              title: "ElevenLabs indisponível",
-              description: `${statusMessages[providerStatus] || 'Erro no ElevenLabs.'} Use o TTS do navegador (gratuito).`,
-              variant: "destructive",
-              action: (
-                <button 
-                  onClick={() => changeTtsProvider('browser')}
-                  className="ml-2 rounded bg-primary px-3 py-1 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  Usar Navegador
-                </button>
-              ),
-            });
-          } else {
-            toast({
-              title: "Erro ElevenLabs",
-              description: providerMessage ? `${edgeError}: ${providerMessage}` : edgeError,
-              variant: "destructive",
-            });
-          }
-        } else {
-          // OpenAI error handling
-          const isQuotaError = 
-            response.status === 429 || 
-            providerCode === 'insufficient_quota';
-          
-          if (response.status === 401 && providerCode === 'invalid_api_key') {
-            toast({
-              title: "Chave OpenAI inválida",
-              description:
-                "Atualize a chave OPENAI_API_KEY no backend e tente novamente.",
-              variant: "destructive",
-            });
-          } else if (isQuotaError) {
-            toast({
-              title: "Créditos OpenAI esgotados",
-              description:
-                "A conta OpenAI excedeu a cota. Use o TTS do navegador (gratuito) ou adicione créditos.",
-              variant: "destructive",
-              action: (
-                <button 
-                  onClick={() => changeTtsProvider('browser')}
-                  className="ml-2 rounded bg-primary px-3 py-1 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  Usar Navegador
-                </button>
-              ),
-            });
-          } else {
-            toast({
-              title: "Erro OpenAI TTS",
-              description: providerMessage ? `${edgeError}: ${providerMessage}` : edgeError,
-              variant: "destructive",
-            });
-          }
-        }
-
-        return null;
-      }
-
-      const audioBlob = await response.blob();
-      return URL.createObjectURL(audioBlob);
-    } catch (error) {
-      console.error('Error generating chunk audio:', error);
+      return true;
+    } catch (e) {
+      console.error('Browser TTS gating error:', e);
       toast({
-        title: "Erro ao gerar áudio",
-        description: "Não foi possível gerar o áudio. Tente novamente.",
+        title: "Erro",
+        description: "Não foi possível iniciar o TTS do navegador.",
         variant: "destructive",
       });
-      return null;
+      return false;
     }
-  }, [toast, ttsProvider, changeTtsProvider, enhanceTextWithAI]);
+  }, [toast]);
 
-  // Initialize chunks without pre-generating audio (on-demand approach)
+  // Initialize chunks
   const initializeChunks = useCallback(() => {
     if (!fullText) return false;
     
@@ -557,10 +318,7 @@ export const useAudiobook = ({
     return chunksRef.current.length > 0;
   }, [fullText, splitIntoChunks]);
 
-  // Ref to hold generateAndPlayChunk to avoid circular dependency
-  const generateAndPlayChunkRef = useRef<(index: number) => Promise<void>>();
-
-  // Play chunk using browser TTS (Web Speech API)
+  // Play chunk using browser TTS
   const playChunkWithBrowserTTS = useCallback(async (index: number) => {
     const chunks = chunksRef.current;
     if (index < 0 || index >= chunks.length) return;
@@ -592,7 +350,7 @@ export const useAudiobook = ({
       utterance.voice = browserVoices[selectedVoiceIndex];
     }
     
-    // Estimate duration (rough: ~150 words per minute)
+    // Estimate duration
     const words = textToSpeak.split(/\s+/).length;
     const estimatedDuration = (words / 150) * 60 / playbackRate;
     setDuration(estimatedDuration);
@@ -641,7 +399,6 @@ export const useAudiobook = ({
       const elapsed = (Date.now() - startTime) / 1000;
       setProgress(elapsed);
       
-      // Calculate approximate page
       const progressRatio = elapsed / estimatedDuration;
       const pageRange = chunk.endPage - chunk.startPage;
       const currentPageEstimate = Math.floor(chunk.startPage + (progressRatio * pageRange));
@@ -658,234 +415,71 @@ export const useAudiobook = ({
     window.speechSynthesis.speak(utterance);
   }, [playbackRate, voicePitch, browserVoices, selectedVoiceIndex, onPageChange, saveProgress, toast, currentAudioPage, enhanceTextWithAI]);
 
-  // Play a specific chunk (for ElevenLabs/OpenAI)
-  const playChunk = useCallback((index: number) => {
-    // Use browser TTS flow
-    if (ttsProvider === 'browser') {
-      playChunkWithBrowserTTS(index);
-      return;
-    }
-    
-    const chunks = chunksRef.current;
-    if (index < 0 || index >= chunks.length) return;
-    
-    const chunk = chunks[index];
-    if (!chunk.audioUrl || chunk.audioUrl === 'browser-tts') return;
-    
-    currentChunkIndexRef.current = index;
-    setCurrentChunk(index + 1);
-    setCurrentAudioPage(chunk.startPage);
-    onPageChange(chunk.startPage);
-    
-    if (audioRef.current) {
-      audioRef.current.pause();
-      URL.revokeObjectURL(audioRef.current.src);
-    }
-
-    const audio = new Audio(chunk.audioUrl);
-    audio.playbackRate = playbackRate;
-    audioRef.current = audio;
-
-    audio.addEventListener('loadedmetadata', () => {
-      setDuration(audio.duration);
-    });
-
-    audio.addEventListener('timeupdate', () => {
-      setProgress(audio.currentTime);
-      
-      // Calculate approximate page based on progress within chunk
-      const progressRatio = audio.currentTime / audio.duration;
-      const pageRange = chunk.endPage - chunk.startPage;
-      const currentPageEstimate = Math.floor(chunk.startPage + (progressRatio * pageRange));
-      
-      if (currentPageEstimate !== currentAudioPage && currentPageEstimate <= chunk.endPage) {
-        setCurrentAudioPage(currentPageEstimate);
-        onPageChange(currentPageEstimate);
-      }
-      
-      saveProgress(currentPageEstimate, audio.currentTime, playbackRate);
-    });
-
-    audio.addEventListener('ended', () => {
-      // Auto-play next chunk (on-demand)
-      if (index < chunks.length - 1) {
-        const nextChunk = chunks[index + 1];
-        if (nextChunk.audioUrl && nextChunk.audioUrl !== 'browser-tts') {
-          // Already pre-fetched, play directly
-          playChunk(index + 1);
-        } else if (generateAndPlayChunkRef.current) {
-          // Generate on-demand
-          generateAndPlayChunkRef.current(index + 1);
-        }
-      } else {
-        setIsPlaying(false);
-        toast({
-          title: "Audiobook finalizado",
-          description: "Você chegou ao final do livro!",
-        });
-      }
-    });
-
-    audio.addEventListener('error', () => {
-      setIsPlaying(false);
-      setIsLoading(false);
-      toast({
-        title: "Erro",
-        description: "Erro ao reproduzir áudio",
-        variant: "destructive"
-      });
-    });
-
-    audio.play().then(() => {
-      setIsPlaying(true);
-      setIsLoading(false);
-    }).catch(error => {
-      console.error('Error playing audio:', error);
-      setIsLoading(false);
-    });
-  }, [playbackRate, onPageChange, saveProgress, toast, currentAudioPage, ttsProvider, playChunkWithBrowserTTS]);
-
-  // Generate and play a chunk on-demand
+  // Generate and play chunk
   const generateAndPlayChunk = useCallback(async (index: number) => {
     const chunks = chunksRef.current;
-    if (index < 0 || index >= chunks.length) return;
-
-    const chunk = chunks[index];
-
-    // If audio already generated, just play it
-    if (chunk.audioUrl && chunk.audioUrl !== 'browser-tts') {
-      playChunk(index);
+    if (index < 0 || index >= chunks.length) {
+      toast({
+        title: "Erro",
+        description: "Chunk inválido",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsLoading(true);
 
-    let audioUrl: string | null = null;
-
-    try {
-      // Generate audio for this chunk
-      audioUrl = await generateChunkAudio(
-        chunk,
-        index > 0 ? chunks[index - 1] : undefined,
-        index < chunks.length - 1 ? chunks[index + 1] : undefined,
-      );
-    } catch (error) {
-      console.error('Error generating chunk audio:', error);
-      toast({
-        title: "Erro",
-        description:
-          "Não foi possível gerar o áudio. Tente novamente ou altere o provedor de voz.",
-        variant: "destructive",
-      });
+    const hasAccess = await verifyPremiumAccess();
+    if (!hasAccess) {
       setIsLoading(false);
       return;
     }
 
-    if (!audioUrl) {
-      setIsLoading(false);
-      return;
-    }
-
-    chunk.audioUrl = audioUrl;
-    chunksRef.current[index] = chunk;
-
-    // Play the chunk
-    playChunk(index);
-
-    // Pre-fetch next chunk in background (if not browser TTS)
-    if (ttsProvider !== 'browser' && index < chunks.length - 1) {
-      const nextChunk = chunks[index + 1];
-      if (!nextChunk.audioUrl) {
-        generateChunkAudio(
-          nextChunk,
-          chunk,
-          index + 2 < chunks.length ? chunks[index + 2] : undefined,
-        )
-          .then((url) => {
-            if (url) {
-              nextChunk.audioUrl = url;
-              chunksRef.current[index + 1] = nextChunk;
-            }
-          })
-          .catch((e) => {
-            console.error('Error prefetching next chunk:', e);
-          });
-      }
-    }
-  }, [generateChunkAudio, ttsProvider, playChunk, toast]);
-
-  // Keep ref updated
-  useEffect(() => {
-    generateAndPlayChunkRef.current = generateAndPlayChunk;
-  }, [generateAndPlayChunk]);
-
-  // Track if browser TTS was paused (not just finished)
-  const browserTTSPausedRef = useRef(false);
+    playChunkWithBrowserTTS(index);
+  }, [verifyPremiumAccess, playChunkWithBrowserTTS, toast]);
 
   const play = useCallback(() => {
-    if (ttsProvider === 'browser') {
-      // Try to resume first if paused
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-        setIsPlaying(true);
-        browserTTSPausedRef.current = false;
-        return;
-      }
-      
-      // If was paused but synthesis got cancelled, restart from current chunk
-      if (browserTTSPausedRef.current) {
-        browserTTSPausedRef.current = false;
-        if (!initializeChunks()) {
-          toast({
-            title: "Texto não disponível",
-            description: "Não foi possível extrair o texto do livro.",
-            variant: "destructive",
-          });
-          return;
-        }
-        generateAndPlayChunk(browserChunkIndexRef.current);
-        return;
-      }
-      
+    // Try to resume first if paused
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+      setIsPlaying(true);
+      browserTTSPausedRef.current = false;
+      return;
+    }
+    
+    // If was paused but synthesis got cancelled, restart from current chunk
+    if (browserTTSPausedRef.current) {
+      browserTTSPausedRef.current = false;
       if (!initializeChunks()) {
         toast({
           title: "Texto não disponível",
           description: "Não foi possível extrair o texto do livro.",
           variant: "destructive",
         });
-      } else {
-        generateAndPlayChunk(browserChunkIndexRef.current);
+        return;
       }
-    } else {
-      if (audioRef.current && audioRef.current.paused) {
-        audioRef.current.play();
-        setIsPlaying(true);
-      } else if (!initializeChunks()) {
-        toast({
-          title: "Texto não disponível",
-          description: "Não foi possível extrair o texto do livro.",
-          variant: "destructive",
-        });
-      } else {
-        generateAndPlayChunk(currentChunkIndexRef.current);
-      }
+      generateAndPlayChunk(browserChunkIndexRef.current);
+      return;
     }
-  }, [initializeChunks, generateAndPlayChunk, ttsProvider, toast]);
+    
+    if (!initializeChunks()) {
+      toast({
+        title: "Texto não disponível",
+        description: "Não foi possível extrair o texto do livro.",
+        variant: "destructive",
+      });
+    } else {
+      generateAndPlayChunk(browserChunkIndexRef.current);
+    }
+  }, [initializeChunks, generateAndPlayChunk, toast]);
 
   const pause = useCallback(() => {
-    if (ttsProvider === 'browser') {
-      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-        window.speechSynthesis.pause();
-        browserTTSPausedRef.current = true;
-        setIsPlaying(false);
-      }
-    } else {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      }
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+      window.speechSynthesis.pause();
+      browserTTSPausedRef.current = true;
+      setIsPlaying(false);
     }
-  }, [ttsProvider]);
+  }, []);
 
   const togglePlayPause = useCallback(() => {
     if (isPlaying) {
@@ -893,79 +487,63 @@ export const useAudiobook = ({
     } else {
       play();
     }
-  }, [isPlaying, play, pause]);
+  }, [isPlaying, pause, play]);
 
   const stop = useCallback(() => {
-    if (ttsProvider === 'browser') {
-      window.speechSynthesis.cancel();
-      setIsPlaying(false);
-      setProgress(0);
-    } else {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-        setIsPlaying(false);
-        setProgress(0);
-      }
-    }
-    currentChunkIndexRef.current = 0;
+    window.speechSynthesis.cancel();
+    browserTTSPausedRef.current = false;
+    setIsPlaying(false);
+    setProgress(0);
     browserChunkIndexRef.current = 0;
-  }, [ttsProvider]);
+    currentChunkIndexRef.current = 0;
+    setCurrentChunk(0);
+  }, []);
 
   const seekTo = useCallback((time: number) => {
-    // Note: Browser TTS doesn't support seeking
-    if (ttsProvider !== 'browser' && audioRef.current) {
-      audioRef.current.currentTime = time;
-      setProgress(time);
-    }
-  }, [ttsProvider]);
+    // Browser TTS doesn't support seeking within utterance
+    console.log('Seeking not supported for browser TTS');
+  }, []);
 
   const changePlaybackRate = useCallback((rate: number) => {
     setPlaybackRate(rate);
-    if (ttsProvider === 'browser') {
-      // Browser TTS rate will apply on next chunk
-      // Note: speechSynthesis doesn't allow changing rate mid-speech
-      toast({
-        title: "Velocidade alterada",
-        description: "A nova velocidade será aplicada no próximo trecho",
-      });
-    } else if (audioRef.current) {
-      audioRef.current.playbackRate = rate;
-    }
-  }, [ttsProvider, toast]);
+    // Will apply to next chunk
+  }, []);
 
   const skipForward = useCallback(() => {
-    const nextIndex = currentChunkIndexRef.current + 1;
+    const nextIndex = browserChunkIndexRef.current + 1;
     if (nextIndex < chunksRef.current.length) {
-      playChunk(nextIndex);
+      window.speechSynthesis.cancel();
+      generateAndPlayChunk(nextIndex);
     }
-  }, [playChunk]);
+  }, [generateAndPlayChunk]);
 
   const skipBackward = useCallback(() => {
-    const prevIndex = currentChunkIndexRef.current - 1;
+    const prevIndex = browserChunkIndexRef.current - 1;
     if (prevIndex >= 0) {
-      playChunk(prevIndex);
+      window.speechSynthesis.cancel();
+      generateAndPlayChunk(prevIndex);
     }
-  }, [playChunk]);
+  }, [generateAndPlayChunk]);
 
   const startSleepTimer = useCallback((minutes: number) => {
+    setSleepTimer(minutes);
+    setSleepTimerRemaining(minutes * 60);
+
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
-    
-    setSleepTimer(minutes);
-    setSleepTimerRemaining(minutes * 60);
-    
+
     timerRef.current = setInterval(() => {
-      setSleepTimerRemaining(prev => {
+      setSleepTimerRemaining((prev) => {
         if (prev === null || prev <= 1) {
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+          }
           pause();
-          clearInterval(timerRef.current!);
-          timerRef.current = null;
           setSleepTimer(null);
           toast({
-            title: "Timer",
-            description: "Audiobook pausado pelo timer de sono",
+            title: "Timer encerrado",
+            description: "O audiobook foi pausado automaticamente.",
           });
           return null;
         }
@@ -977,43 +555,29 @@ export const useAudiobook = ({
   const cancelSleepTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
-      timerRef.current = null;
     }
     setSleepTimer(null);
     setSleepTimerRemaining(null);
   }, []);
 
-  // Play from a specific page
-  const playPage = useCallback(async (pageNum: number) => {
-    // Find chunk containing this page
-    const chunkIndex = chunksRef.current.findIndex(
-      c => pageNum >= c.startPage && pageNum <= c.endPage
+  const playPage = useCallback((page: number) => {
+    if (!initializeChunks()) return;
+
+    const chunks = chunksRef.current;
+    const chunkIndex = chunks.findIndex(
+      (c) => page >= c.startPage && page <= c.endPage
     );
-    
-    if (chunkIndex >= 0 && chunksRef.current[chunkIndex].audioUrl) {
-      playChunk(chunkIndex);
-    } else if (chunkIndex >= 0) {
-      // Generate on-demand
+
+    if (chunkIndex !== -1) {
+      window.speechSynthesis.cancel();
       generateAndPlayChunk(chunkIndex);
-    } else {
-      // Initialize and play first chunk
-      if (initializeChunks()) {
-        generateAndPlayChunk(0);
-      }
     }
-  }, [playChunk, initializeChunks, generateAndPlayChunk]);
+  }, [initializeChunks, generateAndPlayChunk]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        URL.revokeObjectURL(audioRef.current.src);
-      }
-      // Cleanup all chunk audio URLs
-      chunksRef.current.forEach(chunk => {
-        if (chunk.audioUrl) URL.revokeObjectURL(chunk.audioUrl);
-      });
+      window.speechSynthesis?.cancel();
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
@@ -1038,7 +602,6 @@ export const useAudiobook = ({
     hasFullText: !!fullText,
     totalChunks,
     currentChunk,
-    ttsProvider,
     enhanceNarration,
     isEnhancing,
     browserVoices,
@@ -1055,7 +618,6 @@ export const useAudiobook = ({
     startSleepTimer,
     cancelSleepTimer,
     playPage,
-    changeTtsProvider,
     setEnhanceNarration,
     setSelectedVoiceIndex,
     setVoicePitch,
