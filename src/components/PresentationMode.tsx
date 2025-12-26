@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMobileOptimization } from "@/hooks/useMobileOptimization";
-import { Document, Page, pdfjs } from "react-pdf";
+import { Document, Page } from "react-pdf";
 import {
   X,
   ChevronLeft,
@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Worker is configured globally in src/lib/pdfjsWorker.ts
 
 interface PresentationModeProps {
   fileUrl: string;

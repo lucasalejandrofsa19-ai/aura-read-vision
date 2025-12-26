@@ -2,10 +2,9 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import * as pdfjsLib from 'pdfjs-dist';
+import { pdfjs } from 'react-pdf';
 
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Worker is configured globally in src/lib/pdfjsWorker.ts
 
 const CHUNK_SIZE = 4500; // Characters per chunk (ElevenLabs limit is 5000)
 
@@ -38,7 +37,7 @@ export const useAudiobook = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+  const pdfDocRef = useRef<any>(null);
   const chunksRef = useRef<AudioChunk[]>([]);
   const currentChunkIndexRef = useRef(0);
   
@@ -68,7 +67,7 @@ export const useAudiobook = ({
       if (!pdfUrl) return;
       
       try {
-        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        const loadingTask = pdfjs.getDocument(pdfUrl);
         const pdfDoc = await loadingTask.promise;
         pdfDocRef.current = pdfDoc;
         

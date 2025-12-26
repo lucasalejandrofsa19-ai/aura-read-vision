@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Document, Page, pdfjs } from "react-pdf";
+import { Document, Page } from "react-pdf";
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Worker is configured globally in src/lib/pdfjsWorker.ts
 
 interface SelectCoverPageDialogProps {
   open: boolean;
