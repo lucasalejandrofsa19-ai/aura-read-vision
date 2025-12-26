@@ -313,19 +313,30 @@ export const useAudiobook = ({
 
         // Friendly, actionable messaging for common failures
         if (ttsProvider === 'elevenlabs') {
-          if (response.status === 401 && providerStatus === 'detected_unusual_activity') {
+          const shouldSuggestOpenAI = 
+            providerStatus === 'detected_unusual_activity' ||
+            providerStatus === 'quota_exceeded' ||
+            providerStatus === 'missing_permissions';
+
+          if (shouldSuggestOpenAI) {
+            const statusMessages: Record<string, string> = {
+              detected_unusual_activity: "O ElevenLabs bloqueou o uso por atividade incomum.",
+              quota_exceeded: "Créditos insuficientes no ElevenLabs.",
+              missing_permissions: "API key do ElevenLabs sem permissão TTS.",
+            };
+            
             toast({
               title: "ElevenLabs indisponível",
-              description:
-                "O ElevenLabs bloqueou o uso. Troque para OpenAI TTS nas configurações ou use um plano pago do ElevenLabs.",
+              description: `${statusMessages[providerStatus] || 'Erro no ElevenLabs.'} Deseja trocar para OpenAI?`,
               variant: "destructive",
-            });
-          } else if (response.status === 401 && providerStatus === 'missing_permissions') {
-            toast({
-              title: "Permissão ausente",
-              description:
-                "API key do ElevenLabs sem permissão TTS. Troque para OpenAI TTS ou atualize sua key.",
-              variant: "destructive",
+              action: (
+                <button 
+                  onClick={() => changeTtsProvider('openai')}
+                  className="ml-2 rounded bg-primary px-3 py-1 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Usar OpenAI
+                </button>
+              ),
             });
           } else {
             toast({
