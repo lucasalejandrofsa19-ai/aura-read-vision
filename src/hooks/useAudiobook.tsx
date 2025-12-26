@@ -37,6 +37,8 @@ export const useAudiobook = ({
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingProgressRef = useRef<{ page: number; position: number; rate: number } | null>(null);
   const lastBoundaryUpdateRef = useRef(0);
+  const lastBoundaryCharIndexRef = useRef(0);
+  const resumeRequestRef = useRef<{ chunkIndex: number; charIndex: number } | null>(null);
   const pdfDocRef = useRef<any>(null);
   const chunksRef = useRef<AudioChunk[]>([]);
   const currentChunkIndexRef = useRef(0);
@@ -360,59 +362,104 @@ export const useAudiobook = ({
   const playChunkWithBrowserTTS = useCallback(async (index: number) => {
     const chunks = chunksRef.current;
     if (index < 0 || index >= chunks.length) return;
-    
+
     const chunk = chunks[index];
-    
+
+    const resumeReq = resumeRequestRef.current;
+    const resumeCharIndex =
+      resumeReq && resumeReq.chunkIndex === index ? Math.max(0, resumeReq.charIndex || 0) : 0;
+    const shouldResumeWithinChunk = resumeCharIndex > 0;
+
+    // Consume resume request only when it matches this chunk
+    if (shouldResumeWithinChunk) {
+      resumeRequestRef.current = null;
+    }
+
     // Cancel any ongoing speech (some browsers need a tick between cancel -> speak)
-    if (window.speechSynthesis && (window.speechSynthesis.speaking || window.speechSynthesis.pending)) {
+    if (
+      window.speechSynthesis &&
+      (window.speechSynthesis.speaking || window.speechSynthesis.pending)
+    ) {
       window.speechSynthesis.cancel();
     }
-    
+
     browserChunkIndexRef.current = index;
     currentChunkIndexRef.current = index;
     setCurrentChunk(index + 1);
-    setCurrentAudioPage(chunk.startPage);
-    onPageChange(chunk.startPage);
+
+    if (!shouldResumeWithinChunk) {
+      setCurrentAudioPage(chunk.startPage);
+      onPageChange(chunk.startPage);
+      setProgress(0);
+      lastBoundaryCharIndexRef.current = 0;
+    }
 
     // Enhance text with AI if enabled
     const textToSpeak = await enhanceTextWithAI(chunk.text);
-    
+
     // Add subtle pauses for more natural speech
     const processedText = textToSpeak
-      .replace(/\.\s+/g, '. ... ')  // Pause after periods
-      .replace(/,\s+/g, ', .. ')     // Shorter pause after commas
+      .replace(/\.\s+/g, '. ... ') // Pause after periods
+      .replace(/,\s+/g, ', .. ') // Shorter pause after commas
       .replace(/!\s+/g, '! ... ')
       .replace(/\?\s+/g, '? ... ')
       .replace(/:\s+/g, ': .. ')
       .replace(/;\s+/g, '; .. ');
-    
-    const utterance = new SpeechSynthesisUtterance(processedText);
-    
+
+    const fullTextToSpeak = processedText;
+    const fullLen = Math.max(1, fullTextToSpeak.length);
+    const normalizedResumeCharIndex = Math.min(resumeCharIndex, fullTextToSpeak.length);
+
+    const utteranceText = shouldResumeWithinChunk
+      ? fullTextToSpeak.slice(normalizedResumeCharIndex).trimStart()
+      : fullTextToSpeak;
+
+    // If we "resume" but there's nothing left to say, just move to the next chunk
+    if (shouldResumeWithinChunk && utteranceText.length === 0) {
+      if (index < chunks.length - 1) {
+        playChunkWithBrowserTTS(index + 1);
+      } else {
+        setIsPlaying(false);
+      }
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(utteranceText);
+
     // Slightly slower for more natural sound
     utterance.rate = Math.max(0.85, playbackRate * 0.95);
     utterance.pitch = voicePitch;
     utterance.volume = 1;
     utterance.lang = 'pt-BR';
-    
+
     // Set selected voice if available
     if (browserVoices.length > 0 && browserVoices[selectedVoiceIndex]) {
       utterance.voice = browserVoices[selectedVoiceIndex];
     }
-    
-    // Estimate duration
-    const words = textToSpeak.split(/\s+/).length;
+
+    // Estimate duration (based on full chunk text, so UI doesn't jump back on resume)
+    const words = fullTextToSpeak.split(/\s+/).filter(Boolean).length;
     const estimatedDuration = (words / 150) * 60 / playbackRate;
     setDuration(estimatedDuration);
-    
-    let startTime = Date.now();
-    
+
+    const startOffsetSeconds = shouldResumeWithinChunk
+      ? (normalizedResumeCharIndex / fullLen) * estimatedDuration
+      : 0;
+
+    if (shouldResumeWithinChunk) {
+      setProgress(startOffsetSeconds);
+      lastBoundaryCharIndexRef.current = normalizedResumeCharIndex;
+    }
+
+    let startTime = Date.now() - startOffsetSeconds * 1000;
+
     utterance.onstart = () => {
       if (!isMountedRef.current) return;
-      startTime = Date.now();
+      startTime = Date.now() - startOffsetSeconds * 1000;
       setIsPlaying(true);
       setIsLoading(false);
     };
-    
+
     utterance.onend = () => {
       if (!isMountedRef.current) return;
       // Auto-play next chunk
@@ -421,12 +468,12 @@ export const useAudiobook = ({
       } else {
         setIsPlaying(false);
         toast({
-          title: "Audiobook finalizado",
-          description: "Você chegou ao final do livro!",
+          title: 'Audiobook finalizado',
+          description: 'Você chegou ao final do livro!',
         });
       }
     };
-    
+
     utterance.onerror = (event) => {
       // Ignore 'interrupted' and 'canceled' errors - these happen on pause/stop
       const errorType = (event as any).error;
@@ -434,32 +481,43 @@ export const useAudiobook = ({
         console.log('Browser TTS interrupted/canceled (normal on pause)');
         return;
       }
-      
+
       if (!isMountedRef.current) return;
       console.error('Browser TTS error:', event);
       setIsPlaying(false);
       setIsLoading(false);
       toast({
-        title: "Erro",
-        description: "Erro ao reproduzir áudio com o navegador",
-        variant: "destructive"
+        title: 'Erro',
+        description: 'Erro ao reproduzir áudio com o navegador',
+        variant: 'destructive',
       });
     };
-    
+
     // Track progress (throttle UI updates to avoid freezes)
-    utterance.onboundary = () => {
+    utterance.onboundary = (event) => {
       if (!isMountedRef.current) return;
-      
+
       const now = Date.now();
       if (now - lastBoundaryUpdateRef.current < 250) return;
       lastBoundaryUpdateRef.current = now;
 
+      const evt = event as SpeechSynthesisEvent;
+      const localCharIndex = typeof evt.charIndex === 'number' ? evt.charIndex : 0;
+      const absoluteCharIndex = shouldResumeWithinChunk
+        ? normalizedResumeCharIndex + localCharIndex
+        : localCharIndex;
+      lastBoundaryCharIndexRef.current = absoluteCharIndex;
+
       const elapsed = (now - startTime) / 1000;
       setProgress(elapsed);
 
-      const progressRatio = elapsed / estimatedDuration;
+      const progressRatio = estimatedDuration ? elapsed / estimatedDuration : 0;
       const pageRange = chunk.endPage - chunk.startPage;
-      const currentPageEstimate = Math.floor(chunk.startPage + (progressRatio * pageRange));
+      const rawPageEstimate = Math.floor(chunk.startPage + progressRatio * pageRange);
+      const currentPageEstimate = Math.min(
+        chunk.endPage,
+        Math.max(chunk.startPage, Number.isFinite(rawPageEstimate) ? rawPageEstimate : chunk.startPage)
+      );
 
       if (currentPageEstimate !== currentAudioPage && currentPageEstimate <= chunk.endPage) {
         setCurrentAudioPage(currentPageEstimate);
@@ -503,47 +561,54 @@ export const useAudiobook = ({
   }, [verifyPremiumAccess, playChunkWithBrowserTTS, toast]);
 
   const play = useCallback(() => {
-    // Try to resume first if paused
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-      setIsPlaying(true);
-      browserTTSPausedRef.current = false;
-      return;
-    }
-    
-    // If was paused but synthesis got cancelled, restart from current chunk
-    if (browserTTSPausedRef.current) {
-      browserTTSPausedRef.current = false;
-      if (!initializeChunks()) {
-        toast({
-          title: "Texto não disponível",
-          description: "Não foi possível extrair o texto do livro.",
-          variant: "destructive",
-        });
+    // Prefer native resume when we were paused
+    if (window.speechSynthesis.paused || browserTTSPausedRef.current) {
+      try {
+        window.speechSynthesis.resume();
+      } catch {
+        // ignore
+      }
+
+      // If the browser successfully resumed, keep going
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        setIsPlaying(true);
+        browserTTSPausedRef.current = false;
+        resumeRequestRef.current = null;
         return;
       }
-      generateAndPlayChunk(browserChunkIndexRef.current);
-      return;
+
+      // Some browsers cancel the utterance on pause; fall back to restarting the current chunk
+      // (playChunkWithBrowserTTS will resume from last boundary when possible)
+      browserTTSPausedRef.current = false;
     }
-    
+
     if (!initializeChunks()) {
       toast({
         title: "Texto não disponível",
         description: "Não foi possível extrair o texto do livro.",
         variant: "destructive",
       });
-    } else {
-      generateAndPlayChunk(browserChunkIndexRef.current);
+      return;
     }
+
+    generateAndPlayChunk(browserChunkIndexRef.current);
   }, [initializeChunks, generateAndPlayChunk, toast]);
 
   const pause = useCallback(() => {
     if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+      // Store a resume point for browsers that don't truly resume (they cancel on pause)
+      resumeRequestRef.current = {
+        chunkIndex: browserChunkIndexRef.current,
+        charIndex: lastBoundaryCharIndexRef.current,
+      };
+
+      saveProgress(currentAudioPage, progress, playbackRate);
+
       window.speechSynthesis.pause();
       browserTTSPausedRef.current = true;
       setIsPlaying(false);
     }
-  }, []);
+  }, [currentAudioPage, progress, playbackRate, saveProgress]);
 
   const togglePlayPause = useCallback(() => {
     if (isPlaying) {
@@ -556,6 +621,8 @@ export const useAudiobook = ({
   const stop = useCallback(() => {
     window.speechSynthesis.cancel();
     browserTTSPausedRef.current = false;
+    resumeRequestRef.current = null;
+    lastBoundaryCharIndexRef.current = 0;
     setIsPlaying(false);
     setProgress(0);
     browserChunkIndexRef.current = 0;
