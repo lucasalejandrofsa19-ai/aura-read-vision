@@ -42,3 +42,6 @@ verify_jwt = true
 [functions.openai-tts]
 verify_jwt = true
 
+[functions.enhance-narration]
+verify_jwt = true
+

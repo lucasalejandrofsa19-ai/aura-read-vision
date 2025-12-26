@@ -10,8 +10,10 @@ import {
   Loader2,
   Headphones,
   Settings2,
-  Sparkles
+  Sparkles,
+  Wand2
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
@@ -75,6 +77,8 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     totalChunks,
     currentChunk,
     ttsProvider,
+    enhanceNarration,
+    isEnhancing,
     togglePlayPause,
     stop,
     seekTo,
@@ -85,6 +89,7 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     cancelSleepTimer,
     playPage,
     changeTtsProvider,
+    setEnhanceNarration,
   } = useAudiobook({
     bookId,
     pdfUrl,
@@ -313,6 +318,29 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
                 </span>
               </div>
             )}
+          </div>
+
+          {/* AI Enhanced Narration Toggle */}
+          <div className="flex items-center justify-between gap-4 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-purple-500" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Narração aprimorada por IA</span>
+                <span className="text-xs text-muted-foreground">
+                  Reescreve o texto para soar mais fluido
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {isEnhancing && (
+                <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
+              )}
+              <Switch
+                checked={enhanceNarration}
+                onCheckedChange={setEnhanceNarration}
+                disabled={isPlaying || isProcessing}
+              />
+            </div>
           </div>
 
           {/* Stop Button */}
