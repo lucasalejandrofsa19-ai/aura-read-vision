@@ -60,6 +60,8 @@ export const useAudiobook = ({
   const [totalChunks, setTotalChunks] = useState(0);
   const [currentChunk, setCurrentChunk] = useState(0);
   const [ttsProvider, setTtsProvider] = useState<TTSProvider>('browser');
+  const [enhanceNarration, setEnhanceNarration] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
 
   // Load TTS provider preference from profile
   useEffect(() => {
@@ -255,6 +257,43 @@ export const useAudiobook = ({
   const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
   const browserChunkIndexRef = useRef(0);
 
+  // Enhance text with AI for better narration
+  const enhanceTextWithAI = useCallback(async (text: string): Promise<string> => {
+    if (!enhanceNarration) return text;
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return text;
+
+      setIsEnhancing(true);
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enhance-narration`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ text }),
+        }
+      );
+
+      if (!response.ok) {
+        console.warn('Failed to enhance narration, using original text');
+        return text;
+      }
+
+      const data = await response.json();
+      return data.enhancedText || text;
+    } catch (error) {
+      console.error('Error enhancing narration:', error);
+      return text;
+    } finally {
+      setIsEnhancing(false);
+    }
+  }, [enhanceNarration]);
+
   // Generate audio for a chunk with request stitching (for ElevenLabs/OpenAI)
   const generateChunkAudio = useCallback(async (
     chunk: AudioChunk,
@@ -318,6 +357,9 @@ export const useAudiobook = ({
         throw new Error('Not authenticated');
       }
 
+      // Enhance text with AI if enabled
+      const textToSpeak = await enhanceTextWithAI(chunk.text);
+
       // Choose endpoint based on provider
       const endpoint = ttsProvider === 'openai' 
         ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-tts`
@@ -325,9 +367,9 @@ export const useAudiobook = ({
 
       // Build request body based on provider
       const requestBody = ttsProvider === 'openai'
-        ? { text: chunk.text, voice: 'alloy' }
+        ? { text: textToSpeak, voice: 'alloy' }
         : {
-            text: chunk.text,
+            text: textToSpeak,
             previousText: prevChunk?.text?.slice(-200),
             nextText: nextChunk?.text?.slice(0, 200),
           };
@@ -464,7 +506,7 @@ export const useAudiobook = ({
       });
       return null;
     }
-  }, [toast, ttsProvider, changeTtsProvider]);
+  }, [toast, ttsProvider, changeTtsProvider, enhanceTextWithAI]);
 
   // Initialize chunks without pre-generating audio (on-demand approach)
   const initializeChunks = useCallback(() => {
@@ -483,7 +525,7 @@ export const useAudiobook = ({
   const generateAndPlayChunkRef = useRef<(index: number) => Promise<void>>();
 
   // Play chunk using browser TTS (Web Speech API)
-  const playChunkWithBrowserTTS = useCallback((index: number) => {
+  const playChunkWithBrowserTTS = useCallback(async (index: number) => {
     const chunks = chunksRef.current;
     if (index < 0 || index >= chunks.length) return;
     
@@ -499,13 +541,16 @@ export const useAudiobook = ({
     setCurrentChunk(index + 1);
     setCurrentAudioPage(chunk.startPage);
     onPageChange(chunk.startPage);
+
+    // Enhance text with AI if enabled
+    const textToSpeak = await enhanceTextWithAI(chunk.text);
     
-    const utterance = new SpeechSynthesisUtterance(chunk.text);
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.rate = playbackRate;
     utterance.lang = 'pt-BR'; // Portuguese
     
     // Estimate duration (rough: ~150 words per minute)
-    const words = chunk.text.split(/\s+/).length;
+    const words = textToSpeak.split(/\s+/).length;
     const estimatedDuration = (words / 150) * 60 / playbackRate;
     setDuration(estimatedDuration);
     
@@ -561,7 +606,7 @@ export const useAudiobook = ({
     
     speechSynthRef.current = utterance;
     window.speechSynthesis.speak(utterance);
-  }, [playbackRate, onPageChange, saveProgress, toast, currentAudioPage]);
+  }, [playbackRate, onPageChange, saveProgress, toast, currentAudioPage, enhanceTextWithAI]);
 
   // Play a specific chunk (for ElevenLabs/OpenAI)
   const playChunk = useCallback((index: number) => {
@@ -920,6 +965,8 @@ export const useAudiobook = ({
     totalChunks,
     currentChunk,
     ttsProvider,
+    enhanceNarration,
+    isEnhancing,
     play,
     pause,
     togglePlayPause,
@@ -932,5 +979,6 @@ export const useAudiobook = ({
     cancelSleepTimer,
     playPage,
     changeTtsProvider,
+    setEnhanceNarration,
   };
 };
