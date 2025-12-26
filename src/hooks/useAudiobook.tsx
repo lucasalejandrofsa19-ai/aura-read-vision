@@ -261,8 +261,35 @@ export const useAudiobook = ({
     prevChunk?: AudioChunk,
     nextChunk?: AudioChunk
   ): Promise<string | null> => {
-    // Browser TTS doesn't pre-generate audio files
+    // Browser TTS doesn't pre-generate audio files, but we still keep premium/auth gating
     if (ttsProvider === 'browser') {
+      if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+        toast({
+          title: "TTS do navegador indisponível",
+          description: "Seu navegador não suporta leitura em voz alta (Web Speech API).",
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const { data: hasAccess, error: accessError } = await supabase.rpc('has_premium_access', {
+        _user_id: session.user.id,
+      });
+
+      if (accessError || !hasAccess) {
+        toast({
+          title: "Acesso Premium",
+          description: "O audiobook está disponível apenas para assinantes premium",
+          variant: "destructive",
+        });
+        return null;
+      }
+
       return 'browser-tts'; // Placeholder to indicate browser TTS
     }
 
