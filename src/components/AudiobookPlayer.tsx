@@ -9,7 +9,8 @@ import {
   X,
   Loader2,
   Headphones,
-  Settings2
+  Settings2,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -279,27 +280,39 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
           </div>
 
           {/* TTS Provider Selection */}
-          <div className="flex items-center justify-between gap-4 p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Settings2 className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Provedor de voz</span>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-4 p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Settings2 className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Provedor de voz</span>
+              </div>
+              <Select
+                value={ttsProvider}
+                onValueChange={(value) => changeTtsProvider(value as TTSProvider)}
+                disabled={isPlaying || isProcessing}
+              >
+                <SelectTrigger className="w-32 h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {providerOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select
-              value={ttsProvider}
-              onValueChange={(value) => changeTtsProvider(value as TTSProvider)}
-              disabled={isPlaying || isProcessing}
-            >
-              <SelectTrigger className="w-32 h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {providerOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            
+            {/* Free browser TTS indicator */}
+            {ttsProvider === 'browser' && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <Sparkles className="h-4 w-4 text-green-500" />
+                <span className="text-sm text-green-600 dark:text-green-400">
+                  Modo gratuito — não consome créditos de API
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Stop Button */}
