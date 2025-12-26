@@ -190,13 +190,13 @@ export const useAudiobook = ({
 
   // Generate audio for a chunk with request stitching
   const generateChunkAudio = useCallback(async (
-    chunk: AudioChunk, 
-    prevChunk?: AudioChunk, 
+    chunk: AudioChunk,
+    prevChunk?: AudioChunk,
     nextChunk?: AudioChunk
   ): Promise<string | null> => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         throw new Error('Not authenticated');
       }
@@ -209,7 +209,7 @@ export const useAudiobook = ({
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             text: chunk.text,
             previousText: prevChunk?.text?.slice(-200),
             nextText: nextChunk?.text?.slice(0, 200),
@@ -221,19 +221,73 @@ export const useAudiobook = ({
         toast({
           title: "Acesso Premium",
           description: "O audiobook está disponível apenas para assinantes premium",
-          variant: "destructive"
+          variant: "destructive",
         });
         return null;
       }
 
       if (!response.ok) {
-        throw new Error('Failed to generate audio');
+        let serverError: any = null;
+        const contentType = response.headers.get('content-type') ?? '';
+
+        if (contentType.includes('application/json')) {
+          serverError = await response.json().catch(() => null);
+        } else {
+          const text = await response.text().catch(() => '');
+          serverError = { error: `HTTP ${response.status}`, details: text };
+        }
+
+        const edgeError = typeof serverError?.error === 'string'
+          ? serverError.error
+          : `Falha ao gerar áudio (HTTP ${response.status})`;
+
+        const rawDetails = typeof serverError?.details === 'string' ? serverError.details : '';
+
+        let providerStatus: string | null = null;
+        let providerMessage: string | null = null;
+        try {
+          const parsed = rawDetails ? JSON.parse(rawDetails) : null;
+          providerStatus = parsed?.detail?.status ?? null;
+          providerMessage = parsed?.detail?.message ?? null;
+        } catch {
+          // ignore
+        }
+
+        // Friendly, actionable messaging for common ElevenLabs failures
+        if (response.status === 401 && providerStatus === 'detected_unusual_activity') {
+          toast({
+            title: "Serviço de voz indisponível",
+            description:
+              "O ElevenLabs bloqueou o uso no Free Tier por atividade incomum. Desative VPN/proxy ou use um plano pago e gere uma nova API key.",
+            variant: "destructive",
+          });
+        } else if (response.status === 401 && providerStatus === 'missing_permissions') {
+          toast({
+            title: "Permissão ausente",
+            description:
+              "Sua API key do ElevenLabs não tem permissão de Text to Speech. Crie/atualize a key com a permissão 'text_to_speech'.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Erro ao gerar áudio",
+            description: providerMessage ? `${edgeError}: ${providerMessage}` : edgeError,
+            variant: "destructive",
+          });
+        }
+
+        return null;
       }
 
       const audioBlob = await response.blob();
       return URL.createObjectURL(audioBlob);
     } catch (error) {
       console.error('Error generating chunk audio:', error);
+      toast({
+        title: "Erro ao gerar áudio",
+        description: "Não foi possível gerar o áudio. Tente novamente.",
+        variant: "destructive",
+      });
       return null;
     }
   }, [toast]);
@@ -263,11 +317,7 @@ export const useAudiobook = ({
       
       if (!audioUrl) {
         setIsProcessing(false);
-        toast({
-          title: "Erro",
-          description: "Falha ao processar audiobook. Tente novamente.",
-          variant: "destructive"
-        });
+        // generateChunkAudio already shows a specific toast message
         return;
       }
       
