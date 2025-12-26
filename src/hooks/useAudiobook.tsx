@@ -6,7 +6,7 @@ import { pdfjs } from 'react-pdf';
 
 // Worker is configured globally in src/lib/pdfjsWorker.ts
 
-const CHUNK_SIZE = 4500; // Characters per chunk (ElevenLabs limit is 5000)
+const CHUNK_SIZE = 1000; // Reduced to work with limited ElevenLabs credits
 
 export type TTSProvider = 'elevenlabs' | 'openai';
 
