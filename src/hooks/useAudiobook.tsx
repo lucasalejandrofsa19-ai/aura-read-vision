@@ -10,7 +10,7 @@ const OPENAI_CHUNK_SIZE = 1000;
 const ELEVENLABS_SAFE_CHUNK_SIZE = 450; // helps fit quota/low-credit situations better than large chunks
 const CHUNK_SIZE = ELEVENLABS_SAFE_CHUNK_SIZE; // default splitter size (safe for ElevenLabs)
 
-export type TTSProvider = 'elevenlabs' | 'openai';
+export type TTSProvider = 'elevenlabs' | 'openai' | 'browser';
 
 interface UseAudiobookProps {
   bookId: string;
@@ -82,11 +82,19 @@ export const useAudiobook = ({
 
   // Save TTS provider preference
   const changeTtsProvider = useCallback(async (provider: TTSProvider) => {
+    // Cancel any ongoing browser speech
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    
     setTtsProvider(provider);
+    setIsPlaying(false);
     
     // Clear any cached chunks when switching providers
     chunksRef.current.forEach(chunk => {
-      if (chunk.audioUrl) URL.revokeObjectURL(chunk.audioUrl);
+      if (chunk.audioUrl && chunk.audioUrl !== 'browser-tts') {
+        URL.revokeObjectURL(chunk.audioUrl);
+      }
     });
     chunksRef.current = [];
     setTotalChunks(0);
@@ -99,9 +107,15 @@ export const useAudiobook = ({
       .update({ tts_provider: provider })
       .eq('id', user.id);
       
+    const providerNames: Record<TTSProvider, string> = {
+      elevenlabs: 'ElevenLabs',
+      openai: 'OpenAI',
+      browser: 'Navegador (gratuito)',
+    };
+    
     toast({
       title: "Provedor alterado",
-      description: `Audiobook usará ${provider === 'elevenlabs' ? 'ElevenLabs' : 'OpenAI'} para síntese de voz`,
+      description: `Audiobook usará ${providerNames[provider]} para síntese de voz`,
     });
   }, [user, toast]);
 
@@ -237,12 +251,21 @@ export const useAudiobook = ({
     return chunks;
   }, [totalPages]);
 
-  // Generate audio for a chunk with request stitching
+  // Browser TTS state
+  const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const browserChunkIndexRef = useRef(0);
+
+  // Generate audio for a chunk with request stitching (for ElevenLabs/OpenAI)
   const generateChunkAudio = useCallback(async (
     chunk: AudioChunk,
     prevChunk?: AudioChunk,
     nextChunk?: AudioChunk
   ): Promise<string | null> => {
+    // Browser TTS doesn't pre-generate audio files
+    if (ttsProvider === 'browser') {
+      return 'browser-tts'; // Placeholder to indicate browser TTS
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -313,12 +336,12 @@ export const useAudiobook = ({
 
         // Friendly, actionable messaging for common failures
         if (ttsProvider === 'elevenlabs') {
-          const shouldSuggestOpenAI = 
+          const shouldSuggestAlternative = 
             providerStatus === 'detected_unusual_activity' ||
             providerStatus === 'quota_exceeded' ||
             providerStatus === 'missing_permissions';
 
-          if (shouldSuggestOpenAI) {
+          if (shouldSuggestAlternative) {
             const statusMessages: Record<string, string> = {
               detected_unusual_activity: "O ElevenLabs bloqueou o uso por atividade incomum.",
               quota_exceeded: "Créditos insuficientes no ElevenLabs.",
@@ -327,14 +350,14 @@ export const useAudiobook = ({
             
             toast({
               title: "ElevenLabs indisponível",
-              description: `${statusMessages[providerStatus] || 'Erro no ElevenLabs.'} Deseja trocar para OpenAI?`,
+              description: `${statusMessages[providerStatus] || 'Erro no ElevenLabs.'} Use o TTS do navegador (gratuito).`,
               variant: "destructive",
               action: (
                 <button 
-                  onClick={() => changeTtsProvider('openai')}
+                  onClick={() => changeTtsProvider('browser')}
                   className="ml-2 rounded bg-primary px-3 py-1 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                 >
-                  Usar OpenAI
+                  Usar Navegador
                 </button>
               ),
             });
@@ -362,14 +385,14 @@ export const useAudiobook = ({
             toast({
               title: "Créditos OpenAI esgotados",
               description:
-                "A conta OpenAI excedeu a cota. Adicione créditos em platform.openai.com ou use ElevenLabs.",
+                "A conta OpenAI excedeu a cota. Use o TTS do navegador (gratuito) ou adicione créditos.",
               variant: "destructive",
               action: (
                 <button 
-                  onClick={() => changeTtsProvider('elevenlabs')}
+                  onClick={() => changeTtsProvider('browser')}
                   className="ml-2 rounded bg-primary px-3 py-1 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                 >
-                  Usar ElevenLabs
+                  Usar Navegador
                 </button>
               ),
             });
@@ -444,13 +467,100 @@ export const useAudiobook = ({
     playChunk(0);
   }, [fullText, isProcessing, splitIntoChunks, generateChunkAudio, toast]);
 
-  // Play a specific chunk
-  const playChunk = useCallback((index: number) => {
+  // Play chunk using browser TTS (Web Speech API)
+  const playChunkWithBrowserTTS = useCallback((index: number) => {
     const chunks = chunksRef.current;
     if (index < 0 || index >= chunks.length) return;
     
     const chunk = chunks[index];
-    if (!chunk.audioUrl) return;
+    
+    // Cancel any ongoing speech
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    
+    browserChunkIndexRef.current = index;
+    currentChunkIndexRef.current = index;
+    setCurrentChunk(index + 1);
+    setCurrentAudioPage(chunk.startPage);
+    onPageChange(chunk.startPage);
+    
+    const utterance = new SpeechSynthesisUtterance(chunk.text);
+    utterance.rate = playbackRate;
+    utterance.lang = 'pt-BR'; // Portuguese
+    
+    // Estimate duration (rough: ~150 words per minute)
+    const words = chunk.text.split(/\s+/).length;
+    const estimatedDuration = (words / 150) * 60 / playbackRate;
+    setDuration(estimatedDuration);
+    
+    let startTime = Date.now();
+    
+    utterance.onstart = () => {
+      startTime = Date.now();
+      setIsPlaying(true);
+      setIsLoading(false);
+    };
+    
+    utterance.onend = () => {
+      // Auto-play next chunk
+      if (index < chunks.length - 1) {
+        playChunkWithBrowserTTS(index + 1);
+      } else {
+        setIsPlaying(false);
+        toast({
+          title: "Audiobook finalizado",
+          description: "Você chegou ao final do livro!",
+        });
+      }
+    };
+    
+    utterance.onerror = (event) => {
+      console.error('Browser TTS error:', event);
+      setIsPlaying(false);
+      setIsLoading(false);
+      toast({
+        title: "Erro",
+        description: "Erro ao reproduzir áudio com o navegador",
+        variant: "destructive"
+      });
+    };
+    
+    // Track progress
+    utterance.onboundary = () => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      setProgress(elapsed);
+      
+      // Calculate approximate page
+      const progressRatio = elapsed / estimatedDuration;
+      const pageRange = chunk.endPage - chunk.startPage;
+      const currentPageEstimate = Math.floor(chunk.startPage + (progressRatio * pageRange));
+      
+      if (currentPageEstimate !== currentAudioPage && currentPageEstimate <= chunk.endPage) {
+        setCurrentAudioPage(currentPageEstimate);
+        onPageChange(currentPageEstimate);
+      }
+      
+      saveProgress(currentPageEstimate, elapsed, playbackRate);
+    };
+    
+    speechSynthRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+  }, [playbackRate, onPageChange, saveProgress, toast, currentAudioPage]);
+
+  // Play a specific chunk (for ElevenLabs/OpenAI)
+  const playChunk = useCallback((index: number) => {
+    // Use browser TTS flow
+    if (ttsProvider === 'browser') {
+      playChunkWithBrowserTTS(index);
+      return;
+    }
+    
+    const chunks = chunksRef.current;
+    if (index < 0 || index >= chunks.length) return;
+    
+    const chunk = chunks[index];
+    if (!chunk.audioUrl || chunk.audioUrl === 'browser-tts') return;
     
     currentChunkIndexRef.current = index;
     setCurrentChunk(index + 1);
@@ -516,23 +626,41 @@ export const useAudiobook = ({
       console.error('Error playing audio:', error);
       setIsLoading(false);
     });
-  }, [playbackRate, onPageChange, saveProgress, toast, currentAudioPage]);
+  }, [playbackRate, onPageChange, saveProgress, toast, currentAudioPage, ttsProvider, playChunkWithBrowserTTS]);
 
   const play = useCallback(() => {
-    if (audioRef.current && audioRef.current.paused) {
-      audioRef.current.play();
-      setIsPlaying(true);
-    } else if (!audioRef.current || chunksRef.current.length === 0) {
-      processFullBook();
+    if (ttsProvider === 'browser') {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+        setIsPlaying(true);
+      } else if (chunksRef.current.length === 0) {
+        processFullBook();
+      } else {
+        playChunkWithBrowserTTS(browserChunkIndexRef.current);
+      }
+    } else {
+      if (audioRef.current && audioRef.current.paused) {
+        audioRef.current.play();
+        setIsPlaying(true);
+      } else if (!audioRef.current || chunksRef.current.length === 0) {
+        processFullBook();
+      }
     }
-  }, [processFullBook]);
+  }, [processFullBook, ttsProvider, playChunkWithBrowserTTS]);
 
   const pause = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setIsPlaying(false);
+    if (ttsProvider === 'browser') {
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.pause();
+        setIsPlaying(false);
+      }
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
     }
-  }, []);
+  }, [ttsProvider]);
 
   const togglePlayPause = useCallback(() => {
     if (isPlaying) {
@@ -543,28 +671,43 @@ export const useAudiobook = ({
   }, [isPlaying, play, pause]);
 
   const stop = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+    if (ttsProvider === 'browser') {
+      window.speechSynthesis.cancel();
       setIsPlaying(false);
       setProgress(0);
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        setIsPlaying(false);
+        setProgress(0);
+      }
     }
     currentChunkIndexRef.current = 0;
-  }, []);
+    browserChunkIndexRef.current = 0;
+  }, [ttsProvider]);
 
   const seekTo = useCallback((time: number) => {
-    if (audioRef.current) {
+    // Note: Browser TTS doesn't support seeking
+    if (ttsProvider !== 'browser' && audioRef.current) {
       audioRef.current.currentTime = time;
       setProgress(time);
     }
-  }, []);
+  }, [ttsProvider]);
 
   const changePlaybackRate = useCallback((rate: number) => {
     setPlaybackRate(rate);
-    if (audioRef.current) {
+    if (ttsProvider === 'browser') {
+      // Browser TTS rate will apply on next chunk
+      // Note: speechSynthesis doesn't allow changing rate mid-speech
+      toast({
+        title: "Velocidade alterada",
+        description: "A nova velocidade será aplicada no próximo trecho",
+      });
+    } else if (audioRef.current) {
       audioRef.current.playbackRate = rate;
     }
-  }, []);
+  }, [ttsProvider, toast]);
 
   const skipForward = useCallback(() => {
     const nextIndex = currentChunkIndexRef.current + 1;

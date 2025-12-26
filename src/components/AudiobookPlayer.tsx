@@ -113,6 +113,7 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
   const providerOptions: { label: string; value: TTSProvider }[] = [
     { label: 'ElevenLabs', value: 'elevenlabs' },
     { label: 'OpenAI', value: 'openai' },
+    { label: 'Navegador (grátis)', value: 'browser' },
   ];
 
   return (
