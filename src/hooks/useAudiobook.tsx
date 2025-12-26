@@ -62,6 +62,42 @@ export const useAudiobook = ({
   const [ttsProvider, setTtsProvider] = useState<TTSProvider>('browser');
   const [enhanceNarration, setEnhanceNarration] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceIndex, setSelectedVoiceIndex] = useState<number>(0);
+  const [voicePitch, setVoicePitch] = useState(1);
+
+  // Load available browser voices
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = window.speechSynthesis?.getVoices() || [];
+      // Prefer Portuguese voices, then any available
+      const portugueseVoices = voices.filter(v => 
+        v.lang.startsWith('pt') || v.lang.includes('Portuguese')
+      );
+      const sortedVoices = [
+        ...portugueseVoices,
+        ...voices.filter(v => !portugueseVoices.includes(v))
+      ];
+      setBrowserVoices(sortedVoices);
+      
+      // Auto-select best Portuguese voice
+      if (sortedVoices.length > 0 && selectedVoiceIndex === 0) {
+        const bestVoice = sortedVoices.findIndex(v => 
+          v.lang === 'pt-BR' && v.name.toLowerCase().includes('google')
+        );
+        if (bestVoice !== -1) {
+          setSelectedVoiceIndex(bestVoice);
+        }
+      }
+    };
+
+    loadVoices();
+    window.speechSynthesis?.addEventListener('voiceschanged', loadVoices);
+    
+    return () => {
+      window.speechSynthesis?.removeEventListener('voiceschanged', loadVoices);
+    };
+  }, [selectedVoiceIndex]);
 
   // Load TTS provider preference from profile
   useEffect(() => {
@@ -547,7 +583,14 @@ export const useAudiobook = ({
     
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.rate = playbackRate;
-    utterance.lang = 'pt-BR'; // Portuguese
+    utterance.pitch = voicePitch;
+    utterance.volume = 1;
+    utterance.lang = 'pt-BR';
+    
+    // Set selected voice if available
+    if (browserVoices.length > 0 && browserVoices[selectedVoiceIndex]) {
+      utterance.voice = browserVoices[selectedVoiceIndex];
+    }
     
     // Estimate duration (rough: ~150 words per minute)
     const words = textToSpeak.split(/\s+/).length;
@@ -606,7 +649,7 @@ export const useAudiobook = ({
     
     speechSynthRef.current = utterance;
     window.speechSynthesis.speak(utterance);
-  }, [playbackRate, onPageChange, saveProgress, toast, currentAudioPage, enhanceTextWithAI]);
+  }, [playbackRate, voicePitch, browserVoices, selectedVoiceIndex, onPageChange, saveProgress, toast, currentAudioPage, enhanceTextWithAI]);
 
   // Play a specific chunk (for ElevenLabs/OpenAI)
   const playChunk = useCallback((index: number) => {
@@ -967,6 +1010,9 @@ export const useAudiobook = ({
     ttsProvider,
     enhanceNarration,
     isEnhancing,
+    browserVoices,
+    selectedVoiceIndex,
+    voicePitch,
     play,
     pause,
     togglePlayPause,
@@ -980,5 +1026,7 @@ export const useAudiobook = ({
     playPage,
     changeTtsProvider,
     setEnhanceNarration,
+    setSelectedVoiceIndex,
+    setVoicePitch,
   };
 };

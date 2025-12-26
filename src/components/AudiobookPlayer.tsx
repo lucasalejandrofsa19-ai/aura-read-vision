@@ -79,6 +79,9 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     ttsProvider,
     enhanceNarration,
     isEnhancing,
+    browserVoices,
+    selectedVoiceIndex,
+    voicePitch,
     togglePlayPause,
     stop,
     seekTo,
@@ -90,6 +93,8 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     playPage,
     changeTtsProvider,
     setEnhanceNarration,
+    setSelectedVoiceIndex,
+    setVoicePitch,
   } = useAudiobook({
     bookId,
     pdfUrl,
@@ -316,6 +321,50 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
                 <span className="text-sm text-green-600 dark:text-green-400">
                   Modo gratuito — não consome créditos de API
                 </span>
+              </div>
+            )}
+            
+            {/* Browser Voice Settings */}
+            {ttsProvider === 'browser' && browserVoices.length > 0 && (
+              <div className="space-y-3 pt-2 border-t border-border/50">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-sm text-muted-foreground">Voz</span>
+                  <Select
+                    value={selectedVoiceIndex.toString()}
+                    onValueChange={(value) => setSelectedVoiceIndex(parseInt(value))}
+                    disabled={isPlaying}
+                  >
+                    <SelectTrigger className="w-48 h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {browserVoices.map((voice, index) => (
+                        <SelectItem key={index} value={index.toString()}>
+                          {voice.name.length > 25 
+                            ? voice.name.slice(0, 25) + '...' 
+                            : voice.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-sm text-muted-foreground">Tom</span>
+                  <div className="flex items-center gap-2 w-48">
+                    <span className="text-xs text-muted-foreground">Grave</span>
+                    <Slider
+                      value={[voicePitch]}
+                      onValueChange={([value]) => setVoicePitch(value)}
+                      min={0.5}
+                      max={1.5}
+                      step={0.1}
+                      disabled={isPlaying}
+                      className="flex-1"
+                    />
+                    <span className="text-xs text-muted-foreground">Agudo</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
