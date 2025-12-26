@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Document, Page, pdfjs } from "react-pdf";
+import { pdfjs } from "react-pdf";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Worker is configured globally in src/lib/pdfjsWorker.ts
 
 export const useGenerateCover = () => {
   const [generating, setGenerating] = useState(false);

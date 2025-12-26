@@ -8,8 +8,7 @@ import { HighlightCanvas } from "@/components/HighlightCanvas";
 import type { TextItem } from "pdfjs-dist/types/src/display/api";
 import "react-pdf/dist/Page/TextLayer.css";
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// Worker is configured globally in src/lib/pdfjsWorker.ts
 
 interface PDFViewerProps {
   fileUrl: string;
