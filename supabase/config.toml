@@ -39,3 +39,6 @@ verify_jwt = true
 [functions.audiobook-tts]
 verify_jwt = true
 
+[functions.openai-tts]
+verify_jwt = true
+

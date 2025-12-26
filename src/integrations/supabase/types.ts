@@ -378,6 +378,7 @@ export type Database = {
           subscription_status: string | null
           subscription_tier: string | null
           theme_preference: string | null
+          tts_provider: string | null
           ultra_performance_mode: boolean | null
           updated_at: string | null
           zoom_sensitivity: number | null
@@ -400,6 +401,7 @@ export type Database = {
           subscription_status?: string | null
           subscription_tier?: string | null
           theme_preference?: string | null
+          tts_provider?: string | null
           ultra_performance_mode?: boolean | null
           updated_at?: string | null
           zoom_sensitivity?: number | null
@@ -422,6 +424,7 @@ export type Database = {
           subscription_status?: string | null
           subscription_tier?: string | null
           theme_preference?: string | null
+          tts_provider?: string | null
           ultra_performance_mode?: boolean | null
           updated_at?: string | null
           zoom_sensitivity?: number | null
