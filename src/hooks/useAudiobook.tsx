@@ -448,51 +448,21 @@ export const useAudiobook = ({
     }
   }, [toast, ttsProvider]);
 
-  // Process entire book
-  const processFullBook = useCallback(async () => {
-    if (!fullText || isProcessing) return;
+  // Initialize chunks without pre-generating audio (on-demand approach)
+  const initializeChunks = useCallback(() => {
+    if (!fullText) return false;
     
-    setIsProcessing(true);
-    setProcessingProgress(0);
-    
-    const chunks = splitIntoChunks(fullText);
-    chunksRef.current = chunks;
-    
-    toast({
-      title: "Processando audiobook",
-      description: `Gerando áudio para ${chunks.length} partes...`,
-    });
-
-    // Generate audio for all chunks sequentially with progress
-    for (let i = 0; i < chunks.length; i++) {
-      const audioUrl = await generateChunkAudio(
-        chunks[i],
-        i > 0 ? chunks[i - 1] : undefined,
-        i < chunks.length - 1 ? chunks[i + 1] : undefined
-      );
-      
-      if (!audioUrl) {
-        setIsProcessing(false);
-        // generateChunkAudio already shows a specific toast message
-        return;
-      }
-      
-      chunks[i].audioUrl = audioUrl;
-      setProcessingProgress(Math.round(((i + 1) / chunks.length) * 100));
+    if (chunksRef.current.length === 0) {
+      const chunks = splitIntoChunks(fullText);
+      chunksRef.current = chunks;
+      setTotalChunks(chunks.length);
     }
     
-    chunksRef.current = chunks;
-    setTotalChunks(chunks.length);
-    setIsProcessing(false);
-    
-    toast({
-      title: "Audiobook pronto",
-      description: "O audiobook foi processado com sucesso!",
-    });
-    
-    // Start playing immediately
-    playChunk(0);
-  }, [fullText, isProcessing, splitIntoChunks, generateChunkAudio, toast]);
+    return chunksRef.current.length > 0;
+  }, [fullText, splitIntoChunks]);
+
+  // Ref to hold generateAndPlayChunk to avoid circular dependency
+  const generateAndPlayChunkRef = useRef<(index: number) => Promise<void>>();
 
   // Play chunk using browser TTS (Web Speech API)
   const playChunkWithBrowserTTS = useCallback((index: number) => {
@@ -624,9 +594,16 @@ export const useAudiobook = ({
     });
 
     audio.addEventListener('ended', () => {
-      // Auto-play next chunk
+      // Auto-play next chunk (on-demand)
       if (index < chunks.length - 1) {
-        playChunk(index + 1);
+        const nextChunk = chunks[index + 1];
+        if (nextChunk.audioUrl && nextChunk.audioUrl !== 'browser-tts') {
+          // Already pre-fetched, play directly
+          playChunk(index + 1);
+        } else if (generateAndPlayChunkRef.current) {
+          // Generate on-demand
+          generateAndPlayChunkRef.current(index + 1);
+        }
       } else {
         setIsPlaying(false);
         toast({
@@ -655,25 +632,91 @@ export const useAudiobook = ({
     });
   }, [playbackRate, onPageChange, saveProgress, toast, currentAudioPage, ttsProvider, playChunkWithBrowserTTS]);
 
+  // Generate and play a chunk on-demand
+  const generateAndPlayChunk = useCallback(async (index: number) => {
+    const chunks = chunksRef.current;
+    if (index < 0 || index >= chunks.length) return;
+    
+    const chunk = chunks[index];
+    
+    // If audio already generated, just play it
+    if (chunk.audioUrl && chunk.audioUrl !== 'browser-tts') {
+      playChunk(index);
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    // Generate audio for this chunk
+    const audioUrl = await generateChunkAudio(
+      chunk,
+      index > 0 ? chunks[index - 1] : undefined,
+      index < chunks.length - 1 ? chunks[index + 1] : undefined
+    );
+    
+    if (!audioUrl) {
+      setIsLoading(false);
+      return;
+    }
+    
+    chunk.audioUrl = audioUrl;
+    chunksRef.current[index] = chunk;
+    
+    // Play the chunk
+    playChunk(index);
+    
+    // Pre-fetch next chunk in background (if not browser TTS)
+    if (ttsProvider !== 'browser' && index < chunks.length - 1) {
+      const nextChunk = chunks[index + 1];
+      if (!nextChunk.audioUrl) {
+        generateChunkAudio(
+          nextChunk,
+          chunk,
+          index + 2 < chunks.length ? chunks[index + 2] : undefined
+        ).then(url => {
+          if (url) {
+            nextChunk.audioUrl = url;
+            chunksRef.current[index + 1] = nextChunk;
+          }
+        });
+      }
+    }
+  }, [generateChunkAudio, ttsProvider, playChunk]);
+
+  // Keep ref updated
+  useEffect(() => {
+    generateAndPlayChunkRef.current = generateAndPlayChunk;
+  }, [generateAndPlayChunk]);
+
   const play = useCallback(() => {
     if (ttsProvider === 'browser') {
       if (window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
         setIsPlaying(true);
-      } else if (chunksRef.current.length === 0) {
-        processFullBook();
+      } else if (!initializeChunks()) {
+        toast({
+          title: "Texto não disponível",
+          description: "Não foi possível extrair o texto do livro.",
+          variant: "destructive",
+        });
       } else {
-        playChunkWithBrowserTTS(browserChunkIndexRef.current);
+        generateAndPlayChunk(browserChunkIndexRef.current);
       }
     } else {
       if (audioRef.current && audioRef.current.paused) {
         audioRef.current.play();
         setIsPlaying(true);
-      } else if (!audioRef.current || chunksRef.current.length === 0) {
-        processFullBook();
+      } else if (!initializeChunks()) {
+        toast({
+          title: "Texto não disponível",
+          description: "Não foi possível extrair o texto do livro.",
+          variant: "destructive",
+        });
+      } else {
+        generateAndPlayChunk(currentChunkIndexRef.current);
       }
     }
-  }, [processFullBook, ttsProvider, playChunkWithBrowserTTS]);
+  }, [initializeChunks, generateAndPlayChunk, ttsProvider, toast]);
 
   const pause = useCallback(() => {
     if (ttsProvider === 'browser') {
@@ -794,12 +837,16 @@ export const useAudiobook = ({
     
     if (chunkIndex >= 0 && chunksRef.current[chunkIndex].audioUrl) {
       playChunk(chunkIndex);
+    } else if (chunkIndex >= 0) {
+      // Generate on-demand
+      generateAndPlayChunk(chunkIndex);
     } else {
-      // Need to process first
-      setIsLoading(true);
-      await processFullBook();
+      // Initialize and play first chunk
+      if (initializeChunks()) {
+        generateAndPlayChunk(0);
+      }
     }
-  }, [playChunk, processFullBook]);
+  }, [playChunk, initializeChunks, generateAndPlayChunk]);
 
   // Cleanup on unmount
   useEffect(() => {
