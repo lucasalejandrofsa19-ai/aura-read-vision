@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAudiobook, TTSProvider } from '@/hooks/useAudiobook';
+import { useAudiobook } from '@/hooks/useAudiobook';
 import { PremiumBadge } from '@/components/PremiumBadge';
 
 interface AudiobookPlayerProps {
@@ -76,7 +76,6 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     hasFullText,
     totalChunks,
     currentChunk,
-    ttsProvider,
     enhanceNarration,
     isEnhancing,
     browserVoices,
@@ -91,7 +90,6 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     startSleepTimer,
     cancelSleepTimer,
     playPage,
-    changeTtsProvider,
     setEnhanceNarration,
     setSelectedVoiceIndex,
     setVoicePitch,
@@ -121,11 +119,6 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     { label: '2x', value: 2 },
   ];
 
-  const providerOptions: { label: string; value: TTSProvider }[] = [
-    { label: 'ElevenLabs', value: 'elevenlabs' },
-    { label: 'OpenAI', value: 'openai' },
-    { label: 'Navegador (grátis)', value: 'browser' },
-  ];
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -289,44 +282,17 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
             </div>
           </div>
 
-          {/* TTS Provider Selection */}
+          {/* Browser Voice Settings */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between gap-4 p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Settings2 className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Provedor de voz</span>
-              </div>
-              <Select
-                value={ttsProvider}
-                onValueChange={(value) => changeTtsProvider(value as TTSProvider)}
-                disabled={isPlaying || isProcessing}
-              >
-                <SelectTrigger className="w-32 h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {providerOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <Sparkles className="h-4 w-4 text-green-500" />
+              <span className="text-sm text-green-600 dark:text-green-400">
+                Modo gratuito — usa a voz do seu navegador
+              </span>
             </div>
             
-            {/* Free browser TTS indicator */}
-            {ttsProvider === 'browser' && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-                <Sparkles className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-green-600 dark:text-green-400">
-                  Modo gratuito — não consome créditos de API
-                </span>
-              </div>
-            )}
-            
-            {/* Browser Voice Settings */}
-            {ttsProvider === 'browser' && browserVoices.length > 0 && (
-              <div className="space-y-3 pt-2 border-t border-border/50">
+            {browserVoices.length > 0 && (
+              <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-sm text-muted-foreground">Voz</span>
                   <Select
