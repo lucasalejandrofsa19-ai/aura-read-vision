@@ -6,7 +6,7 @@ import { pdfjs } from 'react-pdf';
 
 // Worker is configured globally in src/lib/pdfjsWorker.ts
 
-const CHUNK_SIZE = 1000; // characters per chunk for browser TTS
+const CHUNK_SIZE = 500; // smaller chunks for more natural pauses
 
 interface UseAudiobookProps {
   bookId: string;
@@ -64,26 +64,44 @@ export const useAudiobook = ({
   const browserChunkIndexRef = useRef(0);
   const browserTTSPausedRef = useRef(false);
 
-  // Load available browser voices
+  // Load available browser voices - prioritize natural/premium voices
   useEffect(() => {
     const loadVoices = () => {
       const voices = window.speechSynthesis?.getVoices() || [];
-      const portugueseVoices = voices.filter(v => 
-        v.lang.startsWith('pt') || v.lang.includes('Portuguese')
-      );
-      const sortedVoices = [
-        ...portugueseVoices,
-        ...voices.filter(v => !portugueseVoices.includes(v))
-      ];
+      
+      // Score voices for quality - prefer natural/premium Portuguese voices
+      const scoreVoice = (v: SpeechSynthesisVoice): number => {
+        let score = 0;
+        const name = v.name.toLowerCase();
+        const lang = v.lang.toLowerCase();
+        
+        // Prefer Portuguese
+        if (lang.startsWith('pt-br')) score += 100;
+        else if (lang.startsWith('pt')) score += 80;
+        
+        // Prefer natural/premium voices
+        if (name.includes('natural')) score += 50;
+        if (name.includes('premium')) score += 50;
+        if (name.includes('enhanced')) score += 40;
+        if (name.includes('neural')) score += 40;
+        if (name.includes('wavenet')) score += 40;
+        if (name.includes('google')) score += 30;
+        if (name.includes('microsoft')) score += 25;
+        if (name.includes('female') || name.includes('feminino')) score += 10;
+        
+        // Avoid robotic/compact voices
+        if (name.includes('compact')) score -= 30;
+        if (name.includes('espeak')) score -= 40;
+        
+        return score;
+      };
+      
+      const sortedVoices = [...voices].sort((a, b) => scoreVoice(b) - scoreVoice(a));
       setBrowserVoices(sortedVoices);
       
+      // Auto-select best voice if none selected
       if (sortedVoices.length > 0 && selectedVoiceIndex === 0) {
-        const bestVoice = sortedVoices.findIndex(v => 
-          v.lang === 'pt-BR' && v.name.toLowerCase().includes('google')
-        );
-        if (bestVoice !== -1) {
-          setSelectedVoiceIndex(bestVoice);
-        }
+        setSelectedVoiceIndex(0); // Already sorted by quality
       }
     };
 
@@ -339,8 +357,19 @@ export const useAudiobook = ({
     // Enhance text with AI if enabled
     const textToSpeak = await enhanceTextWithAI(chunk.text);
     
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.rate = playbackRate;
+    // Add subtle pauses for more natural speech
+    const processedText = textToSpeak
+      .replace(/\.\s+/g, '. ... ')  // Pause after periods
+      .replace(/,\s+/g, ', .. ')     // Shorter pause after commas
+      .replace(/!\s+/g, '! ... ')
+      .replace(/\?\s+/g, '? ... ')
+      .replace(/:\s+/g, ': .. ')
+      .replace(/;\s+/g, '; .. ');
+    
+    const utterance = new SpeechSynthesisUtterance(processedText);
+    
+    // Slightly slower for more natural sound
+    utterance.rate = Math.max(0.85, playbackRate * 0.95);
     utterance.pitch = voicePitch;
     utterance.volume = 1;
     utterance.lang = 'pt-BR';
