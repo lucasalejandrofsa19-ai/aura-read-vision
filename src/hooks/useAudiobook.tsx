@@ -49,12 +49,13 @@ export const useAudiobook = ({
   const [playbackRate, setPlaybackRate] = useState(1);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [totalDuration, setTotalDuration] = useState(0);
   const [sleepTimer, setSleepTimer] = useState<number | null>(null);
   const [sleepTimerRemaining, setSleepTimerRemaining] = useState<number | null>(null);
   const [currentAudioPage, setCurrentAudioPage] = useState(currentPage);
   const [savedProgress, setSavedProgress] = useState<{ page: number; position: number } | null>(null);
   const [fullText, setFullText] = useState<string>('');
+  const [totalChunks, setTotalChunks] = useState(0);
+  const [currentChunk, setCurrentChunk] = useState(0);
 
   // Load PDF document and extract all text
   useEffect(() => {
@@ -276,6 +277,7 @@ export const useAudiobook = ({
     }
     
     chunksRef.current = chunks;
+    setTotalChunks(chunks.length);
     setIsProcessing(false);
     
     toast({
@@ -296,6 +298,7 @@ export const useAudiobook = ({
     if (!chunk.audioUrl) return;
     
     currentChunkIndexRef.current = index;
+    setCurrentChunk(index + 1);
     setCurrentAudioPage(chunk.startPage);
     onPageChange(chunk.startPage);
     
@@ -506,8 +509,8 @@ export const useAudiobook = ({
     currentAudioPage,
     savedProgress,
     hasFullText: !!fullText,
-    totalChunks: chunksRef.current.length,
-    currentChunk: currentChunkIndexRef.current + 1,
+    totalChunks,
+    currentChunk,
     play,
     pause,
     togglePlayPause,
