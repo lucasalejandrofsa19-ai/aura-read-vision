@@ -263,34 +263,52 @@ export const useAudiobook = ({
   ): Promise<string | null> => {
     // Browser TTS doesn't pre-generate audio files, but we still keep premium/auth gating
     if (ttsProvider === 'browser') {
-      if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      try {
+        if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+          toast({
+            title: "TTS do navegador indisponível",
+            description: "Seu navegador não suporta leitura em voz alta (Web Speech API).",
+            variant: "destructive",
+          });
+          return null;
+        }
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+          toast({
+            title: "Faça login",
+            description: "Entre na sua conta para usar o audiobook.",
+            variant: "destructive",
+          });
+          return null;
+        }
+
+        const { data: hasAccess, error: accessError } = await supabase.rpc('has_premium_access', {
+          _user_id: session.user.id,
+        });
+
+        if (accessError || !hasAccess) {
+          toast({
+            title: "Acesso Premium",
+            description: "O audiobook está disponível apenas para assinantes premium",
+            variant: "destructive",
+          });
+          return null;
+        }
+
+        return 'browser-tts'; // Placeholder to indicate browser TTS
+      } catch (e) {
+        console.error('Browser TTS gating error:', e);
         toast({
-          title: "TTS do navegador indisponível",
-          description: "Seu navegador não suporta leitura em voz alta (Web Speech API).",
+          title: "Erro",
+          description: "Não foi possível iniciar o TTS do navegador.",
           variant: "destructive",
         });
         return null;
       }
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Not authenticated');
-      }
-
-      const { data: hasAccess, error: accessError } = await supabase.rpc('has_premium_access', {
-        _user_id: session.user.id,
-      });
-
-      if (accessError || !hasAccess) {
-        toast({
-          title: "Acesso Premium",
-          description: "O audiobook está disponível apenas para assinantes premium",
-          variant: "destructive",
-        });
-        return null;
-      }
-
-      return 'browser-tts'; // Placeholder to indicate browser TTS
     }
 
     try {
@@ -446,7 +464,7 @@ export const useAudiobook = ({
       });
       return null;
     }
-  }, [toast, ttsProvider]);
+  }, [toast, ttsProvider, changeTtsProvider]);
 
   // Initialize chunks without pre-generating audio (on-demand approach)
   const initializeChunks = useCallback(() => {
@@ -636,35 +654,49 @@ export const useAudiobook = ({
   const generateAndPlayChunk = useCallback(async (index: number) => {
     const chunks = chunksRef.current;
     if (index < 0 || index >= chunks.length) return;
-    
+
     const chunk = chunks[index];
-    
+
     // If audio already generated, just play it
     if (chunk.audioUrl && chunk.audioUrl !== 'browser-tts') {
       playChunk(index);
       return;
     }
-    
+
     setIsLoading(true);
-    
-    // Generate audio for this chunk
-    const audioUrl = await generateChunkAudio(
-      chunk,
-      index > 0 ? chunks[index - 1] : undefined,
-      index < chunks.length - 1 ? chunks[index + 1] : undefined
-    );
-    
+
+    let audioUrl: string | null = null;
+
+    try {
+      // Generate audio for this chunk
+      audioUrl = await generateChunkAudio(
+        chunk,
+        index > 0 ? chunks[index - 1] : undefined,
+        index < chunks.length - 1 ? chunks[index + 1] : undefined,
+      );
+    } catch (error) {
+      console.error('Error generating chunk audio:', error);
+      toast({
+        title: "Erro",
+        description:
+          "Não foi possível gerar o áudio. Tente novamente ou altere o provedor de voz.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     if (!audioUrl) {
       setIsLoading(false);
       return;
     }
-    
+
     chunk.audioUrl = audioUrl;
     chunksRef.current[index] = chunk;
-    
+
     // Play the chunk
     playChunk(index);
-    
+
     // Pre-fetch next chunk in background (if not browser TTS)
     if (ttsProvider !== 'browser' && index < chunks.length - 1) {
       const nextChunk = chunks[index + 1];
@@ -672,16 +704,20 @@ export const useAudiobook = ({
         generateChunkAudio(
           nextChunk,
           chunk,
-          index + 2 < chunks.length ? chunks[index + 2] : undefined
-        ).then(url => {
-          if (url) {
-            nextChunk.audioUrl = url;
-            chunksRef.current[index + 1] = nextChunk;
-          }
-        });
+          index + 2 < chunks.length ? chunks[index + 2] : undefined,
+        )
+          .then((url) => {
+            if (url) {
+              nextChunk.audioUrl = url;
+              chunksRef.current[index + 1] = nextChunk;
+            }
+          })
+          .catch((e) => {
+            console.error('Error prefetching next chunk:', e);
+          });
       }
     }
-  }, [generateChunkAudio, ttsProvider, playChunk]);
+  }, [generateChunkAudio, ttsProvider, playChunk, toast]);
 
   // Keep ref updated
   useEffect(() => {
