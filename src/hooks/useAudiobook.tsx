@@ -6,7 +6,9 @@ import { pdfjs } from 'react-pdf';
 
 // Worker is configured globally in src/lib/pdfjsWorker.ts
 
-const CHUNK_SIZE = 1000; // Reduced to work with limited ElevenLabs credits
+const OPENAI_CHUNK_SIZE = 1000;
+const ELEVENLABS_SAFE_CHUNK_SIZE = 450; // helps fit quota/low-credit situations better than large chunks
+const CHUNK_SIZE = ELEVENLABS_SAFE_CHUNK_SIZE; // default splitter size (safe for ElevenLabs)
 
 export type TTSProvider = 'elevenlabs' | 'openai';
 
