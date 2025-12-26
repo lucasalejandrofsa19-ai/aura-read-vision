@@ -619,6 +619,13 @@ export const useAudiobook = ({
     };
     
     utterance.onerror = (event) => {
+      // Ignore 'interrupted' and 'canceled' errors - these happen on pause/stop
+      const errorType = (event as any).error;
+      if (errorType === 'interrupted' || errorType === 'canceled') {
+        console.log('Browser TTS interrupted/canceled (normal on pause)');
+        return;
+      }
+      
       console.error('Browser TTS error:', event);
       setIsPlaying(false);
       setIsLoading(false);
@@ -812,12 +819,35 @@ export const useAudiobook = ({
     generateAndPlayChunkRef.current = generateAndPlayChunk;
   }, [generateAndPlayChunk]);
 
+  // Track if browser TTS was paused (not just finished)
+  const browserTTSPausedRef = useRef(false);
+
   const play = useCallback(() => {
     if (ttsProvider === 'browser') {
+      // Try to resume first if paused
       if (window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
         setIsPlaying(true);
-      } else if (!initializeChunks()) {
+        browserTTSPausedRef.current = false;
+        return;
+      }
+      
+      // If was paused but synthesis got cancelled, restart from current chunk
+      if (browserTTSPausedRef.current) {
+        browserTTSPausedRef.current = false;
+        if (!initializeChunks()) {
+          toast({
+            title: "Texto não disponível",
+            description: "Não foi possível extrair o texto do livro.",
+            variant: "destructive",
+          });
+          return;
+        }
+        generateAndPlayChunk(browserChunkIndexRef.current);
+        return;
+      }
+      
+      if (!initializeChunks()) {
         toast({
           title: "Texto não disponível",
           description: "Não foi possível extrair o texto do livro.",
@@ -844,8 +874,9 @@ export const useAudiobook = ({
 
   const pause = useCallback(() => {
     if (ttsProvider === 'browser') {
-      if (window.speechSynthesis.speaking) {
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
         window.speechSynthesis.pause();
+        browserTTSPausedRef.current = true;
         setIsPlaying(false);
       }
     } else {
