@@ -59,7 +59,7 @@ export const useAudiobook = ({
   const [fullText, setFullText] = useState<string>('');
   const [totalChunks, setTotalChunks] = useState(0);
   const [currentChunk, setCurrentChunk] = useState(0);
-  const [ttsProvider, setTtsProvider] = useState<TTSProvider>('elevenlabs');
+  const [ttsProvider, setTtsProvider] = useState<TTSProvider>('browser');
 
   // Load TTS provider preference from profile
   useEffect(() => {
