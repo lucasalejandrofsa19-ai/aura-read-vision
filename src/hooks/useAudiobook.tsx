@@ -299,10 +299,12 @@ export const useAudiobook = ({
 
         let providerStatus: string | null = null;
         let providerMessage: string | null = null;
+        let providerCode: string | null = null;
         try {
           const parsed = rawDetails ? JSON.parse(rawDetails) : null;
           providerStatus = parsed?.detail?.status ?? null;
-          providerMessage = parsed?.detail?.message ?? null;
+          providerMessage = parsed?.detail?.message ?? parsed?.error?.message ?? null;
+          providerCode = parsed?.error?.code ?? null;
         } catch {
           // ignore
         }
@@ -331,11 +333,20 @@ export const useAudiobook = ({
             });
           }
         } else {
-          toast({
-            title: "Erro OpenAI TTS",
-            description: providerMessage ? `${edgeError}: ${providerMessage}` : edgeError,
-            variant: "destructive",
-          });
+          if (response.status === 401 && providerCode === 'invalid_api_key') {
+            toast({
+              title: "Chave OpenAI inválida",
+              description:
+                "Atualize a chave OPENAI_API_KEY no backend e tente novamente.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Erro OpenAI TTS",
+              description: providerMessage ? `${edgeError}: ${providerMessage}` : edgeError,
+              variant: "destructive",
+            });
+          }
         }
 
         return null;
