@@ -98,13 +98,32 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error('ElevenLabs API error:', response.status, errorText);
 
+      // Parse to extract status for better frontend handling
+      let parsedError: any = {};
+      try {
+        parsedError = JSON.parse(errorText);
+      } catch {
+        parsedError = { detail: { message: errorText } };
+      }
+
+      const status = parsedError?.detail?.status;
+      const message = parsedError?.detail?.message || 'Unknown error';
+
+      // Map common ElevenLabs errors to clearer responses
+      let mappedStatus = response.status;
+      if (status === 'quota_exceeded') {
+        mappedStatus = 402; // Payment Required
+      }
+
       return new Response(
         JSON.stringify({
           error: `ElevenLabs API error: ${response.status}`,
           details: errorText,
+          status_code: status,
+          message,
         }),
         {
-          status: response.status,
+          status: mappedStatus,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
