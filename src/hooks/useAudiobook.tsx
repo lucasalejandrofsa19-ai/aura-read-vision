@@ -39,6 +39,15 @@ export const useAudiobook = ({
   const lastBoundaryUpdateRef = useRef(0);
   const lastBoundaryCharIndexRef = useRef(0);
   const resumeRequestRef = useRef<{ chunkIndex: number; charIndex: number } | null>(null);
+
+  // Used to prevent "auto-next chunk" when we intentionally pause/stop/cancel speech
+  const cancelReasonRef = useRef<null | 'pause' | 'stop' | 'skip' | 'internal'>(null);
+
+  // Fallback resume tracking (for browsers that don't emit reliable boundary events)
+  const ttsStartTimeRef = useRef<number | null>(null);
+  const ttsEstimatedDurationRef = useRef(0);
+  const ttsFullLenRef = useRef(0);
+
   const pdfDocRef = useRef<any>(null);
   const chunksRef = useRef<AudioChunk[]>([]);
   const currentChunkIndexRef = useRef(0);
@@ -380,6 +389,7 @@ export const useAudiobook = ({
       window.speechSynthesis &&
       (window.speechSynthesis.speaking || window.speechSynthesis.pending)
     ) {
+      cancelReasonRef.current = 'internal';
       window.speechSynthesis.cancel();
     }
 
@@ -411,7 +421,7 @@ export const useAudiobook = ({
     const normalizedResumeCharIndex = Math.min(resumeCharIndex, fullTextToSpeak.length);
 
     const utteranceText = shouldResumeWithinChunk
-      ? fullTextToSpeak.slice(normalizedResumeCharIndex).trimStart()
+      ? fullTextToSpeak.slice(normalizedResumeCharIndex)
       : fullTextToSpeak;
 
     // If we "resume" but there's nothing left to say, just move to the next chunk
@@ -451,6 +461,9 @@ export const useAudiobook = ({
     const estimatedDuration = (words / 150) * 60 / playbackRate;
     setDuration(estimatedDuration);
 
+    ttsEstimatedDurationRef.current = estimatedDuration;
+    ttsFullLenRef.current = fullLen;
+
     const startOffsetSeconds = shouldResumeWithinChunk
       ? (normalizedResumeCharIndex / fullLen) * estimatedDuration
       : 0;
@@ -461,10 +474,13 @@ export const useAudiobook = ({
     }
 
     let startTime = Date.now() - startOffsetSeconds * 1000;
+    ttsStartTimeRef.current = startTime;
 
     utterance.onstart = () => {
       if (!isMountedRef.current) return;
+      cancelReasonRef.current = null;
       startTime = Date.now() - startOffsetSeconds * 1000;
+      ttsStartTimeRef.current = startTime;
       queueMicrotask(() => {
         if (isMountedRef.current) {
           setIsPlaying(true);
@@ -475,6 +491,13 @@ export const useAudiobook = ({
 
     utterance.onend = () => {
       if (!isMountedRef.current) return;
+
+      const cancelReason = cancelReasonRef.current;
+      if (cancelReason) {
+        cancelReasonRef.current = null;
+        return;
+      }
+
       // Auto-play next chunk - defer to avoid React queue issues
       if (index < chunks.length - 1) {
         queueMicrotask(() => {
@@ -499,6 +522,7 @@ export const useAudiobook = ({
       // Ignore 'interrupted' and 'canceled' errors - these happen on pause/stop
       const errorType = (event as any).error;
       if (errorType === 'interrupted' || errorType === 'canceled') {
+        cancelReasonRef.current = null;
         console.log('Browser TTS interrupted/canceled (normal on pause)');
         return;
       }
@@ -593,6 +617,8 @@ export const useAudiobook = ({
   const play = useCallback(() => {
     // Prefer native resume when we were paused
     if (window.speechSynthesis.paused || browserTTSPausedRef.current) {
+      cancelReasonRef.current = null;
+
       try {
         window.speechSynthesis.resume();
       } catch {
@@ -626,13 +652,25 @@ export const useAudiobook = ({
 
   const pause = useCallback(() => {
     if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+      cancelReasonRef.current = 'pause';
+
+      const now = Date.now();
+      const startTime = ttsStartTimeRef.current;
+      const estimatedDuration = ttsEstimatedDurationRef.current;
+      const fullLen = ttsFullLenRef.current;
+
+      const elapsed = startTime ? (now - startTime) / 1000 : progress;
+      const ratio = estimatedDuration ? Math.min(1, Math.max(0, elapsed / estimatedDuration)) : 0;
+      const estimatedCharIndex = fullLen ? Math.floor(ratio * fullLen) : 0;
+      const charIndex = Math.max(lastBoundaryCharIndexRef.current || 0, estimatedCharIndex);
+
       // Store a resume point for browsers that don't truly resume (they cancel on pause)
       resumeRequestRef.current = {
         chunkIndex: browserChunkIndexRef.current,
-        charIndex: lastBoundaryCharIndexRef.current,
+        charIndex,
       };
 
-      saveProgress(currentAudioPage, progress, playbackRate);
+      saveProgress(currentAudioPage, elapsed, playbackRate);
 
       window.speechSynthesis.pause();
       browserTTSPausedRef.current = true;
@@ -649,10 +687,12 @@ export const useAudiobook = ({
   }, [isPlaying, pause, play]);
 
   const stop = useCallback(() => {
+    cancelReasonRef.current = 'stop';
     window.speechSynthesis.cancel();
     browserTTSPausedRef.current = false;
     resumeRequestRef.current = null;
     lastBoundaryCharIndexRef.current = 0;
+    ttsStartTimeRef.current = null;
     setIsPlaying(false);
     setProgress(0);
     browserChunkIndexRef.current = 0;
@@ -673,6 +713,7 @@ export const useAudiobook = ({
   const skipForward = useCallback(() => {
     const nextIndex = browserChunkIndexRef.current + 1;
     if (nextIndex < chunksRef.current.length) {
+      cancelReasonRef.current = 'skip';
       window.speechSynthesis.cancel();
       generateAndPlayChunk(nextIndex);
     }
@@ -681,6 +722,7 @@ export const useAudiobook = ({
   const skipBackward = useCallback(() => {
     const prevIndex = browserChunkIndexRef.current - 1;
     if (prevIndex >= 0) {
+      cancelReasonRef.current = 'skip';
       window.speechSynthesis.cancel();
       generateAndPlayChunk(prevIndex);
     }
@@ -730,6 +772,7 @@ export const useAudiobook = ({
     );
 
     if (chunkIndex !== -1) {
+      cancelReasonRef.current = 'skip';
       window.speechSynthesis.cancel();
       generateAndPlayChunk(chunkIndex);
     }
