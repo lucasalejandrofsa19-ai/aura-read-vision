@@ -311,5 +311,22 @@ All colors MUST be HSL.
   .drawing-mode .react-pdf__Page__textContent {
     pointer-events: none !important;
   }
+
+  /* Spoken text highlight animation - exception to global animation disable */
+  .react-pdf__Page__textContent mark {
+    animation: spoken-pulse 1.5s ease-in-out infinite !important;
+    animation-duration: 1.5s !important;
+  }
+
+  @keyframes spoken-pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.85;
+      transform: scale(1.02);
+    }
+  }
 }
 

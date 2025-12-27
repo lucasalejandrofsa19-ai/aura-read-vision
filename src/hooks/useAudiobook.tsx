@@ -71,6 +71,10 @@ export const useAudiobook = ({
   const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState<number>(0);
   const [voicePitch, setVoicePitch] = useState(1);
+  
+  // Sync reading state
+  const [syncEnabled, setSyncEnabled] = useState(false);
+  const [currentSpokenText, setCurrentSpokenText] = useState<string>('');
 
   // Browser TTS refs
   const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -567,6 +571,24 @@ export const useAudiobook = ({
         Math.max(chunk.startPage, Number.isFinite(rawPageEstimate) ? rawPageEstimate : chunk.startPage)
       );
 
+      // Extract currently spoken words for sync highlighting
+      if (syncEnabled && evt.name === 'word') {
+        const chunkText = chunk.text;
+        // Get ~30 chars around current position for highlighting
+        const snippetStart = Math.max(0, absoluteCharIndex - 5);
+        const snippetEnd = Math.min(chunkText.length, absoluteCharIndex + 40);
+        const spokenSnippet = chunkText.slice(snippetStart, snippetEnd).trim();
+        // Extract first 2-4 words from the snippet
+        const words = spokenSnippet.split(/\s+/).slice(0, 4).join(' ');
+        if (words.length > 3) {
+          queueMicrotask(() => {
+            if (isMountedRef.current) {
+              setCurrentSpokenText(words);
+            }
+          });
+        }
+      }
+
       // Defer state updates to avoid React queue issues
       queueMicrotask(() => {
         if (!isMountedRef.current) return;
@@ -574,7 +596,9 @@ export const useAudiobook = ({
 
         if (currentPageEstimate !== currentAudioPage && currentPageEstimate <= chunk.endPage) {
           setCurrentAudioPage(currentPageEstimate);
-          onPageChange(currentPageEstimate);
+          if (syncEnabled) {
+            onPageChange(currentPageEstimate);
+          }
         }
 
         saveProgress(currentPageEstimate, elapsed, playbackRate);
@@ -589,7 +613,7 @@ export const useAudiobook = ({
         window.speechSynthesis.speak(utterance);
       }
     }, 0);
-  }, [playbackRate, voicePitch, browserVoices, selectedVoiceIndex, onPageChange, saveProgress, toast, currentAudioPage, enhanceTextWithAI]);
+  }, [playbackRate, voicePitch, browserVoices, selectedVoiceIndex, onPageChange, saveProgress, toast, currentAudioPage, enhanceTextWithAI, syncEnabled]);
 
   // Generate and play chunk
   const generateAndPlayChunk = useCallback(async (index: number) => {
@@ -811,6 +835,8 @@ export const useAudiobook = ({
     browserVoices,
     selectedVoiceIndex,
     voicePitch,
+    syncEnabled,
+    currentSpokenText,
     play,
     pause,
     togglePlayPause,
@@ -825,5 +851,6 @@ export const useAudiobook = ({
     setEnhanceNarration,
     setSelectedVoiceIndex,
     setVoicePitch,
+    setSyncEnabled,
   };
 };

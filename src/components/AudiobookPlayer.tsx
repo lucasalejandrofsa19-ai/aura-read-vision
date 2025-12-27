@@ -11,7 +11,8 @@ import {
   Headphones,
   Settings2,
   Sparkles,
-  Wand2
+  Wand2,
+  BookOpen
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,8 @@ interface AudiobookPlayerProps {
   currentPage: number;
   onPageChange: (page: number) => void;
   bookTitle: string;
+  onSpokenTextChange?: (text: string) => void;
+  onSyncEnabledChange?: (enabled: boolean) => void;
 }
 
 const formatTime = (seconds: number): string => {
@@ -58,6 +61,8 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
   currentPage,
   onPageChange,
   bookTitle,
+  onSpokenTextChange,
+  onSyncEnabledChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -81,6 +86,8 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     browserVoices,
     selectedVoiceIndex,
     voicePitch,
+    syncEnabled,
+    currentSpokenText,
     togglePlayPause,
     stop,
     seekTo,
@@ -93,6 +100,7 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     setEnhanceNarration,
     setSelectedVoiceIndex,
     setVoicePitch,
+    setSyncEnabled,
   } = useAudiobook({
     bookId,
     pdfUrl,
@@ -101,6 +109,20 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
     currentPage,
     onPageChange,
   });
+
+  // Notify parent about spoken text changes
+  React.useEffect(() => {
+    if (syncEnabled && currentSpokenText) {
+      onSpokenTextChange?.(currentSpokenText);
+    } else if (!syncEnabled || !isPlaying) {
+      onSpokenTextChange?.('');
+    }
+  }, [currentSpokenText, syncEnabled, isPlaying, onSpokenTextChange]);
+
+  // Notify parent about sync state changes
+  React.useEffect(() => {
+    onSyncEnabledChange?.(syncEnabled);
+  }, [syncEnabled, onSyncEnabledChange]);
 
   const timerOptions = [
     { label: '15 min', value: 15 },
@@ -431,6 +453,23 @@ export const AudiobookPlayer: React.FC<AudiobookPlayerProps> = ({
                 disabled={isPlaying || isProcessing}
               />
             </div>
+          </div>
+
+          {/* Sync Reading Toggle */}
+          <div className="flex items-center justify-between gap-4 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-blue-500" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Sincronizar leitura</span>
+                <span className="text-xs text-muted-foreground">
+                  Destaca o trecho atual e acompanha a página
+                </span>
+              </div>
+            </div>
+            <Switch
+              checked={syncEnabled}
+              onCheckedChange={setSyncEnabled}
+            />
           </div>
 
           {/* Stop Button */}

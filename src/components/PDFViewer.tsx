@@ -27,6 +27,7 @@ interface PDFViewerProps {
   }>;
   onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string }) => void;
   isDrawingMode?: boolean;
+  spokenText?: string;
 }
 
 export const PDFViewer = ({ 
@@ -40,6 +41,7 @@ export const PDFViewer = ({
   highlights = [],
   onHighlightDrawn,
   isDrawingMode = false,
+  spokenText = '',
 }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
@@ -414,6 +416,17 @@ export const PDFViewer = ({
               }
               customTextRenderer={(textItem) => {
                 const text = 'str' in textItem ? textItem.str : '';
+                
+                // Priority: spoken text highlight (audiobook sync)
+                if (spokenText && spokenText.length > 3) {
+                  const normalizedText = text.toLowerCase();
+                  const normalizedSpoken = spokenText.toLowerCase();
+                  if (normalizedText.includes(normalizedSpoken) || normalizedSpoken.includes(normalizedText)) {
+                    return `<mark style="background: linear-gradient(135deg, hsl(210 100% 60% / 0.4), hsl(210 100% 70% / 0.3)); color: inherit; padding: 2px 4px; border-radius: 3px; animation: pulse 1.5s ease-in-out infinite;">${text}</mark>`;
+                  }
+                }
+                
+                // Secondary: search term highlight
                 if (searchTerm && text.toLowerCase().includes(searchTerm)) {
                   return text
                     .split(new RegExp(`(${searchTerm})`, 'gi'))
