@@ -62,6 +62,7 @@ const Reader = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
+  const [spokenText, setSpokenText] = useState('');
   const mobileConfig = useMobileOptimization();
 
   const { highlights, allHighlights, addHighlight, deleteHighlight } = useHighlights(id || "", currentPage);
@@ -468,6 +469,7 @@ const Reader = () => {
               currentPage={currentPage}
               onPageChange={handlePageChange}
               bookTitle={book.title}
+              onSpokenTextChange={setSpokenText}
             />
           </div>
 
@@ -603,6 +605,7 @@ const Reader = () => {
               currentPage={currentPage}
               onPageChange={handlePageChange}
               bookTitle={book.title}
+              onSpokenTextChange={setSpokenText}
             />
           </div>
         </div>
@@ -629,6 +632,7 @@ const Reader = () => {
             }))}
             onHighlightDrawn={handleHighlightDrawn}
             isDrawingMode={isDrawingMode}
+            spokenText={spokenText}
             bookmarkIndicator={
               bookmarkedPage === currentPage && !mobileConfig.shouldReduceAnimations ? (
                 <motion.div
