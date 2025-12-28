@@ -377,6 +377,7 @@ export type Database = {
           stripe_customer_id: string | null
           subscription_status: string | null
           subscription_tier: string | null
+          sync_reading_enabled: boolean | null
           theme_preference: string | null
           tts_provider: string | null
           ultra_performance_mode: boolean | null
@@ -400,6 +401,7 @@ export type Database = {
           stripe_customer_id?: string | null
           subscription_status?: string | null
           subscription_tier?: string | null
+          sync_reading_enabled?: boolean | null
           theme_preference?: string | null
           tts_provider?: string | null
           ultra_performance_mode?: boolean | null
@@ -423,6 +425,7 @@ export type Database = {
           stripe_customer_id?: string | null
           subscription_status?: string | null
           subscription_tier?: string | null
+          sync_reading_enabled?: boolean | null
           theme_preference?: string | null
           tts_provider?: string | null
           ultra_performance_mode?: boolean | null
