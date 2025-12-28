@@ -73,8 +73,41 @@ export const useAudiobook = ({
   const [voicePitch, setVoicePitch] = useState(1);
   
   // Sync reading state
-  const [syncEnabled, setSyncEnabled] = useState(false);
+  const [syncEnabled, setSyncEnabledState] = useState(false);
   const [currentSpokenText, setCurrentSpokenText] = useState<string>('');
+  const [syncPreferenceLoaded, setSyncPreferenceLoaded] = useState(false);
+
+  // Load sync preference from profile
+  useEffect(() => {
+    if (!user) return;
+
+    const loadSyncPreference = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('sync_reading_enabled')
+        .eq('id', user.id)
+        .single();
+
+      if (data && data.sync_reading_enabled !== null) {
+        setSyncEnabledState(data.sync_reading_enabled);
+      }
+      setSyncPreferenceLoaded(true);
+    };
+
+    loadSyncPreference();
+  }, [user]);
+
+  // Save sync preference to profile
+  const setSyncEnabled = useCallback(async (enabled: boolean) => {
+    setSyncEnabledState(enabled);
+    
+    if (!user) return;
+    
+    await supabase
+      .from('profiles')
+      .update({ sync_reading_enabled: enabled })
+      .eq('id', user.id);
+  }, [user]);
 
   // Browser TTS refs
   const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
