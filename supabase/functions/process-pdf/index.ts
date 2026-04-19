@@ -31,6 +31,20 @@ serve(async (req) => {
       throw new Error("No cover image provided");
     }
 
+    // Verify the requesting user owns this book before any mutation
+    const { data: bookRow, error: ownerError } = await supabaseClient
+      .from("books")
+      .select("user_id")
+      .eq("id", bookId)
+      .maybeSingle();
+
+    if (ownerError || !bookRow || bookRow.user_id !== user.id) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+      );
+    }
+
     // Decode base64 image
     const base64Data = coverImage.split(',')[1];
     const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
@@ -62,7 +76,8 @@ serve(async (req) => {
     const { error: updateError } = await supabaseClient
       .from("books")
       .update({ cover_image_url: coverImageUrl })
-      .eq("id", bookId);
+      .eq("id", bookId)
+      .eq("user_id", user.id);
 
     if (updateError) {
       console.error("Update error:", updateError);
