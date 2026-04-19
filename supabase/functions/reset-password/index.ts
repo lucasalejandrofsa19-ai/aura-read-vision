@@ -38,8 +38,19 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Generate password reset link
-    const redirectTo = `${req.headers.get("origin")}/reset-password`;
+    // Generate password reset link — use a server-controlled base URL
+    // to prevent open-redirect/phishing via attacker-supplied Origin header.
+    const allowedOrigins = [
+      Deno.env.get("APP_BASE_URL"),
+      "https://aura-read-vision.lovable.app",
+    ].filter(Boolean) as string[];
+
+    const requestOrigin = req.headers.get("origin") ?? "";
+    const baseUrl = allowedOrigins.includes(requestOrigin)
+      ? requestOrigin
+      : (Deno.env.get("APP_BASE_URL") ?? "https://aura-read-vision.lovable.app");
+
+    const redirectTo = `${baseUrl}/reset-password`;
     const { data, error: resetError } = await supabase.auth.admin.generateLink({
       type: "recovery",
       email: email,
