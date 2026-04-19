@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createCanvas } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
+import { extractText, getDocumentProxy } from "https://esm.sh/unpdf@0.12.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -87,77 +87,27 @@ serve(async (req) => {
 
     console.log(`[PROCESS-PREMIUM-PDF] Starting PDF processing...`);
 
-    // Processar PDF usando pdf-parse
-    const pdfParse = await import('https://esm.sh/pdf-parse@1.1.1');
-    const pdfData = await pdfParse.default(uint8Array);
+    // Extract text + page count using unpdf (Deno-compatible, no native deps)
+    const pdfDoc = await getDocumentProxy(uint8Array);
+    const numPages = pdfDoc.numPages;
+    const { text } = await extractText(pdfDoc, { mergePages: true });
+    const fullText = Array.isArray(text) ? text.join("\n") : text;
 
-    console.log(`[PROCESS-PREMIUM-PDF] PDF processed - Pages: ${pdfData.numpages}, Text length: ${pdfData.text.length}`);
+    console.log(`[PROCESS-PREMIUM-PDF] PDF processed - Pages: ${numPages}, Text length: ${fullText.length}`);
 
-    // Extrair apenas uma amostra do texto para não sobrecarregar o banco
-    const extractedText = pdfData.text.substring(0, 50000); // Primeiros 50k caracteres
+    // Limit stored text to avoid bloating the database
+    const extractedText = fullText.substring(0, 50000);
 
-    // Gerar thumbnail da primeira página
-    let coverImageUrl = null;
-    try {
-      console.log(`[PROCESS-PREMIUM-PDF] Generating thumbnail...`);
-      
-      const pdfjsLib = await import('https://esm.sh/pdfjs-dist@4.0.379/build/pdf.min.mjs');
-      
-      // Load PDF document
-      const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
-      const pdfDoc = await loadingTask.promise;
-      
-      // Get first page
-      const page = await pdfDoc.getPage(1);
-      const viewport = page.getViewport({ scale: 1.5 });
-      
-      // Create canvas
-      const canvas = createCanvas(viewport.width, viewport.height);
-      const context = canvas.getContext('2d');
-      
-      // Render page to canvas
-      await page.render({
-        canvasContext: context,
-        viewport: viewport,
-      }).promise;
-      
-      // Convert canvas to PNG buffer
-      const thumbnailBuffer = canvas.toBuffer('image/png');
-      
-      // Upload thumbnail to storage
-      const coverFileName = `${bookId}-cover.png`;
-      const { error: uploadError } = await supabaseClient.storage
-        .from('premium-covers')
-        .upload(coverFileName, thumbnailBuffer, {
-          contentType: 'image/png',
-          upsert: true,
-        });
-      
-      if (uploadError) {
-        console.error(`[PROCESS-PREMIUM-PDF] Error uploading thumbnail:`, uploadError);
-      } else {
-        const { data: urlData } = supabaseClient.storage
-          .from('premium-covers')
-          .getPublicUrl(coverFileName);
-        coverImageUrl = urlData.publicUrl;
-        console.log(`[PROCESS-PREMIUM-PDF] Thumbnail uploaded: ${coverImageUrl}`);
-      }
-    } catch (thumbError) {
-      console.error(`[PROCESS-PREMIUM-PDF] Error generating thumbnail:`, thumbError);
-      // Continue without thumbnail
-    }
+    // Note: Cover thumbnail is generated client-side after upload
+    // (Deno edge runtime cannot run the canvas native module).
 
     // Atualizar registro do livro
-    const updateData: any = {
-      total_pages: pdfData.numpages,
+    const updateData: Record<string, unknown> = {
+      total_pages: numPages,
       extracted_text: extractedText,
       updated_at: new Date().toISOString(),
     };
-    
-    if (coverImageUrl) {
-      updateData.cover_image_url = coverImageUrl;
-    }
-    
+
     const { error: updateError } = await supabaseClient
       .from('premium_books')
       .update(updateData)
