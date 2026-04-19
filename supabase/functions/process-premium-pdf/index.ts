@@ -123,7 +123,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         bookId,
-        totalPages: pdfData.numpages,
+        totalPages: numPages,
         textLength: extractedText.length,
       }),
       {
