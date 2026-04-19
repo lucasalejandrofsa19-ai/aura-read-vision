@@ -105,12 +105,12 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
             try {
               toast.loading("Gerando capa da primeira página...", { id: "cover-generation" });
               
-              // Get the PDF URL
-              const { data: urlData } = supabase.storage
+              // Get a signed URL for the PDF (private bucket)
+              const { data: signedData } = await supabase.storage
                 .from("pdfs")
-                .getPublicUrl(fileName);
-              
-              await generateCover(bookData.id, urlData.publicUrl, 1);
+                .createSignedUrl(fileName, 60 * 60);
+
+              await generateCover(bookData.id, signedData?.signedUrl ?? "", 1);
               toast.success("✨ Capa gerada com sucesso!", { id: "cover-generation" });
               queryClient.invalidateQueries({ queryKey: ["books", user.id] });
             } catch (error) {
