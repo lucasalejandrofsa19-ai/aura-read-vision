@@ -20,18 +20,20 @@ export const useBooks = () => {
 
       if (error) throw error;
       
-      // Add public URLs for PDFs
-      const booksWithUrls = (data || []).map(book => {
-        const { data: urlData } = supabase.storage
-          .from("pdfs")
-          .getPublicUrl(book.file_path);
-        
-        return {
-          ...book,
-          file_url: urlData.publicUrl
-        };
-      });
-      
+      // Generate signed URLs for PDFs (private bucket)
+      const booksWithUrls = await Promise.all(
+        (data || []).map(async (book) => {
+          const { data: signedData } = await supabase.storage
+            .from("pdfs")
+            .createSignedUrl(book.file_path, 60 * 60); // 1 hour
+
+          return {
+            ...book,
+            file_url: signedData?.signedUrl ?? ""
+          };
+        })
+      );
+
       return booksWithUrls;
     },
     enabled: !!user,
