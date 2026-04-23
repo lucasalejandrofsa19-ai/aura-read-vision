@@ -104,9 +104,11 @@ export const PDFViewer = ({
     return () => document.removeEventListener("mouseup", handleMouseUp);
   }, [onTextSelect]);
 
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
+  const onDocumentLoadSuccess = (pdfDoc: any) => {
+    setNumPages(pdfDoc.numPages);
     setPageTexts(new Map());
+    // Reuse the same loaded document for highlight/search text extraction
+    pdfDocRef.current = pdfDoc;
   };
 
   const extractTextFromPage = async (pageNum: number, pdfDoc: any) => {
@@ -126,8 +128,12 @@ export const PDFViewer = ({
 
   const extractTextFromCoordinates = async (coords: { x: number; y: number; width: number; height: number }) => {
     try {
-      const loadingTask = pdfjs.getDocument(fileUrl);
-      const pdfDoc = await loadingTask.promise;
+      // Reuse the cached pdfDoc loaded by react-pdf instead of re-downloading
+      const pdfDoc = pdfDocRef.current;
+      if (!pdfDoc) {
+        console.warn("[extractText] PDF document not yet loaded");
+        return '';
+      }
       const page = await pdfDoc.getPage(pageNumber);
       const textContent = await page.getTextContent();
       // Use scale 1 viewport para coordenadas normalizadas
