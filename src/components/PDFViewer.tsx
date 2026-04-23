@@ -5,7 +5,16 @@ import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2 } from "lucide-re
 import { PDFSearchBar } from "@/components/PDFSearchBar";
 import { usePDFPrefetch } from "@/hooks/usePDFPrefetch";
 import { HighlightCanvas } from "@/components/HighlightCanvas";
-import type { TextItem } from "pdfjs-dist/types/src/display/api";
+// Type for PDF text items - using any to avoid deep import issues
+interface PDFTextItem {
+  str?: string;
+  hasEOL?: boolean;
+  dir?: string;
+  width?: number;
+  height?: number;
+  transform?: number[];
+  fontName?: string;
+}
 import "react-pdf/dist/Page/TextLayer.css";
 
 // Worker is configured globally in src/lib/pdfjsWorker.ts
