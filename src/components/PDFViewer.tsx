@@ -200,8 +200,13 @@ export const PDFViewer = ({
     const results: number[] = [];
 
     try {
-      const loadingTask = pdfjs.getDocument(fileUrl);
-      const pdfDoc = await loadingTask.promise;
+      // Reuse cached pdfDoc instead of re-downloading the PDF
+      const pdfDoc = pdfDocRef.current;
+      if (!pdfDoc) {
+        console.warn("[search] PDF document not yet loaded");
+        setIsSearching(false);
+        return;
+      }
 
       for (let i = 1; i <= numPages; i++) {
         let text = pageTexts.get(i);
