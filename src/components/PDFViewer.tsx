@@ -111,7 +111,7 @@ export const PDFViewer = ({
       const page = await pdfDoc.getPage(pageNum);
       const textContent = await page.getTextContent();
       const text = textContent.items
-        .map((item: TextItem) => ('str' in item ? item.str : ''))
+        .map((item: PDFTextItem) => ('str' in item ? item.str : ''))
         .join(' ')
         .toLowerCase();
       return text;
