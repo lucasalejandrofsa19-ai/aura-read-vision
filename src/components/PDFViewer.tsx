@@ -67,6 +67,9 @@ export const PDFViewer = ({
   const [pageTexts, setPageTexts] = useState<Map<number, string>>(new Map());
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
   const [currentPageTextItems, setCurrentPageTextItems] = useState<any[]>([]);
+  // Cache the loaded pdfDoc proxy so we don't re-download the entire PDF
+  // on every highlight or search (major OOM cause on Android Chrome).
+  const pdfDocRef = useRef<any>(null);
 
   // Prefetch hook para carregar próximas páginas
   const { isPageCached, cache } = usePDFPrefetch({
