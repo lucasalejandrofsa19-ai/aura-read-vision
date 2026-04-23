@@ -67,6 +67,9 @@ export const PDFViewer = ({
   const [pageTexts, setPageTexts] = useState<Map<number, string>>(new Map());
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
   const [currentPageTextItems, setCurrentPageTextItems] = useState<any[]>([]);
+  // Cache the loaded pdfDoc proxy so we don't re-download the entire PDF
+  // on every highlight or search (major OOM cause on Android Chrome).
+  const pdfDocRef = useRef<any>(null);
 
   // Prefetch hook para carregar próximas páginas
   const { isPageCached, cache } = usePDFPrefetch({
@@ -101,9 +104,11 @@ export const PDFViewer = ({
     return () => document.removeEventListener("mouseup", handleMouseUp);
   }, [onTextSelect]);
 
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
+  const onDocumentLoadSuccess = (pdfDoc: any) => {
+    setNumPages(pdfDoc.numPages);
     setPageTexts(new Map());
+    // Reuse the same loaded document for highlight/search text extraction
+    pdfDocRef.current = pdfDoc;
   };
 
   const extractTextFromPage = async (pageNum: number, pdfDoc: any) => {
@@ -123,8 +128,12 @@ export const PDFViewer = ({
 
   const extractTextFromCoordinates = async (coords: { x: number; y: number; width: number; height: number }) => {
     try {
-      const loadingTask = pdfjs.getDocument(fileUrl);
-      const pdfDoc = await loadingTask.promise;
+      // Reuse the cached pdfDoc loaded by react-pdf instead of re-downloading
+      const pdfDoc = pdfDocRef.current;
+      if (!pdfDoc) {
+        console.warn("[extractText] PDF document not yet loaded");
+        return '';
+      }
       const page = await pdfDoc.getPage(pageNumber);
       const textContent = await page.getTextContent();
       // Use scale 1 viewport para coordenadas normalizadas
@@ -191,8 +200,13 @@ export const PDFViewer = ({
     const results: number[] = [];
 
     try {
-      const loadingTask = pdfjs.getDocument(fileUrl);
-      const pdfDoc = await loadingTask.promise;
+      // Reuse cached pdfDoc instead of re-downloading the PDF
+      const pdfDoc = pdfDocRef.current;
+      if (!pdfDoc) {
+        console.warn("[search] PDF document not yet loaded");
+        setIsSearching(false);
+        return;
+      }
 
       for (let i = 1; i <= numPages; i++) {
         let text = pageTexts.get(i);
