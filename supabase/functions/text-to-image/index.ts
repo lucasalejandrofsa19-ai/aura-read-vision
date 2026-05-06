@@ -169,22 +169,22 @@ serve(async (req) => {
       throw new Error(`Failed to upload image: ${uploadError.message}`);
     }
 
-    // Get public URL
-    const { data: urlData } = supabaseClient.storage
+    // Bucket is private — generate a signed URL for immediate display
+    const { data: signedData } = await supabaseClient.storage
       .from('highlight-images')
-      .getPublicUrl(fileName);
+      .createSignedUrl(fileName, 60 * 60);
 
-    const publicUrl = urlData.publicUrl;
+    const displayUrl = signedData?.signedUrl ?? '';
 
     console.log('[TEXT-TO-IMAGE] Image uploaded, saving to database...');
 
-    // Save to database
+    // Save to database (store path; sign on read)
     const { error: dbError } = await supabaseClient
       .from('highlight_images')
       .insert({
         highlight_id: highlightId,
         user_id: user.id,
-        image_url: publicUrl,
+        image_url: fileName,
         storage_path: fileName,
         style: style,
         prompt: imagePrompt,
@@ -204,7 +204,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        imageUrl: publicUrl,
+        imageUrl: displayUrl,
         prompt: imagePrompt,
         style: style,
       }),
