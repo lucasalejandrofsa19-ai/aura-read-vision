@@ -100,20 +100,16 @@ const Profile = () => {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(filePath);
-
-      // Update profile
+      // Persist the bare path; sign on read
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: filePath })
         .eq("id", user.id);
 
       if (updateError) throw updateError;
 
-      setAvatarUrl(publicUrl);
+      const signed = await getSignedStorageUrl("avatars", filePath);
+      setAvatarUrl(signed);
       toast.success("Avatar atualizado com sucesso!");
     } catch (error) {
       captureError(error, { context: "upload_avatar" });
