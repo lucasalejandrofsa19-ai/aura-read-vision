@@ -154,16 +154,11 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(fileName);
-
-      // Update book record
+      // Persist bare path; signed URL is generated on read
       const table = isPremiumBook ? "premium_books" : "books";
       const { error: updateError } = await supabase
         .from(table)
-        .update({ cover_image_url: urlData.publicUrl })
+        .update({ cover_image_url: fileName })
         .eq("id", book.id);
 
       if (updateError) throw updateError;
