@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { BookOpen, Trash2, RefreshCw, Images, ImagePlus, FileImage } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { getSignedStorageUrl } from "@/lib/storageUrl";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 import { useState, useRef } from "react";
@@ -154,16 +155,11 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(fileName);
-
-      // Update book record
+      // Persist bare path; signed URL is generated on read
       const table = isPremiumBook ? "premium_books" : "books";
       const { error: updateError } = await supabase
         .from(table)
-        .update({ cover_image_url: urlData.publicUrl })
+        .update({ cover_image_url: fileName })
         .eq("id", book.id);
 
       if (updateError) throw updateError;
@@ -226,7 +222,13 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
           .order("created_at", { ascending: false });
 
         if (imagesError) throw imagesError;
-        setGalleryImages(images || []);
+        const signed = await Promise.all(
+          (images || []).map(async (img: any) => ({
+            ...img,
+            image_url: await getSignedStorageUrl("highlight-images", img.storage_path || img.image_url),
+          }))
+        );
+        setGalleryImages(signed);
       } else {
         setGalleryImages([]);
       }

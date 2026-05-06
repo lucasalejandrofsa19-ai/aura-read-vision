@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
+import { getSignedStorageUrl } from "@/lib/storageUrl";
 import { ArrowLeft, Camera, Save, CreditCard, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,7 +57,8 @@ const Profile = () => {
       if (error) throw error;
 
       setFullName(data?.full_name || "");
-      setAvatarUrl(data?.avatar_url || "");
+      const signed = await getSignedStorageUrl("avatars", data?.avatar_url);
+      setAvatarUrl(signed);
     } catch (error) {
       captureError(error, { context: "load_profile" });
     }
@@ -99,20 +101,16 @@ const Profile = () => {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(filePath);
-
-      // Update profile
+      // Persist the bare path; sign on read
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: filePath })
         .eq("id", user.id);
 
       if (updateError) throw updateError;
 
-      setAvatarUrl(publicUrl);
+      const signed = await getSignedStorageUrl("avatars", filePath);
+      setAvatarUrl(signed);
       toast.success("Avatar atualizado com sucesso!");
     } catch (error) {
       captureError(error, { context: "upload_avatar" });

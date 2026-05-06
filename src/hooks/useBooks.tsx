@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { getSignedStorageUrl } from "@/lib/storageUrl";
 
 export const useBooks = () => {
   const { user } = useAuth();
@@ -27,8 +28,11 @@ export const useBooks = () => {
             .from("pdfs")
             .createSignedUrl(book.file_path, 60 * 60); // 1 hour
 
+          const cover_image_url = await getSignedStorageUrl("premium-covers", book.cover_image_url);
+
           return {
             ...book,
+            cover_image_url,
             file_url: signedData?.signedUrl ?? ""
           };
         })
@@ -59,8 +63,10 @@ export const useBooks = () => {
             .from("premium-pdfs")
             .createSignedUrl(book.file_path, 60 * 60); // 1 hour
 
+          const cover_image_url = await getSignedStorageUrl("premium-covers", book.cover_image_url);
           return {
             ...book,
+            cover_image_url,
             file_url: signedData?.signedUrl ?? ""
           };
         })

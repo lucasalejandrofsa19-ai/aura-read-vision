@@ -64,12 +64,8 @@ serve(async (req) => {
       throw uploadError;
     }
 
-    // Get public URL
-    const { data: urlData } = supabaseClient.storage
-      .from("premium-covers")
-      .getPublicUrl(coverFileName);
-    
-    const coverImageUrl = urlData.publicUrl;
+    // Bucket is private — store the path; client signs on read
+    const coverImageUrl = coverFileName;
     console.log("Cover uploaded:", coverImageUrl);
 
     // Update book with cover
