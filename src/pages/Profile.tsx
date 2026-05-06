@@ -56,7 +56,8 @@ const Profile = () => {
       if (error) throw error;
 
       setFullName(data?.full_name || "");
-      setAvatarUrl(data?.avatar_url || "");
+      const signed = await getSignedStorageUrl("avatars", data?.avatar_url);
+      setAvatarUrl(signed);
     } catch (error) {
       captureError(error, { context: "load_profile" });
     }
