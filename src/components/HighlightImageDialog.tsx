@@ -75,7 +75,13 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setGallery(data || []);
+      const signed = await Promise.all(
+        (data || []).map(async (img) => ({
+          ...img,
+          image_url: await getSignedStorageUrl('highlight-images', img.storage_path || img.image_url),
+        }))
+      );
+      setGallery(signed);
     } catch (error) {
       console.error('Error loading gallery:', error);
     } finally {
