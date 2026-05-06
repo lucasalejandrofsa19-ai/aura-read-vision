@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { BookOpen, Trash2, RefreshCw, Images, ImagePlus, FileImage } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { getSignedStorageUrl } from "@/lib/storageUrl";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 import { useState, useRef } from "react";
