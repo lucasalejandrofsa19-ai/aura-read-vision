@@ -221,7 +221,13 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
           .order("created_at", { ascending: false });
 
         if (imagesError) throw imagesError;
-        setGalleryImages(images || []);
+        const signed = await Promise.all(
+          (images || []).map(async (img: any) => ({
+            ...img,
+            image_url: await getSignedStorageUrl("highlight-images", img.storage_path || img.image_url),
+          }))
+        );
+        setGalleryImages(signed);
       } else {
         setGalleryImages([]);
       }
