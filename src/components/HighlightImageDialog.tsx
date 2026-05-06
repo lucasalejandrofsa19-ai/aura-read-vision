@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
+import { getSignedStorageUrl } from "@/lib/storageUrl";
 import { useUserData } from "@/hooks/useUserData";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
