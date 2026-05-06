@@ -28,8 +28,11 @@ export const useBooks = () => {
             .from("pdfs")
             .createSignedUrl(book.file_path, 60 * 60); // 1 hour
 
+          const cover_image_url = await getSignedStorageUrl("premium-covers", book.cover_image_url);
+
           return {
             ...book,
+            cover_image_url,
             file_url: signedData?.signedUrl ?? ""
           };
         })
