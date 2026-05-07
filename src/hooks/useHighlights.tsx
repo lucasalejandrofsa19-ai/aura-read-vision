@@ -1,7 +1,8 @@
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useGamification } from "@/hooks/useGamification";
 
 export interface Highlight {
   id: string;
@@ -22,6 +23,7 @@ export interface Highlight {
 export const useHighlights = (bookId: string, pageNumber: number) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { awardActionXP } = useGamification();
 
   // Query para highlights da página atual
   const { data: highlights = [], isLoading } = useQuery({
@@ -78,6 +80,7 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
     onSuccess: ({ data, text }) => {
       queryClient.invalidateQueries({ queryKey: ["highlights", bookId, pageNumber] });
       queryClient.invalidateQueries({ queryKey: ["highlights", bookId, "all"] });
+      awardActionXP("highlight").catch(() => {});
       
       // Copiar texto automaticamente para área de transferência e mostrar preview
       if (text && text.trim()) {
