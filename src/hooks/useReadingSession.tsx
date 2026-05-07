@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { captureError } from '@/lib/sentry';
+import { useGamification } from '@/hooks/useGamification';
 
 export const useReadingSession = (bookId: string) => {
   const { user } = useAuth();
+  const { registerPagesRead } = useGamification();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [startPage, setStartPage] = useState<number>(1);
   const sessionStartTime = useRef<Date | null>(null);
@@ -58,6 +60,11 @@ export const useReadingSession = (bookId: string) => {
         .eq('id', sessionId);
 
       if (error) throw error;
+
+      // Award gamification XP for pages read in this session
+      if (pagesRead > 0) {
+        registerPagesRead(pagesRead).catch(() => {});
+      }
 
       setSessionId(null);
       sessionStartTime.current = null;
