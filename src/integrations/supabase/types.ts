@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          icon: string
+          name: string
+          requirement_type: string
+          requirement_value: number
+          sort_order: number
+          xp_reward: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description: string
+          icon?: string
+          name: string
+          requirement_type: string
+          requirement_value: number
+          sort_order?: number
+          xp_reward?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          name?: string
+          requirement_type?: string
+          requirement_value?: number
+          sort_order?: number
+          xp_reward?: number
+        }
+        Relationships: []
+      }
       audiobook_progress: {
         Row: {
           book_id: string
@@ -154,6 +190,78 @@ export type Database = {
           total_pages?: number | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      daily_progress: {
+        Row: {
+          created_at: string
+          date: string
+          goal_met: boolean
+          id: string
+          pages_read: number
+          updated_at: string
+          user_id: string
+          xp_earned: number
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          goal_met?: boolean
+          id?: string
+          pages_read?: number
+          updated_at?: string
+          user_id: string
+          xp_earned?: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          goal_met?: boolean
+          id?: string
+          pages_read?: number
+          updated_at?: string
+          user_id?: string
+          xp_earned?: number
+        }
+        Relationships: []
+      }
+      gamification_stats: {
+        Row: {
+          created_at: string
+          current_streak: number
+          daily_goal_pages: number
+          freezes_available: number
+          last_activity_date: string | null
+          level: number
+          longest_streak: number
+          updated_at: string
+          user_id: string
+          xp_total: number
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          daily_goal_pages?: number
+          freezes_available?: number
+          last_activity_date?: string | null
+          level?: number
+          longest_streak?: number
+          updated_at?: string
+          user_id: string
+          xp_total?: number
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          daily_goal_pages?: number
+          freezes_available?: number
+          last_activity_date?: string | null
+          level?: number
+          longest_streak?: number
+          updated_at?: string
+          user_id?: string
+          xp_total?: number
         }
         Relationships: []
       }
@@ -512,6 +620,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_achievements: {
+        Row: {
+          achievement_code: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_code: string
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_code?: string
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_code_fkey"
+            columns: ["achievement_code"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -604,7 +741,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_action_xp: { Args: { _action: string }; Returns: Json }
+      check_achievements: { Args: { _user_id: string }; Returns: undefined }
       check_book_limit: { Args: { user_id: string }; Returns: boolean }
+      compute_level: { Args: { xp: number }; Returns: number }
       has_premium_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -616,6 +756,8 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_ip_blocked: { Args: { check_ip: string }; Returns: boolean }
       is_ip_whitelisted: { Args: { check_ip: string }; Returns: boolean }
+      register_pages_read: { Args: { _pages: number }; Returns: Json }
+      set_daily_goal: { Args: { _pages: number }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "premium" | "free"
