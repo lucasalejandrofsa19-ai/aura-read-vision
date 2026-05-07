@@ -18,6 +18,7 @@ import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { LazyLoadWrapper } from "@/components/LazyLoadWrapper";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PremiumBadge } from "@/components/PremiumBadge";
+import { DailyGoalCard } from "@/components/gamification/DailyGoalCard";
 
 // Memoizar BookCard para evitar re-renders desnecessários
 const MemoizedBookCard = memo(BookCard);
@@ -204,6 +205,9 @@ const Library = () => {
           />
         </div>
       </motion.header>
+
+      {/* Gamification daily goal */}
+      <DailyGoalCard />
 
       {/* Books grid */}
       {isLoading ? (
