@@ -26,6 +26,9 @@ const Summary = () => {
   const [bookTitle, setBookTitle] = useState<string>("");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [hasPremium, setHasPremium] = useState(false);
+  const [bookSummary, setBookSummary] = useState<string>("");
+  const [bookSummaryIsPreview, setBookSummaryIsPreview] = useState(false);
+  const [generatingBookSummary, setGeneratingBookSummary] = useState(false);
 
   useEffect(() => {
     loadHighlights();
