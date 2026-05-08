@@ -28,6 +28,7 @@ import AdminFeedback from "./pages/AdminFeedback";
 import AdminAuditLogs from "./pages/AdminAuditLogs";
 import AdminBlockedIPs from "./pages/AdminBlockedIPs";
 import Achievements from "./pages/Achievements";
+import AcademicSummary from "./pages/AcademicSummary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
