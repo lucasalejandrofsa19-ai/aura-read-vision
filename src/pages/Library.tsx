@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, memo, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -123,6 +123,15 @@ const Library = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="aura-soft transition-aura"
+              onClick={() => navigate("/resumo-academico")}
+              title="Resumo Acadêmico"
+            >
+              <GraduationCap className="w-5 h-5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
