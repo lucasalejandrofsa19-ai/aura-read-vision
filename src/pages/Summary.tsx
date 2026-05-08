@@ -26,6 +26,9 @@ const Summary = () => {
   const [bookTitle, setBookTitle] = useState<string>("");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [hasPremium, setHasPremium] = useState(false);
+  const [bookSummary, setBookSummary] = useState<string>("");
+  const [bookSummaryIsPreview, setBookSummaryIsPreview] = useState(false);
+  const [generatingBookSummary, setGeneratingBookSummary] = useState(false);
 
   useEffect(() => {
     loadHighlights();
@@ -64,6 +67,38 @@ const Summary = () => {
       toast.error("Erro ao carregar destaques");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generateBookSummary = async (preview: boolean = false) => {
+    if (!preview && !hasPremium) {
+      toast.error("Recurso premium. Assine um plano para resumos completos do livro com IA.");
+      navigate("/pricing");
+      return;
+    }
+    setGeneratingBookSummary(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("summarize-book", {
+        body: { book_id: id, preview },
+      });
+      if (error) {
+        if (error.message?.includes("429")) toast.error("Limite de requisições excedido. Tente novamente mais tarde.");
+        else if (error.message?.includes("402")) toast.error("Créditos insuficientes.");
+        else if (error.message?.includes("403") || error.message?.includes("premium")) {
+          toast.error("Recurso premium. Assine um plano.");
+          navigate("/pricing");
+        } else toast.error("Erro ao gerar resumo do livro");
+        console.error(error);
+        return;
+      }
+      setBookSummary(data.summary);
+      setBookSummaryIsPreview(data.isPreview || false);
+      toast.success(preview ? "Preview do livro gerado!" : "Resumo completo do livro gerado!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao gerar resumo do livro");
+    } finally {
+      setGeneratingBookSummary(false);
     }
   };
 
@@ -217,6 +252,80 @@ const Summary = () => {
           </div>
         </div>
       </motion.header>
+
+      {/* Full Book AI Summary Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-4xl mx-auto mb-8"
+      >
+        <div className="glass rounded-xl p-6 border-l-4 border-accent">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-accent" />
+              Resumo Completo do Livro (IA)
+            </h2>
+            {!bookSummary && (
+              <div className="flex flex-col gap-2">
+                {hasPremium ? (
+                  <Button onClick={() => generateBookSummary(false)} disabled={generatingBookSummary} className="gap-2">
+                    {generatingBookSummary ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" />Analisando livro...</>
+                    ) : (
+                      <><Sparkles className="w-4 h-4" />Gerar Resumo Completo</>
+                    )}
+                  </Button>
+                ) : (
+                  <>
+                    <Button onClick={() => generateBookSummary(true)} disabled={generatingBookSummary} variant="outline" className="gap-2">
+                      {generatingBookSummary ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" />Gerando...</>
+                      ) : (
+                        <><Sparkles className="w-4 h-4" />Ver Preview Grátis</>
+                      )}
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">Resumo completo do livro disponível no plano premium</p>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+          {bookSummary ? (
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              {bookSummaryIsPreview && (
+                <div className="mb-4 p-4 bg-accent/10 border border-accent/20 rounded-lg">
+                  <p className="text-sm font-semibold text-accent mb-2 flex items-center gap-2">
+                    <Lock className="w-4 h-4" />Preview Gratuito
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Este é um preview. Assine premium para o resumo completo com ideias principais, pontos importantes e lições.
+                  </p>
+                </div>
+              )}
+              <p className="text-foreground leading-relaxed whitespace-pre-wrap">{bookSummary}</p>
+              {bookSummaryIsPreview ? (
+                <div className="mt-6 p-6 bg-gradient-to-r from-accent/10 to-primary/10 border border-accent/20 rounded-lg text-center">
+                  <h3 className="font-semibold mb-2">✨ Quer o resumo completo do livro?</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Análise profunda com ideias principais, pontos mais importantes, lições e citações memoráveis.
+                  </p>
+                  <Button onClick={() => navigate("/pricing")} className="gap-2">
+                    <Sparkles className="w-4 h-4" />Ver Planos Premium
+                  </Button>
+                </div>
+              ) : (
+                <Button onClick={() => generateBookSummary(false)} disabled={generatingBookSummary} variant="outline" size="sm" className="mt-4">
+                  {generatingBookSummary ? (<><Loader2 className="w-4 h-4 animate-spin mr-2" />Gerando...</>) : "Gerar Novamente"}
+                </Button>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              A IA analisa o livro inteiro e destaca as <strong>partes mais importantes</strong>: ideias principais, pontos-chave, lições e citações memoráveis.
+            </p>
+          )}
+        </div>
+      </motion.div>
 
       {/* AI Summary Section */}
       {highlights.length > 0 && (
