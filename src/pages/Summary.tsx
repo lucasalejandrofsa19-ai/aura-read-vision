@@ -70,6 +70,38 @@ const Summary = () => {
     }
   };
 
+  const generateBookSummary = async (preview: boolean = false) => {
+    if (!preview && !hasPremium) {
+      toast.error("Recurso premium. Assine um plano para resumos completos do livro com IA.");
+      navigate("/pricing");
+      return;
+    }
+    setGeneratingBookSummary(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("summarize-book", {
+        body: { book_id: id, preview },
+      });
+      if (error) {
+        if (error.message?.includes("429")) toast.error("Limite de requisições excedido. Tente novamente mais tarde.");
+        else if (error.message?.includes("402")) toast.error("Créditos insuficientes.");
+        else if (error.message?.includes("403") || error.message?.includes("premium")) {
+          toast.error("Recurso premium. Assine um plano.");
+          navigate("/pricing");
+        } else toast.error("Erro ao gerar resumo do livro");
+        console.error(error);
+        return;
+      }
+      setBookSummary(data.summary);
+      setBookSummaryIsPreview(data.isPreview || false);
+      toast.success(preview ? "Preview do livro gerado!" : "Resumo completo do livro gerado!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao gerar resumo do livro");
+    } finally {
+      setGeneratingBookSummary(false);
+    }
+  };
+
   const generateSummary = async (preview: boolean = false) => {
     if (highlights.length === 0) {
       toast.error("Não há destaques para resumir");
