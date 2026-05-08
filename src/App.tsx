@@ -59,6 +59,7 @@ const AppContent = () => {
       <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
       <Route path="/admin/blocked-ips" element={<AdminBlockedIPs />} />
       <Route path="/conquistas" element={<Achievements />} />
+      <Route path="/resumo-academico" element={<AcademicSummary />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </SentryRoutes>
