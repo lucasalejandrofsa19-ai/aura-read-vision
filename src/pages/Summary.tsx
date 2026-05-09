@@ -46,6 +46,44 @@ const Summary = () => {
   const [bookSummary, setBookSummary] = useState<string>("");
   const [bookSummaryIsPreview, setBookSummaryIsPreview] = useState(false);
   const [generatingBookSummary, setGeneratingBookSummary] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftText, setDraftText] = useState<string>("");
+  const [originalTexts, setOriginalTexts] = useState<Record<string, string>>({});
+
+  const startEdit = (h: Highlight) => {
+    setEditingId(h.id);
+    setDraftText(h.text || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setDraftText("");
+  };
+
+  const saveEdit = (h: Highlight) => {
+    const trimmed = draftText.trim();
+    if (!trimmed) {
+      toast.error("O trecho não pode ficar vazio");
+      return;
+    }
+    setOriginalTexts((prev) => (prev[h.id] ? prev : { ...prev, [h.id]: h.text || "" }));
+    setHighlights((prev) => prev.map((item) => (item.id === h.id ? { ...item, text: trimmed } : item)));
+    setEditingId(null);
+    setDraftText("");
+    toast.success("Trecho ajustado. Gere o resumo novamente para recalcular.");
+  };
+
+  const resetEdit = (h: Highlight) => {
+    const original = originalTexts[h.id];
+    if (original === undefined) return;
+    setHighlights((prev) => prev.map((item) => (item.id === h.id ? { ...item, text: original } : item)));
+    setOriginalTexts((prev) => {
+      const next = { ...prev };
+      delete next[h.id];
+      return next;
+    });
+    toast.success("Texto original restaurado");
+  };
 
   useEffect(() => {
     loadHighlights();
