@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Download, Share2, Sparkles, Loader2, FileDown, Lock } from "lucide-react";
+import { ArrowLeft, Download, Share2, Sparkles, Loader2, FileDown, Lock, Pencil, Check, X, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Highlight } from "@/hooks/useHighlights";
@@ -45,6 +46,44 @@ const Summary = () => {
   const [bookSummary, setBookSummary] = useState<string>("");
   const [bookSummaryIsPreview, setBookSummaryIsPreview] = useState(false);
   const [generatingBookSummary, setGeneratingBookSummary] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftText, setDraftText] = useState<string>("");
+  const [originalTexts, setOriginalTexts] = useState<Record<string, string>>({});
+
+  const startEdit = (h: Highlight) => {
+    setEditingId(h.id);
+    setDraftText(h.text || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setDraftText("");
+  };
+
+  const saveEdit = (h: Highlight) => {
+    const trimmed = draftText.trim();
+    if (!trimmed) {
+      toast.error("O trecho não pode ficar vazio");
+      return;
+    }
+    setOriginalTexts((prev) => (prev[h.id] ? prev : { ...prev, [h.id]: h.text || "" }));
+    setHighlights((prev) => prev.map((item) => (item.id === h.id ? { ...item, text: trimmed } : item)));
+    setEditingId(null);
+    setDraftText("");
+    toast.success("Trecho ajustado. Gere o resumo novamente para recalcular.");
+  };
+
+  const resetEdit = (h: Highlight) => {
+    const original = originalTexts[h.id];
+    if (original === undefined) return;
+    setHighlights((prev) => prev.map((item) => (item.id === h.id ? { ...item, text: original } : item)));
+    setOriginalTexts((prev) => {
+      const next = { ...prev };
+      delete next[h.id];
+      return next;
+    });
+    toast.success("Texto original restaurado");
+  };
 
   useEffect(() => {
     loadHighlights();
@@ -541,45 +580,104 @@ const Summary = () => {
 
       {/* Highlights list */}
       <div className="max-w-4xl mx-auto space-y-4">
-        <h2 className="text-lg font-semibold mb-4">Seus Destaques</h2>
-        {highlights.map((highlight, index) => (
-          <motion.div
-            key={highlight.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.05 }}
-            className="glass rounded-xl p-6 border-l-4 hover:aura-soft transition-aura cursor-pointer"
-            style={{ borderLeftColor: highlight.color }}
-          >
-            <div className="flex justify-between items-start mb-3">
-              <span className="text-xs text-muted-foreground">Página {highlight.page_number}</span>
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: highlight.color }}
-              />
-            </div>
-            {highlight.text ? (
-              <div>
-                <p className="text-foreground leading-relaxed mb-4">{highlight.text}</p>
-                
-                <HighlightImageDialog 
-                  text={highlight.text} 
-                  highlightId={highlight.id}
-                  trigger={
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      Gerar Imagem
-                    </Button>
-                  }
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <h2 className="text-lg font-semibold">Seus Destaques</h2>
+          {Object.keys(originalTexts).length > 0 && highlights.length > 0 && (
+            <Button
+              size="sm"
+              onClick={() => generateSummary(hasPremium ? false : true)}
+              disabled={generatingSummary}
+              className="gap-2"
+            >
+              {generatingSummary ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              Recalcular resumo com trechos editados
+            </Button>
+          )}
+        </div>
+        {highlights.map((highlight, index) => {
+          const isEditing = editingId === highlight.id;
+          const wasEdited = originalTexts[highlight.id] !== undefined;
+          return (
+            <motion.div
+              key={highlight.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="glass rounded-xl p-6 border-l-4 transition-aura"
+              style={{ borderLeftColor: highlight.color }}
+            >
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Página {highlight.page_number}</span>
+                  {wasEdited && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium">
+                      editado
+                    </span>
+                  )}
+                </div>
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: highlight.color }}
                 />
               </div>
-            ) : (
-              <p className="text-muted-foreground italic text-sm">
-                Destaque visual (sem texto extraído)
-              </p>
-            )}
-          </motion.div>
-        ))}
+
+              {isEditing ? (
+                <div className="space-y-3">
+                  <Textarea
+                    value={draftText}
+                    onChange={(e) => setDraftText(e.target.value)}
+                    rows={5}
+                    className="resize-y"
+                    autoFocus
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" onClick={() => saveEdit(highlight)} className="gap-2">
+                      <Check className="w-4 h-4" />Salvar
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={cancelEdit} className="gap-2">
+                      <X className="w-4 h-4" />Cancelar
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    A edição é local e usada apenas para recalcular o resumo com IA.
+                  </p>
+                </div>
+              ) : highlight.text ? (
+                <div>
+                  <p className="text-foreground leading-relaxed mb-4 whitespace-pre-wrap">{highlight.text}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" onClick={() => startEdit(highlight)} className="gap-2">
+                      <Pencil className="w-4 h-4" />Editar trecho
+                    </Button>
+                    {wasEdited && (
+                      <Button variant="ghost" size="sm" onClick={() => resetEdit(highlight)} className="gap-2">
+                        <RotateCcw className="w-4 h-4" />Restaurar original
+                      </Button>
+                    )}
+                    <HighlightImageDialog
+                      text={highlight.text}
+                      highlightId={highlight.id}
+                      trigger={
+                        <Button variant="outline" size="sm" className="gap-2">
+                          <Sparkles className="w-4 h-4" />Gerar Imagem
+                        </Button>
+                      }
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-muted-foreground italic text-sm">
+                    Destaque visual (sem texto extraído)
+                  </p>
+                  <Button variant="outline" size="sm" onClick={() => startEdit(highlight)} className="gap-2">
+                    <Pencil className="w-4 h-4" />Adicionar texto manualmente
+                  </Button>
+                </div>
+              )}
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Empty state */}
