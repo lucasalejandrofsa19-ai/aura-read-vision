@@ -12,6 +12,7 @@ import { pdf } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePremiumValidation } from "@/hooks/usePremiumValidation";
+import { pdfjs } from "@/lib/pdfjsWorker";
 
 const Summary = () => {
   const { id } = useParams();
