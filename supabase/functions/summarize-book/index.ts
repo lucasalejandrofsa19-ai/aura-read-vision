@@ -30,7 +30,7 @@ serve(async (req) => {
       });
     }
 
-    const { book_id, preview } = await req.json();
+    const { book_id, preview, text: clientText } = await req.json();
     if (!book_id) {
       return new Response(JSON.stringify({ error: "book_id é obrigatório" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
