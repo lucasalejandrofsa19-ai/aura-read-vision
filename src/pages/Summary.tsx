@@ -14,6 +14,21 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePremiumValidation } from "@/hooks/usePremiumValidation";
 import { pdfjs } from "@/lib/pdfjsWorker";
 
+type FunctionErrorBody = { error?: string; needsClientExtraction?: boolean };
+type ResponseClone = { json?: () => Promise<FunctionErrorBody>; text?: () => Promise<string> };
+type FunctionErrorContext = { clone: () => ResponseClone };
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const isFunctionErrorContext = (value: unknown): value is FunctionErrorContext =>
+  isRecord(value) && typeof value.clone === "function";
+
+const getPdfTextItemString = (item: unknown) => {
+  if (!isRecord(item) || typeof item.str !== "string") return "";
+  return item.str;
+};
+
 const Summary = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -85,19 +100,23 @@ const Summary = () => {
         });
 
       let { data, error } = await invokeSummary();
+      let errorMessage = error?.message;
 
       // Detect "needs client extraction" from either a normal response or an HTTP error body.
       let needsExtraction = data?.needsClientExtraction === true;
       if (error) {
-        const ctx: any = (error as any).context;
+        const ctx = (error as { context?: unknown }).context;
         try {
-          if (ctx && typeof ctx.json === "function") {
-            const body = await ctx.clone().json();
-            needsExtraction = body?.needsClientExtraction === true;
-            if (!needsExtraction && body?.error) (error as any).message = body.error;
-          } else if (ctx && typeof ctx.text === "function") {
-            const txt = await ctx.clone().text();
-            needsExtraction = txt.includes("needsClientExtraction");
+          if (isFunctionErrorContext(ctx)) {
+            const cloned = ctx.clone();
+            if (typeof cloned.json === "function") {
+              const body = await cloned.json();
+              needsExtraction = body?.needsClientExtraction === true;
+              if (!needsExtraction && body?.error) errorMessage = body.error;
+            } else if (typeof cloned.text === "function") {
+              const txt = await cloned.text();
+              needsExtraction = txt.includes("needsClientExtraction");
+            }
           }
         } catch (_) { /* ignore */ }
       }
@@ -121,11 +140,12 @@ const Summary = () => {
         for (let i = 1; i <= pdfDoc.numPages; i++) {
           const page = await pdfDoc.getPage(i);
           const content = await page.getTextContent();
-          allText += content.items.map((it: any) => it.str || "").join(" ") + "\n\n";
+          allText += content.items.map(getPdfTextItemString).join(" ") + "\n\n";
         }
         const cleanText = allText.replace(/\s+/g, " ").trim();
         if (cleanText.length >= 100) {
           ({ data, error } = await invokeSummary(cleanText));
+          errorMessage = error?.message;
         } else {
           toast.error("Não foi possível extrair texto do PDF (pode ser um PDF escaneado).");
           return;
@@ -138,9 +158,9 @@ const Summary = () => {
       }
 
       if (error) {
-        if (error.message?.includes("429")) toast.error("Limite de requisições excedido. Tente novamente mais tarde.");
-        else if (error.message?.includes("402")) toast.error("Créditos insuficientes.");
-        else if (error.message?.includes("403") || error.message?.includes("premium")) {
+        if (errorMessage?.includes("429")) toast.error("Limite de requisições excedido. Tente novamente mais tarde.");
+        else if (errorMessage?.includes("402")) toast.error("Créditos insuficientes.");
+        else if (errorMessage?.includes("403") || errorMessage?.includes("premium")) {
           toast.error("Recurso premium. Assine um plano.");
           navigate("/pricing");
         } else toast.error("Erro ao gerar resumo do livro");
