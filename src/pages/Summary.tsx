@@ -79,9 +79,37 @@ const Summary = () => {
     }
     setGeneratingBookSummary(true);
     try {
-      const { data, error } = await supabase.functions.invoke("summarize-book", {
-        body: { book_id: id, preview },
-      });
+      const invokeSummary = (text?: string) =>
+        supabase.functions.invoke("summarize-book", {
+          body: { book_id: id, preview, ...(text ? { text } : {}) },
+        });
+
+      let { data, error } = await invokeSummary();
+
+      // If server says it needs client-side text extraction, extract via PDF.js and retry
+      const errCtx: any = (error as any)?.context;
+      const errBody = errCtx?.body ? (typeof errCtx.body === "string" ? errCtx.body : JSON.stringify(errCtx.body)) : "";
+      if (error && (errBody.includes("needsClientExtraction") || errBody.includes("Texto do livro"))) {
+        toast.info("Extraindo texto do livro...");
+        const { data: book } = await supabase.from("books").select("file_path").eq("id", id!).single();
+        if (book?.file_path) {
+          const { data: signed } = await supabase.storage.from("pdfs").createSignedUrl(book.file_path, 60 * 10);
+          if (signed?.signedUrl) {
+            const pdfDoc = await pdfjs.getDocument(signed.signedUrl).promise;
+            let allText = "";
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+              const page = await pdfDoc.getPage(i);
+              const content = await page.getTextContent();
+              allText += content.items.map((it: any) => it.str).join(" ") + "\n\n";
+            }
+            const cleanText = allText.replace(/\s+/g, " ").trim();
+            if (cleanText.length >= 100) {
+              ({ data, error } = await invokeSummary(cleanText));
+            }
+          }
+        }
+      }
+
       if (error) {
         if (error.message?.includes("429")) toast.error("Limite de requisições excedido. Tente novamente mais tarde.");
         else if (error.message?.includes("402")) toast.error("Créditos insuficientes.");
