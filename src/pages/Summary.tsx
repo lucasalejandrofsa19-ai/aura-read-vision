@@ -86,8 +86,8 @@ const Summary = () => {
 
       let { data, error } = await invokeSummary();
 
-      // Detect "needs client extraction" by reading the error response body
-      let needsExtraction = false;
+      // Detect "needs client extraction" from either a normal response or an HTTP error body.
+      let needsExtraction = data?.needsClientExtraction === true;
       if (error) {
         const ctx: any = (error as any).context;
         try {
@@ -102,28 +102,39 @@ const Summary = () => {
         } catch (_) { /* ignore */ }
       }
 
-      if (error && needsExtraction) {
+      if (needsExtraction) {
         toast.info("Extraindo texto do livro... isso pode levar alguns segundos.");
-        const { data: book } = await supabase.from("books").select("file_path").eq("id", id!).single();
-        if (book?.file_path) {
-          const { data: signed } = await supabase.storage.from("pdfs").createSignedUrl(book.file_path, 60 * 10);
-          if (signed?.signedUrl) {
-            const pdfDoc = await pdfjs.getDocument(signed.signedUrl).promise;
-            let allText = "";
-            for (let i = 1; i <= pdfDoc.numPages; i++) {
-              const page = await pdfDoc.getPage(i);
-              const content = await page.getTextContent();
-              allText += content.items.map((it: any) => it.str).join(" ") + "\n\n";
-            }
-            const cleanText = allText.replace(/\s+/g, " ").trim();
-            if (cleanText.length >= 100) {
-              ({ data, error } = await invokeSummary(cleanText));
-            } else {
-              toast.error("Não foi possível extrair texto do PDF (pode ser um PDF escaneado).");
-              return;
-            }
-          }
+        const { data: book, error: bookError } = await supabase.from("books").select("file_path").eq("id", id!).single();
+        if (bookError || !book?.file_path) {
+          toast.error("Arquivo do livro não encontrado para extrair o texto.");
+          return;
         }
+
+        const { data: signed, error: signedError } = await supabase.storage.from("pdfs").createSignedUrl(book.file_path, 60 * 10);
+        if (signedError || !signed?.signedUrl) {
+          toast.error("Não foi possível abrir o PDF para extrair o texto.");
+          return;
+        }
+
+        const pdfDoc = await pdfjs.getDocument(signed.signedUrl).promise;
+        let allText = "";
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+          const page = await pdfDoc.getPage(i);
+          const content = await page.getTextContent();
+          allText += content.items.map((it: any) => it.str || "").join(" ") + "\n\n";
+        }
+        const cleanText = allText.replace(/\s+/g, " ").trim();
+        if (cleanText.length >= 100) {
+          ({ data, error } = await invokeSummary(cleanText));
+        } else {
+          toast.error("Não foi possível extrair texto do PDF (pode ser um PDF escaneado).");
+          return;
+        }
+      }
+
+      if (data?.needsClientExtraction) {
+        toast.error("Não foi possível preparar o texto do livro para resumo.");
+        return;
       }
 
       if (error) {
