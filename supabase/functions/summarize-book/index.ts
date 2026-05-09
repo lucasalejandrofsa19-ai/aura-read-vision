@@ -79,8 +79,17 @@ serve(async (req) => {
       }
     }
 
+    // Fallback: accept text extracted client-side if DB has no extracted_text
+    if ((!extractedText || extractedText.trim().length < 100) && typeof clientText === "string" && clientText.trim().length >= 100) {
+      extractedText = clientText;
+      // Persist for future calls if it's the user's own book
+      if (bookData && bookData.user_id === user.id) {
+        await supabaseClient.from("books").update({ extracted_text: clientText.slice(0, 200000) }).eq("id", book_id);
+      }
+    }
+
     if (!extractedText || extractedText.trim().length < 100) {
-      return new Response(JSON.stringify({ error: "Texto do livro não disponível para resumo. Reprocesse o PDF." }), {
+      return new Response(JSON.stringify({ error: "Texto do livro não disponível. Abra o livro no leitor para extrair o texto e tente novamente.", needsClientExtraction: true }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
