@@ -42,6 +42,9 @@ verify_jwt = true
 [functions.academic-summary]
 verify_jwt = true
 
+[functions.deepen-topic]
+verify_jwt = true
+
 [functions.audiobook-tts]
 verify_jwt = true
 
