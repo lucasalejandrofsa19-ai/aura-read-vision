@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Highlight } from "@/hooks/useHighlights";
 import { ExportDialog } from "@/components/ExportDialog";
 import { HighlightImageDialog } from "@/components/HighlightImageDialog";
+import { DeepenTopicDialog } from "@/components/DeepenTopicDialog";
+import { Compass } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
 import { useAuth } from "@/contexts/AuthContext";
@@ -433,9 +435,20 @@ const Summary = () => {
                   </Button>
                 </div>
               ) : (
-                <Button onClick={() => generateBookSummary(false)} disabled={generatingBookSummary} variant="outline" size="sm" className="mt-4">
-                  {generatingBookSummary ? (<><Loader2 className="w-4 h-4 animate-spin mr-2" />Gerando...</>) : "Gerar Novamente"}
-                </Button>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <Button onClick={() => generateBookSummary(false)} disabled={generatingBookSummary} variant="outline" size="sm">
+                    {generatingBookSummary ? (<><Loader2 className="w-4 h-4 animate-spin mr-2" />Gerando...</>) : "Gerar Novamente"}
+                  </Button>
+                  <DeepenTopicDialog
+                    summary={bookSummary}
+                    bookTitle={bookTitle}
+                    trigger={
+                      <Button variant="default" size="sm" className="gap-2">
+                        <Compass className="w-4 h-4" />Aprofundar Tópico
+                      </Button>
+                    }
+                  />
+                </div>
               )}
             </div>
           ) : (
@@ -541,7 +554,7 @@ const Summary = () => {
                 )}
                 
                 {!isPreview && (
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex flex-wrap gap-2 mt-4">
                     <Button
                       onClick={() => generateSummary(false)}
                       disabled={generatingSummary}
@@ -566,6 +579,15 @@ const Summary = () => {
                       <FileDown className="w-4 h-4" />
                       Exportar Resumo PDF
                     </Button>
+                    <DeepenTopicDialog
+                      summary={summary}
+                      bookTitle={bookTitle}
+                      trigger={
+                        <Button variant="default" size="sm" className="gap-2">
+                          <Compass className="w-4 h-4" />Aprofundar Tópico
+                        </Button>
+                      }
+                    />
                   </div>
                 )}
               </div>
