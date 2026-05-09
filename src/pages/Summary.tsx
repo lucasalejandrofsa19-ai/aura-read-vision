@@ -86,11 +86,24 @@ const Summary = () => {
 
       let { data, error } = await invokeSummary();
 
-      // If server says it needs client-side text extraction, extract via PDF.js and retry
-      const errCtx: any = (error as any)?.context;
-      const errBody = errCtx?.body ? (typeof errCtx.body === "string" ? errCtx.body : JSON.stringify(errCtx.body)) : "";
-      if (error && (errBody.includes("needsClientExtraction") || errBody.includes("Texto do livro"))) {
-        toast.info("Extraindo texto do livro...");
+      // Detect "needs client extraction" by reading the error response body
+      let needsExtraction = false;
+      if (error) {
+        const ctx: any = (error as any).context;
+        try {
+          if (ctx && typeof ctx.json === "function") {
+            const body = await ctx.clone().json();
+            needsExtraction = body?.needsClientExtraction === true;
+            if (!needsExtraction && body?.error) (error as any).message = body.error;
+          } else if (ctx && typeof ctx.text === "function") {
+            const txt = await ctx.clone().text();
+            needsExtraction = txt.includes("needsClientExtraction");
+          }
+        } catch (_) { /* ignore */ }
+      }
+
+      if (error && needsExtraction) {
+        toast.info("Extraindo texto do livro... isso pode levar alguns segundos.");
         const { data: book } = await supabase.from("books").select("file_path").eq("id", id!).single();
         if (book?.file_path) {
           const { data: signed } = await supabase.storage.from("pdfs").createSignedUrl(book.file_path, 60 * 10);
@@ -105,6 +118,9 @@ const Summary = () => {
             const cleanText = allText.replace(/\s+/g, " ").trim();
             if (cleanText.length >= 100) {
               ({ data, error } = await invokeSummary(cleanText));
+            } else {
+              toast.error("Não foi possível extrair texto do PDF (pode ser um PDF escaneado).");
+              return;
             }
           }
         }
