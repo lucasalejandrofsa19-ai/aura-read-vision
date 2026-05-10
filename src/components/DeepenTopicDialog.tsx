@@ -234,6 +234,11 @@ export const DeepenTopicDialog = ({ summary, bookTitle, trigger }: Props) => {
 
         {!loading && data && (
           <div className="space-y-6">
+            <div className="flex justify-end">
+              <Button size="sm" variant="outline" onClick={exportPDF} className="gap-2">
+                <Download className="w-4 h-4" /> Exportar PDF
+              </Button>
+            </div>
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-sm">Temas centrais</h3>
