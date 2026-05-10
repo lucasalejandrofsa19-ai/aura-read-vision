@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, BookOpen, Video, FileText, Sparkles, ExternalLink, HelpCircle, Pencil, Check, X, Plus, RefreshCw } from "lucide-react";
+import { Loader2, BookOpen, Video, FileText, Sparkles, ExternalLink, HelpCircle, Pencil, Check, X, Plus, RefreshCw, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { pdf, Document, Page, Text, View, StyleSheet, Link } from "@react-pdf/renderer";
+import { saveAs } from "file-saver";
 
 interface Suggestions {
   topics?: string[];
