@@ -114,6 +114,103 @@ export const DeepenTopicDialog = ({ summary, bookTitle, trigger }: Props) => {
   const youtube = (q: string) => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
   const googleBooks = (q: string) => `https://www.google.com/search?tbm=bks&q=${encodeURIComponent(q)}`;
 
+  const exportPDF = async () => {
+    if (!data) return;
+    try {
+      const styles = StyleSheet.create({
+        page: { padding: 36, fontSize: 11, fontFamily: "Helvetica", color: "#1a1a1a" },
+        h1: { fontSize: 20, marginBottom: 4, fontFamily: "Helvetica-Bold" },
+        sub: { fontSize: 10, color: "#666", marginBottom: 16 },
+        h2: { fontSize: 13, marginTop: 14, marginBottom: 6, fontFamily: "Helvetica-Bold", color: "#0f3460" },
+        item: { marginBottom: 8 },
+        title: { fontFamily: "Helvetica-Bold" },
+        desc: { color: "#444", marginTop: 2 },
+        link: { color: "#2563eb", fontSize: 10, marginTop: 2 },
+        chip: { fontSize: 10, color: "#0f3460" },
+        q: { marginBottom: 6, paddingLeft: 8, borderLeft: "2px solid #c9a84c" },
+      });
+      const chosen = topics.filter((_, i) => selected.has(i));
+      const Doc = (
+        <Document>
+          <Page size="A4" style={styles.page} wrap>
+            <Text style={styles.h1}>Aprofundar Tópico</Text>
+            <Text style={styles.sub}>
+              {bookTitle ? `${bookTitle} • ` : ""}Gerado em {new Date().toLocaleDateString("pt-BR")}
+            </Text>
+
+            {chosen.length > 0 && (
+              <View>
+                <Text style={styles.h2}>Temas centrais</Text>
+                <Text style={styles.chip}>{chosen.join(" • ")}</Text>
+              </View>
+            )}
+
+            {data.articles && data.articles.length > 0 && (
+              <View>
+                <Text style={styles.h2}>Artigos e estudos</Text>
+                {data.articles.map((a, i) => (
+                  <View key={i} style={styles.item} wrap={false}>
+                    <Text style={styles.title}>{a.title}</Text>
+                    <Text style={styles.desc}>{a.description}</Text>
+                    <Link src={googleScholar(a.searchQuery || a.title)} style={styles.link}>
+                      Buscar no Google Scholar
+                    </Link>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {data.videos && data.videos.length > 0 && (
+              <View>
+                <Text style={styles.h2}>Vídeos recomendados</Text>
+                {data.videos.map((v, i) => (
+                  <View key={i} style={styles.item} wrap={false}>
+                    <Text style={styles.title}>{v.title}</Text>
+                    <Text style={styles.desc}>{v.description}</Text>
+                    <Link src={youtube(v.searchQuery || v.title)} style={styles.link}>
+                      Buscar no YouTube
+                    </Link>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {data.books && data.books.length > 0 && (
+              <View>
+                <Text style={styles.h2}>Livros relacionados</Text>
+                {data.books.map((b, i) => (
+                  <View key={i} style={styles.item} wrap={false}>
+                    <Text style={styles.title}>{b.title} — {b.author}</Text>
+                    <Text style={styles.desc}>{b.description}</Text>
+                    <Link src={googleBooks(`${b.title} ${b.author}`)} style={styles.link}>
+                      Ver no Google Livros
+                    </Link>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {data.questions && data.questions.length > 0 && (
+              <View>
+                <Text style={styles.h2}>Perguntas para reflexão</Text>
+                {data.questions.map((q, i) => (
+                  <Text key={i} style={styles.q}>{q}</Text>
+                ))}
+              </View>
+            )}
+          </Page>
+        </Document>
+      );
+      const blob = await pdf(Doc).toBlob();
+      const name = `aprofundar-${(bookTitle || "topico").replace(/[^\w\-]+/g, "_")}-${Date.now()}.pdf`;
+      saveAs(blob, name);
+      toast.success("PDF exportado com sucesso!");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao exportar PDF");
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
