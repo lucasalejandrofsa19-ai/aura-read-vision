@@ -228,11 +228,55 @@ export const DeepenTopicDialog = ({ summary, bookTitle, trigger }: Props) => {
       const blob = await pdf(Doc).toBlob();
       const name = `aprofundar-${(bookTitle || "topico").replace(/[^\w\-]+/g, "_")}-${Date.now()}.pdf`;
       saveAs(blob, name);
-      toast.success("PDF exportado com sucesso!");
+
+      // Save to user history
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+        const uid = auth.user?.id;
+        if (uid) {
+          const path = `${uid}/${name}`;
+          const { error: upErr } = await supabase.storage
+            .from("deepen-exports")
+            .upload(path, blob, { contentType: "application/pdf", upsert: false });
+          if (upErr) throw upErr;
+          await supabase.from("deepen_exports").insert({
+            user_id: uid,
+            book_title: bookTitle ?? null,
+            topics: chosen,
+            file_path: path,
+            file_size: blob.size,
+          });
+          await loadHistory();
+        }
+      } catch (histErr) {
+        console.warn("history save failed", histErr);
+      }
+
+      toast.success("PDF exportado e salvo no histórico!");
     } catch (e) {
       console.error(e);
       toast.error("Erro ao exportar PDF");
     }
+  };
+
+  const downloadFromHistory = async (row: ExportRow) => {
+    const { data: signed, error } = await supabase.storage
+      .from("deepen-exports")
+      .createSignedUrl(row.file_path, 60);
+    if (error || !signed?.signedUrl) {
+      toast.error("Não foi possível baixar este arquivo");
+      return;
+    }
+    const res = await fetch(signed.signedUrl);
+    const blob = await res.blob();
+    saveAs(blob, row.file_path.split("/").pop() || "aprofundar.pdf");
+  };
+
+  const deleteFromHistory = async (row: ExportRow) => {
+    await supabase.storage.from("deepen-exports").remove([row.file_path]);
+    await supabase.from("deepen_exports").delete().eq("id", row.id);
+    setHistory((h) => h.filter((r) => r.id !== row.id));
+    toast.success("Removido do histórico");
   };
 
   return (
