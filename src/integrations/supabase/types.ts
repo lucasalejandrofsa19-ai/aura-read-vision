@@ -226,6 +226,36 @@ export type Database = {
         }
         Relationships: []
       }
+      deepen_exports: {
+        Row: {
+          book_title: string | null
+          created_at: string
+          file_path: string
+          file_size: number | null
+          id: string
+          topics: string[] | null
+          user_id: string
+        }
+        Insert: {
+          book_title?: string | null
+          created_at?: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          topics?: string[] | null
+          user_id: string
+        }
+        Update: {
+          book_title?: string | null
+          created_at?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          topics?: string[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       gamification_stats: {
         Row: {
           created_at: string
