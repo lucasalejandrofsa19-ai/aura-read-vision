@@ -40,6 +40,21 @@ export const DeepenTopicDialog = ({ summary, bookTitle, trigger }: Props) => {
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [draft, setDraft] = useState("");
   const [newTopic, setNewTopic] = useState("");
+  const [history, setHistory] = useState<ExportRow[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const loadHistory = async () => {
+    const { data: rows, error } = await supabase
+      .from("deepen_exports")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (!error && rows) setHistory(rows as ExportRow[]);
+  };
+
+  useEffect(() => {
+    if (open) loadHistory();
+  }, [open]);
 
   const handleOpenChange = async (next: boolean) => {
     setOpen(next);
