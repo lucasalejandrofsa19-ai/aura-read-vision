@@ -302,11 +302,38 @@ export const DeepenTopicDialog = ({ summary, bookTitle, trigger }: Props) => {
 
         {!loading && data && (
           <div className="space-y-6">
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              {history.length > 0 && (
+                <Button size="sm" variant="ghost" onClick={() => setShowHistory((v) => !v)} className="gap-2">
+                  <History className="w-4 h-4" /> Histórico ({history.length})
+                </Button>
+              )}
               <Button size="sm" variant="outline" onClick={exportPDF} className="gap-2">
                 <Download className="w-4 h-4" /> Exportar PDF
               </Button>
             </div>
+            {showHistory && history.length > 0 && (
+              <div className="rounded-lg border border-border p-3 space-y-2 bg-muted/20">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">PDFs exportados</h4>
+                {history.map((row) => (
+                  <div key={row.id} className="flex items-center justify-between gap-2 text-sm">
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate font-medium">{row.book_title || "Sem título"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(row.created_at).toLocaleString("pt-BR")}
+                        {row.topics && row.topics.length > 0 ? ` • ${row.topics.slice(0, 3).join(", ")}` : ""}
+                      </p>
+                    </div>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => downloadFromHistory(row)} aria-label="Baixar">
+                      <Download className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteFromHistory(row)} aria-label="Excluir">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-sm">Temas centrais</h3>
