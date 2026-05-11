@@ -7,6 +7,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SentryUserContext } from "./components/SentryUserContext";
 import { usePWAInstallPrompt } from "@/hooks/usePWAInstallPrompt";
+import { useAdMobBanner } from "@/hooks/useAdMobBanner";
 import { UpdateNotification } from "@/components/UpdateNotification";
 import { AppHealthMonitor } from "@/components/AppHealthMonitor";
 import * as Sentry from "@sentry/react";
@@ -38,6 +39,8 @@ const SentryRoutes = Sentry.withSentryRouting(Routes);
 const AppContent = () => {
   // Hook para detectar e gerenciar instalação PWA
   usePWAInstallPrompt();
+  // Banner AdMob (apenas em build nativo iOS/Android e para usuários free)
+  useAdMobBanner();
 
   return (
     <SentryRoutes>
