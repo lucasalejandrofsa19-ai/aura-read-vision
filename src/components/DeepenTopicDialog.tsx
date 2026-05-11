@@ -1,12 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, BookOpen, Video, FileText, Sparkles, ExternalLink, HelpCircle, Pencil, Check, X, Plus, RefreshCw, Download } from "lucide-react";
+import { Loader2, BookOpen, Video, FileText, Sparkles, ExternalLink, HelpCircle, Pencil, Check, X, Plus, RefreshCw, Download, History, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { pdf, Document, Page, Text, View, StyleSheet, Link } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
+
+interface ExportRow {
+  id: string;
+  book_title: string | null;
+  topics: string[] | null;
+  file_path: string;
+  file_size: number | null;
+  created_at: string;
+}
 
 interface Suggestions {
   topics?: string[];
@@ -31,6 +40,21 @@ export const DeepenTopicDialog = ({ summary, bookTitle, trigger }: Props) => {
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [draft, setDraft] = useState("");
   const [newTopic, setNewTopic] = useState("");
+  const [history, setHistory] = useState<ExportRow[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const loadHistory = async () => {
+    const { data: rows, error } = await supabase
+      .from("deepen_exports")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (!error && rows) setHistory(rows as ExportRow[]);
+  };
+
+  useEffect(() => {
+    if (open) loadHistory();
+  }, [open]);
 
   const handleOpenChange = async (next: boolean) => {
     setOpen(next);
@@ -204,11 +228,55 @@ export const DeepenTopicDialog = ({ summary, bookTitle, trigger }: Props) => {
       const blob = await pdf(Doc).toBlob();
       const name = `aprofundar-${(bookTitle || "topico").replace(/[^\w\-]+/g, "_")}-${Date.now()}.pdf`;
       saveAs(blob, name);
-      toast.success("PDF exportado com sucesso!");
+
+      // Save to user history
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+        const uid = auth.user?.id;
+        if (uid) {
+          const path = `${uid}/${name}`;
+          const { error: upErr } = await supabase.storage
+            .from("deepen-exports")
+            .upload(path, blob, { contentType: "application/pdf", upsert: false });
+          if (upErr) throw upErr;
+          await supabase.from("deepen_exports").insert({
+            user_id: uid,
+            book_title: bookTitle ?? null,
+            topics: chosen,
+            file_path: path,
+            file_size: blob.size,
+          });
+          await loadHistory();
+        }
+      } catch (histErr) {
+        console.warn("history save failed", histErr);
+      }
+
+      toast.success("PDF exportado e salvo no histórico!");
     } catch (e) {
       console.error(e);
       toast.error("Erro ao exportar PDF");
     }
+  };
+
+  const downloadFromHistory = async (row: ExportRow) => {
+    const { data: signed, error } = await supabase.storage
+      .from("deepen-exports")
+      .createSignedUrl(row.file_path, 60);
+    if (error || !signed?.signedUrl) {
+      toast.error("Não foi possível baixar este arquivo");
+      return;
+    }
+    const res = await fetch(signed.signedUrl);
+    const blob = await res.blob();
+    saveAs(blob, row.file_path.split("/").pop() || "aprofundar.pdf");
+  };
+
+  const deleteFromHistory = async (row: ExportRow) => {
+    await supabase.storage.from("deepen-exports").remove([row.file_path]);
+    await supabase.from("deepen_exports").delete().eq("id", row.id);
+    setHistory((h) => h.filter((r) => r.id !== row.id));
+    toast.success("Removido do histórico");
   };
 
   return (
@@ -234,11 +302,38 @@ export const DeepenTopicDialog = ({ summary, bookTitle, trigger }: Props) => {
 
         {!loading && data && (
           <div className="space-y-6">
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              {history.length > 0 && (
+                <Button size="sm" variant="ghost" onClick={() => setShowHistory((v) => !v)} className="gap-2">
+                  <History className="w-4 h-4" /> Histórico ({history.length})
+                </Button>
+              )}
               <Button size="sm" variant="outline" onClick={exportPDF} className="gap-2">
                 <Download className="w-4 h-4" /> Exportar PDF
               </Button>
             </div>
+            {showHistory && history.length > 0 && (
+              <div className="rounded-lg border border-border p-3 space-y-2 bg-muted/20">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">PDFs exportados</h4>
+                {history.map((row) => (
+                  <div key={row.id} className="flex items-center justify-between gap-2 text-sm">
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate font-medium">{row.book_title || "Sem título"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(row.created_at).toLocaleString("pt-BR")}
+                        {row.topics && row.topics.length > 0 ? ` • ${row.topics.slice(0, 3).join(", ")}` : ""}
+                      </p>
+                    </div>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => downloadFromHistory(row)} aria-label="Baixar">
+                      <Download className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteFromHistory(row)} aria-label="Excluir">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-sm">Temas centrais</h3>
