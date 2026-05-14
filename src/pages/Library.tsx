@@ -146,14 +146,27 @@ const Library = () => {
             >
               <User className="w-5 h-5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="aura-soft transition-aura"
-              onClick={signOut}
-            >
-              Sair
-            </Button>
+            {user ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="aura-soft transition-aura"
+                onClick={signOut}
+                title="Sair"
+              >
+                Sair
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="aura-soft transition-aura"
+                onClick={() => setAuthDialogOpen(true)}
+                title="Entrar"
+              >
+                <LogIn className="w-5 h-5" />
+              </Button>
+            )}
           </div>
         </div>
 
