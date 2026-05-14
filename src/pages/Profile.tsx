@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -353,7 +354,6 @@ const Profile = () => {
                 </div>
               </CardContent>
             </Card>
-import { SEO } from "@/components/SEO";
 
             {/* Ultra Performance Mode Card */}
             <Card className="border-primary/20">
@@ -494,6 +494,7 @@ import { SEO } from "@/components/SEO";
         </Tabs>
       </div>
     </div>
+    </>
   );
 };
 
