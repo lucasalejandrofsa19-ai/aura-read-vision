@@ -65,7 +65,9 @@ export function setConsent(choice: "granted" | "denied") {
 
 export function onConsentChange(cb: (c: ConsentChoice) => void) {
   LISTENERS.add(cb);
-  return () => LISTENERS.delete(cb);
+  return () => {
+    LISTENERS.delete(cb);
+  };
 }
 
 /** Reabre o banner para o usuário trocar de ideia. */
