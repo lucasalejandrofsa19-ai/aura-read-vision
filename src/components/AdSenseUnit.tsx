@@ -49,6 +49,8 @@ export const AdSenseUnit = ({
   }, [hasPremiumAccess, isLoading]);
 
   if (Capacitor.isNativePlatform() || hasPremiumAccess) return null;
+  // Auto Ads mode: sem slot configurado, deixamos o Google injetar via loader.
+  if (!slot) return null;
 
   return (
     <div className={`adsense-container w-full flex justify-center my-4 ${className}`}>
@@ -56,7 +58,7 @@ export const AdSenseUnit = ({
         className="adsbygoogle"
         style={{ display: "block", width: "100%", ...style }}
         data-ad-client={ADSENSE_CLIENT}
-        data-ad-slot={slot || "0000000000"}
+        data-ad-slot={slot}
         data-ad-format={format}
         data-ad-layout={layout}
         data-ad-layout-key={layoutKey}
