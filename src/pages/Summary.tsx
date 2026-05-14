@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Highlight } from "@/hooks/useHighlights";
 import { ExportDialog } from "@/components/ExportDialog";
+import { AdSenseUnit } from "@/components/AdSenseUnit";
+import { ADSENSE_SLOTS } from "@/lib/adsense";
 import { HighlightImageDialog } from "@/components/HighlightImageDialog";
 import { DeepenTopicDialog } from "@/components/DeepenTopicDialog";
 import { Compass } from "lucide-react";
@@ -599,6 +601,11 @@ const Summary = () => {
           </div>
         </motion.div>
       )}
+
+      {/* AdSense — inline na página de resumo */}
+      <div className="max-w-4xl mx-auto">
+        <AdSenseUnit slot={ADSENSE_SLOTS.summaryInline} format="auto" />
+      </div>
 
       {/* Highlights list */}
       <div className="max-w-4xl mx-auto space-y-4">

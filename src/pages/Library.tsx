@@ -19,6 +19,8 @@ import { LazyLoadWrapper } from "@/components/LazyLoadWrapper";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import { DailyGoalCard } from "@/components/gamification/DailyGoalCard";
+import { AdSenseUnit } from "@/components/AdSenseUnit";
+import { ADSENSE_SLOTS } from "@/lib/adsense";
 
 // Memoizar BookCard para evitar re-renders desnecessários
 const MemoizedBookCard = memo(BookCard);
@@ -217,6 +219,9 @@ const Library = () => {
 
       {/* Gamification daily goal */}
       <DailyGoalCard />
+
+      {/* AdSense — topo da biblioteca */}
+      <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" className="mb-6" />
 
       {/* Books grid */}
       {isLoading ? (
