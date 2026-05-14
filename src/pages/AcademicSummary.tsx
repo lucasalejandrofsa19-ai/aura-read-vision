@@ -446,6 +446,7 @@ const AcademicSummary = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

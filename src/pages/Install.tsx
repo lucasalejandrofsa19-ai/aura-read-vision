@@ -627,6 +627,7 @@ const Install = () => {
         </div>
       </motion.main>
     </div>
+    </>
   );
 };
 

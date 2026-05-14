@@ -195,6 +195,7 @@ const Download = () => {
         </motion.div>
       </div>
     </div>
+    </>
   );
 };
 
