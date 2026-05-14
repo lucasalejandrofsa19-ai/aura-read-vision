@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -123,7 +124,27 @@ export default function Pricing() {
     return productMap[key] === product_id;
   };
 
+  const productJsonLd = Object.entries(PLANS).map(([key, plan]) => ({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: `AURA READ ${plan.name}`,
+    description: plan.features.slice(0, 3).join(", "),
+    offers: {
+      "@type": "Offer",
+      price: plan.price.replace(/[^\d,]/g, "").replace(",", "."),
+      priceCurrency: "BRL",
+      availability: "https://schema.org/InStock",
+    },
+  }));
+
   return (
+    <>
+    <SEO
+      title="Planos e Preços — AURA READ"
+      description="Compare os planos Gratuito, Pro e Premium. Recursos exclusivos como TTS, exportação, IA de imagens e biblioteca premium."
+      path="/pricing"
+      jsonLd={productJsonLd}
+    />
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
       <div className="container mx-auto px-4 py-8">
         <Button

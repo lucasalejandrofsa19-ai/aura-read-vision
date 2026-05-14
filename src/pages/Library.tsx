@@ -432,6 +432,7 @@ const Library = () => {
 
       <LibraryTour />
     </div>
+    </>
   );
 };
 
