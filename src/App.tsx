@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SentryUserContext } from "./components/SentryUserContext";
@@ -14,7 +14,7 @@ import { StickyAdBanner } from "@/components/StickyAdBanner";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import * as Sentry from "@sentry/react";
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
+
 import Welcome from "./pages/Welcome";
 import ResetPassword from "./pages/ResetPassword";
 import Library from "./pages/Library";
@@ -48,7 +48,7 @@ const AppContent = () => {
     <>
       <SentryRoutes>
         <Route path="/" element={<Index />} />
-        <Route path="/auth" element={<Auth />} />
+        <Route path="/auth" element={<Navigate to="/library" replace />} />
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/library" element={<Library />} />

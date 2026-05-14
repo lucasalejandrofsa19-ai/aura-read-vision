@@ -33,7 +33,7 @@ const ResetPassword = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast.error("Link de recuperação inválido ou expirado");
-        navigate("/auth");
+        navigate("/library");
       }
     };
 
@@ -71,7 +71,7 @@ const ResetPassword = () => {
       await supabase.auth.signOut();
       
       setTimeout(() => {
-        navigate("/auth");
+        navigate("/library");
       }, 1500);
     } catch (error) {
       toast.error("Erro inesperado. Tente novamente.");

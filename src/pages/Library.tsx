@@ -21,6 +21,8 @@ import { PremiumBadge } from "@/components/PremiumBadge";
 import { DailyGoalCard } from "@/components/gamification/DailyGoalCard";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
 import { ADSENSE_SLOTS } from "@/lib/adsense";
+import { AuthDialog } from "@/components/AuthDialog";
+import { LogIn } from "lucide-react";
 
 // Memoizar BookCard para evitar re-renders desnecessários
 const MemoizedBookCard = memo(BookCard);
@@ -28,6 +30,7 @@ const MemoizedBookCard = memo(BookCard);
 const Library = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { isAdmin, hasPremiumAccess } = useUserData();
   const { books, premiumBooks, isLoading } = useBooks();
@@ -69,11 +72,11 @@ const Library = () => {
     threshold: 50,
   });
 
+  // Modal de auth abre automaticamente quando o usuário não está logado
   useEffect(() => {
-    if (!user) {
-      navigate("/auth");
-    }
-  }, [user, navigate]);
+    if (!user) setAuthDialogOpen(true);
+    else setAuthDialogOpen(false);
+  }, [user]);
 
   // Memoizar livros premium com flag
   const premiumBooksWithFlag = useMemo(() => 
@@ -143,14 +146,27 @@ const Library = () => {
             >
               <User className="w-5 h-5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="aura-soft transition-aura"
-              onClick={signOut}
-            >
-              Sair
-            </Button>
+            {user ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="aura-soft transition-aura"
+                onClick={signOut}
+                title="Sair"
+              >
+                Sair
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="aura-soft transition-aura"
+                onClick={() => setAuthDialogOpen(true)}
+                title="Entrar"
+              >
+                <LogIn className="w-5 h-5" />
+              </Button>
+            )}
           </div>
         </div>
 
@@ -404,6 +420,8 @@ const Library = () => {
         open={subscriptionDialogOpen}
         onOpenChange={setSubscriptionDialogOpen}
       />
+
+      <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
 
       <LibraryTour />
     </div>
