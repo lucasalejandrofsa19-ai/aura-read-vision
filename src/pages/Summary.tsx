@@ -602,6 +602,11 @@ const Summary = () => {
         </motion.div>
       )}
 
+      {/* AdSense — inline na página de resumo */}
+      <div className="max-w-4xl mx-auto">
+        <AdSenseUnit slot={ADSENSE_SLOTS.summaryInline} format="auto" />
+      </div>
+
       {/* Highlights list */}
       <div className="max-w-4xl mx-auto space-y-4">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
