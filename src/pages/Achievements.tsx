@@ -44,6 +44,12 @@ const Achievements = () => {
   const goal = stats?.daily_goal_pages || 10;
 
   return (
+    <>
+    <SEO
+      title="Conquistas — AURA READ"
+      description="Acompanhe suas conquistas, XP e streaks de leitura na AURA READ."
+      path="/conquistas"
+    />
     <div className="min-h-screen p-6 bg-gradient-to-b from-background via-background to-muted/20">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-3 mb-6">

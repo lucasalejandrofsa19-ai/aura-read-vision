@@ -18,6 +18,12 @@ const Download = () => {
   };
 
   return (
+    <>
+    <SEO
+      title="Baixe a AURA READ — App de Leitura de PDFs"
+      description="Instale a AURA READ no seu dispositivo e leia PDFs offline com IA, destaques e resumos."
+      path="/download"
+    />
     <div className="min-h-screen relative overflow-hidden">
       {/* Animated background */}
       <div className="fixed inset-0 pointer-events-none">

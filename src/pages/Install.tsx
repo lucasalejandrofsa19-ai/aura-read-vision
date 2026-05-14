@@ -71,6 +71,12 @@ const Install = () => {
   const buttonConfig = getButtonVariant();
 
   return (
+    <>
+    <SEO
+      title="Como Instalar — AURA READ"
+      description="Aprenda a instalar a AURA READ como app no iOS, Android e desktop."
+      path="/install"
+    />
     <div className="min-h-screen bg-background">
       {/* Header */}
       <motion.header
