@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { useState, useEffect, useMemo, memo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap } from "lucide-react";
@@ -99,6 +100,12 @@ const Library = () => {
   );
 
   return (
+    <>
+    <SEO
+      title="Minha Biblioteca — AURA READ"
+      description="Acesse, organize e leia seus PDFs em um só lugar. Faça upload de novos livros e continue de onde parou."
+      path="/library"
+    />
     <div className="min-h-screen p-6 bg-gradient-to-b from-background via-background to-muted/20"
          style={{
            backgroundImage: `radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.05), transparent 50%)`
@@ -425,6 +432,7 @@ const Library = () => {
 
       <LibraryTour />
     </div>
+    </>
   );
 };
 

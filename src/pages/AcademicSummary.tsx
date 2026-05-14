@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -148,6 +149,12 @@ const AcademicSummary = () => {
   };
 
   return (
+    <>
+    <SEO
+      title="Resumo Acadêmico — AURA READ"
+      description="Gere resumos acadêmicos detalhados de PDFs com IA na AURA READ."
+      path="/resumo-academico"
+    />
     <div className="min-h-screen p-4 md:p-6">
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -440,6 +447,7 @@ const AcademicSummary = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

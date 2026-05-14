@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { motion } from "framer-motion";
 import { ArrowLeft, Smartphone, Monitor, CheckCircle, Download, Zap, Sparkles, Rocket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -71,6 +72,12 @@ const Install = () => {
   const buttonConfig = getButtonVariant();
 
   return (
+    <>
+    <SEO
+      title="Como Instalar — AURA READ"
+      description="Aprenda a instalar a AURA READ como app no iOS, Android e desktop."
+      path="/install"
+    />
     <div className="min-h-screen bg-background">
       {/* Header */}
       <motion.header
@@ -621,6 +628,7 @@ const Install = () => {
         </div>
       </motion.main>
     </div>
+    </>
   );
 };
 

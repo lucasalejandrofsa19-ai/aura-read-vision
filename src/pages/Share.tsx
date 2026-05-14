@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Copy, Check } from "lucide-react";
@@ -21,6 +22,13 @@ const Share = () => {
   };
 
   return (
+    <>
+    <SEO
+      title="Compartilhar Livro — AURA READ"
+      description="Compartilhe seus livros e destaques com a comunidade AURA READ."
+      path={`/share/${id ?? ""}`}
+      noindex
+    />
     <div className="min-h-screen flex items-center justify-center p-6">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -99,6 +107,7 @@ const Share = () => {
         </div>
       </motion.div>
     </div>
+    </>
   );
 };
 

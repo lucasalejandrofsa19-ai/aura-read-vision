@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -139,6 +140,13 @@ const Profile = () => {
   };
 
   return (
+    <>
+    <SEO
+      title="Meu Perfil — AURA READ"
+      description="Gerencie sua conta, preferências de leitura e plano de assinatura."
+      path="/profile"
+      noindex
+    />
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <div className="container max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
@@ -347,7 +355,6 @@ const Profile = () => {
               </CardContent>
             </Card>
 
-
             {/* Ultra Performance Mode Card */}
             <Card className="border-primary/20">
               <CardHeader>
@@ -487,6 +494,7 @@ const Profile = () => {
         </Tabs>
       </div>
     </div>
+    </>
   );
 };
 

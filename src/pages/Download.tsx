@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { motion } from "framer-motion";
 import { Smartphone, Download as DownloadIcon, Chrome, QrCode, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,12 @@ const Download = () => {
   };
 
   return (
+    <>
+    <SEO
+      title="Baixe a AURA READ — App de Leitura de PDFs"
+      description="Instale a AURA READ no seu dispositivo e leia PDFs offline com IA, destaques e resumos."
+      path="/download"
+    />
     <div className="min-h-screen relative overflow-hidden">
       {/* Animated background */}
       <div className="fixed inset-0 pointer-events-none">
@@ -189,6 +196,7 @@ const Download = () => {
         </motion.div>
       </div>
     </div>
+    </>
   );
 };
 
