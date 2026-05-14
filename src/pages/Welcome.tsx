@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { SEO } from "@/components/SEO";
 import { motion } from "framer-motion";
 import { Book, Sparkles, BookOpen, Highlighter, Share2, FileText, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,12 @@ const Welcome = () => {
   };
 
   return (
+    <>
+    <SEO
+      title="Bem-vindo — AURA READ"
+      description="Comece sua jornada de leitura inteligente com a AURA READ."
+      path="/welcome"
+    />
     <div className="min-h-screen min-h-[100dvh] flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
       {/* Animated background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
