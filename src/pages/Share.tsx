@@ -107,6 +107,7 @@ const Share = () => {
         </div>
       </motion.div>
     </div>
+    </>
   );
 };
 
