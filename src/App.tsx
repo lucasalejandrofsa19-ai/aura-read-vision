@@ -44,33 +44,34 @@ const AppContent = () => {
   useAdMobBanner();
 
   return (
-    <SentryRoutes>
-      <Route path="/" element={<Index />} />
-      <Route path="/auth" element={<Auth />} />
-      <Route path="/welcome" element={<Welcome />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/library" element={<Library />} />
-      <Route path="/reader/:id" element={<Reader />} />
-      <Route path="/summary/:id" element={<Summary />} />
-      <Route path="/share/:id" element={<Share />} />
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/pricing" element={<Pricing />} />
-      <Route path="/download" element={<Download />} />
-      <Route path="/install" element={<Install />} />
-      <Route path="/admin" element={<AdminPanel />} />
-      <Route path="/admin/analytics" element={<AdminAnalytics />} />
-      <Route path="/admin/feedback" element={<AdminFeedback />} />
-      <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
-      <Route path="/admin/blocked-ips" element={<AdminBlockedIPs />} />
-      <Route path="/conquistas" element={<Achievements />} />
-      <Route path="/resumo-academico" element={<AcademicSummary />} />
-      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-      <Route path="*" element={<NotFound />} />
-    </SentryRoutes>
+    <>
+      <SentryRoutes>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/welcome" element={<Welcome />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/library" element={<Library />} />
+        <Route path="/reader/:id" element={<Reader />} />
+        <Route path="/summary/:id" element={<Summary />} />
+        <Route path="/share/:id" element={<Share />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/download" element={<Download />} />
+        <Route path="/install" element={<Install />} />
+        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/admin/analytics" element={<AdminAnalytics />} />
+        <Route path="/admin/feedback" element={<AdminFeedback />} />
+        <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+        <Route path="/admin/blocked-ips" element={<AdminBlockedIPs />} />
+        <Route path="/conquistas" element={<Achievements />} />
+        <Route path="/resumo-academico" element={<AcademicSummary />} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </SentryRoutes>
+      <StickyAdBanner />
+    </>
   );
 };
-
-const AppFooterAds = () => <StickyAdBanner />;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
