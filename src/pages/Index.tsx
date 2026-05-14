@@ -86,6 +86,20 @@ const Index = () => {
   ];
 
   return (
+    <>
+    <SEO
+      title="AURA READ — Biblioteca Interativa de PDFs com IA"
+      description="Leia, destaque e resuma PDFs com IA. Biblioteca pessoal interativa, marca-texto inteligente e geração de imagens. Comece grátis."
+      path="/"
+      jsonLd={{
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        name: "AURA READ",
+        applicationCategory: "EducationApplication",
+        operatingSystem: "Web, iOS, Android",
+        offers: { "@type": "Offer", price: "0", priceCurrency: "BRL" },
+      }}
+    />
     <div className="min-h-screen relative overflow-hidden">
       {/* Animated background */}
       <div className="absolute inset-0">
