@@ -11,6 +11,7 @@ import { useAdMobBanner } from "@/hooks/useAdMobBanner";
 import { UpdateNotification } from "@/components/UpdateNotification";
 import { AppHealthMonitor } from "@/components/AppHealthMonitor";
 import { StickyAdBanner } from "@/components/StickyAdBanner";
+import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import * as Sentry from "@sentry/react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -69,6 +70,7 @@ const AppContent = () => {
         <Route path="*" element={<NotFound />} />
       </SentryRoutes>
       <StickyAdBanner />
+      <CookieConsentBanner />
     </>
   );
 };
