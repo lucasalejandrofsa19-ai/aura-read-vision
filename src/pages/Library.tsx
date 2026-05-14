@@ -421,6 +421,8 @@ const Library = () => {
         onOpenChange={setSubscriptionDialogOpen}
       />
 
+      <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
+
       <LibraryTour />
     </div>
   );
