@@ -70,6 +70,7 @@ const AppContent = () => {
         <Route path="*" element={<NotFound />} />
       </SentryRoutes>
       <StickyAdBanner />
+      <CookieConsentBanner />
     </>
   );
 };
