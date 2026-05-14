@@ -190,6 +190,7 @@ const Welcome = () => {
         </motion.div>
       </div>
     </div>
+    </>
   );
 };
 

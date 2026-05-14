@@ -139,6 +139,13 @@ const Profile = () => {
   };
 
   return (
+    <>
+    <SEO
+      title="Meu Perfil — AURA READ"
+      description="Gerencie sua conta, preferências de leitura e plano de assinatura."
+      path="/profile"
+      noindex
+    />
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <div className="container max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
@@ -346,7 +353,7 @@ const Profile = () => {
                 </div>
               </CardContent>
             </Card>
-
+import { SEO } from "@/components/SEO";
 
             {/* Ultra Performance Mode Card */}
             <Card className="border-primary/20">
