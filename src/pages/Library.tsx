@@ -69,11 +69,11 @@ const Library = () => {
     threshold: 50,
   });
 
+  // Modal de auth abre automaticamente quando o usuário não está logado
   useEffect(() => {
-    if (!user) {
-      navigate("/auth");
-    }
-  }, [user, navigate]);
+    if (!user) setAuthDialogOpen(true);
+    else setAuthDialogOpen(false);
+  }, [user]);
 
   // Memoizar livros premium com flag
   const premiumBooksWithFlag = useMemo(() => 
