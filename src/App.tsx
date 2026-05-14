@@ -48,7 +48,7 @@ const AppContent = () => {
     <>
       <SentryRoutes>
         <Route path="/" element={<Index />} />
-        <Route path="/auth" element={<Auth />} />
+        <Route path="/auth" element={<Navigate to="/library" replace />} />
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/library" element={<Library />} />
