@@ -1,10 +1,15 @@
 // Google AdSense configuration
-// Publisher ID — change here if you ever rotate accounts.
+// Publisher ID
 export const ADSENSE_CLIENT = "ca-pub-4870256203048688";
 
-// Slot IDs — substitua pelos IDs reais criados em https://adsense.google.com
-// (Anúncios > Por unidade de anúncio > Criar). Enquanto vazios, os blocos
-// usam "auto" e o Google preenche via Auto Ads (se ativado na conta).
+// Modo: Auto Ads
+// O loader do AdSense já está em index.html. Com Auto Ads ativado no painel
+// (https://adsense.google.com → Anúncios → Visão geral → Configurações do site),
+// o Google injeta anúncios automaticamente nas melhores posições.
+//
+// Para alternar para unidades manuais no futuro, basta preencher os slots
+// abaixo com os IDs reais (data-ad-slot) criados em
+// "Anúncios → Por unidade de anúncio" e os blocos voltam a renderizar.
 export const ADSENSE_SLOTS = {
   libraryTop: "",
   betweenBooks: "",
