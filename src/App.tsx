@@ -14,7 +14,7 @@ import { StickyAdBanner } from "@/components/StickyAdBanner";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import * as Sentry from "@sentry/react";
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
+import { Navigate } from "react-router-dom";
 import Welcome from "./pages/Welcome";
 import ResetPassword from "./pages/ResetPassword";
 import Library from "./pages/Library";
