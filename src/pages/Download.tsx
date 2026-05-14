@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { motion } from "framer-motion";
 import { Smartphone, Download as DownloadIcon, Chrome, QrCode, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { motion } from "framer-motion";
 import { ArrowLeft, Smartphone, Monitor, CheckCircle, Download, Zap, Sparkles, Rocket } from "lucide-react";
 import { useNavigate } from "react-router-dom";

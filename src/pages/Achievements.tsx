@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Trophy, Flame, Star, Target, BookOpen, Book, Library, LibraryBig, Crown, Sparkles, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
