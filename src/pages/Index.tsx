@@ -157,7 +157,7 @@ const Index = () => {
           >
             <Button
               size="lg"
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/library")}
               className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity text-lg px-8 py-6 aura-safira group"
             >
               Começar Agora
