@@ -21,7 +21,12 @@ import { loadAdSenseScript, ADSENSE_MODE } from "@/lib/adsense";
 export const CookieConsentBanner = () => {
   const [choice, setChoice] = useState<ConsentChoice>(() => getConsent());
 
-  useEffect(() => onConsentChange(setChoice), []);
+  useEffect(() => {
+    const off = onConsentChange(setChoice);
+    return () => {
+      off();
+    };
+  }, []);
 
   // Se já decidiu antes (sessões anteriores), garanta que o script carregue.
   useEffect(() => {
