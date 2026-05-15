@@ -39,7 +39,7 @@ const Share = () => {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate(`/reader/${id}`)}
+          onClick={() = aria-label="Voltar"> navigate(`/reader/${id}`)}
           className="mb-4 aura-soft transition-aura"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -95,7 +95,7 @@ const Share = () => {
                 size="icon"
                 onClick={handleCopy}
                 className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-safira"
-              >
+               aria-label="Confirmar">
                 {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
               </Button>
             </div>

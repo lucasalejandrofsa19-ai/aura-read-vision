@@ -139,7 +139,7 @@ const Library = () => {
               variant="ghost"
               size="icon"
               className="aura-soft transition-aura"
-              onClick={() => navigate("/resumo-academico")}
+              onClick={() = aria-label="GraduationCap"> navigate("/resumo-academico")}
               title="Resumo Acadêmico"
             >
               <GraduationCap className="w-5 h-5" />
@@ -148,7 +148,7 @@ const Library = () => {
               variant="ghost"
               size="icon"
               className="aura-soft transition-aura"
-              onClick={() => navigate("/profile")}
+              onClick={() = aria-label="Perfil"> navigate("/profile")}
               data-tour="profile-button"
             >
               <User className="w-5 h-5" />
@@ -160,7 +160,7 @@ const Library = () => {
                 className="aura-soft transition-aura"
                 onClick={signOut}
                 title="Sair"
-              >
+               aria-label="Ação">
                 Sair
               </Button>
             ) : (
@@ -168,7 +168,7 @@ const Library = () => {
                 variant="ghost"
                 size="icon"
                 className="aura-soft transition-aura"
-                onClick={() => setAuthDialogOpen(true)}
+                onClick={() = aria-label="Entrar"> setAuthDialogOpen(true)}
                 title="Entrar"
               >
                 <LogIn className="w-5 h-5" />
@@ -281,7 +281,7 @@ const Library = () => {
                   variant="ghost"
                   size="icon"
                   className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background/90 rounded-full shadow-lg"
-                  onClick={() => scrollLeft(premiumScrollRef)}
+                  onClick={() = aria-label="Anterior"> scrollLeft(premiumScrollRef)}
                 >
                   <ChevronLeft className="w-6 h-6" />
                 </Button>
@@ -289,7 +289,7 @@ const Library = () => {
                   variant="ghost"
                   size="icon"
                   className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background/90 rounded-full shadow-lg"
-                  onClick={() => scrollRight(premiumScrollRef)}
+                  onClick={() = aria-label="Próximo"> scrollRight(premiumScrollRef)}
                 >
                   <ChevronRight className="w-6 h-6" />
                 </Button>
@@ -365,7 +365,7 @@ const Library = () => {
                   variant="ghost"
                   size="icon"
                   className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background/90 rounded-full shadow-lg"
-                  onClick={() => scrollLeft(userBooksScrollRef)}
+                  onClick={() = aria-label="Anterior"> scrollLeft(userBooksScrollRef)}
                 >
                   <ChevronLeft className="w-6 h-6" />
                 </Button>
@@ -373,7 +373,7 @@ const Library = () => {
                   variant="ghost"
                   size="icon"
                   className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background/90 rounded-full shadow-lg"
-                  onClick={() => scrollRight(userBooksScrollRef)}
+                  onClick={() = aria-label="Próximo"> scrollRight(userBooksScrollRef)}
                 >
                   <ChevronRight className="w-6 h-6" />
                 </Button>

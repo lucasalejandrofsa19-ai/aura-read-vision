@@ -350,7 +350,7 @@ const Summary = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate(`/reader/${id}`)}
+              onClick={() = aria-label="Voltar"> navigate(`/reader/${id}`)}
               className="aura-soft transition-aura"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -371,7 +371,7 @@ const Summary = () => {
               size="icon"
               onClick={handleExport}
               className="aura-soft transition-aura"
-            >
+             aria-label="Baixar">
               <Download className="w-5 h-5" />
             </Button>
             <Button
@@ -379,7 +379,7 @@ const Summary = () => {
               size="icon"
               onClick={handleShare}
               className="aura-soft transition-aura"
-            >
+             aria-label="Compartilhar">
               <Share2 className="w-5 h-5" />
             </Button>
           </div>

@@ -125,7 +125,7 @@ export const FocusedReaderMode = ({
                   size="icon"
                   onClick={onClose}
                   className="aura-soft"
-                >
+                 aria-label="Fechar">
                   <X className="w-5 h-5" />
                 </Button>
                 <div>

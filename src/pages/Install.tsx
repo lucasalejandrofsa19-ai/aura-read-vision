@@ -89,7 +89,7 @@ const Install = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={() = aria-label="Voltar"> navigate(-1)}
             className="aura-soft transition-aura"
           >
             <ArrowLeft className="w-5 h-5" />
