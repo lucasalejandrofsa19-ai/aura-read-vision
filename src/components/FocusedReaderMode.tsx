@@ -125,7 +125,7 @@ export const FocusedReaderMode = ({
                   size="icon"
                   onClick={onClose}
                   className="aura-soft"
-                >
+                 aria-label="Fechar">
                   <X className="w-5 h-5" />
                 </Button>
                 <div>
@@ -294,6 +294,7 @@ export const FocusedReaderMode = ({
                   value={pageNumber}
                   onChange={(e) => handlePageChange(parseInt(e.target.value))}
                   className="w-full h-1 bg-border/30 rounded-lg appearance-none cursor-pointer slider-thumb"
+                  aria-label={`Ir para página (atual: ${pageNumber} de ${totalPages})`}
                 />
               </div>
             </div>

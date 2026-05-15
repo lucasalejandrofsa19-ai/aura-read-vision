@@ -283,6 +283,7 @@ const Profile = () => {
                       className="hidden"
                       onChange={uploadAvatar}
                       disabled={uploading}
+                      aria-label="Enviar foto de perfil"
                     />
                   </div>
                   <div className="flex-1">

@@ -347,7 +347,7 @@ const Reader = () => {
               size="icon"
               onClick={() => navigate("/library")}
               className="aura-soft transition-aura"
-            >
+             aria-label="Voltar">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex-1">
@@ -378,7 +378,7 @@ const Reader = () => {
               onClick={() => setIsDrawingMode(!isDrawingMode)}
               className="aura-soft transition-aura"
               title={isDrawingMode ? "Desativar marca texto" : "Ativar marca texto"}
-            >
+             aria-label="Marcador de texto">
               <Highlighter className="w-5 h-5" />
             </Button>
 
@@ -389,7 +389,7 @@ const Reader = () => {
                   size="icon"
                   className="aura-soft transition-aura"
                   title="Ver destaques"
-                >
+                 aria-label="Lista">
                   <List className="w-5 h-5" />
                 </Button>
               </SheetTrigger>
@@ -422,7 +422,7 @@ const Reader = () => {
                   size="icon"
                   className={`transition-aura ${bookmarkedPage ? "text-accent aura-amber" : "aura-soft"}`}
                   title="Marcador"
-                >
+                 aria-label="Página marcada">
                   {bookmarkedPage ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
                 </Button>
               </DropdownMenuTrigger>
@@ -445,7 +445,7 @@ const Reader = () => {
                   size="icon"
                   className="aura-soft transition-aura"
                   title="Mais opções"
-                >
+                 aria-label="Mais opções">
                   <MoreVertical className="w-5 h-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -507,7 +507,7 @@ const Reader = () => {
               onClick={() => setIsDrawingMode(!isDrawingMode)}
               className="aura-soft transition-aura"
               title={isDrawingMode ? "Desativar marca texto" : "Ativar marca texto"}
-            >
+             aria-label="Marcador de texto">
               <Highlighter className="w-5 h-5" />
             </Button>
 
@@ -518,7 +518,7 @@ const Reader = () => {
                   size="icon"
                   className="aura-soft transition-aura"
                   title="Ver destaques"
-                >
+                 aria-label="Lista">
                   <List className="w-5 h-5" />
                 </Button>
               </SheetTrigger>
@@ -551,7 +551,7 @@ const Reader = () => {
                   size="icon"
                   className={`transition-aura ${bookmarkedPage ? "text-accent aura-amber" : "aura-soft"}`}
                   title="Marcador"
-                >
+                 aria-label="Página marcada">
                   {bookmarkedPage ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
                 </Button>
               </DropdownMenuTrigger>
@@ -573,7 +573,7 @@ const Reader = () => {
               onClick={() => navigate("/summary/" + id)}
               className="aura-soft transition-aura"
               title="Resumo"
-            >
+             aria-label="Notas">
               <FileText className="w-5 h-5" />
             </Button>
 
@@ -583,7 +583,7 @@ const Reader = () => {
               onClick={() => navigate("/share/" + id)}
               className="aura-soft transition-aura"
               title="Compartilhar"
-            >
+             aria-label="Compartilhar">
               <Share2 className="w-5 h-5" />
             </Button>
 
@@ -593,7 +593,7 @@ const Reader = () => {
               onClick={handleEnterFocusedMode}
               className="aura-soft transition-aura"
               title="Modo Leitura Focada"
-            >
+             aria-label="Visualizar">
               <Eye className="w-5 h-5" />
             </Button>
 
@@ -603,7 +603,7 @@ const Reader = () => {
               onClick={handleEnterPresentationMode}
               className="aura-soft transition-aura"
               title="Modo Apresentação"
-            >
+             aria-label="Maximizar">
               <Maximize className="w-5 h-5" />
             </Button>
 

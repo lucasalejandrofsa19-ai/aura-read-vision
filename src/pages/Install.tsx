@@ -91,7 +91,7 @@ const Install = () => {
             size="icon"
             onClick={() => navigate(-1)}
             className="aura-soft transition-aura"
-          >
+           aria-label="Voltar">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
