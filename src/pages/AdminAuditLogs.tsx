@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SEO } from "@/components/SEO";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuditLogs, type AuditLog } from "@/hooks/useAuditLogs";
 import { useUserData } from "@/hooks/useUserData";
@@ -145,6 +146,7 @@ export default function AdminAuditLogs() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Audit logs — AURA READ" description="Registros internos de auditoria de segurança da AURA READ." path="/admin/audit-logs" noindex />
       {/* Header */}
       <header className="border-b border-border/50 bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
         <div className="container mx-auto px-4 py-4">

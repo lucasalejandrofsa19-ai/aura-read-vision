@@ -1,0 +1,20 @@
+# AURA READ
+
+> Biblioteca pessoal interativa para leitura de PDFs com marca-texto inteligente, anotações, audiobook e resumos automáticos com IA.
+
+AURA READ é um PWA mobile-first que permite organizar PDFs em uma estante virtual, ler com destaques e anotações, gerar resumos com IA, ouvir como audiobook e acompanhar estatísticas de leitura. Funciona offline e oferece planos Pro e Premium para recursos avançados.
+
+## Pages
+
+- [Início](/): Apresentação do produto, recursos, depoimentos e CTA principal.
+- [Biblioteca](/library): Estante 3D com os PDFs do usuário (requer login).
+- [Planos e preços](/pricing): Comparativo entre planos Free, Pro e Premium.
+- [Resumo acadêmico](/resumo-academico): Geração de resumos acadêmicos a partir de PDFs.
+- [Conquistas](/conquistas): Sistema de gamificação com XP, streaks e medalhas.
+- [Download do app](/download): Links para baixar a versão mobile (iOS/Android).
+- [Instalar PWA](/install): Instruções para instalar a AURA READ como app.
+- [Boas-vindas](/welcome): Onboarding inicial com visão geral dos recursos.
+
+## Optional
+
+- [Redefinir senha](/reset-password): Fluxo de redefinição de senha por email.

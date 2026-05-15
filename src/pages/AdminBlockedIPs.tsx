@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { SEO } from "@/components/SEO";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBlockedIPs } from "@/hooks/useBlockedIPs";
@@ -341,6 +342,7 @@ export default function AdminBlockedIPs() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="IPs bloqueados — AURA READ" description="Painel interno de gerenciamento de IPs bloqueados na AURA READ." path="/admin/blocked-ips" noindex />
       {/* Header */}
       <header className="border-b border-border/50 bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
         <div className="container mx-auto px-4 py-4">
