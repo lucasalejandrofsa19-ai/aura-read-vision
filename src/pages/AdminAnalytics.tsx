@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { ArrowLeft, Users, BookOpen, TrendingUp, Shield, Star, UserCheck } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { SEO } from "@/components/SEO";
 
 interface Analytics {
   totalUsers: number;
@@ -147,6 +148,7 @@ const AdminAnalytics = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Analytics admin — AURA READ" description="Dashboard interno de métricas e analytics da AURA READ." path="/admin/analytics" noindex />
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}

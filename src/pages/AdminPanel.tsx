@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PremiumBadge } from "@/components/PremiumBadge";
+import { SEO } from "@/components/SEO";
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -220,6 +221,7 @@ const AdminPanel = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Painel admin — AURA READ" description="Painel de administração interno da AURA READ para gerenciamento de usuários, papéis e configurações." path="/admin" noindex />
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}

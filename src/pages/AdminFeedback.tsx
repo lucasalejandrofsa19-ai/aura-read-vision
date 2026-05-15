@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { SEO } from "@/components/SEO";
 import {
   Card,
   CardContent,
@@ -160,6 +161,7 @@ export default function AdminFeedback() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
+      <SEO title="Feedback admin — AURA READ" description="Painel interno de feedback dos usuários da AURA READ." path="/admin/feedback" noindex />
       <div className="max-w-7xl mx-auto">
         <Button
           variant="ghost"
