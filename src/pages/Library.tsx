@@ -160,7 +160,7 @@ const Library = () => {
                 className="aura-soft transition-aura"
                 onClick={signOut}
                 title="Sair"
-               aria-label="Ação">
+               aria-label="Sair">
                 Sair
               </Button>
             ) : (
