@@ -163,7 +163,7 @@ const AcademicSummary = () => {
       >
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() = aria-label="Voltar"> navigate("/library")}>
+            <Button variant="ghost" size="icon" onClick={() => navigate("/library")} aria-label="Voltar">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-3">
@@ -386,7 +386,7 @@ const AcademicSummary = () => {
                       {q.citation && (
                         <div className="flex items-center justify-between gap-2 bg-muted/50 rounded p-2">
                           <code className="text-xs">{q.citation}</code>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() = aria-label="Copiar"> copyToClipboard(q.citation!, "Citação")}>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(q.citation!, "Citação")} aria-label="Copiar">
                             <Copy className="w-3 h-3" />
                           </Button>
                         </div>
@@ -404,7 +404,7 @@ const AcademicSummary = () => {
                       {result.inTextCitations.map((c, i) => (
                         <li key={i} className="flex items-center justify-between gap-2 bg-muted/50 rounded p-2">
                           <code className="text-xs">{c}</code>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() = aria-label="Copiar"> copyToClipboard(c, "Citação")}>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(c, "Citação")} aria-label="Copiar">
                             <Copy className="w-3 h-3" />
                           </Button>
                         </li>

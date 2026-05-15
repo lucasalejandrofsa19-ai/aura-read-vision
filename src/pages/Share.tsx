@@ -39,9 +39,9 @@ const Share = () => {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() = aria-label="Voltar"> navigate(`/reader/${id}`)}
+          onClick={() => navigate(`/reader/${id}`)}
           className="mb-4 aura-soft transition-aura"
-        >
+         aria-label="Voltar">
           <ArrowLeft className="w-5 h-5" />
         </Button>
 

@@ -350,9 +350,9 @@ const Summary = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() = aria-label="Voltar"> navigate(`/reader/${id}`)}
+              onClick={() => navigate(`/reader/${id}`)}
               className="aura-soft transition-aura"
-            >
+             aria-label="Voltar">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>

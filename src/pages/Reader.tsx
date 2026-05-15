@@ -345,9 +345,9 @@ const Reader = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() = aria-label="Voltar"> navigate("/library")}
+              onClick={() => navigate("/library")}
               className="aura-soft transition-aura"
-            >
+             aria-label="Voltar">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex-1">
@@ -375,10 +375,10 @@ const Reader = () => {
             <Button
               variant={isDrawingMode ? "default" : "ghost"}
               size="icon"
-              onClick={() = aria-label="Marcador de texto"> setIsDrawingMode(!isDrawingMode)}
+              onClick={() => setIsDrawingMode(!isDrawingMode)}
               className="aura-soft transition-aura"
               title={isDrawingMode ? "Desativar marca texto" : "Ativar marca texto"}
-            >
+             aria-label="Marcador de texto">
               <Highlighter className="w-5 h-5" />
             </Button>
 
@@ -504,10 +504,10 @@ const Reader = () => {
             <Button
               variant={isDrawingMode ? "default" : "ghost"}
               size="icon"
-              onClick={() = aria-label="Marcador de texto"> setIsDrawingMode(!isDrawingMode)}
+              onClick={() => setIsDrawingMode(!isDrawingMode)}
               className="aura-soft transition-aura"
               title={isDrawingMode ? "Desativar marca texto" : "Ativar marca texto"}
-            >
+             aria-label="Marcador de texto">
               <Highlighter className="w-5 h-5" />
             </Button>
 
@@ -570,20 +570,20 @@ const Reader = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() = aria-label="Notas"> navigate("/summary/" + id)}
+              onClick={() => navigate("/summary/" + id)}
               className="aura-soft transition-aura"
               title="Resumo"
-            >
+             aria-label="Notas">
               <FileText className="w-5 h-5" />
             </Button>
 
             <Button
               variant="ghost"
               size="icon"
-              onClick={() = aria-label="Compartilhar"> navigate("/share/" + id)}
+              onClick={() => navigate("/share/" + id)}
               className="aura-soft transition-aura"
               title="Compartilhar"
-            >
+             aria-label="Compartilhar">
               <Share2 className="w-5 h-5" />
             </Button>
 

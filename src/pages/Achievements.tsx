@@ -54,7 +54,7 @@ const Achievements = () => {
     <div className="min-h-screen p-6 bg-gradient-to-b from-background via-background to-muted/20">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={() = aria-label="Voltar"> navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Voltar">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
