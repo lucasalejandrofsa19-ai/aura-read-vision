@@ -138,7 +138,7 @@ const ResetPassword = () => {
             </div>
           </motion.div>
           <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            AURA READ
+            AURA READ — Redefinir sua senha
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1 text-center">
             Sua biblioteca pessoal interativa

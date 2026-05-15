@@ -161,7 +161,7 @@ const Welcome = () => {
                       <feature.icon className={`w-6 h-6 ${feature.color}`} />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                      <h2 className="font-semibold text-lg mb-2">{feature.title}</h2>
                       <p className="text-muted-foreground text-sm">{feature.description}</p>
                     </div>
                   </div>

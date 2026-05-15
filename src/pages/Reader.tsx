@@ -47,6 +47,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { captureError } from "@/lib/sentry";
+import { SEO } from "@/components/SEO";
 
 const Reader = () => {
   const { id } = useParams();
@@ -268,11 +269,19 @@ const Reader = () => {
     addHighlight(coords, text);
   };
 
+  const seoTitle = book?.title ? `${book.title} — Leitor AURA READ` : "Leitor — AURA READ";
+  const seoDesc = book?.title
+    ? `Leia ${book.title} no leitor interativo da AURA READ com marca-texto inteligente, anotações e resumos.`
+    : "Leitor de PDF interativo com marca-texto, anotações e resumos automáticos.";
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
+      <>
+        <SEO title={seoTitle} description={seoDesc} path={`/reader/${id ?? ""}`} noindex />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      </>
     );
   }
 

@@ -18,6 +18,7 @@ import { saveAs } from "file-saver";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePremiumValidation } from "@/hooks/usePremiumValidation";
 import { pdfjs } from "@/lib/pdfjsWorker";
+import { SEO } from "@/components/SEO";
 
 type FunctionErrorBody = { error?: string; needsClientExtraction?: boolean };
 type ResponseClone = { json?: () => Promise<FunctionErrorBody>; text?: () => Promise<string> };
@@ -328,6 +329,15 @@ const Summary = () => {
   }
 
   return (
+    <>
+    <SEO
+      title={bookTitle ? `Resumo de ${bookTitle} — AURA READ` : "Resumo do livro — AURA READ"}
+      description={bookTitle
+        ? `Resumo inteligente e destaques de ${bookTitle} gerados pela AURA READ.`
+        : "Resumos inteligentes gerados a partir dos seus destaques na AURA READ."}
+      path={`/summary/${id ?? ""}`}
+      noindex
+    />
     <div className="min-h-screen p-6">
       {/* Header */}
       <motion.header
