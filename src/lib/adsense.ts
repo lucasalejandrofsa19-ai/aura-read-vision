@@ -28,7 +28,7 @@ export const ADSENSE_SLOTS = {
   libraryTop: "9551964688",
   betweenBooks: "",
   summaryInline: "",
-  stickyFooter: "",
+  stickyFooter: "9551964688",
 };
 
 /**
