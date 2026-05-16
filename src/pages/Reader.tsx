@@ -48,6 +48,8 @@ import {
 } from "@/components/ui/sheet";
 import { captureError } from "@/lib/sentry";
 import { SEO } from "@/components/SEO";
+import { AdSenseUnit } from "@/components/AdSenseUnit";
+import { ADSENSE_SLOTS } from "@/lib/adsense";
 
 const Reader = () => {
   const { id } = useParams();
