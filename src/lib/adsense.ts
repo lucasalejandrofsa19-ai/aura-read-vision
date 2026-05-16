@@ -24,7 +24,8 @@ export const isAdsLive = ADSENSE_MODE === "production";
 
 // Slot IDs — vazio = Auto Ads.
 export const ADSENSE_SLOTS = {
-  libraryTop: "",
+  // "primeiro bloco aurea read" — banner 728x90 (responsivo no mobile).
+  libraryTop: "9551964688",
   betweenBooks: "",
   summaryInline: "",
   stickyFooter: "",
