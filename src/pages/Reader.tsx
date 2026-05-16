@@ -627,6 +627,7 @@ const Reader = () => {
         {...mainProps}
         className="max-w-5xl mx-auto px-6 py-12 space-y-6"
       >
+        <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" className="mb-4" />
         {pdfUrl ? (
           <PDFViewer 
             fileUrl={pdfUrl} 
