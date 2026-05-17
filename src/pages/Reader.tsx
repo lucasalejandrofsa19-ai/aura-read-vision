@@ -280,11 +280,18 @@ const Reader = () => {
     setIsFocusedMode(false);
   };
 
-  const handleHighlightDrawn = (data: { x: number; y: number; width: number; height: number; text: string }) => {
-    const { text, ...coords } = data;
-    // Adicionar destaque diretamente com texto extraído - cópia automática no useHighlights
-    addHighlight(coords, text);
+  const handleHighlightDrawn = (data: { x: number; y: number; width: number; height: number; text: string; color: string }) => {
+    const { text, color, ...coords } = data;
+    addHighlight(coords, text, color);
   };
+
+  const HIGHLIGHT_COLORS: Array<{ value: string; label: string }> = [
+    { value: "#fef08a", label: "Amarelo" },
+    { value: "#86efac", label: "Verde" },
+    { value: "#93c5fd", label: "Azul" },
+    { value: "#f9a8d4", label: "Rosa" },
+    { value: "#fdba74", label: "Laranja" },
+  ];
 
   const seoTitle = book?.title ? `${book.title} — Leitor AURA READ` : "Leitor — AURA READ";
   const seoDesc = book?.title
