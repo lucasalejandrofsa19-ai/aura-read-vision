@@ -65,6 +65,21 @@ const Reader = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
+  const [highlightColor, setHighlightColor] = useState<string>(() => {
+    if (typeof window === "undefined") return "#fef08a";
+    return localStorage.getItem("aura_highlight_color") || "#fef08a";
+  });
+  const [penThickness, setPenThickness] = useState<number>(() => {
+    if (typeof window === "undefined") return 20;
+    const v = Number(localStorage.getItem("aura_pen_thickness"));
+    return Number.isFinite(v) && v >= 8 && v <= 40 ? v : 20;
+  });
+  useEffect(() => {
+    localStorage.setItem("aura_highlight_color", highlightColor);
+  }, [highlightColor]);
+  useEffect(() => {
+    localStorage.setItem("aura_pen_thickness", String(penThickness));
+  }, [penThickness]);
   const [spokenText, setSpokenText] = useState('');
   const mobileConfig = useMobileOptimization();
 
