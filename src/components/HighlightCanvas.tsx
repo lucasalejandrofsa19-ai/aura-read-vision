@@ -117,8 +117,8 @@ export const HighlightCanvas = ({
       const rectX = rectWidth < 0 ? x : drawingRef.current.startX;
       const rectY = rectHeight < 0 ? y : drawingRef.current.startY;
 
-      ctx.fillStyle = "#fef08a";
-      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = drawColor;
+      ctx.globalAlpha = 0.35;
       ctx.fillRect(rectX, rectY, Math.abs(rectWidth), Math.abs(rectHeight));
       ctx.globalAlpha = 1.0;
 
