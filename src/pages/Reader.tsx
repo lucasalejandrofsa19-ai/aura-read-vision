@@ -291,7 +291,47 @@ const Reader = () => {
     { value: "#93c5fd", label: "Azul" },
     { value: "#f9a8d4", label: "Rosa" },
     { value: "#fdba74", label: "Laranja" },
+  const HIGHLIGHT_COLORS: Array<{ value: string; label: string }> = [
+    { value: "#fef08a", label: "Amarelo" },
+    { value: "#86efac", label: "Verde" },
+    { value: "#93c5fd", label: "Azul" },
+    { value: "#f9a8d4", label: "Rosa" },
+    { value: "#fdba74", label: "Laranja" },
   ];
+
+  const penToolbar = isDrawingMode ? (
+    <div className="flex items-center gap-2 rounded-full border border-border bg-card/80 backdrop-blur px-2 py-1 shadow-sm">
+      <div className="flex items-center gap-1">
+        {HIGHLIGHT_COLORS.map((c) => (
+          <button
+            key={c.value}
+            type="button"
+            onClick={() => setHighlightColor(c.value)}
+            title={c.label}
+            aria-label={`Cor ${c.label}`}
+            className={`w-6 h-6 rounded-full transition-transform hover:scale-110 ${
+              highlightColor === c.value ? "ring-2 ring-offset-2 ring-offset-background ring-primary scale-110" : "ring-1 ring-border"
+            }`}
+            style={{ backgroundColor: c.value }}
+          />
+        ))}
+      </div>
+      <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-border">
+        <span className="text-xs text-muted-foreground">Espessura</span>
+        <input
+          type="range"
+          min={8}
+          max={40}
+          step={2}
+          value={penThickness}
+          onChange={(e) => setPenThickness(Number(e.target.value))}
+          className="w-20 accent-primary"
+          aria-label="Espessura da caneta"
+        />
+        <span className="text-xs w-6 text-foreground">{penThickness}</span>
+      </div>
+    </div>
+  ) : null;
 
   const seoTitle = book?.title ? `${book.title} — Leitor AURA READ` : "Leitor — AURA READ";
   const seoDesc = book?.title
