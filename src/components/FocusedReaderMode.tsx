@@ -24,9 +24,11 @@ interface FocusedReaderModeProps {
     height: number;
     color: string;
   }>;
-  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string }) => void;
+  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string; color: string }) => void;
   isDrawingMode?: boolean;
   onDrawingModeChange?: (isDrawing: boolean) => void;
+  highlightColor?: string;
+  penThickness?: number;
 }
 
 const readingModeStyles: Record<ReadingMode, { bg: string; text: string; label: string; icon: typeof Eye }> = {
