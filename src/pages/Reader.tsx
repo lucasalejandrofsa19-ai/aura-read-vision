@@ -330,6 +330,8 @@ const Reader = () => {
         onHighlightDrawn={handleHighlightDrawn}
         isDrawingMode={isDrawingMode}
         onDrawingModeChange={setIsDrawingMode}
+        highlightColor={highlightColor}
+        penThickness={penThickness}
       />
     );
   }
