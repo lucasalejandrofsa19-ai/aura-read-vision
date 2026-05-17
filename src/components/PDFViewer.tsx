@@ -492,9 +492,11 @@ export const PDFViewer = ({
                     height: coords.height / scale,
                   };
                   
-                  onHighlightDrawn?.({ ...originalCoords, text });
+                  onHighlightDrawn?.({ ...originalCoords, text, color: highlightColor });
                 }}
                 isDrawing={isDrawingMode}
+                drawColor={highlightColor}
+                minSelectionSize={penThickness}
               />
             )}
           </div>
