@@ -149,8 +149,8 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
   });
 
   const addHighlight = useCallback(
-    (position: { x: number; y: number; width: number; height: number }, text: string = "") => {
-      addHighlightMutation.mutate({ position, text });
+    (position: { x: number; y: number; width: number; height: number }, text: string = "", color: string = "#fef08a") => {
+      addHighlightMutation.mutate({ position, text, color });
     },
     [addHighlightMutation]
   );
