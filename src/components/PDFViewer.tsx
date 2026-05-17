@@ -34,8 +34,10 @@ interface PDFViewerProps {
     height: number;
     color: string;
   }>;
-  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string }) => void;
+  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string; color: string }) => void;
   isDrawingMode?: boolean;
+  highlightColor?: string;
+  penThickness?: number;
   spokenText?: string;
 }
 
@@ -50,6 +52,8 @@ export const PDFViewer = ({
   highlights = [],
   onHighlightDrawn,
   isDrawingMode = false,
+  highlightColor = "#fef08a",
+  penThickness = 20,
   spokenText = '',
 }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
