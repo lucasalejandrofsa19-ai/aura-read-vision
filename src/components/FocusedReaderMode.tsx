@@ -69,6 +69,8 @@ export const FocusedReaderMode = ({
   onHighlightDrawn,
   isDrawingMode = false,
   onDrawingModeChange,
+  highlightColor = "#fef08a",
+  penThickness = 20,
 }: FocusedReaderModeProps) => {
   const [pageNumber, setPageNumber] = useState(initialPage);
   const [readingMode, setReadingMode] = useState<ReadingMode>("default");
