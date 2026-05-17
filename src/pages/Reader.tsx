@@ -291,12 +291,6 @@ const Reader = () => {
     { value: "#93c5fd", label: "Azul" },
     { value: "#f9a8d4", label: "Rosa" },
     { value: "#fdba74", label: "Laranja" },
-  const HIGHLIGHT_COLORS: Array<{ value: string; label: string }> = [
-    { value: "#fef08a", label: "Amarelo" },
-    { value: "#86efac", label: "Verde" },
-    { value: "#93c5fd", label: "Azul" },
-    { value: "#f9a8d4", label: "Rosa" },
-    { value: "#fdba74", label: "Laranja" },
   ];
 
   const penToolbar = isDrawingMode ? (
