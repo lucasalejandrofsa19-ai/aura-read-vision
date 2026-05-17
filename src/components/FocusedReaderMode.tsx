@@ -229,9 +229,11 @@ export const FocusedReaderMode = ({
                       height: coords.height / realScale,
                     };
                     // For FocusedReaderMode, we pass empty text since we don't have text extraction here yet
-                    onHighlightDrawn?.({ ...originalCoords, text: "" });
+                    onHighlightDrawn?.({ ...originalCoords, text: "", color: highlightColor });
                   }}
                   isDrawing={isDrawingMode}
+                  drawColor={highlightColor}
+                  minSelectionSize={penThickness}
                 />
               )}
             </div>
