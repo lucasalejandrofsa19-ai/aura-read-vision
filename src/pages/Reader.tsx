@@ -439,8 +439,9 @@ const Reader = () => {
               className="aura-soft transition-aura"
               title={isDrawingMode ? "Desativar marca texto" : "Ativar marca texto"}
              aria-label="Marcador de texto">
-              <Highlighter className="w-5 h-5" />
+              <Highlighter className="w-5 h-5" style={{ color: isDrawingMode ? highlightColor : undefined }} />
             </Button>
+            {penToolbar}
 
             <Sheet>
               <SheetTrigger asChild>
