@@ -13,6 +13,7 @@ interface HighlightCanvasProps {
   onHighlightAdded?: (highlight: { x: number; y: number; width: number; height: number }) => Promise<void> | void;
   isDrawing: boolean;
   minSelectionSize?: number;
+  drawColor?: string;
 }
 
 export const HighlightCanvas = ({
@@ -22,6 +23,7 @@ export const HighlightCanvas = ({
   onHighlightAdded,
   isDrawing,
   minSelectionSize = 20,
+  drawColor = "#fef08a",
 }: HighlightCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef<{
