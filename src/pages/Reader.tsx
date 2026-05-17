@@ -65,6 +65,21 @@ const Reader = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [scale, setScale] = useState(1.0);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
+  const [highlightColor, setHighlightColor] = useState<string>(() => {
+    if (typeof window === "undefined") return "#fef08a";
+    return localStorage.getItem("aura_highlight_color") || "#fef08a";
+  });
+  const [penThickness, setPenThickness] = useState<number>(() => {
+    if (typeof window === "undefined") return 20;
+    const v = Number(localStorage.getItem("aura_pen_thickness"));
+    return Number.isFinite(v) && v >= 8 && v <= 40 ? v : 20;
+  });
+  useEffect(() => {
+    localStorage.setItem("aura_highlight_color", highlightColor);
+  }, [highlightColor]);
+  useEffect(() => {
+    localStorage.setItem("aura_pen_thickness", String(penThickness));
+  }, [penThickness]);
   const [spokenText, setSpokenText] = useState('');
   const mobileConfig = useMobileOptimization();
 
@@ -265,11 +280,52 @@ const Reader = () => {
     setIsFocusedMode(false);
   };
 
-  const handleHighlightDrawn = (data: { x: number; y: number; width: number; height: number; text: string }) => {
-    const { text, ...coords } = data;
-    // Adicionar destaque diretamente com texto extraído - cópia automática no useHighlights
-    addHighlight(coords, text);
+  const handleHighlightDrawn = (data: { x: number; y: number; width: number; height: number; text: string; color: string }) => {
+    const { text, color, ...coords } = data;
+    addHighlight(coords, text, color);
   };
+
+  const HIGHLIGHT_COLORS: Array<{ value: string; label: string }> = [
+    { value: "#fef08a", label: "Amarelo" },
+    { value: "#86efac", label: "Verde" },
+    { value: "#93c5fd", label: "Azul" },
+    { value: "#f9a8d4", label: "Rosa" },
+    { value: "#fdba74", label: "Laranja" },
+  ];
+
+  const penToolbar = isDrawingMode ? (
+    <div className="flex items-center gap-2 rounded-full border border-border bg-card/80 backdrop-blur px-2 py-1 shadow-sm">
+      <div className="flex items-center gap-1">
+        {HIGHLIGHT_COLORS.map((c) => (
+          <button
+            key={c.value}
+            type="button"
+            onClick={() => setHighlightColor(c.value)}
+            title={c.label}
+            aria-label={`Cor ${c.label}`}
+            className={`w-6 h-6 rounded-full transition-transform hover:scale-110 ${
+              highlightColor === c.value ? "ring-2 ring-offset-2 ring-offset-background ring-primary scale-110" : "ring-1 ring-border"
+            }`}
+            style={{ backgroundColor: c.value }}
+          />
+        ))}
+      </div>
+      <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-border">
+        <span className="text-xs text-muted-foreground">Espessura</span>
+        <input
+          type="range"
+          min={8}
+          max={40}
+          step={2}
+          value={penThickness}
+          onChange={(e) => setPenThickness(Number(e.target.value))}
+          className="w-20 accent-primary"
+          aria-label="Espessura da caneta"
+        />
+        <span className="text-xs w-6 text-foreground">{penThickness}</span>
+      </div>
+    </div>
+  ) : null;
 
   const seoTitle = book?.title ? `${book.title} — Leitor AURA READ` : "Leitor — AURA READ";
   const seoDesc = book?.title
@@ -308,6 +364,8 @@ const Reader = () => {
         onHighlightDrawn={handleHighlightDrawn}
         isDrawingMode={isDrawingMode}
         onDrawingModeChange={setIsDrawingMode}
+        highlightColor={highlightColor}
+        penThickness={penThickness}
       />
     );
   }
@@ -381,8 +439,9 @@ const Reader = () => {
               className="aura-soft transition-aura"
               title={isDrawingMode ? "Desativar marca texto" : "Ativar marca texto"}
              aria-label="Marcador de texto">
-              <Highlighter className="w-5 h-5" />
+              <Highlighter className="w-5 h-5" style={{ color: isDrawingMode ? highlightColor : undefined }} />
             </Button>
+            {penToolbar}
 
             <Sheet>
               <SheetTrigger asChild>
@@ -510,8 +569,9 @@ const Reader = () => {
               className="aura-soft transition-aura"
               title={isDrawingMode ? "Desativar marca texto" : "Ativar marca texto"}
              aria-label="Marcador de texto">
-              <Highlighter className="w-5 h-5" />
+              <Highlighter className="w-5 h-5" style={{ color: isDrawingMode ? highlightColor : undefined }} />
             </Button>
+            {penToolbar}
 
             <Sheet>
               <SheetTrigger asChild>
@@ -645,6 +705,8 @@ const Reader = () => {
             }))}
             onHighlightDrawn={handleHighlightDrawn}
             isDrawingMode={isDrawingMode}
+            highlightColor={highlightColor}
+            penThickness={penThickness}
             spokenText={spokenText}
             bookmarkIndicator={
               bookmarkedPage === currentPage && !mobileConfig.shouldReduceAnimations ? (

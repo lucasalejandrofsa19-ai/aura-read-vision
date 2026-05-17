@@ -24,9 +24,11 @@ interface FocusedReaderModeProps {
     height: number;
     color: string;
   }>;
-  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string }) => void;
+  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string; color: string }) => void;
   isDrawingMode?: boolean;
   onDrawingModeChange?: (isDrawing: boolean) => void;
+  highlightColor?: string;
+  penThickness?: number;
 }
 
 const readingModeStyles: Record<ReadingMode, { bg: string; text: string; label: string; icon: typeof Eye }> = {
@@ -67,6 +69,8 @@ export const FocusedReaderMode = ({
   onHighlightDrawn,
   isDrawingMode = false,
   onDrawingModeChange,
+  highlightColor = "#fef08a",
+  penThickness = 20,
 }: FocusedReaderModeProps) => {
   const [pageNumber, setPageNumber] = useState(initialPage);
   const [readingMode, setReadingMode] = useState<ReadingMode>("default");
@@ -225,9 +229,11 @@ export const FocusedReaderMode = ({
                       height: coords.height / realScale,
                     };
                     // For FocusedReaderMode, we pass empty text since we don't have text extraction here yet
-                    onHighlightDrawn?.({ ...originalCoords, text: "" });
+                    onHighlightDrawn?.({ ...originalCoords, text: "", color: highlightColor });
                   }}
                   isDrawing={isDrawingMode}
+                  drawColor={highlightColor}
+                  minSelectionSize={penThickness}
                 />
               )}
             </div>

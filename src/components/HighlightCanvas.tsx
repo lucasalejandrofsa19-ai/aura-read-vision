@@ -13,6 +13,7 @@ interface HighlightCanvasProps {
   onHighlightAdded?: (highlight: { x: number; y: number; width: number; height: number }) => Promise<void> | void;
   isDrawing: boolean;
   minSelectionSize?: number;
+  drawColor?: string;
 }
 
 export const HighlightCanvas = ({
@@ -22,6 +23,7 @@ export const HighlightCanvas = ({
   onHighlightAdded,
   isDrawing,
   minSelectionSize = 20,
+  drawColor = "#fef08a",
 }: HighlightCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef<{
@@ -115,8 +117,8 @@ export const HighlightCanvas = ({
       const rectX = rectWidth < 0 ? x : drawingRef.current.startX;
       const rectY = rectHeight < 0 ? y : drawingRef.current.startY;
 
-      ctx.fillStyle = "#fef08a";
-      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = drawColor;
+      ctx.globalAlpha = 0.35;
       ctx.fillRect(rectX, rectY, Math.abs(rectWidth), Math.abs(rectHeight));
       ctx.globalAlpha = 1.0;
 
@@ -176,7 +178,13 @@ export const HighlightCanvas = ({
       canvas.removeEventListener("touchend", handleEnd as EventListener);
       canvas.removeEventListener("touchcancel", handleEnd as EventListener);
     };
-  }, [isDrawing, highlights, width, height, onHighlightAdded]);
+  }, [isDrawing, highlights, width, height, onHighlightAdded, drawColor, minSelectionSize]);
+
+  // Custom SVG pen cursor tinted with the active highlight color
+  const cursorSvg = encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M3 25 L8 20 L20 8 L24 12 L12 24 Z" fill="${drawColor}" stroke="#1a1a1a" stroke-width="1.2" stroke-linejoin="round"/><path d="M18 10 L22 14" stroke="#1a1a1a" stroke-width="1.2"/><circle cx="4" cy="24" r="1.6" fill="#1a1a1a"/></svg>`
+  );
+  const penCursor = `url("data:image/svg+xml;utf8,${cursorSvg}") 2 26, crosshair`;
 
   return (
     <canvas
@@ -187,7 +195,7 @@ export const HighlightCanvas = ({
         position: "absolute",
         top: 0,
         left: 0,
-        cursor: isDrawing ? "crosshair" : "default",
+        cursor: isDrawing ? penCursor : "default",
         pointerEvents: isDrawing ? "auto" : "none",
         zIndex: isDrawing ? 10 : 1,
       }}
