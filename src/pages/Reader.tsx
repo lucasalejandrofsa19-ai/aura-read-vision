@@ -669,6 +669,8 @@ const Reader = () => {
             }))}
             onHighlightDrawn={handleHighlightDrawn}
             isDrawingMode={isDrawingMode}
+            highlightColor={highlightColor}
+            penThickness={penThickness}
             spokenText={spokenText}
             bookmarkIndicator={
               bookmarkedPage === currentPage && !mobileConfig.shouldReduceAnimations ? (
