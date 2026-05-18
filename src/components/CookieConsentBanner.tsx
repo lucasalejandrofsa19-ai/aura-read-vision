@@ -66,12 +66,12 @@ export const CookieConsentBanner = () => {
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-base mb-1">
-                Cookies e anúncios
+                Sua privacidade
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Usamos cookies para exibir anúncios e melhorar sua experiência.
-                Aceitando, permitimos anúncios personalizados via Google AdSense.
-                Recusando, ainda exibimos anúncios — apenas não personalizados.
+                Nenhum script de terceiros (Google AdSense, analytics) é carregado
+                até você aprovar. Se recusar, o app continua funcionando normalmente — sem anúncios.
               </p>
               <div className="flex flex-wrap gap-2 mt-4">
                 <Button
