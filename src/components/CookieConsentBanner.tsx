@@ -28,9 +28,9 @@ export const CookieConsentBanner = () => {
     };
   }, []);
 
-  // Se já decidiu antes (sessões anteriores), garanta que o script carregue.
+  // Se já decidiu antes e aprovou, garante que o script carregue.
   useEffect(() => {
-    if (choice !== "unset" && ADSENSE_MODE === "production") {
+    if (choice === "granted" && ADSENSE_MODE === "production") {
       loadAdSenseScript();
     }
   }, [choice]);
@@ -41,7 +41,10 @@ export const CookieConsentBanner = () => {
 
   const decide = (v: "granted" | "denied") => {
     setConsent(v);
-    if (ADSENSE_MODE === "production") loadAdSenseScript();
+    // Só carrega scripts de terceiros se o usuário APROVOU.
+    if (v === "granted" && ADSENSE_MODE === "production") {
+      loadAdSenseScript();
+    }
   };
 
   return (
