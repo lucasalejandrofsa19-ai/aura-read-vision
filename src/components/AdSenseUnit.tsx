@@ -42,12 +42,16 @@ export const AdSenseUnit = ({
 }: AdSenseUnitProps) => {
   const { hasPremiumAccess, isLoading } = useUserData();
   const pushed = useRef(false);
+  const [consent, setConsentState] = useState<ConsentChoice>(() => getConsent());
+
+  useEffect(() => onConsentChange(setConsentState), []);
 
   useEffect(() => {
     if (!isAdsLive) return;
     if (pushed.current) return;
     if (Capacitor.isNativePlatform()) return;
     if (hasPremiumAccess || isLoading) return;
+    if (consent !== "granted") return; // Sem consentimento: não empurra anúncio.
     if (!slot) return; // Auto Ads: nada a empurrar manualmente
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
@@ -55,10 +59,12 @@ export const AdSenseUnit = ({
     } catch (err) {
       console.warn("AdSense push error", err);
     }
-  }, [hasPremiumAccess, isLoading, slot]);
+  }, [hasPremiumAccess, isLoading, slot, consent]);
 
   if (Capacitor.isNativePlatform() || hasPremiumAccess) return null;
   if (ADSENSE_MODE === "off") return null;
+  // Em produção, esconde totalmente sem consentimento.
+  if (ADSENSE_MODE === "production" && consent !== "granted") return null;
 
   // Modo dev: placeholder visual
   if (ADSENSE_MODE === "dev") {
