@@ -33,12 +33,20 @@ export const ADSENSE_SLOTS = {
 
 /**
  * Carrega o script do AdSense uma única vez. Deve ser chamado
- * APÓS o usuário tomar uma decisão no banner de consentimento
- * (qualquer escolha — Consent Mode v2 ajusta o comportamento).
+ * APENAS após o usuário ter aprovado (consent === "granted") no banner.
+ * Se o usuário recusou, nenhum script de terceiros é carregado.
  */
 export function loadAdSenseScript() {
   if (typeof document === "undefined") return;
   if (ADSENSE_MODE !== "production") return;
+  // Gate explícito: só carrega com consentimento aprovado.
+  try {
+    // import dinâmico para evitar ciclo de import
+    const consent = localStorage.getItem("cookie_consent_v1");
+    if (consent !== "granted") return;
+  } catch {
+    return;
+  }
   if (document.querySelector('script[data-adsense-loader="true"]')) return;
 
   const s = document.createElement("script");
