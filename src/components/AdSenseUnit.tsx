@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { Capacitor } from "@capacitor/core";
 import { useUserData } from "@/hooks/useUserData";
 import { ADSENSE_CLIENT, ADSENSE_MODE, isAdsLive } from "@/lib/adsense";
+import { getConsent, onConsentChange, type ConsentChoice } from "@/lib/cookieConsent";
+import { useState } from "react";
 
 interface AdSenseUnitProps {
   slot: string;
