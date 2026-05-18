@@ -2,11 +2,16 @@
  * Gerenciamento de consentimento de cookies (LGPD/GDPR + Google Consent Mode v2).
  *
  * Estados possíveis:
- * - "granted":  usuário aceitou anúncios personalizados.
- * - "denied":   usuário recusou (ainda permite anúncios não-personalizados/contextuais).
- * - "unset":    nenhuma escolha feita — não carregamos nada de terceiros.
+ * - "granted":  usuário aceitou — scripts de terceiros (AdSense, analytics) podem carregar.
+ * - "denied":   usuário recusou — NENHUM script de terceiros é carregado.
+ * - "unset":    nenhuma escolha feita — nada é carregado; banner permanece visível.
  */
 export type ConsentChoice = "granted" | "denied" | "unset";
+
+/** Helper: true apenas quando o usuário aprovou explicitamente. */
+export function hasAdsConsent(): boolean {
+  return getConsent() === "granted";
+}
 
 const STORAGE_KEY = "cookie_consent_v1";
 const LISTENERS = new Set<(c: ConsentChoice) => void>();

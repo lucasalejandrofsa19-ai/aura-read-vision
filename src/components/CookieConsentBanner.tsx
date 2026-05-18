@@ -28,9 +28,9 @@ export const CookieConsentBanner = () => {
     };
   }, []);
 
-  // Se já decidiu antes (sessões anteriores), garanta que o script carregue.
+  // Se já decidiu antes e aprovou, garante que o script carregue.
   useEffect(() => {
-    if (choice !== "unset" && ADSENSE_MODE === "production") {
+    if (choice === "granted" && ADSENSE_MODE === "production") {
       loadAdSenseScript();
     }
   }, [choice]);
@@ -41,7 +41,10 @@ export const CookieConsentBanner = () => {
 
   const decide = (v: "granted" | "denied") => {
     setConsent(v);
-    if (ADSENSE_MODE === "production") loadAdSenseScript();
+    // Só carrega scripts de terceiros se o usuário APROVOU.
+    if (v === "granted" && ADSENSE_MODE === "production") {
+      loadAdSenseScript();
+    }
   };
 
   return (
@@ -63,12 +66,12 @@ export const CookieConsentBanner = () => {
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-base mb-1">
-                Cookies e anúncios
+                Sua privacidade
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Usamos cookies para exibir anúncios e melhorar sua experiência.
-                Aceitando, permitimos anúncios personalizados via Google AdSense.
-                Recusando, ainda exibimos anúncios — apenas não personalizados.
+                Nenhum script de terceiros (Google AdSense, analytics) é carregado
+                até você aprovar. Se recusar, o app continua funcionando normalmente — sem anúncios.
               </p>
               <div className="flex flex-wrap gap-2 mt-4">
                 <Button
