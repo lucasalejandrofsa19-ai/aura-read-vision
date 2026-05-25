@@ -29,6 +29,14 @@ serve(async (req) => {
       throw new Error('Text is required');
     }
 
+    // Validate voiceId format to prevent URL path injection
+    if (typeof voiceId !== 'string' || !/^[a-zA-Z0-9]{16,40}$/.test(voiceId)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid voiceId format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Create admin client for storage operations
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
