@@ -14,9 +14,12 @@ serve(async (req) => {
   try {
     const { text } = await req.json();
 
-    if (!text) {
+    if (!text || typeof text !== 'string') {
       throw new Error('Text is required');
     }
+
+    // Cap input length to avoid runaway AI cost
+    const truncatedText = text.slice(0, 5000);
 
     // Create user client for auth verification
     const supabaseClient = createClient(
