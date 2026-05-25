@@ -28,8 +28,9 @@ export const initSentry = () => {
         matchRoutes,
       }),
       Sentry.replayIntegration({
-        maskAllText: false,
-        blockAllMedia: false,
+        maskAllText: true,
+        blockAllMedia: true,
+        maskAllInputs: true,
       }),
     ],
     // Performance Monitoring
