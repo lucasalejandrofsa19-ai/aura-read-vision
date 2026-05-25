@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PDFViewer } from "@/components/PDFViewer";
 import { PresentationMode } from "@/components/PresentationMode";
 import { FocusedReaderMode } from "@/components/FocusedReaderMode";
