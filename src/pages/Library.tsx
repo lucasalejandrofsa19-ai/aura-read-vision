@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import { DailyGoalCard } from "@/components/gamification/DailyGoalCard";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
+import { ReadingInsightsCard } from "@/components/ReadingInsightsCard";
 import { ADSENSE_SLOTS } from "@/lib/adsense";
 import { AuthDialog } from "@/components/AuthDialog";
 import { LogIn } from "lucide-react";
