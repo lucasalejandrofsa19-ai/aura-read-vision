@@ -86,7 +86,7 @@ Regras:
           },
           {
             role: 'user',
-            content: `Reescreva este texto para narração de audiobook:\n\n${text}`
+            content: `Reescreva este texto para narração de audiobook:\n\n${truncatedText}`
           }
         ],
       }),
