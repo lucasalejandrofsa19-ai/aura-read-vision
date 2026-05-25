@@ -33,7 +33,35 @@ serve(async (req) => {
   );
 
   try {
+    // Require authentication: internal shared secret or admin user JWT
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const internalSecret = Deno.env.get('INTERNAL_ALERT_SECRET');
+    const providedToken = authHeader.replace('Bearer ', '').trim();
+    let authorized = false;
+
+    if (internalSecret && providedToken && providedToken === internalSecret) {
+      authorized = true;
+    } else if (providedToken) {
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser(providedToken);
+      if (!authError && user) {
+        const { data: roles } = await supabaseClient
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin');
+        if (roles && roles.length > 0) authorized = true;
+      }
+    }
+
+    if (!authorized) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
     const { ipAddress, userId, reason }: BlockCheckRequest = await req.json();
+    
     
     console.log(`[AUTO-BLOCK] Checking IP: ${ipAddress} for reason: ${reason}`);
 
