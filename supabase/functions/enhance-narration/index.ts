@@ -14,9 +14,12 @@ serve(async (req) => {
   try {
     const { text } = await req.json();
 
-    if (!text) {
+    if (!text || typeof text !== 'string') {
       throw new Error('Text is required');
     }
+
+    // Cap input length to avoid runaway AI cost
+    const truncatedText = text.slice(0, 5000);
 
     // Create user client for auth verification
     const supabaseClient = createClient(
@@ -55,7 +58,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    console.log(`Enhancing narration for ${text.length} characters`);
+    console.log(`Enhancing narration for ${truncatedText.length} characters`);
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -83,7 +86,7 @@ Regras:
           },
           {
             role: 'user',
-            content: `Reescreva este texto para narração de audiobook:\n\n${text}`
+            content: `Reescreva este texto para narração de audiobook:\n\n${truncatedText}`
           }
         ],
       }),
