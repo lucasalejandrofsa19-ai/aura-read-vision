@@ -210,6 +210,7 @@ serve(async (req) => {
             },
           },
         },
+        headers: internalSecret ? { Authorization: `Bearer ${internalSecret}` } : {},
       }).catch(err => console.error('[AUTO-BLOCK] Alert error:', err));
 
       return new Response(
