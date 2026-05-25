@@ -58,7 +58,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    console.log(`Enhancing narration for ${text.length} characters`);
+    console.log(`Enhancing narration for ${truncatedText.length} characters`);
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
