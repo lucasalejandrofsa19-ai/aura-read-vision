@@ -244,6 +244,9 @@ const Library = () => {
       {/* Gamification daily goal */}
       <DailyGoalCard />
 
+      {/* Insights motivacionais e informativos sobre leitura */}
+      <ReadingInsightsCard />
+
       {/* AdSense — topo da biblioteca */}
       <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" className="mb-6" />
 
