@@ -133,6 +133,9 @@ serve(async (req) => {
         },
       });
 
+      const internalSecret = Deno.env.get('INTERNAL_ALERT_SECRET');
+      const internalHeaders = internalSecret ? { Authorization: `Bearer ${internalSecret}` } : {};
+
       // Send security alert
       supabaseClient.functions.invoke('send-security-alert', {
         body: {
@@ -148,6 +151,7 @@ serve(async (req) => {
             },
           },
         },
+        headers: internalHeaders,
       }).catch(err => console.error('[VERIFY-PREMIUM] Alert error:', err));
 
       // Check if IP should be auto-blocked
@@ -157,6 +161,7 @@ serve(async (req) => {
           userId: user.id,
           reason: 'rate_limit',
         },
+        headers: internalHeaders,
       }).catch(err => console.error('[VERIFY-PREMIUM] Auto-block error:', err));
 
       return new Response(
