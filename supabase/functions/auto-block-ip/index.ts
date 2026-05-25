@@ -65,9 +65,10 @@ serve(async (req) => {
     
     console.log(`[AUTO-BLOCK] Checking IP: ${ipAddress} for reason: ${reason}`);
 
-    // Check reputation before blocking
+    // Check reputation before blocking (forward internal secret)
     const reputationCheck = await supabaseClient.functions.invoke('check-ip-reputation', {
       body: { ipAddress, maxAgeInDays: 90 },
+      headers: internalSecret ? { Authorization: `Bearer ${internalSecret}` } : {},
     });
 
     let reputationScore: number | undefined;
