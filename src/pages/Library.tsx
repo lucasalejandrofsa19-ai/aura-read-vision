@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import { DailyGoalCard } from "@/components/gamification/DailyGoalCard";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
+import { ReadingInsightsCard } from "@/components/ReadingInsightsCard";
 import { ADSENSE_SLOTS } from "@/lib/adsense";
 import { AuthDialog } from "@/components/AuthDialog";
 import { LogIn } from "lucide-react";
@@ -242,6 +243,9 @@ const Library = () => {
 
       {/* Gamification daily goal */}
       <DailyGoalCard />
+
+      {/* Insights motivacionais e informativos sobre leitura */}
+      <ReadingInsightsCard />
 
       {/* AdSense — topo da biblioteca */}
       <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" className="mb-6" />

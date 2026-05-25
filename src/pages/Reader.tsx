@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PDFViewer } from "@/components/PDFViewer";
 import { PresentationMode } from "@/components/PresentationMode";
 import { FocusedReaderMode } from "@/components/FocusedReaderMode";
@@ -630,16 +631,27 @@ const Reader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/summary/" + id)}
-              className="aura-soft transition-aura relative"
-              title="Resumir tudo com IA"
-              aria-label="Resumir tudo com IA">
-              <Sparkles className="w-5 h-5 text-primary" />
-              <span className="absolute -top-1 -right-1 text-[8px] font-bold bg-primary text-primary-foreground rounded-full px-1 leading-tight">IA</span>
-            </Button>
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate("/summary/" + id)}
+                    className="aura-soft transition-aura relative"
+                    aria-label="Resumir tudo com IA">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    <span className="absolute -top-1 -right-1 text-[8px] font-bold bg-primary text-primary-foreground rounded-full px-1 leading-tight">IA</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <p className="font-semibold mb-1">Resumir tudo com IA</p>
+                  <p className="text-xs text-muted-foreground">
+                    Gera um resumo inteligente de todo o livro usando IA, destacando os pontos-chave, ideias principais e conclusões — economize horas de leitura.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
             <Button
               variant="ghost"
