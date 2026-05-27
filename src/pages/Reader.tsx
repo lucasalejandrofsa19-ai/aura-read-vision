@@ -402,7 +402,7 @@ const Reader = () => {
         {...headerProps}
         className="glass sticky top-0 z-50 border-b border-border/50"
       >
-        <div className="max-w-6xl mx-auto px-4 py-4">
+        <div className="max-w-screen-2xl mx-auto px-4 lg:px-8 py-4">
           <div className="flex items-center gap-4 mb-3">
             <Button
               variant="ghost"
