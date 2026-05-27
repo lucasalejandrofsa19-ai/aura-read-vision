@@ -243,14 +243,18 @@ const Library = () => {
         </div>
       </motion.header>
 
-      {/* Gamification daily goal */}
-      <DailyGoalCard />
+      {/* Layout desktop-first: sidebar (lg+) + conteúdo principal */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+        {/* Sidebar */}
+        <aside className="lg:col-span-4 xl:col-span-3 space-y-4 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto scrollbar-hide">
+          <DailyGoalCard />
+          <ReadingInsightsCard />
+          <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" />
+        </aside>
 
-      {/* Insights motivacionais e informativos sobre leitura */}
-      <ReadingInsightsCard />
+        {/* Conteúdo principal */}
+        <main className="lg:col-span-8 xl:col-span-9">
 
-      {/* AdSense — topo da biblioteca */}
-      <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" className="mb-6" />
 
       {/* Books grid */}
       {isLoading ? (
