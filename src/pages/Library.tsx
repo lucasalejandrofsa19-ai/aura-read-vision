@@ -421,6 +421,8 @@ const Library = () => {
           )}
         </>
       )}
+        </main>
+      </div>
 
       {/* Upload button */}
       <motion.div
@@ -442,7 +444,9 @@ const Library = () => {
 
       <LibraryTour />
     </div>
+    </div>
     </>
+
   );
 };
 
