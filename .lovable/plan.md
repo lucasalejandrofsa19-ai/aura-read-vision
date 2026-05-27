@@ -1,63 +1,52 @@
-## Sistema de Gamificação de Leitura
+## Objetivo
 
-Inspirado no Duolingo: meta diária, streak (sequência), XP, níveis, conquistas e notificações motivacionais para criar hábito de leitura.
+Transformar o AURA READ de um app mobile-first (PWA) em uma experiência desktop-first, priorizando telas grandes (≥1024px) sem quebrar o uso mobile.
 
-### Mecânica principal
+## Mudanças principais
 
-- **Meta diária**: usuário define páginas/dia (padrão 10, opções 5/10/20/30/50). Barra de progresso visível.
-- **XP por atividade**: +1 XP por página lida, +10 XP por destaque, +25 XP por meta diária batida, +50 XP bônus por completar livro.
-- **Streak (sequência)**: dias consecutivos batendo a meta. Quebra se passar 1 dia sem ler. "Streak freeze" como recompensa de nível.
-- **Níveis**: progressão por XP total (Iniciante 0, Leitor Casual 100, Leitor 500, Bibliófilo 2000, Mestre 5000+).
-- **Conquistas (badges)**: primeira leitura, 7 dias, 30 dias, 100 dias de streak, 10 livros completos, leitor noturno, madrugador, etc.
+### 1. Container global
+- Remover o limite `max-width: 1280px` no `#root` (em `src/App.css`) e usar containers mais largos por página (`max-w-7xl`, `max-w-screen-2xl`).
+- Definir um wrapper de página padrão com padding generoso em desktop (`px-8 lg:px-12 xl:px-16`).
 
-### Banco de dados
+### 2. Index (landing)
+- Hero em grid de 2 colunas em desktop (texto à esquerda, visual/preview à direita) em vez do hero centralizado mobile-first.
+- Aumentar tipografia base do hero (`text-6xl lg:text-7xl xl:text-8xl`).
+- Seções de features em grid 3-4 colunas em desktop.
 
-Tabelas novas (RLS em todas, escopo `auth.uid() = user_id`):
+### 3. Library
+- Layout com **sidebar fixa à esquerda** em desktop (≥lg) contendo: DailyGoalCard, ReadingInsightsCard, filtros, stats.
+- Conteúdo principal (grade de livros) ocupa a área maior à direita, com mais colunas em desktop (5-6 colunas em xl em vez de 2-3).
+- Em mobile, sidebar colapsa para o topo (comportamento atual preservado).
 
-- `gamification_stats` (1 por usuário): xp_total, level, current_streak, longest_streak, last_activity_date, daily_goal_pages, freezes_available
-- `daily_progress` (1 por usuário/dia): pages_read, xp_earned, goal_met, date
-- `achievements` (catálogo público read-only): code, name, description, icon, requirement_type, requirement_value, xp_reward
-- `user_achievements`: user_id, achievement_code, unlocked_at
+### 4. Reader
+- Layout em 3 colunas em desktop: painel de highlights/notas (esquerda) + PDF centralizado + painel de ferramentas (direita).
+- Remover FAB no desktop (controles ficam visíveis nas barras laterais).
+- Manter FAB e UI mobile via `lg:hidden`.
 
-Triggers/funções:
-- `award_xp(user_id, amount, reason)` — incrementa XP, recalcula nível, verifica achievements
-- `update_streak(user_id)` — chamada quando meta diária é atingida
-- `register_pages_read(user_id, book_id, pages)` — atualiza daily_progress, dispara award_xp e update_streak
+### 5. Pricing / Profile
+- Cards de planos lado a lado mais largos em desktop.
+- Profile com layout 2 colunas (info à esquerda, abas à direita).
 
-Reaproveita `reading_sessions` existente para detectar páginas lidas.
+### 6. Memory update
+- Atualizar `mem://design/mobile-first-priority` para refletir a nova diretriz desktop-first (manter responsividade mobile, mas otimizar para desktop primeiro).
+- Atualizar core memory: "Mobile-first PWA" → "Desktop-first responsive web app, PWA opcional".
 
-### UI
+## Detalhes técnicos
 
-- **Card de progresso diário** no topo da Library: anel circular com páginas lidas / meta, streak (🔥 N dias), XP do dia, nível atual.
-- **Página `/conquistas`** (rota nova): grade de badges (desbloqueadas/bloqueadas), histórico de streak, gráfico semanal.
-- **Modal de celebração**: ao bater meta diária ou desbloquear conquista (toast animado + confete leve).
-- **Onboarding**: ao primeiro login pós-deploy, dialog perguntando meta diária preferida.
-- **Lembrete diário**: banner discreto na Library quando o usuário ainda não leu hoje e o streak está em risco.
+- Breakpoints Tailwind alvo: `lg` (1024px) e `xl` (1280px) como base do design; `sm`/`md` como adaptações.
+- Não tocar em lógica de negócio, edge functions, RLS, autenticação, ou pagamentos.
+- Manter PWA/Service Worker funcionando (apenas o layout muda).
+- Não alterar `src/integrations/supabase/*`.
 
-### Integração
+## Fora do escopo
+- Remover funcionalidades PWA.
+- Redesign visual (paleta, tipografia, componentes shadcn).
+- Mudar fluxos ou regras de negócio.
 
-- Hook `useGamification()` centraliza leitura de stats e mutações.
-- Hook em `useReadingSession` chama `register_pages_read` ao salvar progresso de leitura.
-- Hook em `useHighlights` adiciona +10 XP ao criar destaque.
-- Conquistas verificadas via função PL/pgSQL após cada award_xp.
-
-### Arquivos principais a criar
-
-```
-src/hooks/useGamification.tsx
-src/components/gamification/DailyGoalCard.tsx
-src/components/gamification/StreakBadge.tsx
-src/components/gamification/XPBar.tsx
-src/components/gamification/AchievementUnlockedToast.tsx
-src/components/gamification/DailyGoalSetupDialog.tsx
-src/pages/Achievements.tsx
-supabase/migrations/<gamification>.sql
-```
-
-### Detalhes técnicos
-
-- Tudo client-side autenticado (RLS protege). Sem edge functions necessárias.
-- Achievements check via trigger AFTER UPDATE em `gamification_stats` e `daily_progress`.
-- Timezone: usar `current_date` no Postgres (UTC); aceitável para v1.
-- Sem som (constraint do projeto). Animações framer-motion leves só em celebrações pontuais (streak/level up), respeitando o "global animations disabled" para o resto.
-- Premium: meta diária ilimitada para todos (incentivo). Conquistas exclusivas premium opcionais (deixar de fora da v1).
+## Ordem de execução
+1. App.css + container global
+2. Index (landing)
+3. Library (sidebar desktop)
+4. Reader (3 colunas desktop)
+5. Pricing + Profile
+6. Atualizar memória do projeto
