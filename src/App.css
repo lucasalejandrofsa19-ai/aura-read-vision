@@ -36,8 +36,10 @@
   }
 }
 
-/* Root container */
+/* Root container — desktop-first: deixa o conteúdo ocupar a largura total da tela.
+   Cada página define seu próprio max-width interno (max-w-7xl / max-w-screen-2xl). */
 #root {
-  max-width: 1280px;
+  width: 100%;
   margin: 0 auto;
 }
+

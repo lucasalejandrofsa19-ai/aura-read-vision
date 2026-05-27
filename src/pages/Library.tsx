@@ -107,11 +107,13 @@ const Library = () => {
       description="Acesse, organize e leia seus PDFs em um só lugar. Faça upload de novos livros e continue de onde parou."
       path="/library"
     />
-    <div className="min-h-screen p-6 bg-gradient-to-b from-background via-background to-muted/20"
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20"
          style={{
            backgroundImage: `radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.05), transparent 50%)`
          }}
     >
+    <div className="mx-auto w-full max-w-screen-2xl p-4 sm:p-6 lg:p-8 xl:p-10">
+
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -241,14 +243,18 @@ const Library = () => {
         </div>
       </motion.header>
 
-      {/* Gamification daily goal */}
-      <DailyGoalCard />
+      {/* Layout desktop-first: sidebar (lg+) + conteúdo principal */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+        {/* Sidebar */}
+        <aside className="lg:col-span-4 xl:col-span-3 space-y-4 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto scrollbar-hide">
+          <DailyGoalCard />
+          <ReadingInsightsCard />
+          <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" />
+        </aside>
 
-      {/* Insights motivacionais e informativos sobre leitura */}
-      <ReadingInsightsCard />
+        {/* Conteúdo principal */}
+        <main className="lg:col-span-8 xl:col-span-9">
 
-      {/* AdSense — topo da biblioteca */}
-      <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" className="mb-6" />
 
       {/* Books grid */}
       {isLoading ? (
@@ -415,6 +421,8 @@ const Library = () => {
           )}
         </>
       )}
+        </main>
+      </div>
 
       {/* Upload button */}
       <motion.div
@@ -436,7 +444,9 @@ const Library = () => {
 
       <LibraryTour />
     </div>
+    </div>
     </>
+
   );
 };
 

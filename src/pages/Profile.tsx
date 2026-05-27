@@ -148,7 +148,7 @@ const Profile = () => {
       noindex
     />
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="container max-w-5xl mx-auto px-4 py-8">
+      <div className="container max-w-screen-2xl mx-auto px-4 lg:px-10 xl:px-16 py-8 lg:py-12">
         {/* Header */}
         <motion.div
           initial={isMobile ? false : { opacity: 0, y: -20 }}
