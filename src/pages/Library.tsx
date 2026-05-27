@@ -107,11 +107,13 @@ const Library = () => {
       description="Acesse, organize e leia seus PDFs em um só lugar. Faça upload de novos livros e continue de onde parou."
       path="/library"
     />
-    <div className="min-h-screen p-6 bg-gradient-to-b from-background via-background to-muted/20"
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20"
          style={{
            backgroundImage: `radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.05), transparent 50%)`
          }}
     >
+    <div className="mx-auto w-full max-w-screen-2xl p-4 sm:p-6 lg:p-8 xl:p-10">
+
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
