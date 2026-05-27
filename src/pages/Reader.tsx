@@ -699,7 +699,7 @@ const Reader = () => {
 
       <MotionMain
         {...mainProps}
-        className="max-w-5xl mx-auto px-6 py-12 space-y-6"
+        className="max-w-screen-2xl mx-auto px-4 lg:px-10 xl:px-16 py-8 lg:py-12 space-y-6"
       >
         <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" className="mb-4" />
         {pdfUrl ? (
