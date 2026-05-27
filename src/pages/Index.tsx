@@ -130,55 +130,85 @@ const Index = () => {
         />
       </div>
 
-      {/* Hero section */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 text-center">
+      {/* Hero section — desktop-first: 2 colunas em lg+ */}
+      <div className="relative z-10 mx-auto w-full max-w-screen-2xl px-6 lg:px-12 xl:px-20 pt-20 lg:pt-28 pb-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
+          className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center min-h-[70vh]"
         >
-          {/* Logo */}
-          <motion.div
-            className="flex justify-center mb-6"
-            animate={{
-              y: [0, -10, 0],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          >
-            <div className="relative">
-              <Book className="w-20 h-20 text-primary aura-safira" />
-              <Sparkles className="w-8 h-8 text-accent absolute -top-2 -right-2" />
-            </div>
-          </motion.div>
-
-          {/* Title */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent px-4">
-            AURA READ — Sua biblioteca pessoal interativa com IA
-          </h1>
-          
-          <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl px-4">
-            Sua biblioteca pessoal interativa com leitura futurista e inteligente
-          </p>
-
-          {/* CTA Button */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Button
-              size="lg"
-              onClick={() => navigate("/library")}
-              className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity text-lg px-8 py-6 aura-safira group"
+          {/* Texto à esquerda */}
+          <div className="lg:col-span-7 text-center lg:text-left">
+            <motion.div
+              className="flex justify-center lg:justify-start mb-6"
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             >
-              Começar Agora
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </motion.div>
+              <div className="relative">
+                <Book className="w-16 h-16 lg:w-20 lg:h-20 text-primary aura-safira" />
+                <Sparkles className="w-8 h-8 text-accent absolute -top-2 -right-2" />
+              </div>
+            </motion.div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-bold mb-6 bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent leading-tight">
+              AURA READ — Sua biblioteca pessoal interativa com IA
+            </h1>
+
+            <p className="text-lg lg:text-xl xl:text-2xl text-muted-foreground mb-10 max-w-2xl mx-auto lg:mx-0">
+              Sua biblioteca pessoal interativa com leitura futurista e inteligente
+            </p>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+            >
+              <Button
+                size="lg"
+                onClick={() => navigate("/library")}
+                className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity text-lg px-8 py-6 aura-safira group"
+              >
+                Começar Agora
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => navigate("/pricing")}
+                className="text-lg px-8 py-6"
+              >
+                Ver Planos Premium
+              </Button>
+            </motion.div>
+          </div>
+
+          {/* Visual à direita (desktop) — preview decorativo */}
+          <div className="hidden lg:flex lg:col-span-5 justify-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, rotate: -4 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+              className="relative w-full max-w-md aspect-[3/4] glass rounded-3xl overflow-hidden border border-primary/20 aura-safira"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 p-10">
+                <Book className="w-28 h-28 text-primary" />
+                <div className="space-y-3 w-full">
+                  <div className="h-3 bg-primary/30 rounded-full w-full" />
+                  <div className="h-3 bg-primary/20 rounded-full w-5/6" />
+                  <div className="h-3 bg-accent/30 rounded-full w-2/3" />
+                  <div className="h-3 bg-primary/20 rounded-full w-4/5" />
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Highlighter className="w-6 h-6 text-accent" />
+                  <BookmarkCheck className="w-6 h-6 text-primary" />
+                  <Wand2 className="w-6 h-6 text-accent" />
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </motion.div>
 
         {/* PWA Promo Banner */}
@@ -189,7 +219,7 @@ const Index = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.6 }}
-          className="mt-16 max-w-6xl px-4 w-full"
+          className="mt-24 w-full"
         >
           <div className="text-center mb-12">
             <motion.div
@@ -200,15 +230,15 @@ const Index = () => {
             >
               <PremiumBadge variant="default" />
             </motion.div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent">
               Recursos Premium
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto">
               Desbloqueie o potencial completo da sua leitura com recursos exclusivos
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
             {premiumFeatures.map((feature, index) => (
               <motion.div
                 key={feature.title}
@@ -261,13 +291,12 @@ const Index = () => {
           </motion.div>
         </motion.div>
 
-
-        {/* Features */}
+        {/* Features básicas */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 2.8, duration: 0.6 }}
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-24 max-w-5xl px-4 w-full"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-24 w-full"
         >
           {features.map((feature, index) => (
             <motion.div
@@ -275,15 +304,16 @@ const Index = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 3.0 + index * 0.1 }}
-              className="glass rounded-xl p-6 aura-soft transition-aura hover:aura-safira"
+              className="glass rounded-xl p-8 aura-soft transition-aura hover:aura-safira text-center lg:text-left"
             >
-              <feature.icon className="w-10 h-10 text-primary mb-4 mx-auto" />
-              <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-              <p className="text-sm text-muted-foreground">{feature.description}</p>
+              <feature.icon className="w-12 h-12 text-primary mb-4 mx-auto lg:mx-0" />
+              <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+              <p className="text-base text-muted-foreground">{feature.description}</p>
             </motion.div>
           ))}
         </motion.div>
       </div>
+
     </div>
     </>
   );
