@@ -21,6 +21,19 @@ const SUBSCRIPTION_PLANS = {
       "Busca avançada",
     ],
   },
+  estudante: {
+    name: "Estudante",
+    price: "R$ 29,90",
+    priceId: "price_1TcWuoFGn21ViXD3g9dai6D8",
+    features: [
+      "Até 200 PDFs",
+      "Todos os recursos do Pro",
+      "Resumos acadêmicos com IA",
+      "Aprofundamento de tópicos com IA",
+      "Modo focado de estudo",
+      "Suporte prioritário para estudantes",
+    ],
+  },
   premium: {
     name: "Premium",
     price: "R$ 39,90",
