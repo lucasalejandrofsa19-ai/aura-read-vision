@@ -188,7 +188,7 @@ export default function Pricing() {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-screen-2xl mx-auto px-4 lg:px-12">
+        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-8 max-w-screen-2xl mx-auto px-4 lg:px-12">
           {Object.entries(PLANS).map(([key, plan], index) => {
             const Icon = plan.icon;
 
