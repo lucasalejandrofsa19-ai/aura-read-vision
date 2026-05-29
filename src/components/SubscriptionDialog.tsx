@@ -61,6 +61,7 @@ const SubscriptionDialog = ({ open, onOpenChange }: SubscriptionDialogProps) => 
     // Map plan keys to product IDs
     const productMap: Record<string, string> = {
       pro: "prod_TU5KTScAQUJOkS",
+      estudante: "prod_UbkPfLxJPAXXI5",
       premium: "prod_TU5KLqyK3KGUSd"
     };
     return productMap[key] === product_id;
