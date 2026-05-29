@@ -137,6 +137,7 @@ export default function Pricing() {
     if (!subscribed) return key === "free";
     const productMap: Record<string, string> = {
       pro: "prod_TU5KTScAQUJOkS",
+      estudante: "prod_UbkPfLxJPAXXI5",
       premium: "prod_TU5KLqyK3KGUSd"
     };
     return productMap[key] === product_id;
