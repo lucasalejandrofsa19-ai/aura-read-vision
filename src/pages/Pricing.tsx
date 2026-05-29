@@ -52,7 +52,6 @@ const PLANS: Record<string, PlanFeatures> = {
     priceId: "price_1SX79qFGn21ViXD3SRtlkbgi",
     icon: Zap,
     color: "from-blue-500 to-blue-700",
-    popular: true,
     features: [
       "Até 100 PDFs",
       "Todos os recursos do plano gratuito",
@@ -63,6 +62,25 @@ const PLANS: Record<string, PlanFeatures> = {
       "Compartilhamento de destaques",
       "Controles de navegação avançados",
       "Suporte por email",
+    ],
+  },
+  estudante: {
+    name: "Estudante",
+    price: "R$ 29,90",
+    period: "/mês",
+    priceId: "price_1TcWuoFGn21ViXD3g9dai6D8",
+    icon: GraduationCap,
+    color: "from-emerald-500 to-teal-700",
+    popular: true,
+    features: [
+      "Até 200 PDFs",
+      "Todos os recursos do plano Pro",
+      "Resumos acadêmicos com IA",
+      "Aprofundamento de tópicos com IA",
+      "Geração de imagens dos destaques (limitada)",
+      "Modo focado de estudo",
+      "Estatísticas avançadas para estudos",
+      "Suporte prioritário para estudantes",
     ],
   },
   premium: {
