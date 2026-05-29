@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowLeft, Sparkles, Zap, Crown, Loader2 } from "lucide-react";
+import { Check, ArrowLeft, Sparkles, Zap, Crown, GraduationCap, Loader2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -52,7 +52,6 @@ const PLANS: Record<string, PlanFeatures> = {
     priceId: "price_1SX79qFGn21ViXD3SRtlkbgi",
     icon: Zap,
     color: "from-blue-500 to-blue-700",
-    popular: true,
     features: [
       "Até 100 PDFs",
       "Todos os recursos do plano gratuito",
@@ -63,6 +62,25 @@ const PLANS: Record<string, PlanFeatures> = {
       "Compartilhamento de destaques",
       "Controles de navegação avançados",
       "Suporte por email",
+    ],
+  },
+  estudante: {
+    name: "Estudante",
+    price: "R$ 29,90",
+    period: "/mês",
+    priceId: "price_1TcWuoFGn21ViXD3g9dai6D8",
+    icon: GraduationCap,
+    color: "from-emerald-500 to-teal-700",
+    popular: true,
+    features: [
+      "Até 200 PDFs",
+      "Todos os recursos do plano Pro",
+      "Resumos acadêmicos com IA",
+      "Aprofundamento de tópicos com IA",
+      "Geração de imagens dos destaques (limitada)",
+      "Modo focado de estudo",
+      "Estatísticas avançadas para estudos",
+      "Suporte prioritário para estudantes",
     ],
   },
   premium: {
@@ -119,6 +137,7 @@ export default function Pricing() {
     if (!subscribed) return key === "free";
     const productMap: Record<string, string> = {
       pro: "prod_TU5KTScAQUJOkS",
+      estudante: "prod_UbkPfLxJPAXXI5",
       premium: "prod_TU5KLqyK3KGUSd"
     };
     return productMap[key] === product_id;
@@ -169,7 +188,7 @@ export default function Pricing() {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-screen-2xl mx-auto px-4 lg:px-12">
+        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-8 max-w-screen-2xl mx-auto px-4 lg:px-12">
           {Object.entries(PLANS).map(([key, plan], index) => {
             const Icon = plan.icon;
 

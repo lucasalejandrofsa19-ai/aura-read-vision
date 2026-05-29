@@ -21,6 +21,19 @@ const SUBSCRIPTION_PLANS = {
       "Busca avançada",
     ],
   },
+  estudante: {
+    name: "Estudante",
+    price: "R$ 29,90",
+    priceId: "price_1TcWuoFGn21ViXD3g9dai6D8",
+    features: [
+      "Até 200 PDFs",
+      "Todos os recursos do Pro",
+      "Resumos acadêmicos com IA",
+      "Aprofundamento de tópicos com IA",
+      "Modo focado de estudo",
+      "Suporte prioritário para estudantes",
+    ],
+  },
   premium: {
     name: "Premium",
     price: "R$ 39,90",
@@ -48,6 +61,7 @@ const SubscriptionDialog = ({ open, onOpenChange }: SubscriptionDialogProps) => 
     // Map plan keys to product IDs
     const productMap: Record<string, string> = {
       pro: "prod_TU5KTScAQUJOkS",
+      estudante: "prod_UbkPfLxJPAXXI5",
       premium: "prod_TU5KLqyK3KGUSd"
     };
     return productMap[key] === product_id;
@@ -62,7 +76,7 @@ const SubscriptionDialog = ({ open, onOpenChange }: SubscriptionDialogProps) => 
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid md:grid-cols-2 gap-6 mt-6">
+        <div className="grid md:grid-cols-3 gap-6 mt-6">
           {Object.entries(SUBSCRIPTION_PLANS).map(([key, plan]) => (
             <div
               key={key}
