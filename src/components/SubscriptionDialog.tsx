@@ -76,7 +76,7 @@ const SubscriptionDialog = ({ open, onOpenChange }: SubscriptionDialogProps) => 
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid md:grid-cols-2 gap-6 mt-6">
+        <div className="grid md:grid-cols-3 gap-6 mt-6">
           {Object.entries(SUBSCRIPTION_PLANS).map(([key, plan]) => (
             <div
               key={key}
