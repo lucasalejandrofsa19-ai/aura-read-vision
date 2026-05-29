@@ -16,6 +16,7 @@ const logStep = (step: string, details?: any) => {
 const PRODUCT_ROLE_MAP: Record<string, string> = {
   "prod_TU5KLqyK3KGUSd": "premium", // Premium plan
   "prod_TU5KTScAQUJOkS": "premium", // Pro plan (also gets premium role)
+  "prod_UbkPfLxJPAXXI5": "premium", // Estudante plan
 };
 
 serve(async (req) => {
