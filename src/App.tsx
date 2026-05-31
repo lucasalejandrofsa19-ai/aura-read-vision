@@ -32,6 +32,7 @@ import AdminAuditLogs from "./pages/AdminAuditLogs";
 import AdminBlockedIPs from "./pages/AdminBlockedIPs";
 import Achievements from "./pages/Achievements";
 import AcademicSummary from "./pages/AcademicSummary";
+import Guide from "./pages/Guide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ const AppContent = () => {
         <Route path="/admin/blocked-ips" element={<AdminBlockedIPs />} />
         <Route path="/conquistas" element={<Achievements />} />
         <Route path="/resumo-academico" element={<AcademicSummary />} />
+        <Route path="/guia" element={<Guide />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </SentryRoutes>
