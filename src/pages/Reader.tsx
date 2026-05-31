@@ -580,28 +580,38 @@ const Reader = () => {
               onNavigateToPage={handleNavigateToPage}
             />
 
-            <Button
-              variant={isDrawingMode ? "default" : "ghost"}
-              size="icon"
-              onClick={() => setIsDrawingMode(!isDrawingMode)}
-              className="aura-soft transition-aura"
-              title={isDrawingMode ? "Desativar marca texto" : "Ativar marca texto"}
-             aria-label="Marcador de texto">
-              <Highlighter className="w-5 h-5" style={{ color: isDrawingMode ? highlightColor : undefined }} />
-            </Button>
+            <ToolHelpTooltip
+              title="Marca-texto"
+              description="Ative e arraste sobre o PDF para destacar trechos. O texto é extraído e copiado automaticamente."
+              guideAnchor="Marcação de texto"
+            >
+              <Button
+                variant={isDrawingMode ? "default" : "ghost"}
+                size="icon"
+                onClick={() => setIsDrawingMode(!isDrawingMode)}
+                className="aura-soft transition-aura"
+                aria-label="Marcador de texto">
+                <Highlighter className="w-5 h-5" style={{ color: isDrawingMode ? highlightColor : undefined }} />
+              </Button>
+            </ToolHelpTooltip>
             {penToolbar}
 
             <Sheet>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="aura-soft transition-aura"
-                  title="Ver destaques"
-                 aria-label="Lista">
-                  <List className="w-5 h-5" />
-                </Button>
-              </SheetTrigger>
+              <ToolHelpTooltip
+                title="Lista de destaques"
+                description="Veja, navegue e apague todos os destaques marcados neste livro."
+                guideAnchor="Marcação de texto"
+              >
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="aura-soft transition-aura"
+                    aria-label="Lista de destaques">
+                    <List className="w-5 h-5" />
+                  </Button>
+                </SheetTrigger>
+              </ToolHelpTooltip>
               <SheetContent>
                 <SheetHeader>
                   <SheetTitle>Destaques</SheetTitle>
@@ -625,16 +635,21 @@ const Reader = () => {
             </Sheet>
 
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`transition-aura ${bookmarkedPage ? "text-accent aura-amber" : "aura-soft"}`}
-                  title="Marcador"
-                 aria-label="Página marcada">
-                  {bookmarkedPage ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
-                </Button>
-              </DropdownMenuTrigger>
+              <ToolHelpTooltip
+                title="Marcador de página"
+                description="Salve a página atual para voltar depois. Apenas um marcador por livro."
+                guideAnchor="Leitor de PDF"
+              >
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`transition-aura ${bookmarkedPage ? "text-accent aura-amber" : "aura-soft"}`}
+                    aria-label="Página marcada">
+                    {bookmarkedPage ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+                  </Button>
+                </DropdownMenuTrigger>
+              </ToolHelpTooltip>
               <DropdownMenuContent align="start" className="glass">
                 <DropdownMenuItem onClick={handleBookmark}>
                   {bookmarkedPage === currentPage ? "Remover marcador" : "Marcar página atual"}
@@ -647,57 +662,66 @@ const Reader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <TooltipProvider delayDuration={200}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => navigate("/summary/" + id)}
-                    className="aura-soft transition-aura relative"
-                    aria-label="Resumir tudo com IA">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    <span className="absolute -top-1 -right-1 text-[8px] font-bold bg-primary text-primary-foreground rounded-full px-1 leading-tight">IA</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs">
-                  <p className="font-semibold mb-1">Resumir tudo com IA</p>
-                  <p className="text-xs text-muted-foreground">
-                    Gera um resumo inteligente de todo o livro usando IA, destacando os pontos-chave, ideias principais e conclusões — economize horas de leitura.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <ToolHelpTooltip
+              title="Resumir tudo com IA"
+              description="Gera um resumo inteligente de todo o livro usando IA, destacando pontos-chave e conclusões. Recurso Premium."
+              guideAnchor="Resumo com IA"
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/summary/" + id)}
+                className="aura-soft transition-aura relative"
+                aria-label="Resumir tudo com IA">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <span className="absolute -top-1 -right-1 text-[8px] font-bold bg-primary text-primary-foreground rounded-full px-1 leading-tight">IA</span>
+              </Button>
+            </ToolHelpTooltip>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/share/" + id)}
-              className="aura-soft transition-aura"
+            <ToolHelpTooltip
               title="Compartilhar"
-             aria-label="Compartilhar">
-              <Share2 className="w-5 h-5" />
-            </Button>
+              description="Envie um link público do livro ou de destaques para outras pessoas."
+              guideAnchor="Compartilhar"
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/share/" + id)}
+                className="aura-soft transition-aura"
+                aria-label="Compartilhar">
+                <Share2 className="w-5 h-5" />
+              </Button>
+            </ToolHelpTooltip>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleEnterFocusedMode}
-              className="aura-soft transition-aura"
-              title="Modo Leitura Focada"
-             aria-label="Visualizar">
-              <Eye className="w-5 h-5" />
-            </Button>
+            <ToolHelpTooltip
+              title="Leitura focada"
+              description="Esconde distrações e amplia a página para você focar só na leitura."
+              guideAnchor="Leitor de PDF"
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleEnterFocusedMode}
+                className="aura-soft transition-aura"
+                aria-label="Modo leitura focada">
+                <Eye className="w-5 h-5" />
+              </Button>
+            </ToolHelpTooltip>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleEnterPresentationMode}
-              className="aura-soft transition-aura"
-              title="Modo Apresentação"
-             aria-label="Maximizar">
-              <Maximize className="w-5 h-5" />
-            </Button>
+            <ToolHelpTooltip
+              title="Modo apresentação"
+              description="Tela cheia com navegação e zoom — ideal para projeções e aulas."
+              guideAnchor="Modo apresentação"
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleEnterPresentationMode}
+                className="aura-soft transition-aura"
+                aria-label="Modo apresentação">
+                <Maximize className="w-5 h-5" />
+              </Button>
+            </ToolHelpTooltip>
 
             <AudiobookPlayer
               bookId={id || ""}
