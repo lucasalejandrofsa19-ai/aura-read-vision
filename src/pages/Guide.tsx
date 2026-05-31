@@ -285,7 +285,8 @@ const Guide = () => {
                 <AccordionItem
                   key={tool.title}
                   value={tool.title}
-                  className="glass border border-primary/10 rounded-xl px-4 aura-soft"
+                  id={tool.title}
+                  className="glass border border-primary/10 rounded-xl px-4 aura-soft scroll-mt-24"
                 >
                   <AccordionTrigger className="hover:no-underline">
                     <div className="flex items-center gap-3 text-left">
