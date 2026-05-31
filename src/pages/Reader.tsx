@@ -33,6 +33,7 @@ import { NotesPanel } from "@/components/NotesPanel";
 import { ExportDialog } from "@/components/ExportDialog";
 import { FloatingControls } from "@/components/FloatingControls";
 import { AudiobookPlayer } from "@/components/AudiobookPlayer";
+import { ToolHelpTooltip } from "@/components/ToolHelpTooltip";
 
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
@@ -434,28 +435,38 @@ const Reader = () => {
               notes={notes}
             />
 
-            <Button
-              variant={isDrawingMode ? "default" : "ghost"}
-              size="icon"
-              onClick={() => setIsDrawingMode(!isDrawingMode)}
-              className="aura-soft transition-aura"
-              title={isDrawingMode ? "Desativar marca texto" : "Ativar marca texto"}
-             aria-label="Marcador de texto">
-              <Highlighter className="w-5 h-5" style={{ color: isDrawingMode ? highlightColor : undefined }} />
-            </Button>
+            <ToolHelpTooltip
+              title="Marca-texto"
+              description="Ative e arraste sobre o PDF para destacar trechos. O texto é extraído e copiado automaticamente."
+              guideAnchor="Marcação de texto"
+            >
+              <Button
+                variant={isDrawingMode ? "default" : "ghost"}
+                size="icon"
+                onClick={() => setIsDrawingMode(!isDrawingMode)}
+                className="aura-soft transition-aura"
+                aria-label="Marcador de texto">
+                <Highlighter className="w-5 h-5" style={{ color: isDrawingMode ? highlightColor : undefined }} />
+              </Button>
+            </ToolHelpTooltip>
             {penToolbar}
 
             <Sheet>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="aura-soft transition-aura"
-                  title="Ver destaques"
-                 aria-label="Lista">
-                  <List className="w-5 h-5" />
-                </Button>
-              </SheetTrigger>
+              <ToolHelpTooltip
+                title="Lista de destaques"
+                description="Veja, navegue e apague todos os destaques marcados neste livro."
+                guideAnchor="Marcação de texto"
+              >
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="aura-soft transition-aura"
+                    aria-label="Lista de destaques">
+                    <List className="w-5 h-5" />
+                  </Button>
+                </SheetTrigger>
+              </ToolHelpTooltip>
               <SheetContent>
                 <SheetHeader>
                   <SheetTitle>Destaques</SheetTitle>
@@ -479,16 +490,21 @@ const Reader = () => {
             </Sheet>
 
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`transition-aura ${bookmarkedPage ? "text-accent aura-amber" : "aura-soft"}`}
-                  title="Marcador"
-                 aria-label="Página marcada">
-                  {bookmarkedPage ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
-                </Button>
-              </DropdownMenuTrigger>
+              <ToolHelpTooltip
+                title="Marcador de página"
+                description="Salve a página atual para voltar depois. Apenas um marcador por livro."
+                guideAnchor="Leitor de PDF"
+              >
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`transition-aura ${bookmarkedPage ? "text-accent aura-amber" : "aura-soft"}`}
+                    aria-label="Página marcada">
+                    {bookmarkedPage ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+                  </Button>
+                </DropdownMenuTrigger>
+              </ToolHelpTooltip>
               <DropdownMenuContent align="start" className="glass">
                 <DropdownMenuItem onClick={handleBookmark}>
                   {bookmarkedPage === currentPage ? "Remover marcador" : "Marcar página atual"}
