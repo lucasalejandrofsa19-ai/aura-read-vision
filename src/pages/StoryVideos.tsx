@@ -180,7 +180,7 @@ const StoryVideos = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Histórias em Vídeo IA | AURA READ" description="Transforme seus livros em vídeos narrados com imagens geradas por IA." />
+      <SEO title="Histórias em Vídeo IA | AURA READ" description="Transforme seus livros em vídeos narrados com imagens geradas por IA." path="/historias-video" />
 
       <header className="border-b">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
