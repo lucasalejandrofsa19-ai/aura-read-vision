@@ -34,6 +34,7 @@ import { ExportDialog } from "@/components/ExportDialog";
 import { FloatingControls } from "@/components/FloatingControls";
 import { AudiobookPlayer } from "@/components/AudiobookPlayer";
 import { ToolHelpTooltip } from "@/components/ToolHelpTooltip";
+import { TOOL_COPY } from "@/lib/toolGuide";
 
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
@@ -435,11 +436,7 @@ const Reader = () => {
               notes={notes}
             />
 
-            <ToolHelpTooltip
-              title="Marca-texto"
-              description="Ative e arraste sobre o PDF para destacar trechos. O texto é extraído e copiado automaticamente."
-              guideAnchor="Marcação de texto"
-            >
+            <ToolHelpTooltip {...TOOL_COPY.highlight}>
               <Button
                 variant={isDrawingMode ? "default" : "ghost"}
                 size="icon"
@@ -452,11 +449,7 @@ const Reader = () => {
             {penToolbar}
 
             <Sheet>
-              <ToolHelpTooltip
-                title="Lista de destaques"
-                description="Veja, navegue e apague todos os destaques marcados neste livro."
-                guideAnchor="Marcação de texto"
-              >
+              <ToolHelpTooltip {...TOOL_COPY.highlightsList}>
                 <SheetTrigger asChild>
                   <Button
                     variant="ghost"
@@ -490,11 +483,7 @@ const Reader = () => {
             </Sheet>
 
             <DropdownMenu>
-              <ToolHelpTooltip
-                title="Marcador de página"
-                description="Salve a página atual para voltar depois. Apenas um marcador por livro."
-                guideAnchor="Leitor de PDF"
-              >
+              <ToolHelpTooltip {...TOOL_COPY.bookmark}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -580,11 +569,7 @@ const Reader = () => {
               onNavigateToPage={handleNavigateToPage}
             />
 
-            <ToolHelpTooltip
-              title="Marca-texto"
-              description="Ative e arraste sobre o PDF para destacar trechos. O texto é extraído e copiado automaticamente."
-              guideAnchor="Marcação de texto"
-            >
+            <ToolHelpTooltip {...TOOL_COPY.highlight}>
               <Button
                 variant={isDrawingMode ? "default" : "ghost"}
                 size="icon"
@@ -597,11 +582,7 @@ const Reader = () => {
             {penToolbar}
 
             <Sheet>
-              <ToolHelpTooltip
-                title="Lista de destaques"
-                description="Veja, navegue e apague todos os destaques marcados neste livro."
-                guideAnchor="Marcação de texto"
-              >
+              <ToolHelpTooltip {...TOOL_COPY.highlightsList}>
                 <SheetTrigger asChild>
                   <Button
                     variant="ghost"
@@ -635,11 +616,7 @@ const Reader = () => {
             </Sheet>
 
             <DropdownMenu>
-              <ToolHelpTooltip
-                title="Marcador de página"
-                description="Salve a página atual para voltar depois. Apenas um marcador por livro."
-                guideAnchor="Leitor de PDF"
-              >
+              <ToolHelpTooltip {...TOOL_COPY.bookmark}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -662,11 +639,7 @@ const Reader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <ToolHelpTooltip
-              title="Resumir tudo com IA"
-              description="Gera um resumo inteligente de todo o livro usando IA, destacando pontos-chave e conclusões. Recurso Premium."
-              guideAnchor="Resumo com IA"
-            >
+            <ToolHelpTooltip {...TOOL_COPY.aiSummary}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -678,11 +651,7 @@ const Reader = () => {
               </Button>
             </ToolHelpTooltip>
 
-            <ToolHelpTooltip
-              title="Compartilhar"
-              description="Envie um link público do livro ou de destaques para outras pessoas."
-              guideAnchor="Compartilhar"
-            >
+            <ToolHelpTooltip {...TOOL_COPY.share}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -693,11 +662,7 @@ const Reader = () => {
               </Button>
             </ToolHelpTooltip>
 
-            <ToolHelpTooltip
-              title="Leitura focada"
-              description="Esconde distrações e amplia a página para você focar só na leitura."
-              guideAnchor="Leitor de PDF"
-            >
+            <ToolHelpTooltip {...TOOL_COPY.focusedReader}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -708,11 +673,7 @@ const Reader = () => {
               </Button>
             </ToolHelpTooltip>
 
-            <ToolHelpTooltip
-              title="Modo apresentação"
-              description="Tela cheia com navegação e zoom — ideal para projeções e aulas."
-              guideAnchor="Modo apresentação"
-            >
+            <ToolHelpTooltip {...TOOL_COPY.presentation}>
               <Button
                 variant="ghost"
                 size="icon"
