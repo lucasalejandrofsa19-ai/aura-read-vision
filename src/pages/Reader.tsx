@@ -436,11 +436,7 @@ const Reader = () => {
               notes={notes}
             />
 
-            <ToolHelpTooltip
-              title="Marca-texto"
-              description="Ative e arraste sobre o PDF para destacar trechos. O texto é extraído e copiado automaticamente."
-              guideAnchor="Marcação de texto"
-            >
+            <ToolHelpTooltip {...TOOL_COPY.highlight}>
               <Button
                 variant={isDrawingMode ? "default" : "ghost"}
                 size="icon"
