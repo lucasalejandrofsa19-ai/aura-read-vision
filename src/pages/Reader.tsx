@@ -34,6 +34,7 @@ import { ExportDialog } from "@/components/ExportDialog";
 import { FloatingControls } from "@/components/FloatingControls";
 import { AudiobookPlayer } from "@/components/AudiobookPlayer";
 import { ToolHelpTooltip } from "@/components/ToolHelpTooltip";
+import { TOOL_COPY } from "@/lib/toolGuide";
 
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
