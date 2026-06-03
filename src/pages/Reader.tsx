@@ -639,11 +639,7 @@ const Reader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <ToolHelpTooltip
-              title="Resumir tudo com IA"
-              description="Gera um resumo inteligente de todo o livro usando IA, destacando pontos-chave e conclusões. Recurso Premium."
-              guideAnchor="Resumo com IA"
-            >
+            <ToolHelpTooltip {...TOOL_COPY.aiSummary}>
               <Button
                 variant="ghost"
                 size="icon"
