@@ -662,11 +662,7 @@ const Reader = () => {
               </Button>
             </ToolHelpTooltip>
 
-            <ToolHelpTooltip
-              title="Leitura focada"
-              description="Esconde distrações e amplia a página para você focar só na leitura."
-              guideAnchor="Leitor de PDF"
-            >
+            <ToolHelpTooltip {...TOOL_COPY.focusedReader}>
               <Button
                 variant="ghost"
                 size="icon"
