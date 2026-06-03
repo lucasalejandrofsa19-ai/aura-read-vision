@@ -65,7 +65,7 @@ const StoryVideos = () => {
   // Initial quota fetch
   useEffect(() => {
     if (!user) return;
-    supabase.rpc("can_generate_story_video", { _user_id: user.id }).then(({ data }) => {
+    (supabase.rpc as any)("can_generate_story_video", { _user_id: user.id }).then(({ data }: any) => {
       if (data) setQuota(data as any);
     });
   }, [user]);
