@@ -651,11 +651,7 @@ const Reader = () => {
               </Button>
             </ToolHelpTooltip>
 
-            <ToolHelpTooltip
-              title="Compartilhar"
-              description="Envie um link público do livro ou de destaques para outras pessoas."
-              guideAnchor="Compartilhar"
-            >
+            <ToolHelpTooltip {...TOOL_COPY.share}>
               <Button
                 variant="ghost"
                 size="icon"
