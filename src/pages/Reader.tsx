@@ -673,11 +673,7 @@ const Reader = () => {
               </Button>
             </ToolHelpTooltip>
 
-            <ToolHelpTooltip
-              title="Modo apresentação"
-              description="Tela cheia com navegação e zoom — ideal para projeções e aulas."
-              guideAnchor="Modo apresentação"
-            >
+            <ToolHelpTooltip {...TOOL_COPY.presentation}>
               <Button
                 variant="ghost"
                 size="icon"
