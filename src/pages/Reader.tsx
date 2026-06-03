@@ -582,11 +582,7 @@ const Reader = () => {
             {penToolbar}
 
             <Sheet>
-              <ToolHelpTooltip
-                title="Lista de destaques"
-                description="Veja, navegue e apague todos os destaques marcados neste livro."
-                guideAnchor="Marcação de texto"
-              >
+              <ToolHelpTooltip {...TOOL_COPY.highlightsList}>
                 <SheetTrigger asChild>
                   <Button
                     variant="ghost"
