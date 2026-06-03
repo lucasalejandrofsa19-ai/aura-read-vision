@@ -616,11 +616,7 @@ const Reader = () => {
             </Sheet>
 
             <DropdownMenu>
-              <ToolHelpTooltip
-                title="Marcador de página"
-                description="Salve a página atual para voltar depois. Apenas um marcador por livro."
-                guideAnchor="Leitor de PDF"
-              >
+              <ToolHelpTooltip {...TOOL_COPY.bookmark}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
