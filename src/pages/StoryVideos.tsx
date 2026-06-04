@@ -277,7 +277,7 @@ const StoryVideos = () => {
         {scenes.length > 0 && (
           <Card className="p-6 space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <h2 className="font-semibold text-lg">Pré-visualização das cenas</h2>
+              <h2 className="font-semibold text-lg">Capítulos do roteiro</h2>
               <div className="flex gap-2">
                 <Button onClick={handleRecord} disabled={recording} variant="default">
                   {recording ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gravando…</> : <><Play className="w-4 h-4 mr-2" /> Gerar vídeo MP4</>}
@@ -299,21 +299,39 @@ const StoryVideos = () => {
               <video ref={previewRef} src={videoUrl} controls className="w-full rounded-md bg-black" />
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {scenes.map((s, i) => (
-                <div key={i} className="space-y-2 border rounded-md overflow-hidden bg-card">
-                  {s.imageDataUrl ? (
-                    <img src={s.imageDataUrl} alt={`Cena ${i + 1}`} className="w-full aspect-video object-cover" />
-                  ) : (
-                    <div className="w-full aspect-video bg-muted flex items-center justify-center text-xs text-muted-foreground">Sem imagem</div>
-                  )}
-                  <div className="p-3 space-y-2">
-                    <p className="text-xs font-semibold text-muted-foreground">Cena {i + 1}</p>
-                    <p className="text-sm leading-snug">{s.narration}</p>
-                    {s.audioDataUrl && <audio src={s.audioDataUrl} controls className="w-full h-8" />}
+            <div className="space-y-4">
+              {scenes.map((s, i) => {
+                const imgs = s.imageDataUrls && s.imageDataUrls.length > 0 ? s.imageDataUrls : (s.imageDataUrl ? [s.imageDataUrl] : []);
+                return (
+                  <div key={i} className="border rounded-md overflow-hidden bg-card">
+                    <div className="px-4 py-2 bg-muted/50 flex items-center justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-wide">
+                        {s.isOutro ? "Encerramento" : `Capítulo ${i + 1}`}
+                        {s.chapterTitle ? ` · ${s.chapterTitle}` : ""}
+                      </p>
+                      {s.isOutro && <Badge variant="secondary" className="text-[10px]">Promo AURA READ</Badge>}
+                    </div>
+                    {s.isOutro ? (
+                      <div className="aspect-video bg-gradient-to-br from-primary/30 via-purple-900/40 to-background flex flex-col items-center justify-center gap-2">
+                        <span className="text-3xl font-extrabold text-amber-400">AURA READ</span>
+                        <span className="text-xs text-muted-foreground">auraread.store</span>
+                      </div>
+                    ) : (
+                      <div className={`grid gap-1 ${imgs.length >= 3 ? "grid-cols-3" : imgs.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+                        {imgs.length === 0 ? (
+                          <div className="aspect-video bg-muted flex items-center justify-center text-xs text-muted-foreground col-span-3">Sem imagens</div>
+                        ) : imgs.map((u, k) => (
+                          <img key={k} src={u} alt={`Cena ${i + 1} imagem ${k + 1}`} className="w-full aspect-video object-cover" />
+                        ))}
+                      </div>
+                    )}
+                    <div className="p-3 space-y-2">
+                      <p className="text-sm leading-snug">{s.narration}</p>
+                      {s.audioDataUrl && <audio src={s.audioDataUrl} controls className="w-full h-8" />}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         )}
