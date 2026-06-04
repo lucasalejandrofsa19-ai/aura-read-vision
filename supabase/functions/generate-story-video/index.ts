@@ -7,7 +7,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface Scene { narration: string; imagePrompt: string }
+interface ChapterScene {
+  chapterTitle: string;
+  narration: string;
+  imagePrompts: string[];
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -63,7 +67,7 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const MAX_CHARS = mode === "pages" ? 12000 : 60000;
+    const MAX_CHARS = mode === "pages" ? 14000 : 70000;
     const truncated = extractedText.length > MAX_CHARS ? extractedText.slice(0, MAX_CHARS) : extractedText;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -72,15 +76,18 @@ serve(async (req) => {
     if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY não configurada");
 
     const n = Math.max(3, Math.min(6, Number(scenesCount) || 5));
-    const systemPrompt = `Você cria roteiros de vídeos curtos narrados sobre livros, em português brasileiro.
-Receba o conteúdo do livro e produza EXATAMENTE ${n} cenas que contem a história/ideia principal de forma envolvente.
-Cada cena deve ter:
-- "narration": 2 a 4 frases (35-70 palavras) prontas para serem narradas em voz alta, fluidas e cinematográficas. Sem markdown, sem emojis.
-- "imagePrompt": descrição visual EM INGLÊS, detalhada, cinematográfica (estilo, iluminação, composição) para gerar uma ilustração que represente a cena. Sem texto na imagem.
+    const IMAGES_PER_SCENE = 3;
 
-Responda APENAS com JSON válido no formato: {"scenes":[{"narration":"...","imagePrompt":"..."}]}`;
+    const systemPrompt = `Você cria roteiros de vídeos narrados sobre livros, em português brasileiro, ESTRUTURADOS POR CAPÍTULOS.
+Divida a obra em EXATAMENTE ${n} capítulos sequenciais que contem a história/ideia principal de forma envolvente e progressiva (início, desenvolvimento, clímax, desfecho).
+Para CADA capítulo, produza:
+- "chapterTitle": título curto e impactante do capítulo (3 a 6 palavras).
+- "narration": 3 a 5 frases (60-110 palavras) prontas para narração em voz alta, fluidas e cinematográficas, conectando-se ao capítulo anterior. Sem markdown, sem emojis.
+- "imagePrompts": array com EXATAMENTE ${IMAGES_PER_SCENE} descrições visuais EM INGLÊS, detalhadas e cinematográficas (estilo, iluminação, composição, ângulo), mostrando momentos DIFERENTES e SEQUENCIAIS dentro do mesmo capítulo, criando continuidade visual. Sem texto na imagem. Mantenha o MESMO estilo visual entre todas as imagens (mesma paleta, mesmo tratamento artístico) para coerência.
 
-    const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nModo: ${mode === "pages" ? "trecho selecionado" : "resumo geral"}\n\nConteúdo:\n${truncated}`;
+Responda APENAS com JSON válido: {"chapters":[{"chapterTitle":"...","narration":"...","imagePrompts":["...","...","..."]}]}`;
+
+    const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nModo: ${mode === "pages" ? "trecho selecionado" : "obra completa"}\n\nConteúdo:\n${truncated}`;
 
     const scriptRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -102,60 +109,95 @@ Responda APENAS com JSON válido no formato: {"scenes":[{"narration":"...","imag
       throw new Error("Falha ao gerar roteiro");
     }
     const scriptData = await scriptRes.json();
-    let parsed: { scenes: Scene[] };
+    let parsed: { chapters: ChapterScene[] };
     try {
       parsed = JSON.parse(scriptData.choices[0].message.content);
     } catch (e) {
       console.error("json parse error", e, scriptData.choices?.[0]?.message?.content);
       throw new Error("Roteiro inválido retornado pela IA");
     }
-    const scenes = (parsed.scenes || []).slice(0, n).filter(s => s.narration && s.imagePrompt);
-    if (scenes.length === 0) throw new Error("Nenhuma cena gerada");
+    const chapters = (parsed.chapters || []).slice(0, n).filter(c => c.narration && Array.isArray(c.imagePrompts) && c.imagePrompts.length > 0);
+    if (chapters.length === 0) throw new Error("Nenhum capítulo gerado");
 
-    // Generate image + audio for each scene in parallel
-    const built = await Promise.all(scenes.map(async (scene, idx) => {
-      // Image (non-streaming)
-      const imgRes = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "openai/gpt-image-2",
-          prompt: scene.imagePrompt + " cinematic, book illustration, no text",
-          size: "1024x1024",
-          quality: "low",
-          n: 1,
-        }),
-      });
-      let imageDataUrl = "";
-      if (imgRes.ok) {
-        const j = await imgRes.json();
-        const b64 = j?.data?.[0]?.b64_json;
-        if (b64) imageDataUrl = `data:image/png;base64,${b64}`;
-      } else {
-        console.error("image error scene", idx, imgRes.status, await imgRes.text());
-      }
+    // Generate images for each chapter (parallel across all prompts) + TTS per chapter
+    const built = await Promise.all(chapters.map(async (ch, idx) => {
+      // Limit images per scene to keep cost predictable
+      const prompts = ch.imagePrompts.slice(0, IMAGES_PER_SCENE);
+
+      const imageDataUrls = await Promise.all(prompts.map(async (p, pi) => {
+        try {
+          const imgRes = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "openai/gpt-image-2",
+              prompt: p + " cinematic, book illustration, consistent art style, no text",
+              size: "1024x1024",
+              quality: "low",
+              n: 1,
+            }),
+          });
+          if (!imgRes.ok) {
+            console.error("image error", idx, pi, imgRes.status, await imgRes.text());
+            return "";
+          }
+          const j = await imgRes.json();
+          const b64 = j?.data?.[0]?.b64_json;
+          return b64 ? `data:image/png;base64,${b64}` : "";
+        } catch (e) { console.error("image exception", idx, pi, e); return ""; }
+      }));
 
       // TTS via OpenAI tts-1
+      let audioDataUrl = "";
+      try {
+        const ttsRes = await fetch("https://api.openai.com/v1/audio/speech", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "tts-1",
+            input: ch.narration.slice(0, 1500),
+            voice,
+            response_format: "mp3",
+          }),
+        });
+        if (ttsRes.ok) {
+          const buf = await ttsRes.arrayBuffer();
+          audioDataUrl = `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
+        } else {
+          console.error("tts error", idx, ttsRes.status, await ttsRes.text());
+        }
+      } catch (e) { console.error("tts exception", idx, e); }
+
+      return {
+        chapterTitle: ch.chapterTitle || `Capítulo ${idx + 1}`,
+        narration: ch.narration,
+        imageDataUrls: imageDataUrls.filter(Boolean),
+        audioDataUrl,
+      };
+    }));
+
+    // Build outro scene (app promo) — narrated, no AI image (rendered as branded card client-side)
+    const outroNarration = `Você acabou de assistir a uma história criada com a inteligência artificial do AURA READ. Transforme seus livros em vídeos, áudios e resumos inteligentes. Acesse auraread.store e comece grátis agora mesmo.`;
+    let outroAudio = "";
+    try {
       const ttsRes = await fetch("https://api.openai.com/v1/audio/speech", {
         method: "POST",
         headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "tts-1",
-          input: scene.narration.slice(0, 1200),
-          voice,
-          response_format: "mp3",
-        }),
+        body: JSON.stringify({ model: "tts-1", input: outroNarration, voice, response_format: "mp3" }),
       });
-      let audioDataUrl = "";
       if (ttsRes.ok) {
         const buf = await ttsRes.arrayBuffer();
-        audioDataUrl = `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
-      } else {
-        console.error("tts error scene", idx, ttsRes.status, await ttsRes.text());
+        outroAudio = `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
       }
+    } catch (e) { console.error("outro tts error", e); }
 
-      return { narration: scene.narration, imagePrompt: scene.imagePrompt, imageDataUrl, audioDataUrl };
-    }));
+    const outro = {
+      chapterTitle: "AURA READ",
+      narration: outroNarration,
+      imageDataUrls: [], // client renders branded promo card
+      audioDataUrl: outroAudio,
+      isOutro: true as const,
+    };
 
     // Record generation
     await supabaseClient.from("story_videos").insert({
@@ -168,7 +210,7 @@ Responda APENAS com JSON válido no formato: {"scenes":[{"narration":"...","imag
 
     const { data: newQuota } = await supabaseClient.rpc("can_generate_story_video", { _user_id: user.id });
 
-    return new Response(JSON.stringify({ title, author, scenes: built, quota: newQuota }), {
+    return new Response(JSON.stringify({ title, author, scenes: [...built, outro], quota: newQuota }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
