@@ -19,7 +19,7 @@ import { recordStoryVideo, type StoryScene } from "@/lib/storyVideoRecorder";
 
 type Mode = "summary" | "pages";
 
-interface SceneResult extends StoryScene { imagePrompt: string }
+interface SceneResult extends StoryScene {}
 
 const VOICES = [
   { id: "nova", label: "Nova (feminina, brasileira)" },
