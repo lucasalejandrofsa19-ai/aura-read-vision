@@ -314,6 +314,7 @@ export async function recordStoryVideo(
     frame();
   });
 
+  try { recorder.requestData(); } catch {}
   recorder.stop();
   const blob = await finished;
   try { audioCtx.close(); } catch {}
