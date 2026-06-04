@@ -261,9 +261,14 @@ export async function recordStoryVideo(
     recorder.onstop = () => resolve(new Blob(chunks, { type: "video/webm" }));
   });
 
-  // Compute scene timings (with gap between)
+  // Compute scene timings (with gap between). Fallback duration when audio missing.
   const GAP = 0.5;
-  const durations = audioBuffers.map(b => (b ? b.duration : 4));
+  const durations = audioBuffers.map((b, i) => {
+    if (b) return b.duration;
+    // Estimate by narration length (~14 chars/sec) when TTS unavailable
+    const words = (scenes[i]?.narration || "").length;
+    return Math.max(4, Math.min(12, words / 14));
+  });
   const starts: number[] = [];
   let acc = 0.2;
   for (let i = 0; i < scenes.length; i++) {
@@ -272,7 +277,9 @@ export async function recordStoryVideo(
   }
   const total = acc + 0.8;
 
-  recorder.start();
+  // start with timeslice so webm carries proper cluster timestamps -> playable in all players
+  recorder.start(1000);
+
 
   // Schedule audio
   const baseAudioT = audioCtx.currentTime + 0.2;
@@ -307,6 +314,7 @@ export async function recordStoryVideo(
     frame();
   });
 
+  try { recorder.requestData(); } catch {}
   recorder.stop();
   const blob = await finished;
   try { audioCtx.close(); } catch {}

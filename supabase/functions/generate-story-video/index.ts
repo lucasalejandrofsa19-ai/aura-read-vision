@@ -72,8 +72,100 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
-    if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY não configurada");
+    // OPENAI/ELEVENLABS são opcionais — usamos fallback entre eles para imagens e TTS
+
+    // Mapa de vozes OpenAI -> ElevenLabs (vozes públicas multilingual v2)
+    const ELEVEN_VOICE_MAP: Record<string, string> = {
+      nova: "EXAVITQu4vr4xnSDxMaL",   // Sarah
+      alloy: "9BWtsMINqrJLrRacOk9x",  // Aria
+      onyx: "JBFqnCBsd6RMkjVDRZzb",   // George
+      shimmer: "XB0fDUnXU5powFXDhCwa",// Charlotte
+      echo: "iP95p4xoKVk53GoZ742B",   // Chris
+      fable: "TX3LPaxmHKxFdv7VOQHJ",  // Liam
+    };
+
+    // Helper: gera imagem via Lovable AI (Gemini), com fallback p/ OpenAI
+    async function genImage(prompt: string, idx: number, pi: number): Promise<string> {
+      const fullPrompt = prompt + " cinematic, painterly book illustration, consistent art style, no text, no words, no letters";
+      // Primeiro: Gemini via Lovable AI Gateway (moderação mais permissiva)
+      try {
+        const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash-image",
+            messages: [{ role: "user", content: fullPrompt }],
+            modalities: ["image", "text"],
+          }),
+        });
+        if (r.ok) {
+          const j = await r.json();
+          const imgs = j?.choices?.[0]?.message?.images;
+          const url = imgs?.[0]?.image_url?.url;
+          if (url) return url;
+        } else {
+          console.error("gemini image", idx, pi, r.status, await r.text());
+        }
+      } catch (e) { console.error("gemini image ex", idx, pi, e); }
+
+      // Fallback OpenAI (se houver chave/quota)
+      if (OPENAI_API_KEY) {
+        try {
+          const r = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ model: "openai/gpt-image-2", prompt: fullPrompt, size: "1024x1024", quality: "low", n: 1 }),
+          });
+          if (r.ok) {
+            const j = await r.json();
+            const b64 = j?.data?.[0]?.b64_json;
+            if (b64) return `data:image/png;base64,${b64}`;
+          } else {
+            console.error("openai image fallback", idx, pi, r.status);
+          }
+        } catch (e) { console.error("openai image ex", idx, pi, e); }
+      }
+      return "";
+    }
+
+    // Helper TTS: OpenAI -> ElevenLabs fallback
+    async function genTTS(text: string, voice: string): Promise<string> {
+      const input = text.slice(0, 1500);
+      if (OPENAI_API_KEY) {
+        try {
+          const r = await fetch("https://api.openai.com/v1/audio/speech", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ model: "tts-1", input, voice, response_format: "mp3" }),
+          });
+          if (r.ok) {
+            const buf = await r.arrayBuffer();
+            return `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
+          } else {
+            console.error("openai tts", r.status);
+          }
+        } catch (e) { console.error("openai tts ex", e); }
+      }
+      if (ELEVENLABS_API_KEY) {
+        try {
+          const voiceId = ELEVEN_VOICE_MAP[voice] || ELEVEN_VOICE_MAP.nova;
+          const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
+            method: "POST",
+            headers: { "xi-api-key": ELEVENLABS_API_KEY, "Content-Type": "application/json" },
+            body: JSON.stringify({ text: input, model_id: "eleven_multilingual_v2" }),
+          });
+          if (r.ok) {
+            const buf = await r.arrayBuffer();
+            return `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
+          } else {
+            console.error("eleven tts", r.status, await r.text());
+          }
+        } catch (e) { console.error("eleven tts ex", e); }
+      }
+      return "";
+    }
 
     const n = Math.max(3, Math.min(6, Number(scenesCount) || 5));
     const IMAGES_PER_SCENE = 3;
@@ -121,53 +213,9 @@ Responda APENAS com JSON válido: {"chapters":[{"chapterTitle":"...","narration"
 
     // Generate images for each chapter (parallel across all prompts) + TTS per chapter
     const built = await Promise.all(chapters.map(async (ch, idx) => {
-      // Limit images per scene to keep cost predictable
       const prompts = ch.imagePrompts.slice(0, IMAGES_PER_SCENE);
-
-      const imageDataUrls = await Promise.all(prompts.map(async (p, pi) => {
-        try {
-          const imgRes = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: "openai/gpt-image-2",
-              prompt: p + " cinematic, book illustration, consistent art style, no text",
-              size: "1024x1024",
-              quality: "low",
-              n: 1,
-            }),
-          });
-          if (!imgRes.ok) {
-            console.error("image error", idx, pi, imgRes.status, await imgRes.text());
-            return "";
-          }
-          const j = await imgRes.json();
-          const b64 = j?.data?.[0]?.b64_json;
-          return b64 ? `data:image/png;base64,${b64}` : "";
-        } catch (e) { console.error("image exception", idx, pi, e); return ""; }
-      }));
-
-      // TTS via OpenAI tts-1
-      let audioDataUrl = "";
-      try {
-        const ttsRes = await fetch("https://api.openai.com/v1/audio/speech", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "tts-1",
-            input: ch.narration.slice(0, 1500),
-            voice,
-            response_format: "mp3",
-          }),
-        });
-        if (ttsRes.ok) {
-          const buf = await ttsRes.arrayBuffer();
-          audioDataUrl = `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
-        } else {
-          console.error("tts error", idx, ttsRes.status, await ttsRes.text());
-        }
-      } catch (e) { console.error("tts exception", idx, e); }
-
+      const imageDataUrls = await Promise.all(prompts.map((p, pi) => genImage(p, idx, pi)));
+      const audioDataUrl = await genTTS(ch.narration, voice);
       return {
         chapterTitle: ch.chapterTitle || `Capítulo ${idx + 1}`,
         narration: ch.narration,
@@ -176,20 +224,10 @@ Responda APENAS com JSON válido: {"chapters":[{"chapterTitle":"...","narration"
       };
     }));
 
-    // Build outro scene (app promo) — narrated, no AI image (rendered as branded card client-side)
+    // Build outro scene (app promo)
     const outroNarration = `Você acabou de assistir a uma história criada com a inteligência artificial do AURA READ. Transforme seus livros em vídeos, áudios e resumos inteligentes. Acesse auraread.store e comece grátis agora mesmo.`;
-    let outroAudio = "";
-    try {
-      const ttsRes = await fetch("https://api.openai.com/v1/audio/speech", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "tts-1", input: outroNarration, voice, response_format: "mp3" }),
-      });
-      if (ttsRes.ok) {
-        const buf = await ttsRes.arrayBuffer();
-        outroAudio = `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
-      }
-    } catch (e) { console.error("outro tts error", e); }
+    const outroAudio = await genTTS(outroNarration, voice);
+
 
     const outro = {
       chapterTitle: "AURA READ",
