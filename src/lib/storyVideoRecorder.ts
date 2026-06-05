@@ -1,19 +1,29 @@
 /**
- * Slideshow video recorder: renders book story scenes (chapters) with multiple images
- * (continuous crossfade during narration) + TTS audio to a webm video using Canvas
- * captureStream + Web Audio API + MediaRecorder. Branded outro scene supported.
+ * Vertical 9:16 (Instagram Reels) slideshow recorder.
+ * Each scene contains N segments (sentence + image). Image and caption
+ * appear synchronized with the narration for that segment.
  */
+
+export interface StorySegment {
+  text: string;
+  imageDataUrl: string;
+}
 
 export interface StoryScene {
   chapterTitle?: string;
   narration: string;
-  /** Multiple images shown sequentially during the scene narration. */
-  imageDataUrls?: string[];
-  /** Backward compatible single-image field. */
-  imageDataUrl?: string;
+  segments: StorySegment[];
   audioDataUrl: string;
-  /** Branded outro card (no AI image) */
   isOutro?: boolean;
+  // legacy fields (ignored)
+  imageDataUrls?: string[];
+  imageDataUrl?: string;
+}
+
+export interface RecordOptions {
+  onProgress?: (p: number, label?: string) => void;
+  title?: string;
+  fontFamily?: string; // CSS font family for captions
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -43,6 +53,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines;
 }
 
+// Cover-fit (no distortion). Uses object-cover semantics for the canvas size.
 function drawCover(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
@@ -64,97 +75,135 @@ function drawCover(
   ctx.restore();
 }
 
+interface PreparedSegment {
+  img: HTMLImageElement | null;
+  text: string;
+  start: number; // seconds within scene
+  end: number;
+}
+
 function drawSceneFrame(
   ctx: CanvasRenderingContext2D,
-  images: (HTMLImageElement | null)[],
+  prepared: PreparedSegment[],
   chapterTitle: string | undefined,
-  text: string,
   localT: number,
-  sceneDur: number,
   width: number,
   height: number,
+  fontFamily: string,
 ) {
   // Background
   ctx.fillStyle = "#0a0a0f";
   ctx.fillRect(0, 0, width, height);
 
-  // Continuous slideshow with crossfade across N images
-  const valid = images.filter((i): i is HTMLImageElement => !!i);
-  if (valid.length > 0) {
-    const perImg = sceneDur / valid.length;
-    const FADE = Math.min(0.8, perImg * 0.35);
-    const idxF = localT / perImg;
-    const idx = Math.min(valid.length - 1, Math.floor(idxF));
-    const next = Math.min(valid.length - 1, idx + 1);
-    const localImgT = localT - idx * perImg;
+  // Determine active segment
+  let activeIdx = 0;
+  for (let i = prepared.length - 1; i >= 0; i--) {
+    if (localT >= prepared[i].start) { activeIdx = i; break; }
+  }
+  const seg = prepared[activeIdx];
+  const segDur = Math.max(0.01, seg.end - seg.start);
+  const segLocalT = Math.max(0, localT - seg.start);
+  const segP = Math.min(1, segLocalT / segDur);
 
-    // Ken Burns subtle scale per image
-    const p = Math.min(1, localImgT / perImg);
-    const scaleA = 1.0 + 0.08 * p;
-    drawCover(ctx, valid[idx], 1, scaleA, width, height);
+  // Ken Burns
+  const scaleA = 1.0 + 0.06 * segP;
+  if (seg.img) drawCover(ctx, seg.img, 1, scaleA, width, height);
 
-    // Crossfade to next near the end of this image's window
-    if (next !== idx && localImgT > perImg - FADE) {
-      const fadeP = Math.min(1, (localImgT - (perImg - FADE)) / FADE);
-      const scaleB = 1.0 + 0.04 * fadeP;
-      drawCover(ctx, valid[next], fadeP, scaleB, width, height);
-    }
+  // Crossfade to next image near the end of the segment
+  const FADE = Math.min(0.6, segDur * 0.25);
+  if (segLocalT > segDur - FADE && activeIdx + 1 < prepared.length) {
+    const nxt = prepared[activeIdx + 1];
+    const fadeP = Math.min(1, (segLocalT - (segDur - FADE)) / FADE);
+    if (nxt.img) drawCover(ctx, nxt.img, fadeP, 1.0 + 0.04 * fadeP, width, height);
   }
 
-  // Dark gradient overlay at bottom for legibility
-  const grad = ctx.createLinearGradient(0, height * 0.5, 0, height);
+  // Top dark gradient
+  const topGrad = ctx.createLinearGradient(0, 0, 0, height * 0.18);
+  topGrad.addColorStop(0, "rgba(0,0,0,0.7)");
+  topGrad.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = topGrad;
+  ctx.fillRect(0, 0, width, height * 0.18);
+
+  // Bottom dark gradient (legibility for caption)
+  const grad = ctx.createLinearGradient(0, height * 0.55, 0, height);
   grad.addColorStop(0, "rgba(0,0,0,0)");
-  grad.addColorStop(1, "rgba(0,0,0,0.88)");
+  grad.addColorStop(1, "rgba(0,0,0,0.92)");
   ctx.fillStyle = grad;
-  ctx.fillRect(0, height * 0.5, width, height * 0.5);
+  ctx.fillRect(0, height * 0.55, width, height * 0.45);
 
   // Chapter title (top)
   if (chapterTitle) {
     ctx.save();
-    ctx.fillStyle = "rgba(0,0,0,0.55)";
-    ctx.fillRect(0, 0, width, 80);
     ctx.fillStyle = "#ffd166";
-    ctx.font = "700 28px Inter, system-ui, sans-serif";
-    ctx.textBaseline = "middle";
-    ctx.fillText(chapterTitle.toUpperCase(), 40, 40);
+    ctx.font = `700 36px ${fontFamily}, Inter, system-ui, sans-serif`;
+    ctx.textBaseline = "top";
+    ctx.fillText(chapterTitle.toUpperCase(), 50, 50);
     ctx.restore();
   }
 
-  // Subtitle text
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "600 30px Inter, system-ui, sans-serif";
+  // Dynamic caption (subtitle) — only the active segment text, with pop-in animation
+  const popIn = Math.min(1, segLocalT / 0.25); // 250ms pop-in
+  const captionAlpha = popIn;
+  const captionScale = 0.92 + 0.08 * popIn;
+
+  ctx.save();
+  ctx.globalAlpha = captionAlpha;
+  const fontSize = 52;
+  ctx.font = `800 ${fontSize}px ${fontFamily}, Inter, system-ui, sans-serif`;
   ctx.textBaseline = "bottom";
+  ctx.textAlign = "center";
   const maxW = width - 120;
-  const lines = wrapText(ctx, text, maxW);
-  const lineH = 40;
-  let y = height - 60;
+  const lines = wrapText(ctx, seg.text, maxW);
+  const lineH = fontSize * 1.18;
+
+  const cx = width / 2;
+  const baseY = height - 120;
+
+  ctx.translate(cx, baseY);
+  ctx.scale(captionScale, captionScale);
+
+  // text shadow / stroke for readability
   for (let i = lines.length - 1; i >= 0; i--) {
-    const m = ctx.measureText(lines[i]);
-    ctx.fillText(lines[i], (width - m.width) / 2, y);
-    y -= lineH;
+    const y = -((lines.length - 1 - i) * lineH);
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = "rgba(0,0,0,0.85)";
+    ctx.strokeText(lines[i], 0, y);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(lines[i], 0, y);
   }
+  ctx.restore();
+
+  // Progress bar (segment progression) at top
+  const total = prepared[prepared.length - 1].end;
+  const pTotal = Math.min(1, localT / total);
+  ctx.fillStyle = "rgba(255,255,255,0.18)";
+  ctx.fillRect(0, 0, width, 6);
+  ctx.fillStyle = "#ffd166";
+  ctx.fillRect(0, 0, width * pTotal, 6);
 }
 
 function drawOutroFrame(
   ctx: CanvasRenderingContext2D,
+  prepared: PreparedSegment[],
   localT: number,
-  sceneDur: number,
   width: number,
   height: number,
+  fontFamily: string,
 ) {
   // Animated gradient background
-  const t = localT / Math.max(0.1, sceneDur);
+  const total = prepared[prepared.length - 1].end;
+  const t = Math.min(1, localT / Math.max(0.1, total));
   const grad = ctx.createLinearGradient(0, 0, width, height);
   grad.addColorStop(0, `hsl(${260 + t * 30}, 70%, 18%)`);
   grad.addColorStop(1, `hsl(${200 + t * 40}, 80%, 12%)`);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, height);
 
-  // Decorative orbs
-  for (let i = 0; i < 5; i++) {
-    const cx = (width / 5) * i + (width / 10) + Math.sin(t * Math.PI * 2 + i) * 30;
-    const cy = height / 2 + Math.cos(t * Math.PI * 2 + i) * 40;
-    const r = 120 + i * 20;
+  // Orbs
+  for (let i = 0; i < 6; i++) {
+    const cx = (width / 5) * i + (width / 10) + Math.sin(t * Math.PI * 2 + i) * 40;
+    const cy = height / 2 + Math.cos(t * Math.PI * 2 + i) * 60;
+    const r = 180 + i * 30;
     const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
     g.addColorStop(0, `hsla(${280 + i * 20}, 90%, 60%, 0.25)`);
     g.addColorStop(1, "hsla(0,0%,0%,0)");
@@ -164,33 +213,52 @@ function drawOutroFrame(
     ctx.fill();
   }
 
-  // Logo / brand
   ctx.textBaseline = "middle";
   ctx.textAlign = "center";
 
-  ctx.font = "800 96px Inter, system-ui, sans-serif";
-  const grad2 = ctx.createLinearGradient(0, height / 2 - 60, 0, height / 2 + 20);
+  // Brand
+  ctx.font = `800 130px ${fontFamily}, Inter, system-ui, sans-serif`;
+  const grad2 = ctx.createLinearGradient(0, height / 2 - 200, 0, height / 2 - 80);
   grad2.addColorStop(0, "#fef3c7");
   grad2.addColorStop(1, "#f59e0b");
   ctx.fillStyle = grad2;
-  ctx.fillText("AURA READ", width / 2, height / 2 - 60);
+  ctx.fillText("AURA READ", width / 2, height / 2 - 140);
 
-  ctx.font = "500 32px Inter, system-ui, sans-serif";
+  ctx.font = `500 42px ${fontFamily}, Inter, system-ui, sans-serif`;
   ctx.fillStyle = "rgba(255,255,255,0.92)";
-  ctx.fillText("Transforme livros em experiências com IA", width / 2, height / 2 + 20);
+  ctx.fillText("Livros + IA", width / 2, height / 2 - 50);
+
+  // Dynamic caption (active segment text)
+  let activeIdx = 0;
+  for (let i = prepared.length - 1; i >= 0; i--) {
+    if (localT >= prepared[i].start) { activeIdx = i; break; }
+  }
+  const seg = prepared[activeIdx];
+  ctx.font = `700 46px ${fontFamily}, Inter, system-ui, sans-serif`;
+  ctx.fillStyle = "#ffffff";
+  const maxW = width - 140;
+  const lines = wrapText(ctx, seg.text, maxW);
+  const lineH = 60;
+  let y = height / 2 + 80;
+  for (const ln of lines) {
+    ctx.lineWidth = 8; ctx.strokeStyle = "rgba(0,0,0,0.8)";
+    ctx.strokeText(ln, width / 2, y);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(ln, width / 2, y);
+    y += lineH;
+  }
 
   // CTA pill
   const ctaText = "auraread.store";
-  ctx.font = "700 36px Inter, system-ui, sans-serif";
+  ctx.font = `700 48px ${fontFamily}, Inter, system-ui, sans-serif`;
   const tw = ctx.measureText(ctaText).width;
-  const pw = tw + 80;
-  const ph = 70;
+  const pw = tw + 100;
+  const ph = 90;
   const px = (width - pw) / 2;
-  const py = height / 2 + 80;
+  const py = height - 240;
   ctx.fillStyle = "#f59e0b";
   ctx.beginPath();
-  // rounded rect
-  const r = 35;
+  const r = 45;
   ctx.moveTo(px + r, py);
   ctx.arcTo(px + pw, py, px + pw, py + ph, r);
   ctx.arcTo(px + pw, py + ph, px, py + ph, r);
@@ -199,48 +267,89 @@ function drawOutroFrame(
   ctx.closePath();
   ctx.fill();
   ctx.fillStyle = "#1a0f00";
-  ctx.fillText(ctaText, width / 2, py + ph / 2 + 2);
+  ctx.fillText(ctaText, width / 2, py + ph / 2 + 4);
 
   ctx.textAlign = "start";
 }
 
 export async function recordStoryVideo(
   scenes: StoryScene[],
-  opts: { onProgress?: (p: number, label?: string) => void; title?: string } = {},
+  opts: RecordOptions = {},
 ): Promise<Blob> {
-  const { onProgress } = opts;
-  const width = 1280;
-  const height = 720;
+  const { onProgress, fontFamily = "Inter" } = opts;
+  // 9:16 vertical (Instagram Reels / TikTok)
+  const width = 1080;
+  const height = 1920;
 
   onProgress?.(0.05, "Carregando imagens…");
-  // Per-scene: array of images
+  // Ensure scenes have segments (legacy fallback)
+  const normScenes: StoryScene[] = scenes.map(s => {
+    if (s.segments && s.segments.length > 0) return s;
+    const urls = (s.imageDataUrls && s.imageDataUrls.length > 0)
+      ? s.imageDataUrls
+      : (s.imageDataUrl ? [s.imageDataUrl] : []);
+    const sentences = (s.narration || "").split(/(?<=[.!?])\s+/).filter(Boolean);
+    const n = Math.max(urls.length || sentences.length, 1);
+    const segs: StorySegment[] = [];
+    for (let i = 0; i < n; i++) {
+      segs.push({ text: sentences[i] || s.narration || "", imageDataUrl: urls[i] || urls[urls.length - 1] || "" });
+    }
+    return { ...s, segments: segs };
+  });
+
   const sceneImages: (HTMLImageElement | null)[][] = await Promise.all(
-    scenes.map(async s => {
-      const urls = (s.imageDataUrls && s.imageDataUrls.length > 0)
-        ? s.imageDataUrls
-        : (s.imageDataUrl ? [s.imageDataUrl] : []);
-      return Promise.all(urls.map(u => loadImage(u).catch(() => null)));
-    }),
+    normScenes.map(s => Promise.all(s.segments.map(seg => seg.imageDataUrl ? loadImage(seg.imageDataUrl).catch(() => null) : Promise.resolve(null)))),
   );
 
   onProgress?.(0.15, "Preparando áudio…");
   const AudioCtor = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
   const audioCtx = new AudioCtor();
-  const audioBuffers = await Promise.all(scenes.map(async s => {
+  const audioBuffers = await Promise.all(normScenes.map(async s => {
     if (!s.audioDataUrl) return null;
     const res = await fetch(s.audioDataUrl);
     const buf = await res.arrayBuffer();
     try { return await audioCtx.decodeAudioData(buf); } catch { return null; }
   }));
 
-  // Build canvas
+  // Pre-warm font (ensure caption font is loaded before rendering)
+  try {
+    if ((document as any).fonts?.load) {
+      await (document as any).fonts.load(`800 52px ${fontFamily}`);
+      await (document as any).fonts.load(`700 48px ${fontFamily}`);
+    }
+  } catch {}
+
+  // Build per-scene prepared segments with timings (distribute audio duration
+  // proportionally to segment text length so longer sentences hold longer).
+  const GAP = 0.4;
+  const scenePrepared: PreparedSegment[][] = [];
+  const sceneDurations: number[] = [];
+  for (let i = 0; i < normScenes.length; i++) {
+    const segs = normScenes[i].segments;
+    const audioDur = audioBuffers[i]?.duration
+      ?? Math.max(6, Math.min(20, normScenes[i].narration.length / 14));
+    const totals = segs.reduce((a, s) => a + Math.max(8, s.text.length), 0);
+    let acc = 0;
+    const prep: PreparedSegment[] = segs.map((s, k) => {
+      const w = Math.max(8, s.text.length) / totals;
+      const dur = Math.max(1.2, audioDur * w);
+      const start = acc;
+      const end = (k === segs.length - 1) ? audioDur : acc + dur;
+      acc = end;
+      return { img: sceneImages[i][k], text: s.text, start, end };
+    });
+    scenePrepared.push(prep);
+    sceneDurations.push(audioDur);
+  }
+
+  // Canvas setup
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d")!;
-  // Prime first frame
-  if (scenes[0]?.isOutro) drawOutroFrame(ctx, 0, 1, width, height);
-  else drawSceneFrame(ctx, sceneImages[0] || [], scenes[0]?.chapterTitle, scenes[0]?.narration ?? "", 0, 1, width, height);
+  // Prime
+  if (normScenes[0]?.isOutro) drawOutroFrame(ctx, scenePrepared[0], 0, width, height, fontFamily);
+  else drawSceneFrame(ctx, scenePrepared[0], normScenes[0]?.chapterTitle, 0, width, height, fontFamily);
 
   const dest = audioCtx.createMediaStreamDestination();
   const videoStream = canvas.captureStream(30);
@@ -254,36 +363,27 @@ export async function recordStoryVideo(
     : MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")
       ? "video/webm;codecs=vp8,opus"
       : "video/webm";
-  const recorder = new MediaRecorder(combined, { mimeType: mime, videoBitsPerSecond: 3_000_000 });
+  const recorder = new MediaRecorder(combined, { mimeType: mime, videoBitsPerSecond: 4_500_000 });
   const chunks: BlobPart[] = [];
   recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
   const finished = new Promise<Blob>(resolve => {
     recorder.onstop = () => resolve(new Blob(chunks, { type: "video/webm" }));
   });
 
-  // Compute scene timings (with gap between). Fallback duration when audio missing.
-  const GAP = 0.5;
-  const durations = audioBuffers.map((b, i) => {
-    if (b) return b.duration;
-    // Estimate by narration length (~14 chars/sec) when TTS unavailable
-    const words = (scenes[i]?.narration || "").length;
-    return Math.max(4, Math.min(12, words / 14));
-  });
+  // Scene start offsets
   const starts: number[] = [];
   let acc = 0.2;
-  for (let i = 0; i < scenes.length; i++) {
+  for (let i = 0; i < normScenes.length; i++) {
     starts.push(acc);
-    acc += durations[i] + GAP;
+    acc += sceneDurations[i] + GAP;
   }
   const total = acc + 0.8;
 
-  // start with timeslice so webm carries proper cluster timestamps -> playable in all players
   recorder.start(1000);
-
 
   // Schedule audio
   const baseAudioT = audioCtx.currentTime + 0.2;
-  for (let i = 0; i < scenes.length; i++) {
+  for (let i = 0; i < normScenes.length; i++) {
     if (!audioBuffers[i]) continue;
     const src = audioCtx.createBufferSource();
     src.buffer = audioBuffers[i]!;
@@ -297,16 +397,15 @@ export async function recordStoryVideo(
       const t = (performance.now() - startReal) / 1000;
       if (t >= total) { resolve(); return; }
       let idx = 0;
-      for (let i = scenes.length - 1; i >= 0; i--) {
+      for (let i = normScenes.length - 1; i >= 0; i--) {
         if (t >= starts[i]) { idx = i; break; }
       }
       const localT = Math.max(0, t - starts[idx]);
-      const sceneDur = durations[idx] + GAP;
-      const sc = scenes[idx];
+      const sc = normScenes[idx];
       if (sc.isOutro) {
-        drawOutroFrame(ctx, localT, sceneDur, width, height);
+        drawOutroFrame(ctx, scenePrepared[idx], localT, width, height, fontFamily);
       } else {
-        drawSceneFrame(ctx, sceneImages[idx] || [], sc.chapterTitle, sc.narration, localT, sceneDur, width, height);
+        drawSceneFrame(ctx, scenePrepared[idx], sc.chapterTitle, localT, width, height, fontFamily);
       }
       onProgress?.(0.15 + 0.8 * Math.min(1, t / total), "Gravando vídeo…");
       requestAnimationFrame(frame);

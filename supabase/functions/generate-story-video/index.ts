@@ -7,10 +7,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface ChapterSegment {
+  text: string;
+  imagePrompt: string;
+}
+
 interface ChapterScene {
   chapterTitle: string;
-  narration: string;
-  imagePrompts: string[];
+  segments: ChapterSegment[];
 }
 
 serve(async (req) => {
@@ -74,22 +78,19 @@ serve(async (req) => {
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
-    // OPENAI/ELEVENLABS são opcionais — usamos fallback entre eles para imagens e TTS
 
-    // Mapa de vozes OpenAI -> ElevenLabs (vozes públicas multilingual v2)
     const ELEVEN_VOICE_MAP: Record<string, string> = {
-      nova: "EXAVITQu4vr4xnSDxMaL",   // Sarah
-      alloy: "9BWtsMINqrJLrRacOk9x",  // Aria
-      onyx: "JBFqnCBsd6RMkjVDRZzb",   // George
-      shimmer: "XB0fDUnXU5powFXDhCwa",// Charlotte
-      echo: "iP95p4xoKVk53GoZ742B",   // Chris
-      fable: "TX3LPaxmHKxFdv7VOQHJ",  // Liam
+      nova: "EXAVITQu4vr4xnSDxMaL",
+      alloy: "9BWtsMINqrJLrRacOk9x",
+      onyx: "JBFqnCBsd6RMkjVDRZzb",
+      shimmer: "XB0fDUnXU5powFXDhCwa",
+      echo: "iP95p4xoKVk53GoZ742B",
+      fable: "TX3LPaxmHKxFdv7VOQHJ",
     };
 
-    // Helper: gera imagem via Lovable AI (Gemini), com fallback p/ OpenAI
+    // Helper: gera imagem PORTRAIT 9:16 via Gemini -> OpenAI fallback
     async function genImage(prompt: string, idx: number, pi: number): Promise<string> {
-      const fullPrompt = prompt + " cinematic, painterly book illustration, consistent art style, no text, no words, no letters";
-      // Primeiro: Gemini via Lovable AI Gateway (moderação mais permissiva)
+      const fullPrompt = `${prompt}. Vertical 9:16 portrait composition, full-bleed cinematic frame, painterly book illustration, consistent art style, no text, no words, no letters, no captions, no UI`;
       try {
         const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -106,17 +107,16 @@ serve(async (req) => {
           const url = imgs?.[0]?.image_url?.url;
           if (url) return url;
         } else {
-          console.error("gemini image", idx, pi, r.status, await r.text());
+          console.error("gemini image", idx, pi, r.status);
         }
       } catch (e) { console.error("gemini image ex", idx, pi, e); }
 
-      // Fallback OpenAI (se houver chave/quota)
       if (OPENAI_API_KEY) {
         try {
           const r = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
             method: "POST",
             headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ model: "openai/gpt-image-2", prompt: fullPrompt, size: "1024x1024", quality: "low", n: 1 }),
+            body: JSON.stringify({ model: "openai/gpt-image-2", prompt: fullPrompt, size: "1024x1536", quality: "low", n: 1 }),
           });
           if (r.ok) {
             const j = await r.json();
@@ -130,9 +130,8 @@ serve(async (req) => {
       return "";
     }
 
-    // Helper TTS: OpenAI -> ElevenLabs fallback
     async function genTTS(text: string, voice: string): Promise<string> {
-      const input = text.slice(0, 1500);
+      const input = text.slice(0, 2500);
       if (OPENAI_API_KEY) {
         try {
           const r = await fetch("https://api.openai.com/v1/audio/speech", {
@@ -143,9 +142,7 @@ serve(async (req) => {
           if (r.ok) {
             const buf = await r.arrayBuffer();
             return `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
-          } else {
-            console.error("openai tts", r.status);
-          }
+          } else { console.error("openai tts", r.status); }
         } catch (e) { console.error("openai tts ex", e); }
       }
       if (ELEVENLABS_API_KEY) {
@@ -159,25 +156,27 @@ serve(async (req) => {
           if (r.ok) {
             const buf = await r.arrayBuffer();
             return `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
-          } else {
-            console.error("eleven tts", r.status, await r.text());
-          }
+          } else { console.error("eleven tts", r.status); }
         } catch (e) { console.error("eleven tts ex", e); }
       }
       return "";
     }
 
     const n = Math.max(3, Math.min(6, Number(scenesCount) || 5));
-    const IMAGES_PER_SCENE = 3;
+    const SEGMENTS_PER_SCENE = 5; // mais imagens/legendas sincronizadas
 
-    const systemPrompt = `Você cria roteiros de vídeos narrados sobre livros, em português brasileiro, ESTRUTURADOS POR CAPÍTULOS.
-Divida a obra em EXATAMENTE ${n} capítulos sequenciais que contem a história/ideia principal de forma envolvente e progressiva (início, desenvolvimento, clímax, desfecho).
+    const systemPrompt = `Você cria roteiros de vídeos verticais (9:16, Reels/TikTok) narrados sobre livros em português brasileiro, ESTRUTURADOS POR CAPÍTULOS.
+Divida a obra em EXATAMENTE ${n} capítulos sequenciais (início, desenvolvimento, clímax, desfecho).
 Para CADA capítulo, produza:
-- "chapterTitle": título curto e impactante do capítulo (3 a 6 palavras).
-- "narration": 3 a 5 frases (60-110 palavras) prontas para narração em voz alta, fluidas e cinematográficas, conectando-se ao capítulo anterior. Sem markdown, sem emojis.
-- "imagePrompts": array com EXATAMENTE ${IMAGES_PER_SCENE} descrições visuais EM INGLÊS, detalhadas e cinematográficas (estilo, iluminação, composição, ângulo), mostrando momentos DIFERENTES e SEQUENCIAIS dentro do mesmo capítulo, criando continuidade visual. Sem texto na imagem. Mantenha o MESMO estilo visual entre todas as imagens (mesma paleta, mesmo tratamento artístico) para coerência.
+- "chapterTitle": título curto e impactante (3 a 6 palavras).
+- "segments": array com EXATAMENTE ${SEGMENTS_PER_SCENE} segmentos. Cada segmento representa UMA FRASE da narração com SUA imagem correspondente.
+  Cada segmento contém:
+  - "text": UMA FRASE em português brasileiro (12 a 22 palavras), fluida, cinematográfica, fácil de ler como legenda na tela. Sem emojis, sem markdown.
+  - "imagePrompt": descrição visual EM INGLÊS, detalhada e cinematográfica (estilo, iluminação, composição, ângulo), retratando EXATAMENTE o que a frase descreve. Composição VERTICAL 9:16 (portrait). Mantenha MESMA paleta e tratamento artístico entre todas as imagens do vídeo (coerência visual). Sem texto na imagem.
 
-Responda APENAS com JSON válido: {"chapters":[{"chapterTitle":"...","narration":"...","imagePrompts":["...","...","..."]}]}`;
+Garanta que ao concatenar todas as frases o resultado seja uma narração fluida e contínua.
+
+Responda APENAS com JSON válido: {"chapters":[{"chapterTitle":"...","segments":[{"text":"...","imagePrompt":"..."}]}]}`;
 
     const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nModo: ${mode === "pages" ? "trecho selecionado" : "obra completa"}\n\nConteúdo:\n${truncated}`;
 
@@ -205,39 +204,46 @@ Responda APENAS com JSON válido: {"chapters":[{"chapterTitle":"...","narration"
     try {
       parsed = JSON.parse(scriptData.choices[0].message.content);
     } catch (e) {
-      console.error("json parse error", e, scriptData.choices?.[0]?.message?.content);
+      console.error("json parse error", e);
       throw new Error("Roteiro inválido retornado pela IA");
     }
-    const chapters = (parsed.chapters || []).slice(0, n).filter(c => c.narration && Array.isArray(c.imagePrompts) && c.imagePrompts.length > 0);
+    const chapters = (parsed.chapters || []).slice(0, n).filter(c =>
+      Array.isArray(c.segments) && c.segments.length > 0 && c.segments.every(s => s.text && s.imagePrompt)
+    );
     if (chapters.length === 0) throw new Error("Nenhum capítulo gerado");
 
-    // Generate images for each chapter (parallel across all prompts) + TTS per chapter
+    // Para cada capítulo: gera todas imagens em paralelo + TTS da narração concatenada
     const built = await Promise.all(chapters.map(async (ch, idx) => {
-      const prompts = ch.imagePrompts.slice(0, IMAGES_PER_SCENE);
-      const imageDataUrls = await Promise.all(prompts.map((p, pi) => genImage(p, idx, pi)));
-      const audioDataUrl = await genTTS(ch.narration, voice);
+      const segs = ch.segments.slice(0, SEGMENTS_PER_SCENE);
+      const imgs = await Promise.all(segs.map((s, pi) => genImage(s.imagePrompt, idx, pi)));
+      const fullNarration = segs.map(s => s.text.trim()).join(" ");
+      const audioDataUrl = await genTTS(fullNarration, voice);
+      const segments = segs.map((s, pi) => ({ text: s.text, imageDataUrl: imgs[pi] || "" }));
       return {
         chapterTitle: ch.chapterTitle || `Capítulo ${idx + 1}`,
-        narration: ch.narration,
-        imageDataUrls: imageDataUrls.filter(Boolean),
+        narration: fullNarration,
+        segments,
         audioDataUrl,
       };
     }));
 
-    // Build outro scene (app promo)
-    const outroNarration = `Você acabou de assistir a uma história criada com a inteligência artificial do AURA READ. Transforme seus livros em vídeos, áudios e resumos inteligentes. Acesse auraread.store e comece grátis agora mesmo.`;
+    // Outro promo
+    const outroSegments = [
+      { text: "Esta história foi criada com a inteligência artificial do AURA READ.", imageDataUrl: "" },
+      { text: "Transforme seus livros em vídeos, áudios e resumos inteligentes.", imageDataUrl: "" },
+      { text: "Acesse auraread.store e comece grátis agora mesmo.", imageDataUrl: "" },
+    ];
+    const outroNarration = outroSegments.map(s => s.text).join(" ");
     const outroAudio = await genTTS(outroNarration, voice);
-
 
     const outro = {
       chapterTitle: "AURA READ",
       narration: outroNarration,
-      imageDataUrls: [], // client renders branded promo card
+      segments: outroSegments,
       audioDataUrl: outroAudio,
       isOutro: true as const,
     };
 
-    // Record generation
     await supabaseClient.from("story_videos").insert({
       user_id: user.id,
       book_id,
