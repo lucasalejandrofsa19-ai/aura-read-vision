@@ -271,7 +271,7 @@ const StoryVideos = () => {
             </TabsContent>
           </Tabs>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1">
               <Label className="text-xs">Voz da narração</Label>
               <Select value={voice} onValueChange={setVoice}>
@@ -289,6 +289,20 @@ const StoryVideos = () => {
                   {[3, 4, 5, 6].map(n => <SelectItem key={n} value={String(n)}>{n} cenas</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Fonte da legenda</Label>
+              <Select value={fontId} onValueChange={(v) => { setFontId(v); const f = FONTS.find(f => f.id === v); if (f) ensureFontLoaded(f); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FONTS.map(f => (
+                    <SelectItem key={f.id} value={f.id}>
+                      <span style={{ fontFamily: `${f.id}, sans-serif` }}>{f.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">Vídeo 9:16 (Reels/TikTok) · legenda sincronizada</p>
             </div>
           </div>
 
