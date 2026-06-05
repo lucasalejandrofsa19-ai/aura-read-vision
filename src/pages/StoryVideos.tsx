@@ -183,6 +183,7 @@ const StoryVideos = () => {
       const blob = await recordStoryVideo(scenes, {
         onProgress: (p, label) => { setRecProgress(Math.round(p * 100)); if (label) setRecLabel(label); },
         title: bookTitle,
+        fontFamily: fontId,
       });
       const url = URL.createObjectURL(blob);
       setVideoUrl(url);
