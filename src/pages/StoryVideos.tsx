@@ -67,8 +67,14 @@ const StoryVideos = () => {
   const [mode, setMode] = useState<Mode>("summary");
   const [scenesCount, setScenesCount] = useState(5);
   const [voice, setVoice] = useState("nova");
+  const [fontId, setFontId] = useState("Bebas Neue");
   const [startPage, setStartPage] = useState(1);
   const [endPage, setEndPage] = useState(10);
+
+  useEffect(() => {
+    const f = FONTS.find(f => f.id === fontId);
+    if (f) ensureFontLoaded(f);
+  }, [fontId]);
 
   const [generating, setGenerating] = useState(false);
   const [scenes, setScenes] = useState<SceneResult[]>([]);
