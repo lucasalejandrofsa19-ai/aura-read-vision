@@ -338,12 +338,15 @@ const StoryVideos = () => {
             )}
 
             {videoUrl && (
-              <video ref={previewRef} src={videoUrl} controls className="w-full rounded-md bg-black" />
+              <div className="flex justify-center bg-black rounded-md p-2">
+                <video ref={previewRef} src={videoUrl} controls className="max-h-[70vh] rounded" style={{ aspectRatio: "9 / 16" }} />
+              </div>
             )}
 
             <div className="space-y-4">
               {scenes.map((s, i) => {
-                const imgs = s.imageDataUrls && s.imageDataUrls.length > 0 ? s.imageDataUrls : (s.imageDataUrl ? [s.imageDataUrl] : []);
+                const segs = (s as any).segments as { text: string; imageDataUrl: string }[] | undefined;
+                const imgs = segs?.map(x => x.imageDataUrl).filter(Boolean) ?? (s.imageDataUrls && s.imageDataUrls.length > 0 ? s.imageDataUrls : (s.imageDataUrl ? [s.imageDataUrl] : []));
                 return (
                   <div key={i} className="border rounded-md overflow-hidden bg-card">
                     <div className="px-4 py-2 bg-muted/50 flex items-center justify-between">
@@ -354,21 +357,28 @@ const StoryVideos = () => {
                       {s.isOutro && <Badge variant="secondary" className="text-[10px]">Promo AURA READ</Badge>}
                     </div>
                     {s.isOutro ? (
-                      <div className="aspect-video bg-gradient-to-br from-primary/30 via-purple-900/40 to-background flex flex-col items-center justify-center gap-2">
-                        <span className="text-3xl font-extrabold text-amber-400">AURA READ</span>
+                      <div className="aspect-[9/16] max-h-72 bg-gradient-to-br from-primary/30 via-purple-900/40 to-background flex flex-col items-center justify-center gap-2">
+                        <span className="text-3xl font-extrabold text-amber-400" style={{ fontFamily: `${fontId}, sans-serif` }}>AURA READ</span>
                         <span className="text-xs text-muted-foreground">auraread.store</span>
                       </div>
                     ) : (
-                      <div className={`grid gap-1 ${imgs.length >= 3 ? "grid-cols-3" : imgs.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-1">
                         {imgs.length === 0 ? (
-                          <div className="aspect-video bg-muted flex items-center justify-center text-xs text-muted-foreground col-span-3">Sem imagens</div>
+                          <div className="aspect-[9/16] bg-muted flex items-center justify-center text-xs text-muted-foreground col-span-full">Sem imagens</div>
                         ) : imgs.map((u, k) => (
-                          <img key={k} src={u} alt={`Cena ${i + 1} imagem ${k + 1}`} className="w-full aspect-video object-cover" />
+                          <div key={k} className="relative">
+                            <img src={u} alt={`Cena ${i + 1} segmento ${k + 1}`} className="w-full aspect-[9/16] object-cover" />
+                            {segs?.[k]?.text && (
+                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-1.5">
+                                <p className="text-[10px] text-white leading-tight line-clamp-3" style={{ fontFamily: `${fontId}, sans-serif` }}>{segs[k].text}</p>
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
                     )}
                     <div className="p-3 space-y-2">
-                      <p className="text-sm leading-snug">{s.narration}</p>
+                      <p className="text-sm leading-snug text-muted-foreground">{s.narration}</p>
                       {s.audioDataUrl && <audio src={s.audioDataUrl} controls className="w-full h-8" />}
                     </div>
                   </div>
