@@ -30,6 +30,27 @@ const VOICES = [
   { id: "fable", label: "Fable (narrativa)" },
 ];
 
+const FONTS = [
+  { id: "Inter", label: "Inter (moderno)", google: "Inter:wght@500;700;800" },
+  { id: "Montserrat", label: "Montserrat (clean)", google: "Montserrat:wght@600;800" },
+  { id: "Bebas Neue", label: "Bebas Neue (impacto)", google: "Bebas+Neue" },
+  { id: "Anton", label: "Anton (bold sans)", google: "Anton" },
+  { id: "Playfair Display", label: "Playfair Display (elegante)", google: "Playfair+Display:wght@700;900" },
+  { id: "Lora", label: "Lora (serif suave)", google: "Lora:wght@600;700" },
+  { id: "Oswald", label: "Oswald (vertical impact)", google: "Oswald:wght@600;800" },
+  { id: "Poppins", label: "Poppins (amigável)", google: "Poppins:wght@600;800" },
+];
+
+function ensureFontLoaded(font: { id: string; google: string }) {
+  const id = `font-${font.id.replace(/\s+/g, "-")}`;
+  if (document.getElementById(id)) return;
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${font.google}&display=swap`;
+  document.head.appendChild(link);
+}
+
 const StoryVideos = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
