@@ -134,14 +134,39 @@ const StoryVideos = () => {
     return (data as any)?.extracted_text ?? null;
   }
 
+  async function handleDetectChapters() {
+    if (!bookId) { toast.error("Selecione um livro"); return; }
+    setChaptersLoading(true);
+    setChapters([]);
+    setSelectedChapterIdx(null);
+    try {
+      const full = await getBookExtractedText();
+      const { data, error } = await supabase.functions.invoke("detect-book-chapters", {
+        body: { book_id: bookId, ...(full ? { text: full } : {}) },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const list = ((data as any)?.chapters || []) as DetectedChapter[];
+      setChapters(list);
+      if (list.length > 0) setSelectedChapterIdx(0);
+      toast.success(`${list.length} capítulos detectados`);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Erro ao detectar capítulos");
+    } finally {
+      setChaptersLoading(false);
+    }
+  }
+
   async function handleGenerate() {
     if (!bookId) { toast.error("Selecione um livro"); return; }
     setGenerating(true);
     setScenes([]);
     setVideoUrl("");
     try {
-      // For pages mode, slice by page-range estimate
       let textPayload: string | undefined;
+      let sendMode: Mode = mode;
+
       if (mode === "pages") {
         if (endPage < startPage) { toast.error("Intervalo inválido"); setGenerating(false); return; }
         const full = await getBookExtractedText();
@@ -158,12 +183,20 @@ const StoryVideos = () => {
           setGenerating(false);
           return;
         }
+      } else if (mode === "chapters") {
+        if (selectedChapterIdx === null || !chapters[selectedChapterIdx]?.excerpt) {
+          toast.error("Selecione um capítulo");
+          setGenerating(false);
+          return;
+        }
+        textPayload = chapters[selectedChapterIdx].excerpt!;
+        sendMode = "pages"; // edge function trata como trecho
       }
 
       const { data, error } = await supabase.functions.invoke("generate-story-video", {
         body: {
           book_id: bookId,
-          mode,
+          mode: sendMode,
           scenesCount,
           voice,
           ...(textPayload ? { text: textPayload } : {}),
@@ -174,7 +207,10 @@ const StoryVideos = () => {
 
       const res = data as { title: string; scenes: SceneResult[]; quota: any };
       setScenes(res.scenes || []);
-      setBookTitle(res.title || selectedBook?.title || "");
+      const chapterTitle = mode === "chapters" && selectedChapterIdx !== null
+        ? `${res.title} — ${chapters[selectedChapterIdx].title}`
+        : res.title;
+      setBookTitle(chapterTitle || selectedBook?.title || "");
       if (res.quota) setQuota(res.quota);
       toast.success(`${res.scenes.length} cenas geradas!`);
     } catch (e: any) {
@@ -197,14 +233,34 @@ const StoryVideos = () => {
     setRecording(true);
     setRecProgress(0);
     setVideoUrl("");
+    setRecLabel("Iniciando…");
     try {
-      const blob = await recordStoryVideo(scenes, {
-        onProgress: (p, label) => { setRecProgress(Math.round(p * 100)); if (label) setRecLabel(label); },
+      const webmBlob = await recordStoryVideo(scenes, {
+        onProgress: (p, label) => {
+          // Gravação ocupa 0–60% da barra
+          setRecProgress(Math.round(p * 60));
+          if (label) setRecLabel(label);
+        },
         title: bookTitle,
         fontFamily: fontId,
       });
-      const url = URL.createObjectURL(blob);
+
+      let finalBlob: Blob = webmBlob;
+      let mime: "video/mp4" | "video/webm" = "video/mp4";
+      try {
+        finalBlob = await convertWebmToMp4(webmBlob, (p, label) => {
+          setRecProgress(60 + Math.round(p * 40));
+          if (label) setRecLabel(label);
+        });
+      } catch (convErr) {
+        console.error("MP4 conversion failed, keeping webm", convErr);
+        mime = "video/webm";
+        toast.warning("Não foi possível converter para MP4. Baixando em WebM.");
+      }
+
+      const url = URL.createObjectURL(finalBlob);
       setVideoUrl(url);
+      setVideoMime(mime);
       toast.success("Vídeo pronto! Clique em baixar.");
     } catch (e: any) {
       console.error(e);
@@ -216,13 +272,15 @@ const StoryVideos = () => {
 
   function handleDownload() {
     if (!videoUrl) return;
+    const ext = videoMime === "video/mp4" ? "mp4" : "webm";
     const a = document.createElement("a");
     a.href = videoUrl;
-    a.download = `${(bookTitle || "historia").replace(/[^\w\-]+/g, "_")}.webm`;
+    a.download = `${(bookTitle || "historia").replace(/[^\w\-]+/g, "_")}.${ext}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   }
+
 
   return (
     <div className="min-h-screen bg-background">
