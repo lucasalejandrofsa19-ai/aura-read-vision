@@ -323,12 +323,58 @@ const StoryVideos = () => {
           </div>
 
           <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
-            <TabsList className="grid grid-cols-2 w-full max-w-sm">
+            <TabsList className="grid grid-cols-3 w-full max-w-md">
               <TabsTrigger value="summary">Resumo IA</TabsTrigger>
+              <TabsTrigger value="chapters">Capítulos</TabsTrigger>
               <TabsTrigger value="pages">Trecho</TabsTrigger>
             </TabsList>
             <TabsContent value="summary" className="text-sm text-muted-foreground pt-3">
               A IA cria um roteiro a partir do livro inteiro e narra a essência da história.
+            </TabsContent>
+            <TabsContent value="chapters" className="pt-3 space-y-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleDetectChapters}
+                  disabled={chaptersLoading || !bookId}
+                >
+                  {chaptersLoading
+                    ? <><Loader2 className="w-3 h-3 mr-2 animate-spin" /> Detectando capítulos…</>
+                    : <><Sparkles className="w-3 h-3 mr-2" /> {chapters.length > 0 ? "Detectar novamente" : "Detectar capítulos com IA"}</>}
+                </Button>
+                {chapters.length > 0 && (
+                  <span className="text-xs text-muted-foreground">{chapters.length} capítulos disponíveis</span>
+                )}
+              </div>
+
+              {chapters.length === 0 && !chaptersLoading && (
+                <p className="text-xs text-muted-foreground">
+                  Clique no botão acima para que a IA divida o livro em capítulos. Depois escolha qual virará vídeo.
+                </p>
+              )}
+
+              {chapters.length > 0 && (
+                <div className="grid sm:grid-cols-2 gap-2 max-h-72 overflow-auto pr-1">
+                  {chapters.map((c, i) => {
+                    const active = i === selectedChapterIdx;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setSelectedChapterIdx(i)}
+                        className={`text-left p-3 rounded-md border transition ${
+                          active ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border hover:border-primary/50 bg-card"
+                        }`}
+                      >
+                        <p className="text-xs font-semibold text-primary mb-1">Capítulo {i + 1}</p>
+                        <p className="text-sm font-medium leading-tight">{c.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.summary}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </TabsContent>
             <TabsContent value="pages" className="pt-3">
               <div className="grid grid-cols-2 gap-3 max-w-sm">
@@ -346,6 +392,7 @@ const StoryVideos = () => {
               )}
             </TabsContent>
           </Tabs>
+
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1">
