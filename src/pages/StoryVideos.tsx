@@ -16,10 +16,17 @@ import { useBooks } from "@/hooks/useBooks";
 import { useUserData } from "@/hooks/useUserData";
 import { supabase } from "@/integrations/supabase/client";
 import { recordStoryVideo, type StoryScene } from "@/lib/storyVideoRecorder";
+import { convertWebmToMp4 } from "@/lib/webmToMp4";
 
-type Mode = "summary" | "pages";
+type Mode = "summary" | "pages" | "chapters";
 
 interface SceneResult extends StoryScene {}
+
+interface DetectedChapter {
+  title: string;
+  summary: string;
+  excerpt?: string;
+}
 
 const VOICES = [
   { id: "nova", label: "Nova (feminina, brasileira)" },
@@ -81,13 +88,24 @@ const StoryVideos = () => {
   const [bookTitle, setBookTitle] = useState("");
   const [quota, setQuota] = useState<{ used: number; limit: number; premium: boolean } | null>(null);
 
+  const [chapters, setChapters] = useState<DetectedChapter[]>([]);
+  const [chaptersLoading, setChaptersLoading] = useState(false);
+  const [selectedChapterIdx, setSelectedChapterIdx] = useState<number | null>(null);
+
   const [recording, setRecording] = useState(false);
   const [recProgress, setRecProgress] = useState(0);
   const [recLabel, setRecLabel] = useState("");
   const [videoUrl, setVideoUrl] = useState<string>("");
+  const [videoMime, setVideoMime] = useState<"video/mp4" | "video/webm">("video/mp4");
   const previewRef = useRef<HTMLVideoElement>(null);
 
   const selectedBook = allBooks.find(b => b.id === bookId);
+
+  // Reset chapters when book changes
+  useEffect(() => {
+    setChapters([]);
+    setSelectedChapterIdx(null);
+  }, [bookId]);
 
   // Initial quota fetch
   useEffect(() => {
