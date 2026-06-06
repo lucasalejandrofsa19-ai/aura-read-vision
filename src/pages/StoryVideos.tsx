@@ -448,7 +448,7 @@ const StoryVideos = () => {
                   {recording ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gravando…</> : <><Play className="w-4 h-4 mr-2" /> Gerar vídeo MP4</>}
                 </Button>
                 {videoUrl && (
-                  <Button onClick={handleDownload} variant="secondary"><Download className="w-4 h-4 mr-2" /> Baixar vídeo</Button>
+                  <Button onClick={handleDownload} variant="secondary"><Download className="w-4 h-4 mr-2" /> Baixar {videoMime === "video/mp4" ? "MP4" : "WebM"}</Button>
                 )}
               </div>
             </div>
