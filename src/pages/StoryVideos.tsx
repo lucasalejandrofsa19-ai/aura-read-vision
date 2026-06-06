@@ -16,10 +16,17 @@ import { useBooks } from "@/hooks/useBooks";
 import { useUserData } from "@/hooks/useUserData";
 import { supabase } from "@/integrations/supabase/client";
 import { recordStoryVideo, type StoryScene } from "@/lib/storyVideoRecorder";
+import { convertWebmToMp4 } from "@/lib/webmToMp4";
 
-type Mode = "summary" | "pages";
+type Mode = "summary" | "pages" | "chapters";
 
 interface SceneResult extends StoryScene {}
+
+interface DetectedChapter {
+  title: string;
+  summary: string;
+  excerpt?: string;
+}
 
 const VOICES = [
   { id: "nova", label: "Nova (feminina, brasileira)" },
@@ -81,13 +88,24 @@ const StoryVideos = () => {
   const [bookTitle, setBookTitle] = useState("");
   const [quota, setQuota] = useState<{ used: number; limit: number; premium: boolean } | null>(null);
 
+  const [chapters, setChapters] = useState<DetectedChapter[]>([]);
+  const [chaptersLoading, setChaptersLoading] = useState(false);
+  const [selectedChapterIdx, setSelectedChapterIdx] = useState<number | null>(null);
+
   const [recording, setRecording] = useState(false);
   const [recProgress, setRecProgress] = useState(0);
   const [recLabel, setRecLabel] = useState("");
   const [videoUrl, setVideoUrl] = useState<string>("");
+  const [videoMime, setVideoMime] = useState<"video/mp4" | "video/webm">("video/mp4");
   const previewRef = useRef<HTMLVideoElement>(null);
 
   const selectedBook = allBooks.find(b => b.id === bookId);
+
+  // Reset chapters when book changes
+  useEffect(() => {
+    setChapters([]);
+    setSelectedChapterIdx(null);
+  }, [bookId]);
 
   // Initial quota fetch
   useEffect(() => {
@@ -116,14 +134,39 @@ const StoryVideos = () => {
     return (data as any)?.extracted_text ?? null;
   }
 
+  async function handleDetectChapters() {
+    if (!bookId) { toast.error("Selecione um livro"); return; }
+    setChaptersLoading(true);
+    setChapters([]);
+    setSelectedChapterIdx(null);
+    try {
+      const full = await getBookExtractedText();
+      const { data, error } = await supabase.functions.invoke("detect-book-chapters", {
+        body: { book_id: bookId, ...(full ? { text: full } : {}) },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const list = ((data as any)?.chapters || []) as DetectedChapter[];
+      setChapters(list);
+      if (list.length > 0) setSelectedChapterIdx(0);
+      toast.success(`${list.length} capítulos detectados`);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Erro ao detectar capítulos");
+    } finally {
+      setChaptersLoading(false);
+    }
+  }
+
   async function handleGenerate() {
     if (!bookId) { toast.error("Selecione um livro"); return; }
     setGenerating(true);
     setScenes([]);
     setVideoUrl("");
     try {
-      // For pages mode, slice by page-range estimate
       let textPayload: string | undefined;
+      let sendMode: Mode = mode;
+
       if (mode === "pages") {
         if (endPage < startPage) { toast.error("Intervalo inválido"); setGenerating(false); return; }
         const full = await getBookExtractedText();
@@ -140,12 +183,20 @@ const StoryVideos = () => {
           setGenerating(false);
           return;
         }
+      } else if (mode === "chapters") {
+        if (selectedChapterIdx === null || !chapters[selectedChapterIdx]?.excerpt) {
+          toast.error("Selecione um capítulo");
+          setGenerating(false);
+          return;
+        }
+        textPayload = chapters[selectedChapterIdx].excerpt!;
+        sendMode = "pages"; // edge function trata como trecho
       }
 
       const { data, error } = await supabase.functions.invoke("generate-story-video", {
         body: {
           book_id: bookId,
-          mode,
+          mode: sendMode,
           scenesCount,
           voice,
           ...(textPayload ? { text: textPayload } : {}),
@@ -156,7 +207,10 @@ const StoryVideos = () => {
 
       const res = data as { title: string; scenes: SceneResult[]; quota: any };
       setScenes(res.scenes || []);
-      setBookTitle(res.title || selectedBook?.title || "");
+      const chapterTitle = mode === "chapters" && selectedChapterIdx !== null
+        ? `${res.title} — ${chapters[selectedChapterIdx].title}`
+        : res.title;
+      setBookTitle(chapterTitle || selectedBook?.title || "");
       if (res.quota) setQuota(res.quota);
       toast.success(`${res.scenes.length} cenas geradas!`);
     } catch (e: any) {
@@ -179,14 +233,34 @@ const StoryVideos = () => {
     setRecording(true);
     setRecProgress(0);
     setVideoUrl("");
+    setRecLabel("Iniciando…");
     try {
-      const blob = await recordStoryVideo(scenes, {
-        onProgress: (p, label) => { setRecProgress(Math.round(p * 100)); if (label) setRecLabel(label); },
+      const webmBlob = await recordStoryVideo(scenes, {
+        onProgress: (p, label) => {
+          // Gravação ocupa 0–60% da barra
+          setRecProgress(Math.round(p * 60));
+          if (label) setRecLabel(label);
+        },
         title: bookTitle,
         fontFamily: fontId,
       });
-      const url = URL.createObjectURL(blob);
+
+      let finalBlob: Blob = webmBlob;
+      let mime: "video/mp4" | "video/webm" = "video/mp4";
+      try {
+        finalBlob = await convertWebmToMp4(webmBlob, (p, label) => {
+          setRecProgress(60 + Math.round(p * 40));
+          if (label) setRecLabel(label);
+        });
+      } catch (convErr) {
+        console.error("MP4 conversion failed, keeping webm", convErr);
+        mime = "video/webm";
+        toast.warning("Não foi possível converter para MP4. Baixando em WebM.");
+      }
+
+      const url = URL.createObjectURL(finalBlob);
       setVideoUrl(url);
+      setVideoMime(mime);
       toast.success("Vídeo pronto! Clique em baixar.");
     } catch (e: any) {
       console.error(e);
@@ -198,13 +272,15 @@ const StoryVideos = () => {
 
   function handleDownload() {
     if (!videoUrl) return;
+    const ext = videoMime === "video/mp4" ? "mp4" : "webm";
     const a = document.createElement("a");
     a.href = videoUrl;
-    a.download = `${(bookTitle || "historia").replace(/[^\w\-]+/g, "_")}.webm`;
+    a.download = `${(bookTitle || "historia").replace(/[^\w\-]+/g, "_")}.${ext}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   }
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -247,12 +323,58 @@ const StoryVideos = () => {
           </div>
 
           <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
-            <TabsList className="grid grid-cols-2 w-full max-w-sm">
+            <TabsList className="grid grid-cols-3 w-full max-w-md">
               <TabsTrigger value="summary">Resumo IA</TabsTrigger>
+              <TabsTrigger value="chapters">Capítulos</TabsTrigger>
               <TabsTrigger value="pages">Trecho</TabsTrigger>
             </TabsList>
             <TabsContent value="summary" className="text-sm text-muted-foreground pt-3">
               A IA cria um roteiro a partir do livro inteiro e narra a essência da história.
+            </TabsContent>
+            <TabsContent value="chapters" className="pt-3 space-y-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleDetectChapters}
+                  disabled={chaptersLoading || !bookId}
+                >
+                  {chaptersLoading
+                    ? <><Loader2 className="w-3 h-3 mr-2 animate-spin" /> Detectando capítulos…</>
+                    : <><Sparkles className="w-3 h-3 mr-2" /> {chapters.length > 0 ? "Detectar novamente" : "Detectar capítulos com IA"}</>}
+                </Button>
+                {chapters.length > 0 && (
+                  <span className="text-xs text-muted-foreground">{chapters.length} capítulos disponíveis</span>
+                )}
+              </div>
+
+              {chapters.length === 0 && !chaptersLoading && (
+                <p className="text-xs text-muted-foreground">
+                  Clique no botão acima para que a IA divida o livro em capítulos. Depois escolha qual virará vídeo.
+                </p>
+              )}
+
+              {chapters.length > 0 && (
+                <div className="grid sm:grid-cols-2 gap-2 max-h-72 overflow-auto pr-1">
+                  {chapters.map((c, i) => {
+                    const active = i === selectedChapterIdx;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setSelectedChapterIdx(i)}
+                        className={`text-left p-3 rounded-md border transition ${
+                          active ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border hover:border-primary/50 bg-card"
+                        }`}
+                      >
+                        <p className="text-xs font-semibold text-primary mb-1">Capítulo {i + 1}</p>
+                        <p className="text-sm font-medium leading-tight">{c.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.summary}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </TabsContent>
             <TabsContent value="pages" className="pt-3">
               <div className="grid grid-cols-2 gap-3 max-w-sm">
@@ -270,6 +392,7 @@ const StoryVideos = () => {
               )}
             </TabsContent>
           </Tabs>
+
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1">
@@ -325,7 +448,7 @@ const StoryVideos = () => {
                   {recording ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gravando…</> : <><Play className="w-4 h-4 mr-2" /> Gerar vídeo MP4</>}
                 </Button>
                 {videoUrl && (
-                  <Button onClick={handleDownload} variant="secondary"><Download className="w-4 h-4 mr-2" /> Baixar vídeo</Button>
+                  <Button onClick={handleDownload} variant="secondary"><Download className="w-4 h-4 mr-2" /> Baixar {videoMime === "video/mp4" ? "MP4" : "WebM"}</Button>
                 )}
               </div>
             </div>

@@ -57,6 +57,8 @@ verify_jwt = true
 [functions.generate-story-video]
 verify_jwt = true
 
+[functions.detect-book-chapters]
+verify_jwt = true
 
 [functions.process-email-queue]
 verify_jwt = true
