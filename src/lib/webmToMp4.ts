@@ -57,6 +57,7 @@ export async function convertWebmToMp4(
 
   const data = await ff.readFile(outputName);
   onProgress?.(1, "MP4 pronto");
-  // data is Uint8Array
-  return new Blob([data as Uint8Array], { type: "video/mp4" });
+  const bytes = data as Uint8Array;
+  const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  return new Blob([ab], { type: "video/mp4" });
 }
