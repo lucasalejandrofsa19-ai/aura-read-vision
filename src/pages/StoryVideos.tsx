@@ -84,9 +84,27 @@ const StoryVideos = () => {
   }, [fontId]);
 
   const [generating, setGenerating] = useState(false);
+  const [genProgress, setGenProgress] = useState(0);
+  const [genLabel, setGenLabel] = useState("");
   const [scenes, setScenes] = useState<SceneResult[]>([]);
   const [bookTitle, setBookTitle] = useState("");
   const [quota, setQuota] = useState<{ used: number; limit: number; premium: boolean } | null>(null);
+
+  // Smooth fake progress while AI generates (real progress unknown)
+  useEffect(() => {
+    if (!generating) return;
+    setGenProgress(5);
+    setGenLabel("Lendo livro e criando roteiro com IA…");
+    let v = 5;
+    const id = window.setInterval(() => {
+      v = Math.min(92, v + Math.max(0.5, (95 - v) * 0.04));
+      setGenProgress(v);
+      if (v > 30 && v < 60) setGenLabel("Gerando imagens das cenas…");
+      else if (v >= 60) setGenLabel("Gerando narração em áudio…");
+    }, 600);
+    return () => { window.clearInterval(id); };
+  }, [generating]);
+
 
   const [chapters, setChapters] = useState<DetectedChapter[]>([]);
   const [chaptersLoading, setChaptersLoading] = useState(false);
@@ -234,10 +252,30 @@ const StoryVideos = () => {
     setRecProgress(0);
     setVideoUrl("");
     setRecLabel("Iniciando…");
+
+    // Create a "processing" row up-front so it appears immediately in the videos list
+    let rowId: string | null = null;
+    try {
+      const { data: inserted } = await supabase
+        .from("story_videos" as any)
+        .insert({
+          user_id: user!.id,
+          book_id: bookId,
+          book_title: bookTitle,
+          mode,
+          scenes_count: scenes.length,
+          status: "processing",
+        })
+        .select("id")
+        .single();
+      rowId = (inserted as any)?.id ?? null;
+    } catch (e) {
+      console.error("create processing row", e);
+    }
+
     try {
       const webmBlob = await recordStoryVideo(scenes, {
         onProgress: (p, label) => {
-          // Gravação ocupa 0–60% da barra
           setRecProgress(Math.round(p * 60));
           if (label) setRecLabel(label);
         },
@@ -249,7 +287,7 @@ const StoryVideos = () => {
       let mime: "video/mp4" | "video/webm" = "video/mp4";
       try {
         finalBlob = await convertWebmToMp4(webmBlob, (p, label) => {
-          setRecProgress(60 + Math.round(p * 40));
+          setRecProgress(60 + Math.round(p * 35));
           if (label) setRecLabel(label);
         });
       } catch (convErr) {
@@ -262,9 +300,10 @@ const StoryVideos = () => {
       setVideoUrl(url);
       setVideoMime(mime);
 
-      // Upload to storage + register row
+      // Upload to storage + update row
       try {
         setRecLabel("Salvando vídeo na sua conta…");
+        setRecProgress(96);
         const ext = mime === "video/mp4" ? "mp4" : "webm";
         const fileId = crypto.randomUUID();
         const path = `${user!.id}/${fileId}.${ext}`;
@@ -272,30 +311,53 @@ const StoryVideos = () => {
           .from("story-videos")
           .upload(path, finalBlob, { contentType: mime, upsert: false });
         if (upErr) throw upErr;
-        await supabase.from("story_videos" as any).insert({
-          user_id: user!.id,
-          book_id: bookId,
-          book_title: bookTitle,
-          mode,
-          scenes_count: scenes.length,
-          file_path: path,
-          file_size: finalBlob.size,
-          file_mime: mime,
-        });
+        if (rowId) {
+          await supabase.from("story_videos" as any).update({
+            file_path: path,
+            file_size: finalBlob.size,
+            file_mime: mime,
+            status: "ok",
+          }).eq("id", rowId);
+        } else {
+          await supabase.from("story_videos" as any).insert({
+            user_id: user!.id,
+            book_id: bookId,
+            book_title: bookTitle,
+            mode,
+            scenes_count: scenes.length,
+            file_path: path,
+            file_size: finalBlob.size,
+            file_mime: mime,
+            status: "ok",
+          });
+        }
+        setRecProgress(100);
+        setRecLabel("Pronto!");
         toast.success("Vídeo salvo no seu perfil!");
       } catch (uploadErr: any) {
         console.error("upload story video", uploadErr);
+        if (rowId) {
+          await supabase.from("story_videos" as any).update({
+            status: "error",
+            error_message: uploadErr?.message?.slice(0, 500) || "Falha ao salvar",
+          }).eq("id", rowId);
+        }
         toast.warning("Vídeo gerado, mas não foi possível salvar na sua conta.");
       }
-
-      toast.success("Vídeo pronto! Clique em baixar.");
     } catch (e: any) {
       console.error(e);
+      if (rowId) {
+        await supabase.from("story_videos" as any).update({
+          status: "error",
+          error_message: e?.message?.slice(0, 500) || "Erro durante geração",
+        }).eq("id", rowId);
+      }
       toast.error("Erro ao gravar vídeo: " + (e?.message || ""));
     } finally {
       setRecording(false);
     }
   }
+
 
 
   function handleDownload() {
@@ -460,11 +522,18 @@ const StoryVideos = () => {
           <Button onClick={handleGenerate} disabled={generating || !bookId} className="w-full sm:w-auto" size="lg">
             {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando roteiro, imagens e narração…</> : <><Sparkles className="w-4 h-4 mr-2" /> Gerar vídeo</>}
           </Button>
+          {generating && (
+            <div className="space-y-1">
+              <Progress value={genProgress} />
+              <p className="text-xs text-muted-foreground">{genLabel} ({Math.round(genProgress)}%)</p>
+            </div>
+          )}
           {!hasPremiumAccess && quota && !quota.premium && (
             <p className="text-xs text-muted-foreground">
               Plano gratuito: {quota.limit} vídeo por mês. <button className="underline" onClick={() => navigate("/pricing")}>Upgrade para ilimitado</button>.
             </p>
           )}
+
         </Card>
 
         {scenes.length > 0 && (
