@@ -703,36 +703,42 @@ export type Database = {
           book_id: string | null
           book_title: string | null
           created_at: string
+          error_message: string | null
           file_mime: string | null
           file_path: string | null
           file_size: number | null
           id: string
           mode: string | null
           scenes_count: number | null
+          status: string
           user_id: string
         }
         Insert: {
           book_id?: string | null
           book_title?: string | null
           created_at?: string
+          error_message?: string | null
           file_mime?: string | null
           file_path?: string | null
           file_size?: number | null
           id?: string
           mode?: string | null
           scenes_count?: number | null
+          status?: string
           user_id: string
         }
         Update: {
           book_id?: string | null
           book_title?: string | null
           created_at?: string
+          error_message?: string | null
           file_mime?: string | null
           file_path?: string | null
           file_size?: number | null
           id?: string
           mode?: string | null
           scenes_count?: number | null
+          status?: string
           user_id?: string
         }
         Relationships: []
