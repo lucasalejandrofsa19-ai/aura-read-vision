@@ -84,9 +84,27 @@ const StoryVideos = () => {
   }, [fontId]);
 
   const [generating, setGenerating] = useState(false);
+  const [genProgress, setGenProgress] = useState(0);
+  const [genLabel, setGenLabel] = useState("");
   const [scenes, setScenes] = useState<SceneResult[]>([]);
   const [bookTitle, setBookTitle] = useState("");
   const [quota, setQuota] = useState<{ used: number; limit: number; premium: boolean } | null>(null);
+
+  // Smooth fake progress while AI generates (real progress unknown)
+  useEffect(() => {
+    if (!generating) return;
+    setGenProgress(5);
+    setGenLabel("Lendo livro e criando roteiro com IA…");
+    let v = 5;
+    const id = window.setInterval(() => {
+      v = Math.min(92, v + Math.max(0.5, (95 - v) * 0.04));
+      setGenProgress(v);
+      if (v > 30 && v < 60) setGenLabel("Gerando imagens das cenas…");
+      else if (v >= 60) setGenLabel("Gerando narração em áudio…");
+    }, 600);
+    return () => { window.clearInterval(id); };
+  }, [generating]);
+
 
   const [chapters, setChapters] = useState<DetectedChapter[]>([]);
   const [chaptersLoading, setChaptersLoading] = useState(false);
