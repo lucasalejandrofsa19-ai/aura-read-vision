@@ -522,11 +522,18 @@ const StoryVideos = () => {
           <Button onClick={handleGenerate} disabled={generating || !bookId} className="w-full sm:w-auto" size="lg">
             {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando roteiro, imagens e narração…</> : <><Sparkles className="w-4 h-4 mr-2" /> Gerar vídeo</>}
           </Button>
+          {generating && (
+            <div className="space-y-1">
+              <Progress value={genProgress} />
+              <p className="text-xs text-muted-foreground">{genLabel} ({Math.round(genProgress)}%)</p>
+            </div>
+          )}
           {!hasPremiumAccess && quota && !quota.premium && (
             <p className="text-xs text-muted-foreground">
               Plano gratuito: {quota.limit} vídeo por mês. <button className="underline" onClick={() => navigate("/pricing")}>Upgrade para ilimitado</button>.
             </p>
           )}
+
         </Card>
 
         {scenes.length > 0 && (

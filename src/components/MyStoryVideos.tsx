@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Trash2, Loader2, Clapperboard } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Download, Trash2, Loader2, Clapperboard, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -16,6 +17,8 @@ interface StoryVideoRow {
   file_path: string | null;
   file_size: number | null;
   file_mime: string | null;
+  status: string | null;
+  error_message: string | null;
   created_at: string;
 }
 
@@ -23,6 +26,31 @@ function formatBytes(n: number | null) {
   if (!n) return "";
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function StatusBadge({ status }: { status: string | null }) {
+  if (status === "processing") {
+    return (
+      <Badge variant="secondary" className="gap-1">
+        <Loader2 className="w-3 h-3 animate-spin" />
+        Processando
+      </Badge>
+    );
+  }
+  if (status === "error") {
+    return (
+      <Badge variant="destructive" className="gap-1">
+        <AlertCircle className="w-3 h-3" />
+        Erro
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="default" className="gap-1 bg-emerald-600 hover:bg-emerald-700">
+      <CheckCircle2 className="w-3 h-3" />
+      Pronto
+    </Badge>
+  );
 }
 
 export const MyStoryVideos = () => {
@@ -33,10 +61,9 @@ export const MyStoryVideos = () => {
 
   const load = async () => {
     if (!user) return;
-    setLoading(true);
     const { data, error } = await supabase
       .from("story_videos" as any)
-      .select("id, book_title, mode, scenes_count, file_path, file_size, file_mime, created_at")
+      .select("id, book_title, mode, scenes_count, file_path, file_size, file_mime, status, error_message, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (error) {
@@ -48,6 +75,14 @@ export const MyStoryVideos = () => {
   };
 
   useEffect(() => { load(); }, [user]);
+
+  // Auto refresh while any video is "processing"
+  useEffect(() => {
+    const hasProcessing = videos.some(v => v.status === "processing");
+    if (!hasProcessing) return;
+    const id = window.setInterval(load, 4000);
+    return () => window.clearInterval(id);
+  }, [videos]);
 
   const handleDownload = async (v: StoryVideoRow) => {
     if (!v.file_path) { toast.error("Vídeo sem arquivo salvo"); return; }
@@ -103,7 +138,7 @@ export const MyStoryVideos = () => {
         <Clapperboard className="w-10 h-10 mx-auto text-muted-foreground" />
         <p className="font-medium">Nenhum vídeo gerado ainda</p>
         <p className="text-sm text-muted-foreground">
-          Crie histórias em vídeo na página Histórias em Vídeo IA — elas aparecem aqui para você baixar quando quiser.
+          Crie histórias em vídeo na página Histórias em Vídeo IA — elas aparecem aqui com o status (processando, pronto ou erro).
         </p>
       </Card>
     );
@@ -111,23 +146,37 @@ export const MyStoryVideos = () => {
 
   return (
     <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button variant="ghost" size="sm" onClick={load}>
+          <RefreshCw className="w-3 h-3 mr-2" /> Atualizar
+        </Button>
+      </div>
       {videos.map(v => (
         <Card key={v.id} className="p-4 flex items-center gap-3">
           <div className="w-12 h-12 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
             <Clapperboard className="w-6 h-6 text-primary" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium truncate">{v.book_title || "Vídeo sem título"}</p>
+          <div className="flex-1 min-w-0 space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-medium truncate">{v.book_title || "Vídeo sem título"}</p>
+              <StatusBadge status={v.status} />
+            </div>
             <p className="text-xs text-muted-foreground">
-              {v.scenes_count || 0} cenas · {formatBytes(v.file_size)} ·{" "}
+              {v.scenes_count || 0} cenas
+              {v.file_size ? ` · ${formatBytes(v.file_size)}` : ""}
+              {" · "}
               {formatDistanceToNow(new Date(v.created_at), { addSuffix: true, locale: ptBR })}
             </p>
+            {v.status === "error" && v.error_message && (
+              <p className="text-xs text-destructive line-clamp-1">{v.error_message}</p>
+            )}
           </div>
           <Button
             size="sm"
             variant="secondary"
             onClick={() => handleDownload(v)}
-            disabled={busyId === v.id || !v.file_path}
+            disabled={busyId === v.id || !v.file_path || v.status !== "ok"}
+            title={v.status !== "ok" ? "Vídeo ainda não está pronto" : "Baixar"}
           >
             {busyId === v.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
           </Button>
