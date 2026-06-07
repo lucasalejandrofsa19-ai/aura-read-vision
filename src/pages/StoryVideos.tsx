@@ -261,6 +261,33 @@ const StoryVideos = () => {
       const url = URL.createObjectURL(finalBlob);
       setVideoUrl(url);
       setVideoMime(mime);
+
+      // Upload to storage + register row
+      try {
+        setRecLabel("Salvando vídeo na sua conta…");
+        const ext = mime === "video/mp4" ? "mp4" : "webm";
+        const fileId = crypto.randomUUID();
+        const path = `${user!.id}/${fileId}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("story-videos")
+          .upload(path, finalBlob, { contentType: mime, upsert: false });
+        if (upErr) throw upErr;
+        await supabase.from("story_videos" as any).insert({
+          user_id: user!.id,
+          book_id: bookId,
+          book_title: bookTitle,
+          mode,
+          scenes_count: scenes.length,
+          file_path: path,
+          file_size: finalBlob.size,
+          file_mime: mime,
+        });
+        toast.success("Vídeo salvo no seu perfil!");
+      } catch (uploadErr: any) {
+        console.error("upload story video", uploadErr);
+        toast.warning("Vídeo gerado, mas não foi possível salvar na sua conta.");
+      }
+
       toast.success("Vídeo pronto! Clique em baixar.");
     } catch (e: any) {
       console.error(e);
@@ -269,6 +296,7 @@ const StoryVideos = () => {
       setRecording(false);
     }
   }
+
 
   function handleDownload() {
     if (!videoUrl) return;
