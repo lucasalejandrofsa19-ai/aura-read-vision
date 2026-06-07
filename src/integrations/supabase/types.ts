@@ -698,6 +698,45 @@ export type Database = {
         }
         Relationships: []
       }
+      story_videos: {
+        Row: {
+          book_id: string | null
+          book_title: string | null
+          created_at: string
+          file_mime: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          mode: string | null
+          scenes_count: number | null
+          user_id: string
+        }
+        Insert: {
+          book_id?: string | null
+          book_title?: string | null
+          created_at?: string
+          file_mime?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          mode?: string | null
+          scenes_count?: number | null
+          user_id: string
+        }
+        Update: {
+          book_id?: string | null
+          book_title?: string | null
+          created_at?: string
+          file_mime?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          mode?: string | null
+          scenes_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
@@ -883,6 +922,7 @@ export type Database = {
     }
     Functions: {
       award_action_xp: { Args: { _action: string }; Returns: Json }
+      can_generate_story_video: { Args: { _user_id: string }; Returns: Json }
       check_achievements: { Args: { _user_id: string }; Returns: undefined }
       check_book_limit: { Args: { user_id: string }; Returns: boolean }
       compute_level: { Args: { xp: number }; Returns: number }
