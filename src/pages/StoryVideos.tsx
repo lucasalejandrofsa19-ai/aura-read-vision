@@ -234,10 +234,30 @@ const StoryVideos = () => {
     setRecProgress(0);
     setVideoUrl("");
     setRecLabel("Iniciando…");
+
+    // Create a "processing" row up-front so it appears immediately in the videos list
+    let rowId: string | null = null;
+    try {
+      const { data: inserted } = await supabase
+        .from("story_videos" as any)
+        .insert({
+          user_id: user!.id,
+          book_id: bookId,
+          book_title: bookTitle,
+          mode,
+          scenes_count: scenes.length,
+          status: "processing",
+        })
+        .select("id")
+        .single();
+      rowId = (inserted as any)?.id ?? null;
+    } catch (e) {
+      console.error("create processing row", e);
+    }
+
     try {
       const webmBlob = await recordStoryVideo(scenes, {
         onProgress: (p, label) => {
-          // Gravação ocupa 0–60% da barra
           setRecProgress(Math.round(p * 60));
           if (label) setRecLabel(label);
         },
@@ -249,7 +269,7 @@ const StoryVideos = () => {
       let mime: "video/mp4" | "video/webm" = "video/mp4";
       try {
         finalBlob = await convertWebmToMp4(webmBlob, (p, label) => {
-          setRecProgress(60 + Math.round(p * 40));
+          setRecProgress(60 + Math.round(p * 35));
           if (label) setRecLabel(label);
         });
       } catch (convErr) {
@@ -262,9 +282,10 @@ const StoryVideos = () => {
       setVideoUrl(url);
       setVideoMime(mime);
 
-      // Upload to storage + register row
+      // Upload to storage + update row
       try {
         setRecLabel("Salvando vídeo na sua conta…");
+        setRecProgress(96);
         const ext = mime === "video/mp4" ? "mp4" : "webm";
         const fileId = crypto.randomUUID();
         const path = `${user!.id}/${fileId}.${ext}`;
@@ -272,30 +293,53 @@ const StoryVideos = () => {
           .from("story-videos")
           .upload(path, finalBlob, { contentType: mime, upsert: false });
         if (upErr) throw upErr;
-        await supabase.from("story_videos" as any).insert({
-          user_id: user!.id,
-          book_id: bookId,
-          book_title: bookTitle,
-          mode,
-          scenes_count: scenes.length,
-          file_path: path,
-          file_size: finalBlob.size,
-          file_mime: mime,
-        });
+        if (rowId) {
+          await supabase.from("story_videos" as any).update({
+            file_path: path,
+            file_size: finalBlob.size,
+            file_mime: mime,
+            status: "ok",
+          }).eq("id", rowId);
+        } else {
+          await supabase.from("story_videos" as any).insert({
+            user_id: user!.id,
+            book_id: bookId,
+            book_title: bookTitle,
+            mode,
+            scenes_count: scenes.length,
+            file_path: path,
+            file_size: finalBlob.size,
+            file_mime: mime,
+            status: "ok",
+          });
+        }
+        setRecProgress(100);
+        setRecLabel("Pronto!");
         toast.success("Vídeo salvo no seu perfil!");
       } catch (uploadErr: any) {
         console.error("upload story video", uploadErr);
+        if (rowId) {
+          await supabase.from("story_videos" as any).update({
+            status: "error",
+            error_message: uploadErr?.message?.slice(0, 500) || "Falha ao salvar",
+          }).eq("id", rowId);
+        }
         toast.warning("Vídeo gerado, mas não foi possível salvar na sua conta.");
       }
-
-      toast.success("Vídeo pronto! Clique em baixar.");
     } catch (e: any) {
       console.error(e);
+      if (rowId) {
+        await supabase.from("story_videos" as any).update({
+          status: "error",
+          error_message: e?.message?.slice(0, 500) || "Erro durante geração",
+        }).eq("id", rowId);
+      }
       toast.error("Erro ao gravar vídeo: " + (e?.message || ""));
     } finally {
       setRecording(false);
     }
   }
+
 
 
   function handleDownload() {
