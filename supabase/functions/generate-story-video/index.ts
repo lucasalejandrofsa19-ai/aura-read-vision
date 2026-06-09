@@ -200,12 +200,30 @@ Responda APENAS com JSON válido: {"chapters":[{"chapterTitle":"...","segments":
       throw new Error("Falha ao gerar roteiro");
     }
     const scriptData = await scriptRes.json();
+    const rawContent: string = scriptData.choices?.[0]?.message?.content ?? "";
     let parsed: { chapters: ChapterScene[] };
+    const tryParse = (s: string) => JSON.parse(s);
+    const extractJson = (s: string) => {
+      const fenced = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
+      const candidate = fenced ? fenced[1] : s;
+      const start = candidate.indexOf("{");
+      const end = candidate.lastIndexOf("}");
+      return start >= 0 && end > start ? candidate.slice(start, end + 1) : candidate;
+    };
     try {
-      parsed = JSON.parse(scriptData.choices[0].message.content);
-    } catch (e) {
-      console.error("json parse error", e);
-      throw new Error("Roteiro inválido retornado pela IA");
+      parsed = tryParse(rawContent);
+    } catch {
+      try {
+        parsed = tryParse(extractJson(rawContent));
+      } catch {
+        try {
+          const { jsonrepair } = await import("https://esm.sh/jsonrepair@3.8.0");
+          parsed = tryParse(jsonrepair(extractJson(rawContent)));
+        } catch (e) {
+          console.error("json parse error after repair", e, rawContent.slice(0, 500));
+          throw new Error("Roteiro inválido retornado pela IA");
+        }
+      }
     }
     const chapters = (parsed.chapters || []).slice(0, n).filter(c =>
       Array.isArray(c.segments) && c.segments.length > 0 && c.segments.every(s => s.text && s.imagePrompt)
