@@ -16,7 +16,6 @@ import { useBooks } from "@/hooks/useBooks";
 import { useUserData } from "@/hooks/useUserData";
 import { supabase } from "@/integrations/supabase/client";
 import { recordStoryVideo, type StoryScene } from "@/lib/storyVideoRecorder";
-import { convertWebmToMp4 } from "@/lib/webmToMp4";
 
 type Mode = "summary" | "pages" | "chapters";
 
@@ -316,26 +315,20 @@ const StoryVideos = () => {
     }
 
     try {
-      const webmBlob = await recordStoryVideo(scenes, {
+      const recordedBlob = await recordStoryVideo(scenes, {
         onProgress: (p, label) => {
-          setRecProgress(Math.round(p * 60));
+          setRecProgress(Math.round(p * 95));
           if (label) setRecLabel(label);
         },
         title: bookTitle,
         fontFamily: fontId,
       });
 
-      let finalBlob: Blob = webmBlob;
-      let mime: "video/mp4" | "video/webm" = "video/mp4";
-      try {
-        finalBlob = await convertWebmToMp4(webmBlob, (p, label) => {
-          setRecProgress(60 + Math.round(p * 35));
-          if (label) setRecLabel(label);
-        });
-      } catch (convErr) {
-        console.error("MP4 conversion failed, keeping webm", convErr);
-        mime = "video/webm";
-        toast.warning("Não foi possível converter para MP4. Baixando em WebM.");
+      const isMp4 = recordedBlob.type.includes("mp4");
+      const finalBlob: Blob = recordedBlob;
+      const mime: "video/mp4" | "video/webm" = isMp4 ? "video/mp4" : "video/webm";
+      if (!isMp4) {
+        toast.warning("Seu navegador não grava MP4 direto. O vídeo foi salvo em WebM sem travar.");
       }
 
       const url = URL.createObjectURL(finalBlob);
@@ -584,7 +577,7 @@ const StoryVideos = () => {
               <h2 className="font-semibold text-lg">Capítulos do roteiro</h2>
               <div className="flex gap-2">
                 <Button onClick={handleRecord} disabled={recording} variant="default">
-                  {recording ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gravando…</> : <><Play className="w-4 h-4 mr-2" /> Gerar vídeo MP4</>}
+                  {recording ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gravando…</> : <><Play className="w-4 h-4 mr-2" /> Gerar vídeo</>}
                 </Button>
                 {videoUrl && (
                   <Button onClick={handleDownload} variant="secondary"><Download className="w-4 h-4 mr-2" /> Baixar {videoMime === "video/mp4" ? "MP4" : "WebM"}</Button>
