@@ -277,9 +277,9 @@ export async function recordStoryVideo(
   opts: RecordOptions = {},
 ): Promise<Blob> {
   const { onProgress, fontFamily = "Inter" } = opts;
-  // 9:16 vertical (Instagram Reels / TikTok)
-  const width = 1080;
-  const height = 1920;
+  // 9:16 vertical. 720p keeps browser recording/export stable on phones.
+  const width = 720;
+  const height = 1280;
 
   onProgress?.(0.05, "Carregando imagens…");
   // Ensure scenes have segments (legacy fallback)
@@ -352,22 +352,26 @@ export async function recordStoryVideo(
   else drawSceneFrame(ctx, scenePrepared[0], normScenes[0]?.chapterTitle, 0, width, height, fontFamily);
 
   const dest = audioCtx.createMediaStreamDestination();
-  const videoStream = canvas.captureStream(30);
+  const videoStream = canvas.captureStream(24);
   const combined = new MediaStream([
     ...videoStream.getVideoTracks(),
     ...dest.stream.getAudioTracks(),
   ]);
 
-  const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
-    ? "video/webm;codecs=vp9,opus"
-    : MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")
-      ? "video/webm;codecs=vp8,opus"
-      : "video/webm";
-  const recorder = new MediaRecorder(combined, { mimeType: mime, videoBitsPerSecond: 4_500_000 });
+  const mimeCandidates = [
+    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+    "video/mp4;codecs=h264,aac",
+    "video/mp4",
+    "video/webm;codecs=vp8,opus",
+    "video/webm;codecs=vp9,opus",
+    "video/webm",
+  ];
+  const mime = mimeCandidates.find(m => MediaRecorder.isTypeSupported(m)) || "";
+  const recorder = new MediaRecorder(combined, { ...(mime ? { mimeType: mime } : {}), videoBitsPerSecond: 2_000_000 });
   const chunks: BlobPart[] = [];
   recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
   const finished = new Promise<Blob>(resolve => {
-    recorder.onstop = () => resolve(new Blob(chunks, { type: "video/webm" }));
+    recorder.onstop = () => resolve(new Blob(chunks, { type: mime || "video/webm" }));
   });
 
   // Scene start offsets
