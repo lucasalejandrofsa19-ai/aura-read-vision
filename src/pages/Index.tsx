@@ -133,9 +133,9 @@ const Index = () => {
       {/* Hero section — desktop-first: 2 colunas em lg+ */}
       <div className="relative z-10 mx-auto w-full max-w-screen-2xl px-6 lg:px-12 xl:px-20 pt-20 lg:pt-28 pb-16">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0 }}
           className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center min-h-[70vh]"
         >
           {/* Texto à esquerda */}
@@ -255,7 +255,7 @@ const Index = () => {
                       <PremiumBadge variant="icon-only" />
                     </div>
                     <CardTitle className="text-xl">{feature.title}</CardTitle>
-                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
                       <Sparkles className="w-3 h-3" />
                       {feature.highlight}
                     </div>
