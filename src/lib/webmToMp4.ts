@@ -14,12 +14,23 @@ async function getFFmpeg(onLog?: (msg: string) => void): Promise<FFmpeg> {
 
   loadingPromise = (async () => {
     const ff = new FFmpeg();
-    if (onLog) ff.on("log", ({ message }) => onLog(message));
-    const base = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
-    await ff.load({
-      coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, "application/wasm"),
+    ff.on("log", ({ message }) => {
+      console.log("[ffmpeg]", message);
+      onLog?.(message);
     });
+    const base = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
+    const workerBase = "https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/esm";
+    try {
+      await ff.load({
+        classWorkerURL: await toBlobURL(`${workerBase}/worker.js`, "text/javascript"),
+        coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, "text/javascript"),
+        wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, "application/wasm"),
+      });
+    } catch (e) {
+      loadingPromise = null;
+      console.error("[ffmpeg] load failed", e);
+      throw e;
+    }
     ffmpegInstance = ff;
     return ff;
   })();
