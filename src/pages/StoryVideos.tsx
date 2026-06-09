@@ -220,8 +220,25 @@ const StoryVideos = () => {
           ...(textPayload ? { text: textPayload } : {}),
         },
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+
+      // supabase-js returns an error object for non-2xx; the JSON body lives on error.context (a Response)
+      if (error) {
+        let parsed: any = null;
+        try {
+          if (error.context && typeof (error.context as any).json === "function") {
+            parsed = await (error.context as Response).clone().json();
+          }
+        } catch {}
+        if (parsed?.quota) setQuota(parsed.quota);
+        const friendly = parsed?.error || error.message || "Erro ao gerar vídeo";
+        toast.error(friendly);
+        return;
+      }
+      if ((data as any)?.error) {
+        if ((data as any).quota) setQuota((data as any).quota);
+        toast.error((data as any).error);
+        return;
+      }
 
       const res = data as { title: string; scenes: SceneResult[]; quota: any };
       setScenes(res.scenes || []);
@@ -233,17 +250,11 @@ const StoryVideos = () => {
       toast.success(`${res.scenes.length} cenas geradas!`);
     } catch (e: any) {
       console.error(e);
-      const msg = e?.message || "Erro ao gerar vídeo";
-      toast.error(msg);
-      if (e?.context?.body) {
-        try {
-          const parsed = JSON.parse(e.context.body);
-          if (parsed?.quota) setQuota(parsed.quota);
-        } catch {}
-      }
+      toast.error(e?.message || "Erro ao gerar vídeo");
     } finally {
       setGenerating(false);
     }
+
   }
 
   async function handleRecord() {
