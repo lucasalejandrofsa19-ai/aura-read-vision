@@ -145,11 +145,42 @@ const StoryVideos = () => {
     );
   }
 
+  async function extractPdfTextClient(): Promise<string | null> {
+    if (!selectedBook) return null;
+    try {
+      const bucket = selectedBook.source === "user" ? "pdfs" : "premium-pdfs";
+      const table = selectedBook.source === "user" ? "books" : "premium_books";
+      const { data: row } = await supabase.from(table).select("file_path").eq("id", selectedBook.id).maybeSingle();
+      const filePath = (row as any)?.file_path;
+      if (!filePath) return null;
+      const { data: signed } = await supabase.storage.from(bucket).createSignedUrl(filePath, 60 * 10);
+      if (!signed?.signedUrl) return null;
+      const { pdfjs } = await import("@/lib/pdfjsWorker");
+      const buf = await (await fetch(signed.signedUrl)).arrayBuffer();
+      const pdf = await pdfjs.getDocument({ data: buf }).promise;
+      const max = Math.min(pdf.numPages, 80);
+      let out = "";
+      for (let i = 1; i <= max; i++) {
+        const page = await pdf.getPage(i);
+        const tc = await page.getTextContent();
+        out += (tc.items as any[]).map((it: any) => it.str).join(" ") + "\n";
+        if (out.length > 80000) break;
+      }
+      return out.trim() || null;
+    } catch (e) {
+      console.error("client pdf extract", e);
+      return null;
+    }
+  }
+
   async function getBookExtractedText(): Promise<string | null> {
     if (!selectedBook) return null;
     const table = selectedBook.source === "user" ? "books" : "premium_books";
     const { data } = await supabase.from(table).select("extracted_text").eq("id", selectedBook.id).maybeSingle();
-    return (data as any)?.extracted_text ?? null;
+    const stored = (data as any)?.extracted_text as string | null;
+    if (stored && stored.trim().length >= 200) return stored;
+    toast.message("Extraindo texto do PDF…");
+    return await extractPdfTextClient();
   }
 
   async function handleDetectChapters() {
