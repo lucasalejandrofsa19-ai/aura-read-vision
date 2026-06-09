@@ -133,9 +133,9 @@ const Index = () => {
       {/* Hero section — desktop-first: 2 colunas em lg+ */}
       <div className="relative z-10 mx-auto w-full max-w-screen-2xl px-6 lg:px-12 xl:px-20 pt-20 lg:pt-28 pb-16">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0 }}
           className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center min-h-[70vh]"
         >
           {/* Texto à esquerda */}
