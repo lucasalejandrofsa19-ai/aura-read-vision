@@ -31,6 +31,15 @@ serve(async (req) => {
       });
     }
 
+    const { data: hasPremium, error: premErr } = await supabaseClient.rpc("has_premium_access", { _user_id: user.id });
+    if (premErr || !hasPremium) {
+      return new Response(JSON.stringify({ error: "Acesso premium necessário" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+
+
     const { summary, bookTitle, topic } = await req.json();
     const baseText = (topic || summary || "").toString().trim();
     if (!baseText || baseText.length < 30) {
