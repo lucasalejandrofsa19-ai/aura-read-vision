@@ -56,14 +56,18 @@ export async function convertWebmToMp4(
 
   await ff.exec([
     "-i", inputName,
+    "-threads", "0",
     "-c:v", "libx264",
     "-preset", "ultrafast",
-    "-tune", "fastdecode",
-    "-crf", "30",
+    "-tune", "zerolatency",
+    "-crf", "32",
     "-pix_fmt", "yuv420p",
-    "-vf", "scale=720:-2",
+    "-vf", "scale=480:-2,fps=24",
+    "-g", "48",
     "-c:a", "aac",
-    "-b:a", "96k",
+    "-b:a", "64k",
+    "-ac", "1",
+    "-ar", "44100",
     "-movflags", "+faststart",
     outputName,
   ]);
