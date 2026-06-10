@@ -187,6 +187,8 @@ IMPORTANTE: Seja CONCISO. Responda APENAS JSON válido COMPLETO (não trunque): 
           { role: "user", content: userPrompt },
         ],
         response_format: { type: "json_object" },
+        max_tokens: 8000,
+        temperature: 0.7,
       }),
     });
     if (!scriptRes.ok) {
