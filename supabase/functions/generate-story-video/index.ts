@@ -163,20 +163,17 @@ serve(async (req) => {
     }
 
     const n = Math.max(3, Math.min(6, Number(scenesCount) || 5));
-    const SEGMENTS_PER_SCENE = 5; // mais imagens/legendas sincronizadas
+    const SEGMENTS_PER_SCENE = 4;
 
     const systemPrompt = `Você cria roteiros de vídeos verticais (9:16, Reels/TikTok) narrados sobre livros em português brasileiro, ESTRUTURADOS POR CAPÍTULOS.
 Divida a obra em EXATAMENTE ${n} capítulos sequenciais (início, desenvolvimento, clímax, desfecho).
 Para CADA capítulo, produza:
-- "chapterTitle": título curto e impactante (3 a 6 palavras).
-- "segments": array com EXATAMENTE ${SEGMENTS_PER_SCENE} segmentos. Cada segmento representa UMA FRASE da narração com SUA imagem correspondente.
-  Cada segmento contém:
-  - "text": UMA FRASE em português brasileiro (12 a 22 palavras), fluida, cinematográfica, fácil de ler como legenda na tela. Sem emojis, sem markdown.
-  - "imagePrompt": descrição visual EM INGLÊS, detalhada e cinematográfica (estilo, iluminação, composição, ângulo), retratando EXATAMENTE o que a frase descreve. Composição VERTICAL 9:16 (portrait). Mantenha MESMA paleta e tratamento artístico entre todas as imagens do vídeo (coerência visual). Sem texto na imagem.
+- "chapterTitle": título curto (3-6 palavras).
+- "segments": array com EXATAMENTE ${SEGMENTS_PER_SCENE} segmentos. Cada segmento contém:
+  - "text": UMA FRASE em PT-BR (12-20 palavras), fluida, cinematográfica. Sem emojis/markdown.
+  - "imagePrompt": descrição visual CURTA EM INGLÊS (máx 25 palavras), cinematográfica, vertical 9:16, mesma paleta consistente, sem texto.
 
-Garanta que ao concatenar todas as frases o resultado seja uma narração fluida e contínua.
-
-Responda APENAS com JSON válido: {"chapters":[{"chapterTitle":"...","segments":[{"text":"...","imagePrompt":"..."}]}]}`;
+IMPORTANTE: Seja CONCISO. Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{"chapterTitle":"...","segments":[{"text":"...","imagePrompt":"..."}]}]}`;
 
     const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nModo: ${mode === "pages" ? "trecho selecionado" : "obra completa"}\n\nConteúdo:\n${truncated}`;
 
