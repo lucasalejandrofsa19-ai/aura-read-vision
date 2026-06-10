@@ -218,9 +218,30 @@ IMPORTANTE: Seja CONCISO. Responda APENAS JSON válido COMPLETO (não trunque): 
         try {
           const { jsonrepair } = await import("https://esm.sh/jsonrepair@3.8.0");
           parsed = tryParse(jsonrepair(extractJson(rawContent)));
-        } catch (e) {
-          console.error("json parse error after repair", e, rawContent.slice(0, 500));
-          throw new Error("Roteiro inválido retornado pela IA");
+        } catch {
+          // Salvage: truncar até o último segmento completo
+          try {
+            const txt = rawContent;
+            // pega só capítulos/segmentos completos via regex
+            const segRe = /\{\s*"text"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"imagePrompt"\s*:\s*"((?:[^"\\]|\\.)*)"\s*\}/g;
+            const chapRe = /"chapterTitle"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+            const titles: string[] = [];
+            let m: RegExpExecArray | null;
+            while ((m = chapRe.exec(txt)) !== null) titles.push(m[1]);
+            const allSegs: { text: string; imagePrompt: string }[] = [];
+            while ((m = segRe.exec(txt)) !== null) allSegs.push({ text: m[1], imagePrompt: m[2] });
+            if (titles.length === 0 || allSegs.length === 0) throw new Error("no salvage");
+            const perChap = Math.max(1, Math.floor(allSegs.length / titles.length));
+            const chaptersSalvaged = titles.map((t, i) => ({
+              chapterTitle: t,
+              segments: allSegs.slice(i * perChap, (i + 1) * perChap),
+            })).filter(c => c.segments.length > 0);
+            if (chaptersSalvaged.length === 0) throw new Error("no salvage");
+            parsed = { chapters: chaptersSalvaged };
+          } catch (e) {
+            console.error("json parse error after repair", e, rawContent.slice(0, 500));
+            throw new Error("Roteiro inválido retornado pela IA");
+          }
         }
       }
     }
