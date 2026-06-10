@@ -163,20 +163,17 @@ serve(async (req) => {
     }
 
     const n = Math.max(3, Math.min(6, Number(scenesCount) || 5));
-    const SEGMENTS_PER_SCENE = 5; // mais imagens/legendas sincronizadas
+    const SEGMENTS_PER_SCENE = 4;
 
     const systemPrompt = `Você cria roteiros de vídeos verticais (9:16, Reels/TikTok) narrados sobre livros em português brasileiro, ESTRUTURADOS POR CAPÍTULOS.
 Divida a obra em EXATAMENTE ${n} capítulos sequenciais (início, desenvolvimento, clímax, desfecho).
 Para CADA capítulo, produza:
-- "chapterTitle": título curto e impactante (3 a 6 palavras).
-- "segments": array com EXATAMENTE ${SEGMENTS_PER_SCENE} segmentos. Cada segmento representa UMA FRASE da narração com SUA imagem correspondente.
-  Cada segmento contém:
-  - "text": UMA FRASE em português brasileiro (12 a 22 palavras), fluida, cinematográfica, fácil de ler como legenda na tela. Sem emojis, sem markdown.
-  - "imagePrompt": descrição visual EM INGLÊS, detalhada e cinematográfica (estilo, iluminação, composição, ângulo), retratando EXATAMENTE o que a frase descreve. Composição VERTICAL 9:16 (portrait). Mantenha MESMA paleta e tratamento artístico entre todas as imagens do vídeo (coerência visual). Sem texto na imagem.
+- "chapterTitle": título curto (3-6 palavras).
+- "segments": array com EXATAMENTE ${SEGMENTS_PER_SCENE} segmentos. Cada segmento contém:
+  - "text": UMA FRASE em PT-BR (12-20 palavras), fluida, cinematográfica. Sem emojis/markdown.
+  - "imagePrompt": descrição visual CURTA EM INGLÊS (máx 25 palavras), cinematográfica, vertical 9:16, mesma paleta consistente, sem texto.
 
-Garanta que ao concatenar todas as frases o resultado seja uma narração fluida e contínua.
-
-Responda APENAS com JSON válido: {"chapters":[{"chapterTitle":"...","segments":[{"text":"...","imagePrompt":"..."}]}]}`;
+IMPORTANTE: Seja CONCISO. Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{"chapterTitle":"...","segments":[{"text":"...","imagePrompt":"..."}]}]}`;
 
     const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nModo: ${mode === "pages" ? "trecho selecionado" : "obra completa"}\n\nConteúdo:\n${truncated}`;
 
@@ -190,6 +187,8 @@ Responda APENAS com JSON válido: {"chapters":[{"chapterTitle":"...","segments":
           { role: "user", content: userPrompt },
         ],
         response_format: { type: "json_object" },
+        max_tokens: 8000,
+        temperature: 0.7,
       }),
     });
     if (!scriptRes.ok) {
@@ -219,9 +218,30 @@ Responda APENAS com JSON válido: {"chapters":[{"chapterTitle":"...","segments":
         try {
           const { jsonrepair } = await import("https://esm.sh/jsonrepair@3.8.0");
           parsed = tryParse(jsonrepair(extractJson(rawContent)));
-        } catch (e) {
-          console.error("json parse error after repair", e, rawContent.slice(0, 500));
-          throw new Error("Roteiro inválido retornado pela IA");
+        } catch {
+          // Salvage: truncar até o último segmento completo
+          try {
+            const txt = rawContent;
+            // pega só capítulos/segmentos completos via regex
+            const segRe = /\{\s*"text"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"imagePrompt"\s*:\s*"((?:[^"\\]|\\.)*)"\s*\}/g;
+            const chapRe = /"chapterTitle"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+            const titles: string[] = [];
+            let m: RegExpExecArray | null;
+            while ((m = chapRe.exec(txt)) !== null) titles.push(m[1]);
+            const allSegs: { text: string; imagePrompt: string }[] = [];
+            while ((m = segRe.exec(txt)) !== null) allSegs.push({ text: m[1], imagePrompt: m[2] });
+            if (titles.length === 0 || allSegs.length === 0) throw new Error("no salvage");
+            const perChap = Math.max(1, Math.floor(allSegs.length / titles.length));
+            const chaptersSalvaged = titles.map((t, i) => ({
+              chapterTitle: t,
+              segments: allSegs.slice(i * perChap, (i + 1) * perChap),
+            })).filter(c => c.segments.length > 0);
+            if (chaptersSalvaged.length === 0) throw new Error("no salvage");
+            parsed = { chapters: chaptersSalvaged };
+          } catch (e) {
+            console.error("json parse error after repair", e, rawContent.slice(0, 500));
+            throw new Error("Roteiro inválido retornado pela IA");
+          }
         }
       }
     }
