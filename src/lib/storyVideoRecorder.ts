@@ -182,6 +182,58 @@ function drawSceneFrame(
   ctx.fillRect(0, 0, width * pTotal, 6);
 }
 
+// Cartão separador de capítulo: tela cheia com número e título do capítulo.
+function drawChapterIntro(
+  ctx: CanvasRenderingContext2D,
+  chapterIndex: number,
+  chapterTitle: string,
+  localT: number,
+  duration: number,
+  width: number,
+  height: number,
+  fontFamily: string,
+) {
+  const p = Math.min(1, localT / duration);
+  // Fundo gradiente animado
+  const grad = ctx.createLinearGradient(0, 0, width, height);
+  grad.addColorStop(0, `hsl(${220 + chapterIndex * 25}, 65%, 12%)`);
+  grad.addColorStop(1, `hsl(${260 + chapterIndex * 20}, 70%, 8%)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, width, height);
+
+  // Linha decorativa
+  const lineW = width * 0.4 * p;
+  ctx.fillStyle = "#ffd166";
+  ctx.fillRect((width - lineW) / 2, height / 2 - 140, lineW, 4);
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  // "CAPÍTULO N"
+  ctx.globalAlpha = Math.min(1, p * 2);
+  ctx.fillStyle = "#ffd166";
+  ctx.font = `700 38px ${fontFamily}, Inter, system-ui, sans-serif`;
+  ctx.fillText(`CAPÍTULO ${chapterIndex + 1}`, width / 2, height / 2 - 60);
+
+  // Título
+  ctx.globalAlpha = Math.min(1, Math.max(0, (p - 0.2) * 1.6));
+  ctx.fillStyle = "#ffffff";
+  const titleSize = 64;
+  ctx.font = `800 ${titleSize}px ${fontFamily}, Inter, system-ui, sans-serif`;
+  const lines = wrapText(ctx, chapterTitle.toUpperCase(), width - 120);
+  let y = height / 2 + 30;
+  for (const ln of lines) {
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "rgba(0,0,0,0.6)";
+    ctx.strokeText(ln, width / 2, y);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(ln, width / 2, y);
+    y += titleSize * 1.15;
+  }
+  ctx.globalAlpha = 1;
+  ctx.textAlign = "start";
+  ctx.textBaseline = "alphabetic";
+
 function drawOutroFrame(
   ctx: CanvasRenderingContext2D,
   prepared: PreparedSegment[],
