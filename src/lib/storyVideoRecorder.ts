@@ -429,10 +429,15 @@ export async function recordStoryVideo(
     recorder.onstop = () => resolve(new Blob(chunks, { type: mime || "video/webm" }));
   });
 
-  // Scene start offsets
-  const starts: number[] = [];
+  // Scene start offsets — cada capítulo ganha um cartão intro de 2.5s (exceto outro)
+  const INTRO = 2.5;
+  const starts: number[] = []; // início da NARRAÇÃO de cada cena (após intro)
+  const introStarts: number[] = []; // início do cartão intro
   let acc = 0.2;
   for (let i = 0; i < normScenes.length; i++) {
+    const hasIntro = !normScenes[i].isOutro;
+    introStarts.push(acc);
+    if (hasIntro) acc += INTRO;
     starts.push(acc);
     acc += sceneDurations[i] + GAP;
   }
@@ -440,7 +445,7 @@ export async function recordStoryVideo(
 
   recorder.start(1000);
 
-  // Schedule audio
+  // Schedule audio (após o intro de cada cena)
   const baseAudioT = audioCtx.currentTime + 0.2;
   for (let i = 0; i < normScenes.length; i++) {
     if (!audioBuffers[i]) continue;
@@ -457,14 +462,20 @@ export async function recordStoryVideo(
       if (t >= total) { resolve(); return; }
       let idx = 0;
       for (let i = normScenes.length - 1; i >= 0; i--) {
-        if (t >= starts[i]) { idx = i; break; }
+        if (t >= introStarts[i]) { idx = i; break; }
       }
-      const localT = Math.max(0, t - starts[idx]);
       const sc = normScenes[idx];
-      if (sc.isOutro) {
-        drawOutroFrame(ctx, scenePrepared[idx], localT, width, height, fontFamily);
+      // Está no cartão de intro?
+      if (!sc.isOutro && t < starts[idx]) {
+        const localIntro = t - introStarts[idx];
+        drawChapterIntro(ctx, idx, sc.chapterTitle || `Capítulo ${idx + 1}`, localIntro, INTRO, width, height, fontFamily);
       } else {
-        drawSceneFrame(ctx, scenePrepared[idx], sc.chapterTitle, localT, width, height, fontFamily);
+        const localT = Math.max(0, t - starts[idx]);
+        if (sc.isOutro) {
+          drawOutroFrame(ctx, scenePrepared[idx], localT, width, height, fontFamily);
+        } else {
+          drawSceneFrame(ctx, scenePrepared[idx], sc.chapterTitle, localT, width, height, fontFamily);
+        }
       }
       onProgress?.(0.15 + 0.8 * Math.min(1, t / total), "Gravando vídeo…");
       requestAnimationFrame(frame);
