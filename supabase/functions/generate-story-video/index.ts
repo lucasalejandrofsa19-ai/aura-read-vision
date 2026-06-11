@@ -163,18 +163,24 @@ serve(async (req) => {
     }
 
     const n = Math.max(3, Math.min(5, Number(scenesCount) || 4));
-    // ~6 segmentos × ~6s narração + intro 2.5s ≈ 90s por capítulo (reduzido p/ caber em memória do edge worker)
-    const SEGMENTS_PER_SCENE = 6;
+    // O vídeo FINAL deve ter cerca de 1min30 no total, não 1min30 por capítulo.
+    // Poucos segmentos mantêm a narração curta, reduzem créditos e evitam limite de memória.
+    const TARGET_TOTAL_SECONDS = 90;
+    const SEGMENTS_PER_SCENE = n <= 3 ? 4 : 3;
+    const TARGET_WORDS_TOTAL = 190;
+    const TARGET_WORDS_PER_SEGMENT = Math.max(7, Math.floor(TARGET_WORDS_TOTAL / (n * SEGMENTS_PER_SCENE)));
     const seed = variationSeed ?? Math.floor(Math.random() * 1e9);
 
     const systemPrompt = `Você cria roteiros de vídeos verticais (9:16, Reels/TikTok) narrados sobre livros em português brasileiro, ESTRUTURADOS POR CAPÍTULOS.
 Divida a obra em EXATAMENTE ${n} capítulos sequenciais (início, desenvolvimento, clímax, desfecho).
+O vídeo FINAL inteiro terá aproximadamente ${TARGET_TOTAL_SECONDS} segundos. NÃO crie 90 segundos por capítulo.
 Para CADA capítulo, produza:
 - "chapterTitle": título curto (3-6 palavras).
 - "segments": EXATAMENTE ${SEGMENTS_PER_SCENE} segmentos. Cada um:
-  - "text": UMA FRASE PT-BR (14-22 palavras), cinematográfica, fluida, sem emojis/markdown.
+  - "text": UMA FRASE PT-BR curta (${TARGET_WORDS_PER_SEGMENT}-${TARGET_WORDS_PER_SEGMENT + 3} palavras), cinematográfica, fluida, sem emojis/markdown.
   - "imagePrompt": descrição visual EM INGLÊS (máx 20 palavras), cinematográfica, vertical 9:16, paleta consistente, sem texto.
-Cada capítulo deve narrar ~90 segundos. Use ângulos visuais variados (close, wide, detail, action) para imagens distintas.
+O roteiro completo deve ter cerca de ${TARGET_WORDS_TOTAL} palavras no total, para a narração caber em 1 minuto e meio.
+Use ângulos visuais variados (close, wide, detail, action) para imagens distintas.
 
 IMPORTANTE: Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{"chapterTitle":"...","segments":[{"text":"...","imagePrompt":"..."}]}]}`;
 
@@ -271,23 +277,6 @@ IMPORTANTE: Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{
       });
     }
 
-    // Outro promo
-    const outroSegments = [
-      { text: "Esta história foi criada com a inteligência artificial do AURA READ.", imageDataUrl: "" },
-      { text: "Transforme seus livros em vídeos, áudios e resumos inteligentes.", imageDataUrl: "" },
-      { text: "Acesse auraread.store e comece grátis agora mesmo.", imageDataUrl: "" },
-    ];
-    const outroNarration = outroSegments.map(s => s.text).join(" ");
-    const outroAudio = await genTTS(outroNarration, voice);
-
-    const outro = {
-      chapterTitle: "AURA READ",
-      narration: outroNarration,
-      segments: outroSegments,
-      audioDataUrl: outroAudio,
-      isOutro: true as const,
-    };
-
     await supabaseClient.from("story_videos").insert({
       user_id: user.id,
       book_id,
@@ -298,7 +287,7 @@ IMPORTANTE: Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{
 
     const { data: newQuota } = await supabaseClient.rpc("can_generate_story_video", { _user_id: user.id });
 
-    return new Response(JSON.stringify({ title, author, scenes: [...built, outro], quota: newQuota }), {
+    return new Response(JSON.stringify({ title, author, scenes: built, quota: newQuota, targetDurationSeconds: TARGET_TOTAL_SECONDS }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
