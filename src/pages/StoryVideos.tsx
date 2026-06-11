@@ -206,7 +206,7 @@ const StoryVideos = () => {
     }
   }
 
-  async function handleGenerate() {
+  async function handleGenerate(forceNewVariation = false) {
     if (!bookId) { toast.error("Selecione um livro"); return; }
     setGenerating(true);
     setScenes([]);
@@ -247,6 +247,7 @@ const StoryVideos = () => {
           mode: sendMode,
           scenesCount,
           voice,
+          variationSeed: forceNewVariation ? Math.floor(Math.random() * 1e9) : undefined,
           ...(textPayload ? { text: textPayload } : {}),
         },
       });
