@@ -233,6 +233,9 @@ function drawChapterIntro(
   ctx.globalAlpha = 1;
   ctx.textAlign = "start";
   ctx.textBaseline = "alphabetic";
+}
+
+
 
 function drawOutroFrame(
   ctx: CanvasRenderingContext2D,
