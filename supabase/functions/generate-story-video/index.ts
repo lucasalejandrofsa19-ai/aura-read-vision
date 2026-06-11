@@ -162,9 +162,9 @@ serve(async (req) => {
       return "";
     }
 
-    const n = Math.max(3, Math.min(6, Number(scenesCount) || 5));
-    // ~10 segmentos × ~3.5s narração + intro 2.5s ≈ 90s (1m30s) por capítulo
-    const SEGMENTS_PER_SCENE = 10;
+    const n = Math.max(3, Math.min(5, Number(scenesCount) || 4));
+    // ~6 segmentos × ~6s narração + intro 2.5s ≈ 90s por capítulo (reduzido p/ caber em memória do edge worker)
+    const SEGMENTS_PER_SCENE = 6;
     const seed = variationSeed ?? Math.floor(Math.random() * 1e9);
 
     const systemPrompt = `Você cria roteiros de vídeos verticais (9:16, Reels/TikTok) narrados sobre livros em português brasileiro, ESTRUTURADOS POR CAPÍTULOS.
