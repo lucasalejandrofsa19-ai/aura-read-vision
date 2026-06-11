@@ -555,9 +555,16 @@ const StoryVideos = () => {
             </div>
           </div>
 
-          <Button onClick={handleGenerate} disabled={generating || !bookId} className="w-full sm:w-auto" size="lg">
-            {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando roteiro, imagens e narração…</> : <><Sparkles className="w-4 h-4 mr-2" /> Gerar vídeo</>}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => handleGenerate(false)} disabled={generating || !bookId} className="w-full sm:w-auto" size="lg">
+              {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando roteiro, imagens e narração…</> : <><Sparkles className="w-4 h-4 mr-2" /> Gerar vídeo</>}
+            </Button>
+            {scenes.length > 0 && !generating && (
+              <Button onClick={() => handleGenerate(true)} disabled={generating || !bookId} variant="outline" size="lg">
+                <Sparkles className="w-4 h-4 mr-2" /> Nova variação
+              </Button>
+            )}
+          </div>
           {generating && (
             <div className="space-y-1">
               <Progress value={genProgress} />
