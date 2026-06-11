@@ -162,9 +162,9 @@ serve(async (req) => {
       return "";
     }
 
-    const n = Math.max(3, Math.min(6, Number(scenesCount) || 5));
-    // ~10 segmentos × ~3.5s narração + intro 2.5s ≈ 90s (1m30s) por capítulo
-    const SEGMENTS_PER_SCENE = 10;
+    const n = Math.max(3, Math.min(5, Number(scenesCount) || 4));
+    // ~6 segmentos × ~6s narração + intro 2.5s ≈ 90s por capítulo (reduzido p/ caber em memória do edge worker)
+    const SEGMENTS_PER_SCENE = 6;
     const seed = variationSeed ?? Math.floor(Math.random() * 1e9);
 
     const systemPrompt = `Você cria roteiros de vídeos verticais (9:16, Reels/TikTok) narrados sobre livros em português brasileiro, ESTRUTURADOS POR CAPÍTULOS.
@@ -253,20 +253,23 @@ IMPORTANTE: Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{
     );
     if (chapters.length === 0) throw new Error("Nenhum capítulo gerado");
 
-    // Para cada capítulo: gera todas imagens em paralelo + TTS da narração concatenada
-    const built = await Promise.all(chapters.map(async (ch, idx) => {
+    // Processa capítulos SEQUENCIALMENTE para evitar pico de memória (WORKER_RESOURCE_LIMIT)
+    const built: any[] = [];
+    for (let idx = 0; idx < chapters.length; idx++) {
+      const ch = chapters[idx];
       const segs = ch.segments.slice(0, SEGMENTS_PER_SCENE);
+      // imagens do capítulo em paralelo (só um capítulo por vez na memória)
       const imgs = await Promise.all(segs.map((s, pi) => genImage(s.imagePrompt, idx, pi)));
       const fullNarration = segs.map(s => s.text.trim()).join(" ");
       const audioDataUrl = await genTTS(fullNarration, voice);
       const segments = segs.map((s, pi) => ({ text: s.text, imageDataUrl: imgs[pi] || "" }));
-      return {
+      built.push({
         chapterTitle: ch.chapterTitle || `Capítulo ${idx + 1}`,
         narration: fullNarration,
         segments,
         audioDataUrl,
-      };
-    }));
+      });
+    }
 
     // Outro promo
     const outroSegments = [
