@@ -272,13 +272,15 @@ const StoryVideos = () => {
       }
 
       const res = data as { title: string; scenes: SceneResult[]; quota: any };
-      setScenes(res.scenes || []);
+      const generatedScenes = res.scenes || [];
+      setScenes(generatedScenes);
       const chapterTitle = mode === "chapters" && selectedChapterIdx !== null
         ? `${res.title} — ${chapters[selectedChapterIdx].title}`
         : res.title;
       setBookTitle(chapterTitle || selectedBook?.title || "");
       if (res.quota) setQuota(res.quota);
-      toast.success(`${res.scenes.length} cenas geradas!`);
+      toast.success(`${generatedScenes.length} capítulos gerados. Gravando vídeo final…`);
+      await handleRecord(generatedScenes, chapterTitle || selectedBook?.title || "");
     } catch (e: any) {
       console.error(e);
       toast.error(e?.message || "Erro ao gerar vídeo");
@@ -288,8 +290,10 @@ const StoryVideos = () => {
 
   }
 
-  async function handleRecord() {
-    if (!scenes.length) return;
+  async function handleRecord(scenesOverride?: SceneResult[], titleOverride?: string) {
+    const localScenes = scenesOverride && scenesOverride.length > 0 ? scenesOverride : scenes;
+    const localTitle = titleOverride || bookTitle;
+    if (!localScenes.length) return;
     setRecording(true);
     setRecProgress(0);
     setVideoUrl("");
@@ -303,9 +307,9 @@ const StoryVideos = () => {
         .insert({
           user_id: user!.id,
           book_id: bookId,
-          book_title: bookTitle,
+          book_title: localTitle,
           mode,
-          scenes_count: scenes.length,
+          scenes_count: localScenes.length,
           status: "processing",
         })
         .select("id")
@@ -316,13 +320,14 @@ const StoryVideos = () => {
     }
 
     try {
-      const recordedBlob = await recordStoryVideo(scenes, {
+      const recordedBlob = await recordStoryVideo(localScenes, {
         onProgress: (p, label) => {
           setRecProgress(Math.round(p * 95));
           if (label) setRecLabel(label);
         },
-        title: bookTitle,
+        title: localTitle,
         fontFamily: fontId,
+        targetDurationSeconds: 90,
       });
 
       const isMp4 = recordedBlob.type.includes("mp4");
@@ -358,9 +363,9 @@ const StoryVideos = () => {
           await supabase.from("story_videos" as any).insert({
             user_id: user!.id,
             book_id: bookId,
-            book_title: bookTitle,
+            book_title: localTitle,
             mode,
-            scenes_count: scenes.length,
+            scenes_count: localScenes.length,
             file_path: path,
             file_size: finalBlob.size,
             file_mime: mime,
@@ -584,7 +589,7 @@ const StoryVideos = () => {
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="font-semibold text-lg">Capítulos do roteiro</h2>
               <div className="flex gap-2">
-                <Button onClick={handleRecord} disabled={recording} variant="default">
+                <Button onClick={() => handleRecord()} disabled={recording} variant="default">
                   {recording ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gravando…</> : <><Play className="w-4 h-4 mr-2" /> Gerar vídeo</>}
                 </Button>
                 {videoUrl && (

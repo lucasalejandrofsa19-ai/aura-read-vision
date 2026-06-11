@@ -24,6 +24,7 @@ export interface RecordOptions {
   onProgress?: (p: number, label?: string) => void;
   title?: string;
   fontFamily?: string; // CSS font family for captions
+  targetDurationSeconds?: number;
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -331,7 +332,7 @@ export async function recordStoryVideo(
   scenes: StoryScene[],
   opts: RecordOptions = {},
 ): Promise<Blob> {
-  const { onProgress, fontFamily = "Inter" } = opts;
+  const { onProgress, fontFamily = "Inter", targetDurationSeconds = 90 } = opts;
   // 9:16 vertical. 720p keeps browser recording/export stable on phones.
   const width = 720;
   const height = 1280;
@@ -374,15 +375,26 @@ export async function recordStoryVideo(
     }
   } catch {}
 
-  // Build per-scene prepared segments with timings (distribute audio duration
+  const INTRO = 1.5;
+  const GAP = 0.25;
+  const naturalDurations = normScenes.map((s, i) => audioBuffers[i]?.duration
+    ?? Math.max(5, Math.min(16, s.narration.length / 15)));
+  const introTotal = normScenes.reduce((sum, s) => sum + (s.isOutro ? 0 : INTRO), 0);
+  const gapTotal = Math.max(0, normScenes.length - 1) * GAP;
+  const availableNarration = Math.max(20, targetDurationSeconds - introTotal - gapTotal - 1);
+  const naturalTotal = naturalDurations.reduce((a, b) => a + b, 0) || availableNarration;
+  const timelineScale = availableNarration / naturalTotal;
+
+  // Build per-scene prepared segments with timings (distribute adjusted audio duration
   // proportionally to segment text length so longer sentences hold longer).
-  const GAP = 0.4;
   const scenePrepared: PreparedSegment[][] = [];
   const sceneDurations: number[] = [];
+  const playbackRates: number[] = [];
   for (let i = 0; i < normScenes.length; i++) {
     const segs = normScenes[i].segments;
-    const audioDur = audioBuffers[i]?.duration
-      ?? Math.max(6, Math.min(20, normScenes[i].narration.length / 14));
+    const naturalDur = naturalDurations[i];
+    const audioDur = Math.max(1.8, naturalDur * timelineScale);
+    playbackRates.push(naturalDur / audioDur);
     const totals = segs.reduce((a, s) => a + Math.max(8, s.text.length), 0);
     let acc = 0;
     const prep: PreparedSegment[] = segs.map((s, k) => {
@@ -429,8 +441,7 @@ export async function recordStoryVideo(
     recorder.onstop = () => resolve(new Blob(chunks, { type: mime || "video/webm" }));
   });
 
-  // Scene start offsets — cada capítulo ganha um cartão intro de 2.5s (exceto outro)
-  const INTRO = 2.5;
+  // Scene start offsets — cada capítulo ganha um cartão intro curto para caber em ~1min30 total
   const starts: number[] = []; // início da NARRAÇÃO de cada cena (após intro)
   const introStarts: number[] = []; // início do cartão intro
   let acc = 0.2;
@@ -451,6 +462,7 @@ export async function recordStoryVideo(
     if (!audioBuffers[i]) continue;
     const src = audioCtx.createBufferSource();
     src.buffer = audioBuffers[i]!;
+    src.playbackRate.value = playbackRates[i] || 1;
     src.connect(dest);
     src.start(baseAudioT + starts[i] - 0.2);
   }
