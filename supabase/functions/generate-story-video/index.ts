@@ -253,20 +253,23 @@ IMPORTANTE: Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{
     );
     if (chapters.length === 0) throw new Error("Nenhum capítulo gerado");
 
-    // Para cada capítulo: gera todas imagens em paralelo + TTS da narração concatenada
-    const built = await Promise.all(chapters.map(async (ch, idx) => {
+    // Processa capítulos SEQUENCIALMENTE para evitar pico de memória (WORKER_RESOURCE_LIMIT)
+    const built: any[] = [];
+    for (let idx = 0; idx < chapters.length; idx++) {
+      const ch = chapters[idx];
       const segs = ch.segments.slice(0, SEGMENTS_PER_SCENE);
+      // imagens do capítulo em paralelo (só um capítulo por vez na memória)
       const imgs = await Promise.all(segs.map((s, pi) => genImage(s.imagePrompt, idx, pi)));
       const fullNarration = segs.map(s => s.text.trim()).join(" ");
       const audioDataUrl = await genTTS(fullNarration, voice);
       const segments = segs.map((s, pi) => ({ text: s.text, imageDataUrl: imgs[pi] || "" }));
-      return {
+      built.push({
         chapterTitle: ch.chapterTitle || `Capítulo ${idx + 1}`,
         narration: fullNarration,
         segments,
         audioDataUrl,
-      };
-    }));
+      });
+    }
 
     // Outro promo
     const outroSegments = [
