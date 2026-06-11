@@ -589,7 +589,7 @@ const StoryVideos = () => {
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="font-semibold text-lg">Capítulos do roteiro</h2>
               <div className="flex gap-2">
-                <Button onClick={handleRecord} disabled={recording} variant="default">
+                <Button onClick={() => handleRecord()} disabled={recording} variant="default">
                   {recording ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gravando…</> : <><Play className="w-4 h-4 mr-2" /> Gerar vídeo</>}
                 </Button>
                 {videoUrl && (

@@ -277,14 +277,6 @@ IMPORTANTE: Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{
       });
     }
 
-    await supabaseClient.from("story_videos").insert({
-      user_id: user.id,
-      book_id,
-      book_title: title,
-      mode,
-      scenes_count: built.length,
-    });
-
     const { data: newQuota } = await supabaseClient.rpc("can_generate_story_video", { _user_id: user.id });
 
     return new Response(JSON.stringify({ title, author, scenes: built, quota: newQuota, targetDurationSeconds: TARGET_TOTAL_SECONDS }), {
