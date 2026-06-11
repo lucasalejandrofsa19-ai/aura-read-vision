@@ -37,7 +37,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { book_id, mode = "summary", text: clientText, voice = "nova", scenesCount = 5 } = await req.json();
+    const { book_id, mode = "summary", text: clientText, voice = "nova", scenesCount = 5, variationSeed } = await req.json();
     if (!book_id) {
       return new Response(JSON.stringify({ error: "book_id é obrigatório" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -163,19 +163,22 @@ serve(async (req) => {
     }
 
     const n = Math.max(3, Math.min(6, Number(scenesCount) || 5));
-    const SEGMENTS_PER_SCENE = 4;
+    // ~10 segmentos × ~3.5s narração + intro 2.5s ≈ 90s (1m30s) por capítulo
+    const SEGMENTS_PER_SCENE = 10;
+    const seed = variationSeed ?? Math.floor(Math.random() * 1e9);
 
     const systemPrompt = `Você cria roteiros de vídeos verticais (9:16, Reels/TikTok) narrados sobre livros em português brasileiro, ESTRUTURADOS POR CAPÍTULOS.
 Divida a obra em EXATAMENTE ${n} capítulos sequenciais (início, desenvolvimento, clímax, desfecho).
 Para CADA capítulo, produza:
 - "chapterTitle": título curto (3-6 palavras).
-- "segments": array com EXATAMENTE ${SEGMENTS_PER_SCENE} segmentos. Cada segmento contém:
-  - "text": UMA FRASE em PT-BR (12-20 palavras), fluida, cinematográfica. Sem emojis/markdown.
-  - "imagePrompt": descrição visual CURTA EM INGLÊS (máx 25 palavras), cinematográfica, vertical 9:16, mesma paleta consistente, sem texto.
+- "segments": EXATAMENTE ${SEGMENTS_PER_SCENE} segmentos. Cada um:
+  - "text": UMA FRASE PT-BR (14-22 palavras), cinematográfica, fluida, sem emojis/markdown.
+  - "imagePrompt": descrição visual EM INGLÊS (máx 20 palavras), cinematográfica, vertical 9:16, paleta consistente, sem texto.
+Cada capítulo deve narrar ~90 segundos. Use ângulos visuais variados (close, wide, detail, action) para imagens distintas.
 
-IMPORTANTE: Seja CONCISO. Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{"chapterTitle":"...","segments":[{"text":"...","imagePrompt":"..."}]}]}`;
+IMPORTANTE: Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{"chapterTitle":"...","segments":[{"text":"...","imagePrompt":"..."}]}]}`;
 
-    const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nModo: ${mode === "pages" ? "trecho selecionado" : "obra completa"}\n\nConteúdo:\n${truncated}`;
+    const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nModo: ${mode === "pages" ? "trecho selecionado" : "obra completa"}\nSeed de variação: ${seed} (use para variar tom, foco narrativo e estilo visual a cada geração).\n\nConteúdo:\n${truncated}`;
 
     const scriptRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -187,8 +190,8 @@ IMPORTANTE: Seja CONCISO. Responda APENAS JSON válido COMPLETO (não trunque): 
           { role: "user", content: userPrompt },
         ],
         response_format: { type: "json_object" },
-        max_tokens: 8000,
-        temperature: 0.7,
+        max_tokens: 16000,
+        temperature: 0.9,
       }),
     });
     if (!scriptRes.ok) {
