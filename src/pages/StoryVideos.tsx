@@ -564,6 +564,16 @@ const StoryVideos = () => {
             </div>
           </div>
 
+          <div className="flex items-center justify-between rounded-md border p-3">
+            <div className="space-y-0.5">
+              <Label className="text-sm">Legendas automáticas no vídeo</Label>
+              <p className="text-xs text-muted-foreground">
+                Quando ativado, as legendas sincronizadas com a narração ficam gravadas no vídeo.
+              </p>
+            </div>
+            <Switch checked={captionsEnabled} onCheckedChange={setCaptionsEnabled} aria-label="Ativar legendas" />
+          </div>
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => handleGenerate(false)} disabled={generating || !bookId} className="w-full sm:w-auto" size="lg">
               {generating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando roteiro, imagens e narração…</> : <><Sparkles className="w-4 h-4 mr-2" /> Gerar vídeo</>}
