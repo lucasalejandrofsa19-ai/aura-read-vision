@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
@@ -76,6 +77,8 @@ const StoryVideos = () => {
   const [fontId, setFontId] = useState("Bebas Neue");
   const [startPage, setStartPage] = useState(1);
   const [endPage, setEndPage] = useState(10);
+  const [captionsEnabled, setCaptionsEnabled] = useState(true);
+
 
   useEffect(() => {
     const f = FONTS.find(f => f.id === fontId);
@@ -328,6 +331,7 @@ const StoryVideos = () => {
         title: localTitle,
         fontFamily: fontId,
         targetDurationSeconds: 90,
+        captions: captionsEnabled,
       });
 
       const isMp4 = recordedBlob.type.includes("mp4");
@@ -558,6 +562,16 @@ const StoryVideos = () => {
               </Select>
               <p className="text-[10px] text-muted-foreground">Vídeo 9:16 (Reels/TikTok) · legenda sincronizada</p>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-md border p-3">
+            <div className="space-y-0.5">
+              <Label className="text-sm">Legendas automáticas no vídeo</Label>
+              <p className="text-xs text-muted-foreground">
+                Quando ativado, as legendas sincronizadas com a narração ficam gravadas no vídeo.
+              </p>
+            </div>
+            <Switch checked={captionsEnabled} onCheckedChange={setCaptionsEnabled} aria-label="Ativar legendas" />
           </div>
 
           <div className="flex flex-wrap gap-2">

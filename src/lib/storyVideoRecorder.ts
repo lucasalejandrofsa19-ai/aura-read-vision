@@ -25,6 +25,7 @@ export interface RecordOptions {
   title?: string;
   fontFamily?: string; // CSS font family for captions
   targetDurationSeconds?: number;
+  captions?: boolean; // burn-in subtitles (default true)
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -91,6 +92,7 @@ function drawSceneFrame(
   width: number,
   height: number,
   fontFamily: string,
+  showCaptions: boolean = true,
 ) {
   // Background
   ctx.fillStyle = "#0a0a0f";
@@ -126,11 +128,13 @@ function drawSceneFrame(
   ctx.fillRect(0, 0, width, height * 0.18);
 
   // Bottom dark gradient (legibility for caption)
-  const grad = ctx.createLinearGradient(0, height * 0.55, 0, height);
-  grad.addColorStop(0, "rgba(0,0,0,0)");
-  grad.addColorStop(1, "rgba(0,0,0,0.92)");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, height * 0.55, width, height * 0.45);
+  if (showCaptions) {
+    const grad = ctx.createLinearGradient(0, height * 0.55, 0, height);
+    grad.addColorStop(0, "rgba(0,0,0,0)");
+    grad.addColorStop(1, "rgba(0,0,0,0.92)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, height * 0.55, width, height * 0.45);
+  }
 
   // Chapter title (top)
   if (chapterTitle) {
@@ -142,37 +146,38 @@ function drawSceneFrame(
     ctx.restore();
   }
 
-  // Dynamic caption (subtitle) — only the active segment text, with pop-in animation
-  const popIn = Math.min(1, segLocalT / 0.25); // 250ms pop-in
-  const captionAlpha = popIn;
-  const captionScale = 0.92 + 0.08 * popIn;
+  if (showCaptions) {
+    // Dynamic caption (subtitle) — only the active segment text, with pop-in animation
+    const popIn = Math.min(1, segLocalT / 0.25); // 250ms pop-in
+    const captionAlpha = popIn;
+    const captionScale = 0.92 + 0.08 * popIn;
 
-  ctx.save();
-  ctx.globalAlpha = captionAlpha;
-  const fontSize = 52;
-  ctx.font = `800 ${fontSize}px ${fontFamily}, Inter, system-ui, sans-serif`;
-  ctx.textBaseline = "bottom";
-  ctx.textAlign = "center";
-  const maxW = width - 120;
-  const lines = wrapText(ctx, seg.text, maxW);
-  const lineH = fontSize * 1.18;
+    ctx.save();
+    ctx.globalAlpha = captionAlpha;
+    const fontSize = 52;
+    ctx.font = `800 ${fontSize}px ${fontFamily}, Inter, system-ui, sans-serif`;
+    ctx.textBaseline = "bottom";
+    ctx.textAlign = "center";
+    const maxW = width - 120;
+    const lines = wrapText(ctx, seg.text, maxW);
+    const lineH = fontSize * 1.18;
 
-  const cx = width / 2;
-  const baseY = height - 120;
+    const cx = width / 2;
+    const baseY = height - 120;
 
-  ctx.translate(cx, baseY);
-  ctx.scale(captionScale, captionScale);
+    ctx.translate(cx, baseY);
+    ctx.scale(captionScale, captionScale);
 
-  // text shadow / stroke for readability
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const y = -((lines.length - 1 - i) * lineH);
-    ctx.lineWidth = 8;
-    ctx.strokeStyle = "rgba(0,0,0,0.85)";
-    ctx.strokeText(lines[i], 0, y);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText(lines[i], 0, y);
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const y = -((lines.length - 1 - i) * lineH);
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = "rgba(0,0,0,0.85)";
+      ctx.strokeText(lines[i], 0, y);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(lines[i], 0, y);
+    }
+    ctx.restore();
   }
-  ctx.restore();
 
   // Progress bar (segment progression) at top
   const total = prepared[prepared.length - 1].end;
@@ -332,7 +337,7 @@ export async function recordStoryVideo(
   scenes: StoryScene[],
   opts: RecordOptions = {},
 ): Promise<Blob> {
-  const { onProgress, fontFamily = "Inter", targetDurationSeconds = 90 } = opts;
+  const { onProgress, fontFamily = "Inter", targetDurationSeconds = 90, captions = true } = opts;
   // 9:16 vertical. 720p keeps browser recording/export stable on phones.
   const width = 720;
   const height = 1280;
@@ -416,7 +421,7 @@ export async function recordStoryVideo(
   const ctx = canvas.getContext("2d")!;
   // Prime
   if (normScenes[0]?.isOutro) drawOutroFrame(ctx, scenePrepared[0], 0, width, height, fontFamily);
-  else drawSceneFrame(ctx, scenePrepared[0], normScenes[0]?.chapterTitle, 0, width, height, fontFamily);
+  else drawSceneFrame(ctx, scenePrepared[0], normScenes[0]?.chapterTitle, 0, width, height, fontFamily, captions);
 
   const dest = audioCtx.createMediaStreamDestination();
   const videoStream = canvas.captureStream(24);
@@ -486,7 +491,7 @@ export async function recordStoryVideo(
         if (sc.isOutro) {
           drawOutroFrame(ctx, scenePrepared[idx], localT, width, height, fontFamily);
         } else {
-          drawSceneFrame(ctx, scenePrepared[idx], sc.chapterTitle, localT, width, height, fontFamily);
+          drawSceneFrame(ctx, scenePrepared[idx], sc.chapterTitle, localT, width, height, fontFamily, captions);
         }
       }
       onProgress?.(0.15 + 0.8 * Math.min(1, t / total), "Gravando vídeo…");
