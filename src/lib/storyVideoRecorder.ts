@@ -92,6 +92,7 @@ function drawSceneFrame(
   width: number,
   height: number,
   fontFamily: string,
+  showCaptions: boolean = true,
 ) {
   // Background
   ctx.fillStyle = "#0a0a0f";
