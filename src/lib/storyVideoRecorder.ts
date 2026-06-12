@@ -25,6 +25,7 @@ export interface RecordOptions {
   title?: string;
   fontFamily?: string; // CSS font family for captions
   targetDurationSeconds?: number;
+  captions?: boolean; // burn-in subtitles (default true)
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
