@@ -491,7 +491,7 @@ export async function recordStoryVideo(
         if (sc.isOutro) {
           drawOutroFrame(ctx, scenePrepared[idx], localT, width, height, fontFamily);
         } else {
-          drawSceneFrame(ctx, scenePrepared[idx], sc.chapterTitle, localT, width, height, fontFamily);
+          drawSceneFrame(ctx, scenePrepared[idx], sc.chapterTitle, localT, width, height, fontFamily, captions);
         }
       }
       onProgress?.(0.15 + 0.8 * Math.min(1, t / total), "Gravando vídeo…");
