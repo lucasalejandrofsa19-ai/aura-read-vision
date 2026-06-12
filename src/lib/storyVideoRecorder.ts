@@ -457,7 +457,7 @@ export async function recordStoryVideo(
     starts.push(acc);
     acc += sceneDurations[i] + GAP;
   }
-  const total = acc + 0.8;
+  const total = acc + 1.5; // tail buffer para garantir que o áudio termine antes do stop
 
   recorder.start(1000);
 
@@ -500,10 +500,19 @@ export async function recordStoryVideo(
     frame();
   });
 
+  // Flush final: pede um chunk extra e aguarda o muxer drenar antes de parar
   try { recorder.requestData(); } catch {}
+  await new Promise(r => setTimeout(r, 400));
   recorder.stop();
   const blob = await finished;
   try { audioCtx.close(); } catch {}
+
+  // Sanity check: se o arquivo final for absurdamente pequeno, é parcial/corrompido
+  const minBytes = Math.max(50_000, Math.floor(total * 30_000)); // ~30KB/s mínimo
+  if (blob.size < minBytes) {
+    throw new Error(`Vídeo final incompleto (${(blob.size / 1024).toFixed(0)}KB). Tente novamente sem trocar de aba durante a gravação.`);
+  }
+
   onProgress?.(1, "Pronto!");
   return blob;
 }
