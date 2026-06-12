@@ -421,7 +421,7 @@ export async function recordStoryVideo(
   const ctx = canvas.getContext("2d")!;
   // Prime
   if (normScenes[0]?.isOutro) drawOutroFrame(ctx, scenePrepared[0], 0, width, height, fontFamily);
-  else drawSceneFrame(ctx, scenePrepared[0], normScenes[0]?.chapterTitle, 0, width, height, fontFamily);
+  else drawSceneFrame(ctx, scenePrepared[0], normScenes[0]?.chapterTitle, 0, width, height, fontFamily, captions);
 
   const dest = audioCtx.createMediaStreamDestination();
   const videoStream = canvas.captureStream(24);
