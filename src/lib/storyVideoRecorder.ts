@@ -337,7 +337,7 @@ export async function recordStoryVideo(
   scenes: StoryScene[],
   opts: RecordOptions = {},
 ): Promise<Blob> {
-  const { onProgress, fontFamily = "Inter", targetDurationSeconds = 90 } = opts;
+  const { onProgress, fontFamily = "Inter", targetDurationSeconds = 90, captions = true } = opts;
   // 9:16 vertical. 720p keeps browser recording/export stable on phones.
   const width = 720;
   const height = 1280;
