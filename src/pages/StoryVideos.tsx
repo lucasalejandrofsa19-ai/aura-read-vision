@@ -77,6 +77,8 @@ const StoryVideos = () => {
   const [fontId, setFontId] = useState("Bebas Neue");
   const [startPage, setStartPage] = useState(1);
   const [endPage, setEndPage] = useState(10);
+  const [captionsEnabled, setCaptionsEnabled] = useState(true);
+
 
   useEffect(() => {
     const f = FONTS.find(f => f.id === fontId);
