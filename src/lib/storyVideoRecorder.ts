@@ -513,6 +513,97 @@ export async function recordStoryVideo(
     throw new Error(`Vídeo final incompleto (${(blob.size / 1024).toFixed(0)}KB). Tente novamente sem trocar de aba durante a gravação.`);
   }
 
+  // Validação final: duração, presença de áudio e legendas antes de salvar
+  onProgress?.(0.98, "Validando vídeo final…");
+  await validateRecording(blob, {
+    expectedDuration: total,
+    expectAudio: audioBuffers.some(b => b !== null),
+    captionsBurnedIn: captions,
+  });
+
   onProgress?.(1, "Pronto!");
   return blob;
+}
+
+interface ValidateOpts {
+  expectedDuration: number;
+  expectAudio: boolean;
+  captionsBurnedIn: boolean;
+}
+
+async function validateRecording(blob: Blob, opts: ValidateOpts): Promise<void> {
+  const { expectedDuration, expectAudio, captionsBurnedIn } = opts;
+  const url = URL.createObjectURL(blob);
+  try {
+    // 1) Duração via <video> metadata
+    const duration = await new Promise<number>((resolve, reject) => {
+      const v = document.createElement("video");
+      v.preload = "metadata";
+      v.muted = true;
+      const cleanup = () => { v.removeAttribute("src"); v.load(); };
+      const timeout = setTimeout(() => { cleanup(); reject(new Error("timeout lendo metadata")); }, 10_000);
+      v.onloadedmetadata = () => {
+        clearTimeout(timeout);
+        // Alguns containers WebM reportam Infinity até seek; força um seek para o fim
+        if (!isFinite(v.duration)) {
+          v.currentTime = 1e9;
+          v.ontimeupdate = () => {
+            v.ontimeupdate = null;
+            const d = v.duration;
+            cleanup();
+            resolve(isFinite(d) ? d : 0);
+          };
+        } else {
+          const d = v.duration;
+          cleanup();
+          resolve(d);
+        }
+      };
+      v.onerror = () => { clearTimeout(timeout); cleanup(); reject(new Error("falha ao ler vídeo")); };
+      v.src = url;
+    });
+
+    const minDur = Math.max(5, expectedDuration * 0.6);
+    if (!duration || duration < minDur) {
+      throw new Error(`Duração do vídeo abaixo do esperado (${duration.toFixed(1)}s de ~${expectedDuration.toFixed(1)}s). Geração interrompida.`);
+    }
+
+    // 2) Presença de áudio: decodifica e checa se há amostras não-silenciosas
+    if (expectAudio) {
+      const buf = await blob.arrayBuffer();
+      const AudioCtor = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
+      const probeCtx = new AudioCtor();
+      try {
+        const decoded = await probeCtx.decodeAudioData(buf.slice(0));
+        if (decoded.numberOfChannels === 0 || decoded.length === 0) {
+          throw new Error("Faixa de áudio vazia no vídeo final.");
+        }
+        // Verifica energia: pelo menos 1 amostra significativa nos primeiros segundos
+        const ch = decoded.getChannelData(0);
+        const step = Math.max(1, Math.floor(ch.length / 5000));
+        let peak = 0;
+        for (let i = 0; i < ch.length; i += step) {
+          const v = Math.abs(ch[i]);
+          if (v > peak) peak = v;
+        }
+        if (peak < 0.001) {
+          throw new Error("Vídeo final sem áudio audível (peak ~0).");
+        }
+      } catch (e: any) {
+        // decodeAudioData pode falhar em alguns containers MP4 — não bloqueia se a duração estiver OK
+        if (e?.message?.startsWith("Vídeo final") || e?.message?.startsWith("Faixa")) throw e;
+        console.warn("[validate] decodeAudioData falhou, pulando checagem de energia:", e);
+      } finally {
+        try { probeCtx.close(); } catch {}
+      }
+    }
+
+    // 3) Legendas: como são burned-in no canvas, validamos apenas o flag de geração
+    if (captionsBurnedIn) {
+      // Já foram desenhadas frame-a-frame; nenhuma checagem extra possível sem OCR
+      console.info("[validate] legendas gravadas (burn-in) ativadas.");
+    }
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
