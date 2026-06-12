@@ -331,6 +331,7 @@ const StoryVideos = () => {
         title: localTitle,
         fontFamily: fontId,
         targetDurationSeconds: 90,
+        captions: captionsEnabled,
       });
 
       const isMp4 = recordedBlob.type.includes("mp4");
