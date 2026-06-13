@@ -151,15 +151,6 @@ const Library = () => {
               variant="ghost"
               size="icon"
               className="aura-soft transition-aura"
-              onClick={() => navigate("/historias-video")}
-              title="Histórias em Vídeo IA"
-              aria-label="Histórias em Vídeo IA">
-              <Clapperboard className="w-5 h-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="aura-soft transition-aura"
               onClick={() => navigate("/resumo-academico")}
               title="Resumo Acadêmico"
              aria-label="Resumo acadêmico">
