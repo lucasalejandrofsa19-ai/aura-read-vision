@@ -69,7 +69,7 @@ const AppContent = () => {
         <Route path="/conquistas" element={<Achievements />} />
         <Route path="/resumo-academico" element={<AcademicSummary />} />
         <Route path="/guia" element={<Guide />} />
-        <Route path="/historias-video" element={<StoryVideos />} />
+        
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </SentryRoutes>
