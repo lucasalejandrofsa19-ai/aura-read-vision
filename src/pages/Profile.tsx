@@ -496,17 +496,6 @@ const Profile = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="videos" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Meus vídeos gerados</CardTitle>
-                <CardDescription>Baixe ou exclua os vídeos criados em Histórias em Vídeo IA.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <MyStoryVideos />
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
 
       </div>
