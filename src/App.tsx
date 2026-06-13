@@ -33,7 +33,7 @@ import AdminBlockedIPs from "./pages/AdminBlockedIPs";
 import Achievements from "./pages/Achievements";
 import AcademicSummary from "./pages/AcademicSummary";
 import Guide from "./pages/Guide";
-import StoryVideos from "./pages/StoryVideos";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
