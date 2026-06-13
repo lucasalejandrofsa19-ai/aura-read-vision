@@ -26,7 +26,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { LazyLoadWrapper } from "@/components/LazyLoadWrapper";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PremiumBadge } from "@/components/PremiumBadge";
-import { MyStoryVideos } from "@/components/MyStoryVideos";
+
 
 
 const Profile = () => {
