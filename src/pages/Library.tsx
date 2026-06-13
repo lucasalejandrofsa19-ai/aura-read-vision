@@ -1,7 +1,7 @@
 import { SEO } from "@/components/SEO";
 import { useState, useEffect, useMemo, memo, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle, Clapperboard } from "lucide-react";
+import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -146,15 +146,6 @@ const Library = () => {
               title="Guia de uso"
               aria-label="Guia de uso">
               <HelpCircle className="w-5 h-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="aura-soft transition-aura"
-              onClick={() => navigate("/historias-video")}
-              title="Histórias em Vídeo IA"
-              aria-label="Histórias em Vídeo IA">
-              <Clapperboard className="w-5 h-5" />
             </Button>
             <Button
               variant="ghost"

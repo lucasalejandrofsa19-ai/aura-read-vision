@@ -26,7 +26,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { LazyLoadWrapper } from "@/components/LazyLoadWrapper";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PremiumBadge } from "@/components/PremiumBadge";
-import { MyStoryVideos } from "@/components/MyStoryVideos";
+
 
 
 const Profile = () => {
@@ -246,12 +246,11 @@ const Profile = () => {
         </motion.div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile">Perfil</TabsTrigger>
             <TabsTrigger value="stats">Estatísticas</TabsTrigger>
             <TabsTrigger value="subscription">Assinatura</TabsTrigger>
             <TabsTrigger value="highlights">Destaques</TabsTrigger>
-            <TabsTrigger value="videos">Vídeos</TabsTrigger>
           </TabsList>
 
 
@@ -497,17 +496,6 @@ const Profile = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="videos" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Meus vídeos gerados</CardTitle>
-                <CardDescription>Baixe ou exclua os vídeos criados em Histórias em Vídeo IA.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <MyStoryVideos />
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
 
       </div>
