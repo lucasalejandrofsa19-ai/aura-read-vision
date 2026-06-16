@@ -90,6 +90,15 @@ const Library = () => {
     [premiumBooks]
   );
 
+  // Livros premium gratuitos (acessíveis a todos)
+  const freePremiumBooks = useMemo(
+    () => premiumBooksWithFlag.filter((b: any) => b.is_free),
+    [premiumBooksWithFlag]
+  );
+
+  // Mostrar carrossel premium se usuário tem acesso OU se há livros gratuitos disponíveis
+  const visiblePremiumBooks = hasPremiumAccess ? premiumBooksWithFlag : freePremiumBooks;
+
   // Memoizar filtro de livros
   const filteredBooks = useMemo(() => 
     books.filter(
