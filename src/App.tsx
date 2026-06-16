@@ -21,6 +21,7 @@ import Library from "./pages/Library";
 import Reader from "./pages/Reader";
 import Summary from "./pages/Summary";
 import Share from "./pages/Share";
+import SharedBook from "./pages/SharedBook";
 import Profile from "./pages/Profile";
 import Pricing from "./pages/Pricing";
 import Download from "./pages/Download";
@@ -57,6 +58,7 @@ const AppContent = () => {
         <Route path="/reader/:id" element={<Reader />} />
         <Route path="/summary/:id" element={<Summary />} />
         <Route path="/share/:id" element={<Share />} />
+        <Route path="/shared/:token" element={<SharedBook />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/download" element={<Download />} />

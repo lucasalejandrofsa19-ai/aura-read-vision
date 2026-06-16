@@ -139,6 +139,41 @@ export type Database = {
         }
         Relationships: []
       }
+      book_shares: {
+        Row: {
+          book_id: string
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          token: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          created_by: string
+          expires_at?: string
+          id?: string
+          token: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_shares_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       books: {
         Row: {
           author: string | null
