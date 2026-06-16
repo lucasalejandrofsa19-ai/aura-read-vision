@@ -63,6 +63,8 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
   const [loadingGallery, setLoadingGallery] = useState(false);
   const [imageCount, setImageCount] = useState(0);
   const [showLimitWarning, setShowLimitWarning] = useState(false);
+  const [downloadFailedUrl, setDownloadFailedUrl] = useState<string | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   const FREE_IMAGE_LIMIT = 3;
 
