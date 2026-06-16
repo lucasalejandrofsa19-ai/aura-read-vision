@@ -119,7 +119,7 @@ export const HighlightsPDFDocument = ({
                       .filter((n) => n.page_number === pageNum)
                       .map((note, idx) => (
                         <View key={`n-${idx}`} style={styles.noteBox}>
-                          <Text style={styles.noteLabel}>📝 Anotação:</Text>
+                          <Text style={styles.noteLabel}>Anotação:</Text>
                           <Text style={styles.noteText}>{note.note_text}</Text>
                           {includeTimestamps && (
                             <Text style={styles.timestamp}>
@@ -172,7 +172,7 @@ export const HighlightsPDFDocument = ({
                     <Text style={styles.pageRef}>
                       Página {note.page_number}
                     </Text>
-                    <Text style={styles.noteLabel}>📝 Anotação:</Text>
+                    <Text style={styles.noteLabel}>Anotação:</Text>
                     <Text style={styles.noteText}>{note.note_text}</Text>
                     {includeTimestamps && (
                       <Text style={styles.timestamp}>
