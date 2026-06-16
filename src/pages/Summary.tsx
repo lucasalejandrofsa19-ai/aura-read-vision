@@ -447,6 +447,9 @@ const Summary = () => {
                   <Button onClick={() => generateBookSummary(false)} disabled={generatingBookSummary} variant="outline" size="sm">
                     {generatingBookSummary ? (<><Loader2 className="w-4 h-4 animate-spin mr-2" />Gerando...</>) : "Gerar Novamente"}
                   </Button>
+                  <Button onClick={exportBookSummaryToPDF} variant="outline" size="sm" className="gap-2">
+                    <FileDown className="w-4 h-4" />Exportar PDF
+                  </Button>
                   <DeepenTopicDialog
                     summary={bookSummary}
                     bookTitle={bookTitle}
