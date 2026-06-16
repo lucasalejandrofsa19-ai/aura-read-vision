@@ -24,7 +24,7 @@ import { getSignedStorageUrl } from "@/lib/storageUrl";
 import { useUserData } from "@/hooks/useUserData";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Image, Download, Loader2, Trash2, Images, AlertCircle, Crown, X, Maximize2 } from "lucide-react";
+import { Image, Download, Loader2, Trash2, Images, AlertCircle, Crown, X, Maximize2, ExternalLink, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LazyImage } from "@/components/LazyImage";
@@ -63,6 +63,8 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
   const [loadingGallery, setLoadingGallery] = useState(false);
   const [imageCount, setImageCount] = useState(0);
   const [showLimitWarning, setShowLimitWarning] = useState(false);
+  const [downloadFailedUrl, setDownloadFailedUrl] = useState<string | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   const FREE_IMAGE_LIMIT = 3;
 
@@ -177,29 +179,67 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
     }
   };
 
+  const openInNewTab = (url: string) => {
+    window.open(url, "_blank", "noopener,noreferrer");
+    toast.info("Imagem aberta em nova aba — clique com o botão direito e escolha 'Salvar imagem como'");
+  };
+
+  const copyImageUrl = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedUrl(true);
+      toast.success("URL da imagem copiada!");
+      setTimeout(() => setCopiedUrl(false), 2000);
+    } catch {
+      toast.error("Não foi possível copiar o link");
+    }
+  };
+
   const downloadImage = async (url?: string) => {
     const targetUrl = url || imageUrl;
     if (!targetUrl) return;
+    setDownloadFailedUrl(null);
 
+    // Attempt 1: Fetch blob + download
     try {
-      const res = await fetch(targetUrl, { mode: "cors" });
+      const res = await fetch(targetUrl, { mode: "cors", credentials: "omit" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
+      if (!blob.size) throw new Error("Blob vazio");
+
       const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = objectUrl;
       link.download = `highlight-${Date.now()}.png`;
+      link.style.display = "none";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-      toast.success("Imagem baixada!");
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+      toast.success("Imagem baixada com sucesso!");
+      return;
     } catch (err) {
-      console.error("Erro ao baixar imagem:", err);
-      // Fallback: open in new tab
-      window.open(targetUrl, "_blank", "noopener,noreferrer");
-      toast.error("Não foi possível baixar diretamente. Abrimos em uma nova aba — use 'Salvar imagem como'.");
+      console.warn("Download via blob falhou:", err);
     }
+
+    // Attempt 2: Try anchor with download attribute directly
+    try {
+      const link = document.createElement("a");
+      link.href = targetUrl;
+      link.download = `highlight-${Date.now()}.png`;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Download iniciado!");
+      return;
+    } catch (err) {
+      console.warn("Download direto falhou:", err);
+    }
+
+    // Fallback: show options to user
+    setDownloadFailedUrl(targetUrl);
+    toast.error("Download automático não disponível. Escolha uma opção abaixo.");
   };
 
 
@@ -385,6 +425,48 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
                   Gerar Nova
                 </Button>
               </div>
+
+              {/* Download Fallback */}
+              {downloadFailedUrl === imageUrl && (
+                <Alert className="border-amber-500/50 bg-amber-500/10">
+                  <AlertCircle className="h-4 w-4 text-amber-500" />
+                  <AlertDescription className="text-sm space-y-2">
+                    <p>O download automático não funcionou no seu navegador. Escolha uma alternativa:</p>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1"
+                        onClick={() => openInNewTab(downloadFailedUrl)}
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Abrir em nova aba
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1"
+                        onClick={() => copyImageUrl(downloadFailedUrl)}
+                      >
+                        {copiedUrl ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copiedUrl ? "Copiado!" : "Copiar link"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1"
+                        onClick={() => {
+                          setDownloadFailedUrl(null);
+                          downloadImage();
+                        }}
+                      >
+                        <Download className="w-3 h-3" />
+                        Tentar novamente
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           )}
 
@@ -485,6 +567,49 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
               <Download className="w-4 h-4" />
               Salvar Imagem
             </Button>
+
+            {/* Fallback buttons in fullscreen */}
+            {downloadFailedUrl === fullscreenImage && (
+              <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 flex gap-2 flex-wrap justify-center">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="gap-1 bg-white/90 hover:bg-white text-black"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openInNewTab(downloadFailedUrl);
+                  }}
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Abrir em nova aba
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="gap-1 bg-white/90 hover:bg-white text-black"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    copyImageUrl(downloadFailedUrl);
+                  }}
+                >
+                  {copiedUrl ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  {copiedUrl ? "Copiado!" : "Copiar link"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="gap-1 bg-white/90 hover:bg-white text-black"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDownloadFailedUrl(null);
+                    downloadImage(fullscreenImage);
+                  }}
+                >
+                  <Download className="w-3 h-3" />
+                  Tentar novamente
+                </Button>
+              </div>
+            )}
 
             {/* Image */}
             <img 
