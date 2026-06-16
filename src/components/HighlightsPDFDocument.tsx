@@ -193,7 +193,7 @@ export const HighlightsPDFDocument = ({
 const styles = StyleSheet.create({
   page: {
     padding: 40,
-    fontFamily: "Helvetica",
+    fontFamily: "Roboto",
     backgroundColor: "#ffffff",
   },
   header: {
