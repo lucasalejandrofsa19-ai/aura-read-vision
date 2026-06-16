@@ -293,6 +293,28 @@ const Summary = () => {
     }
   };
 
+  const exportBookSummaryToPDF = async () => {
+    if (!bookSummary) {
+      toast.error("Nenhum resumo do livro para exportar");
+      return;
+    }
+    if (bookSummaryIsPreview) {
+      toast.error("Exportação disponível apenas para o resumo completo (premium).");
+      return;
+    }
+    try {
+      exportSimpleTextPDF(
+        `${bookTitle} - Resumo Completo IA`,
+        bookSummary,
+        `${bookTitle}-resumo-completo-${Date.now()}.pdf`,
+      );
+      toast.success("Resumo completo exportado para PDF!");
+    } catch (error) {
+      console.error("Erro ao exportar resumo completo:", error);
+      toast.error("Erro ao exportar resumo completo");
+    }
+  };
+
 
   if (loading) {
     return (
@@ -424,6 +446,9 @@ const Summary = () => {
                 <div className="flex flex-wrap gap-2 mt-4">
                   <Button onClick={() => generateBookSummary(false)} disabled={generatingBookSummary} variant="outline" size="sm">
                     {generatingBookSummary ? (<><Loader2 className="w-4 h-4 animate-spin mr-2" />Gerando...</>) : "Gerar Novamente"}
+                  </Button>
+                  <Button onClick={exportBookSummaryToPDF} variant="outline" size="sm" className="gap-2">
+                    <FileDown className="w-4 h-4" />Exportar PDF
                   </Button>
                   <DeepenTopicDialog
                     summary={bookSummary}
