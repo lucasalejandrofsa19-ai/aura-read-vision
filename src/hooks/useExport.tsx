@@ -1,10 +1,10 @@
 import { toast } from "sonner";
-import { pdf } from "@react-pdf/renderer";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
 import { saveAs } from "file-saver";
 import type { Note } from "@/hooks/useNotes";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { exportHighlightsPDF } from "@/lib/pdfExport";
 
 export type ExportFormat = "pdf" | "word" | "markdown" | "notion";
 
@@ -32,25 +32,14 @@ export const useExport = () => {
     options: ExportOptions
   ) => {
     try {
-      const { HighlightsPDFDocument } = await import("@/components/HighlightsPDFDocument");
-      
-      const doc = (
-        <HighlightsPDFDocument
-          bookTitle={bookTitle}
-          highlights={options.includeHighlights ? highlights : []}
-          notes={options.includeNotes ? notes : []}
-          options={options}
-        />
-      );
-
-      const blob = await pdf(doc).toBlob();
-      saveAs(blob, `${bookTitle}-export-${Date.now()}.pdf`);
+      exportHighlightsPDF(bookTitle, highlights, notes as any, options);
       toast.success("PDF exportado com sucesso!");
     } catch (error) {
       console.error("Error exporting PDF:", error);
       toast.error("Erro ao exportar PDF");
     }
   };
+
 
   const exportToWord = async (
     bookTitle: string,
