@@ -377,7 +377,7 @@ const Library = () => {
             </motion.div>
           ) : (
             <>
-              {(hasPremiumAccess && premiumBooksWithFlag.length > 0) && (
+              {visiblePremiumBooks.length > 0 && (
                 <div className="flex items-center gap-3 mb-4">
                   <h2 className="text-2xl font-bold">Meus Livros</h2>
                 </div>
