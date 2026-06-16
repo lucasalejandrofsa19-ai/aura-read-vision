@@ -316,6 +316,58 @@ const Summary = () => {
     }
   };
 
+  const shareBookSummaryPDF = async () => {
+    if (!bookSummary) {
+      toast.error("Nenhum resumo do livro para compartilhar");
+      return;
+    }
+    if (bookSummaryIsPreview) {
+      toast.error("Compartilhamento disponível apenas para o resumo completo (premium).");
+      return;
+    }
+    if (!user) {
+      toast.error("Faça login para compartilhar o resumo");
+      return;
+    }
+
+    try {
+      setSharingBookSummary(true);
+
+      const { generateSimpleTextPdfBlob } = await import("@/lib/pdfExport");
+      const blob = generateSimpleTextPdfBlob(
+        `${bookTitle} - Resumo Completo IA`,
+        bookSummary
+      );
+
+      const timestamp = Date.now();
+      const safeTitle = bookTitle.replace(/[^a-zA-Z0-9\u00C0-\u00FF]/g, "_").substring(0, 60);
+      const filePath = `shared-summaries/${user.id}/${timestamp}-${safeTitle}.pdf`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("pdfs")
+        .upload(filePath, blob, {
+          contentType: "application/pdf",
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData, error: urlError } = await supabase.storage
+        .from("pdfs")
+        .createSignedUrl(filePath, 60 * 60 * 24 * 7);
+
+      if (urlError || !urlData?.signedUrl) throw urlError || new Error("Não foi possível gerar o link");
+
+      await navigator.clipboard.writeText(urlData.signedUrl);
+      toast.success("Link do PDF copiado! Cole onde quiser compartilhar.", { duration: 6000 });
+    } catch (error) {
+      console.error("Erro ao compartilhar resumo:", error);
+      toast.error("Erro ao gerar link de compartilhamento");
+    } finally {
+      setSharingBookSummary(false);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -450,6 +502,13 @@ const Summary = () => {
                   </Button>
                   <Button onClick={exportBookSummaryToPDF} variant="outline" size="sm" className="gap-2">
                     <FileDown className="w-4 h-4" />Exportar PDF
+                  </Button>
+                  <Button onClick={shareBookSummaryPDF} disabled={sharingBookSummary} variant="outline" size="sm" className="gap-2">
+                    {sharingBookSummary ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" />Gerando link...</>
+                    ) : (
+                      <><Link2 className="w-4 h-4" />Copiar Link</>
+                    )}
                   </Button>
                   <DeepenTopicDialog
                     summary={bookSummary}
