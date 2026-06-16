@@ -1,5 +1,66 @@
 import { jsPDF } from "jspdf";
 import { saveAs } from "file-saver";
+import { toast } from "sonner";
+
+/**
+ * Robust PDF save with multiple fallbacks:
+ * 1) file-saver (saveAs)
+ * 2) Manual anchor download from blob URL
+ * 3) Open blob in a new tab so the user can save manually
+ * 4) Last resort: copy a temporary blob URL to clipboard
+ */
+async function savePdfBlobWithFallback(blob: Blob, filename: string) {
+  // Attempt 1: file-saver
+  try {
+    saveAs(blob, filename);
+    return;
+  } catch (e) {
+    console.warn("[pdfExport] saveAs failed, trying anchor download", e);
+  }
+
+  // Attempt 2: anchor download from object URL
+  let url: string | null = null;
+  try {
+    url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => url && URL.revokeObjectURL(url), 8000);
+    return;
+  } catch (e) {
+    console.warn("[pdfExport] anchor download failed, opening in new tab", e);
+  }
+
+  // Attempt 3: open in new tab
+  try {
+    if (!url) url = URL.createObjectURL(blob);
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    if (win) {
+      toast.info("Download bloqueado. Abrimos o PDF em uma nova aba — use 'Salvar como' para baixar.", {
+        duration: 8000,
+      });
+      setTimeout(() => url && URL.revokeObjectURL(url!), 60000);
+      return;
+    }
+  } catch (e) {
+    console.warn("[pdfExport] new tab fallback failed", e);
+  }
+
+  // Attempt 4: copy URL to clipboard
+  try {
+    if (!url) url = URL.createObjectURL(blob);
+    await navigator.clipboard.writeText(url);
+    toast.error("Não foi possível baixar nem abrir o PDF. O link temporário foi copiado para a área de transferência.", {
+      duration: 10000,
+    });
+  } catch {
+    toast.error("Falha ao exportar o PDF. Verifique permissões do navegador e tente novamente.");
+  }
+}
 
 interface Highlight {
   id: string;
