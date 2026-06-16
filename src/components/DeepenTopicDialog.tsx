@@ -5,7 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Loader2, BookOpen, Video, FileText, Sparkles, ExternalLink, HelpCircle, Pencil, Check, X, Plus, RefreshCw, Download, History, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { pdf, Document, Page, Text, View, StyleSheet, Link } from "@react-pdf/renderer";
+import { pdf, Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
+
+Font.register({
+  family: "Roboto",
+  fonts: [
+    { src: "https://cdn.jsdelivr.net/npm/roboto-font@0.1.0/fonts/Roboto/roboto-regular-webfont.ttf" },
+    { src: "https://cdn.jsdelivr.net/npm/roboto-font@0.1.0/fonts/Roboto/roboto-bold-webfont.ttf", fontWeight: "bold" },
+  ],
+});
 import { saveAs } from "file-saver";
 
 interface ExportRow {
@@ -142,12 +150,12 @@ export const DeepenTopicDialog = ({ summary, bookTitle, trigger }: Props) => {
     if (!data) return;
     try {
       const styles = StyleSheet.create({
-        page: { padding: 36, fontSize: 11, fontFamily: "Helvetica", color: "#1a1a1a" },
-        h1: { fontSize: 20, marginBottom: 4, fontFamily: "Helvetica-Bold" },
+        page: { padding: 36, fontSize: 11, fontFamily: "Roboto", color: "#1a1a1a" },
+        h1: { fontSize: 20, marginBottom: 4, fontFamily: "Roboto", fontWeight: "bold" },
         sub: { fontSize: 10, color: "#666", marginBottom: 16 },
-        h2: { fontSize: 13, marginTop: 14, marginBottom: 6, fontFamily: "Helvetica-Bold", color: "#0f3460" },
+        h2: { fontSize: 13, marginTop: 14, marginBottom: 6, fontFamily: "Roboto", fontWeight: "bold", color: "#0f3460" },
         item: { marginBottom: 8 },
-        title: { fontFamily: "Helvetica-Bold" },
+        title: { fontFamily: "Roboto", fontWeight: "bold" },
         desc: { color: "#444", marginTop: 2 },
         link: { color: "#2563eb", fontSize: 10, marginTop: 2 },
         chip: { fontSize: 10, color: "#0f3460" },

@@ -1,5 +1,16 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
+
+// Register a Unicode-capable font to avoid `unitsPerEm` crash on accented chars/emoji
+Font.register({
+  family: "Roboto",
+  fonts: [
+    { src: "https://cdn.jsdelivr.net/npm/roboto-font@0.1.0/fonts/Roboto/roboto-regular-webfont.ttf" },
+    { src: "https://cdn.jsdelivr.net/npm/roboto-font@0.1.0/fonts/Roboto/roboto-bold-webfont.ttf", fontWeight: "bold" },
+    { src: "https://cdn.jsdelivr.net/npm/roboto-font@0.1.0/fonts/Roboto/roboto-italic-webfont.ttf", fontStyle: "italic" },
+  ],
+});
+Font.registerHyphenationCallback((word) => [word]);
 import type { Note } from "@/hooks/useNotes";
 
 interface Highlight {
@@ -108,7 +119,7 @@ export const HighlightsPDFDocument = ({
                       .filter((n) => n.page_number === pageNum)
                       .map((note, idx) => (
                         <View key={`n-${idx}`} style={styles.noteBox}>
-                          <Text style={styles.noteLabel}>📝 Anotação:</Text>
+                          <Text style={styles.noteLabel}>Anotação:</Text>
                           <Text style={styles.noteText}>{note.note_text}</Text>
                           {includeTimestamps && (
                             <Text style={styles.timestamp}>
@@ -161,7 +172,7 @@ export const HighlightsPDFDocument = ({
                     <Text style={styles.pageRef}>
                       Página {note.page_number}
                     </Text>
-                    <Text style={styles.noteLabel}>📝 Anotação:</Text>
+                    <Text style={styles.noteLabel}>Anotação:</Text>
                     <Text style={styles.noteText}>{note.note_text}</Text>
                     {includeTimestamps && (
                       <Text style={styles.timestamp}>
@@ -182,7 +193,7 @@ export const HighlightsPDFDocument = ({
 const styles = StyleSheet.create({
   page: {
     padding: 40,
-    fontFamily: "Helvetica",
+    fontFamily: "Roboto",
     backgroundColor: "#ffffff",
   },
   header: {
