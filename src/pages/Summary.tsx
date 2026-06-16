@@ -293,6 +293,28 @@ const Summary = () => {
     }
   };
 
+  const exportBookSummaryToPDF = async () => {
+    if (!bookSummary) {
+      toast.error("Nenhum resumo do livro para exportar");
+      return;
+    }
+    if (bookSummaryIsPreview) {
+      toast.error("Exportação disponível apenas para o resumo completo (premium).");
+      return;
+    }
+    try {
+      exportSimpleTextPDF(
+        `${bookTitle} - Resumo Completo IA`,
+        bookSummary,
+        `${bookTitle}-resumo-completo-${Date.now()}.pdf`,
+      );
+      toast.success("Resumo completo exportado para PDF!");
+    } catch (error) {
+      console.error("Erro ao exportar resumo completo:", error);
+      toast.error("Erro ao exportar resumo completo");
+    }
+  };
+
 
   if (loading) {
     return (
