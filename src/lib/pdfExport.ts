@@ -151,10 +151,29 @@ class PdfWriter {
     this.y += 4;
   }
 
+  toBlob(): Blob {
+    return this.doc.output("blob");
+  }
+
   save(name: string) {
     const blob = this.doc.output("blob");
     void savePdfBlobWithFallback(blob, name);
   }
+}
+
+export function generateSimpleTextPdfBlob(title: string, body: string): Blob {
+  const w = new PdfWriter();
+  w.text(title, { size: 20, bold: true });
+  w.spacer(1);
+  w.text(new Date().toLocaleDateString("pt-BR"), { size: 9, color: [150, 150, 150] });
+  w.spacer(2);
+  w.rule();
+  const paragraphs = body.split(/\n{2,}/);
+  for (const p of paragraphs) {
+    w.text(p.trim(), { size: 11 });
+    w.spacer(3);
+  }
+  return w.toBlob();
 }
 
 function fmtDate(iso: string) {
