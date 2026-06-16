@@ -24,7 +24,7 @@ import { getSignedStorageUrl } from "@/lib/storageUrl";
 import { useUserData } from "@/hooks/useUserData";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Image, Download, Loader2, Trash2, Images, AlertCircle, Crown, X, Maximize2 } from "lucide-react";
+import { Image, Download, Loader2, Trash2, Images, AlertCircle, Crown, X, Maximize2, ExternalLink, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LazyImage } from "@/components/LazyImage";
