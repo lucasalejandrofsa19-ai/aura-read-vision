@@ -95,7 +95,7 @@ export function exportHighlightsPDF(
 
   w.text(bookTitle, { size: 20, bold: true, color: [20, 20, 20] });
   w.spacer(1);
-  w.text("Destaques e Anotacoes Exportados", { size: 12, color: [110, 110, 110] });
+  w.text("Destaques e Anotações Exportados", { size: 12, color: [110, 110, 110] });
   w.text(new Date().toLocaleDateString("pt-BR"), { size: 9, color: [150, 150, 150] });
   w.spacer(2);
   w.rule();
@@ -110,7 +110,7 @@ export function exportHighlightsPDF(
     const sorted = Array.from(pages).sort((a, b) => a - b);
     for (const p of sorted) {
       w.spacer(2);
-      w.text(`Pagina ${p}`, { size: 14, bold: true, color: [40, 40, 60] });
+      w.text(`Página ${p}`, { size: 14, bold: true, color: [40, 40, 60] });
       w.spacer(1);
       for (const h of hi.filter((x) => x.page_number === p)) {
         w.text(`"${h.text}"`, { size: 11, italic: true, indent: 3 });
@@ -119,7 +119,7 @@ export function exportHighlightsPDF(
         w.spacer(2);
       }
       for (const n of no.filter((x) => x.page_number === p)) {
-        w.text("Anotacao:", { size: 10, bold: true, color: [59, 130, 246], indent: 3 });
+        w.text("Anotação:", { size: 10, bold: true, color: [59, 130, 246], indent: 3 });
         w.text(n.note_text, { size: 11, indent: 3 });
         if (options.includeTimestamps) w.text(fmtDate(n.created_at), { size: 8, color: [150, 150, 150], indent: 3 });
         w.spacer(2);
@@ -130,7 +130,7 @@ export function exportHighlightsPDF(
       w.text("Destaques", { size: 14, bold: true, color: [40, 40, 60] });
       w.spacer(1);
       for (const h of hi) {
-        w.text(`Pagina ${h.page_number}`, { size: 9, bold: true, color: [110, 110, 110] });
+        w.text(`Página ${h.page_number}`, { size: 9, bold: true, color: [110, 110, 110] });
         w.text(`"${h.text}"`, { size: 11, italic: true });
         if (options.includeColors && h.color) w.text(`Cor: ${h.color}`, { size: 9, color: [120, 120, 120] });
         if (options.includeTimestamps) w.text(fmtDate(h.created_at), { size: 8, color: [150, 150, 150] });
@@ -139,10 +139,10 @@ export function exportHighlightsPDF(
     }
     if (no.length) {
       w.spacer(2);
-      w.text("Anotacoes", { size: 14, bold: true, color: [40, 40, 60] });
+      w.text("Anotações", { size: 14, bold: true, color: [40, 40, 60] });
       w.spacer(1);
       for (const n of no) {
-        w.text(`Pagina ${n.page_number}`, { size: 9, bold: true, color: [110, 110, 110] });
+        w.text(`Página ${n.page_number}`, { size: 9, bold: true, color: [110, 110, 110] });
         w.text(n.note_text, { size: 11 });
         if (options.includeTimestamps) w.text(fmtDate(n.created_at), { size: 8, color: [150, 150, 150] });
         w.spacer(2);
