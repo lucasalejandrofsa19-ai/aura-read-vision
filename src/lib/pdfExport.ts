@@ -134,7 +134,7 @@ class PdfWriter {
 
   save(name: string) {
     const blob = this.doc.output("blob");
-    saveAs(blob, name);
+    void savePdfBlobWithFallback(blob, name);
   }
 }
 
