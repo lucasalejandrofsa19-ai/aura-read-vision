@@ -70,10 +70,25 @@ serve(async (req) => {
 
     console.log(`[VERIFY-PREMIUM] Checking access for user: ${user.id}`);
 
+    // Admin bypass: full access, no rate limit / IP block / audit denial
+    const { data: isAdminUser } = await supabaseClient.rpc('is_admin', { _user_id: user.id });
+    if (isAdminUser) {
+      console.log(`[VERIFY-PREMIUM] Admin user ${user.id} - granting unrestricted access`);
+      return new Response(
+        JSON.stringify({
+          hasPremiumAccess: true,
+          isAdmin: true,
+          unlimited: true,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
     // Check if IP is whitelisted (skip blocking check if whitelisted)
     const { data: isWhitelisted } = await supabaseClient.rpc('is_ip_whitelisted', { 
       check_ip: ipAddress 
     });
+
 
     if (!isWhitelisted) {
       // Check if IP is blocked only if not whitelisted
