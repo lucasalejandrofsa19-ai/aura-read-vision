@@ -5,7 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Loader2, BookOpen, Video, FileText, Sparkles, ExternalLink, HelpCircle, Pencil, Check, X, Plus, RefreshCw, Download, History, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { pdf, Document, Page, Text, View, StyleSheet, Link } from "@react-pdf/renderer";
+import { pdf, Document, Page, Text, View, StyleSheet, Link, Font } from "@react-pdf/renderer";
+
+Font.register({
+  family: "Roboto",
+  fonts: [
+    { src: "https://cdn.jsdelivr.net/npm/roboto-font@0.1.0/fonts/Roboto/roboto-regular-webfont.ttf" },
+    { src: "https://cdn.jsdelivr.net/npm/roboto-font@0.1.0/fonts/Roboto/roboto-bold-webfont.ttf", fontWeight: "bold" },
+  ],
+});
 import { saveAs } from "file-saver";
 
 interface ExportRow {
