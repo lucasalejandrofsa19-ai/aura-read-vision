@@ -179,29 +179,67 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
     }
   };
 
+  const openInNewTab = (url: string) => {
+    window.open(url, "_blank", "noopener,noreferrer");
+    toast.info("Imagem aberta em nova aba — clique com o botão direito e escolha 'Salvar imagem como'");
+  };
+
+  const copyImageUrl = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedUrl(true);
+      toast.success("URL da imagem copiada!");
+      setTimeout(() => setCopiedUrl(false), 2000);
+    } catch {
+      toast.error("Não foi possível copiar o link");
+    }
+  };
+
   const downloadImage = async (url?: string) => {
     const targetUrl = url || imageUrl;
     if (!targetUrl) return;
+    setDownloadFailedUrl(null);
 
+    // Attempt 1: Fetch blob + download
     try {
-      const res = await fetch(targetUrl, { mode: "cors" });
+      const res = await fetch(targetUrl, { mode: "cors", credentials: "omit" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
+      if (!blob.size) throw new Error("Blob vazio");
+
       const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = objectUrl;
       link.download = `highlight-${Date.now()}.png`;
+      link.style.display = "none";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-      toast.success("Imagem baixada!");
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+      toast.success("Imagem baixada com sucesso!");
+      return;
     } catch (err) {
-      console.error("Erro ao baixar imagem:", err);
-      // Fallback: open in new tab
-      window.open(targetUrl, "_blank", "noopener,noreferrer");
-      toast.error("Não foi possível baixar diretamente. Abrimos em uma nova aba — use 'Salvar imagem como'.");
+      console.warn("Download via blob falhou:", err);
     }
+
+    // Attempt 2: Try anchor with download attribute directly
+    try {
+      const link = document.createElement("a");
+      link.href = targetUrl;
+      link.download = `highlight-${Date.now()}.png`;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Download iniciado!");
+      return;
+    } catch (err) {
+      console.warn("Download direto falhou:", err);
+    }
+
+    // Fallback: show options to user
+    setDownloadFailedUrl(targetUrl);
+    toast.error("Download automático não disponível. Escolha uma opção abaixo.");
   };
 
 
