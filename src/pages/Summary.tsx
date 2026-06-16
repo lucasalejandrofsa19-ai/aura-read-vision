@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Download, Share2, Sparkles, Loader2, FileDown, Lock, Pencil, Check, X, RotateCcw } from "lucide-react";
+import { ArrowLeft, Download, Share2, Sparkles, Loader2, FileDown, Lock, Pencil, Check, X, RotateCcw, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -50,6 +50,7 @@ const Summary = () => {
   const [bookSummary, setBookSummary] = useState<string>("");
   const [bookSummaryIsPreview, setBookSummaryIsPreview] = useState(false);
   const [generatingBookSummary, setGeneratingBookSummary] = useState(false);
+  const [sharingBookSummary, setSharingBookSummary] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftText, setDraftText] = useState<string>("");
   const [originalTexts, setOriginalTexts] = useState<Record<string, string>>({});
