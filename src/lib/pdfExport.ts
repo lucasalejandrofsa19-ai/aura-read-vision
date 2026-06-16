@@ -2,47 +2,66 @@ import { jsPDF } from "jspdf";
 import { saveAs } from "file-saver";
 import { toast } from "sonner";
 
+function isSafariOrIOS(): boolean {
+  const ua = navigator.userAgent.toLowerCase();
+  const vendor = (navigator as any).vendor?.toLowerCase() || "";
+  const isSafari = vendor.includes("apple") && !ua.includes("crios") && !ua.includes("fxios");
+  const isIOS = /iphone|ipad|ipod/.test(ua);
+  return isSafari || isIOS;
+}
+
 /**
- * Robust PDF save with multiple fallbacks:
- * 1) file-saver (saveAs)
- * 2) Manual anchor download from blob URL
- * 3) Open blob in a new tab so the user can save manually
- * 4) Last resort: copy a temporary blob URL to clipboard
+ * Robust PDF save with multiple fallbacks.
+ * On Safari/iOS it skips saveAs/anchor blob download and goes straight to
+ * opening in a new tab so the user can "Share → Save to Files".
  */
 async function savePdfBlobWithFallback(blob: Blob, filename: string) {
-  // Attempt 1: file-saver
-  try {
-    saveAs(blob, filename);
-    return;
-  } catch (e) {
-    console.warn("[pdfExport] saveAs failed, trying anchor download", e);
+  const isAppleWebkit = isSafariOrIOS();
+
+  // Non-Safari: Attempt 1 — file-saver
+  if (!isAppleWebkit) {
+    try {
+      saveAs(blob, filename);
+      return;
+    } catch (e) {
+      console.warn("[pdfExport] saveAs failed, trying anchor download", e);
+    }
   }
 
-  // Attempt 2: anchor download from object URL
+  // Non-Safari: Attempt 2 — anchor download from object URL
   let url: string | null = null;
-  try {
-    url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.rel = "noopener";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => url && URL.revokeObjectURL(url), 8000);
-    return;
-  } catch (e) {
-    console.warn("[pdfExport] anchor download failed, opening in new tab", e);
+  if (!isAppleWebkit) {
+    try {
+      url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => url && URL.revokeObjectURL(url), 8000);
+      return;
+    } catch (e) {
+      console.warn("[pdfExport] anchor download failed, opening in new tab", e);
+    }
   }
 
-  // Attempt 3: open in new tab
+  // Attempt 3 (also primary for Safari/iOS): open in new tab
   try {
     if (!url) url = URL.createObjectURL(blob);
     const win = window.open(url, "_blank", "noopener,noreferrer");
     if (win) {
-      toast.info("Download bloqueado. Abrimos o PDF em uma nova aba — use 'Salvar como' para baixar.", {
-        duration: 8000,
-      });
+      if (isAppleWebkit) {
+        toast.info(
+          "Safari/iOS restringe downloads automáticos. Abrimos o PDF em uma nova aba — toque em 'Compartilhar' e depois 'Salvar em Arquivos' para baixar.",
+          { duration: 12000 }
+        );
+      } else {
+        toast.info("Download bloqueado. Abrimos o PDF em uma nova aba — use 'Salvar como' para baixar.", {
+          duration: 8000,
+        });
+      }
       setTimeout(() => url && URL.revokeObjectURL(url!), 60000);
       return;
     }
