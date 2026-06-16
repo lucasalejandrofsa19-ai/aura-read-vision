@@ -584,6 +584,7 @@ export type Database = {
           file_path: string
           file_size: number | null
           id: string
+          is_free: boolean
           summary: string | null
           title: string
           total_pages: number | null
@@ -598,6 +599,7 @@ export type Database = {
           file_path: string
           file_size?: number | null
           id?: string
+          is_free?: boolean
           summary?: string | null
           title: string
           total_pages?: number | null
@@ -612,6 +614,7 @@ export type Database = {
           file_path?: string
           file_size?: number | null
           id?: string
+          is_free?: boolean
           summary?: string | null
           title?: string
           total_pages?: number | null
