@@ -177,18 +177,31 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
     }
   };
 
-  const downloadImage = (url?: string) => {
+  const downloadImage = async (url?: string) => {
     const targetUrl = url || imageUrl;
     if (!targetUrl) return;
 
-    const link = document.createElement('a');
-    link.href = targetUrl;
-    link.download = `highlight-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Imagem baixada!");
+    try {
+      const res = await fetch(targetUrl, { mode: "cors" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `highlight-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      toast.success("Imagem baixada!");
+    } catch (err) {
+      console.error("Erro ao baixar imagem:", err);
+      // Fallback: open in new tab
+      window.open(targetUrl, "_blank", "noopener,noreferrer");
+      toast.error("Não foi possível baixar diretamente. Abrimos em uma nova aba — use 'Salvar imagem como'.");
+    }
   };
+
 
   const handleOpenChange = async (newOpen: boolean) => {
     setOpen(newOpen);

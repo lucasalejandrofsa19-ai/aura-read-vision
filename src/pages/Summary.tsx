@@ -13,8 +13,7 @@ import { ADSENSE_SLOTS } from "@/lib/adsense";
 import { HighlightImageDialog } from "@/components/HighlightImageDialog";
 import { DeepenTopicDialog } from "@/components/DeepenTopicDialog";
 import { Compass } from "lucide-react";
-import { pdf } from "@react-pdf/renderer";
-import { saveAs } from "file-saver";
+import { exportSimpleTextPDF } from "@/lib/pdfExport";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePremiumValidation } from "@/hooks/usePremiumValidation";
 import { pdfjs } from "@/lib/pdfjsWorker";
@@ -286,39 +285,14 @@ const Summary = () => {
     }
 
     try {
-      const { HighlightsPDFDocument } = await import("@/components/HighlightsPDFDocument");
-      
-      const doc = (
-        <HighlightsPDFDocument
-          bookTitle={`${bookTitle} - Resumo IA`}
-          highlights={[]}
-          notes={[{
-            id: "summary",
-            note_text: summary,
-            page_number: 1,
-            book_id: id!,
-            user_id: "",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }]}
-          options={{
-            includeHighlights: false,
-            includeNotes: true,
-            groupByPage: false,
-            includeTimestamps: false,
-            includeColors: false
-          }}
-        />
-      );
-
-      const blob = await pdf(doc).toBlob();
-      saveAs(blob, `${bookTitle}-resumo-${Date.now()}.pdf`);
+      exportSimpleTextPDF(`${bookTitle} - Resumo IA`, summary, `${bookTitle}-resumo-${Date.now()}.pdf`);
       toast.success("Resumo exportado para PDF!");
     } catch (error) {
       console.error("Erro ao exportar resumo:", error);
       toast.error("Erro ao exportar resumo");
     }
   };
+
 
   if (loading) {
     return (
