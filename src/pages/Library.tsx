@@ -282,7 +282,7 @@ const Library = () => {
       ) : (
         <>
           {/* Premium Books Section */}
-          {hasPremiumAccess && premiumBooksWithFlag.length > 0 && (
+          {visiblePremiumBooks.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -293,9 +293,13 @@ const Library = () => {
                   <Shield className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold">Biblioteca Premium</h2>
+                  <h2 className="text-2xl font-bold">
+                    {hasPremiumAccess ? "Biblioteca Premium" : "Livros Gratuitos"}
+                  </h2>
                   <p className="text-sm text-muted-foreground">
-                    Livros exclusivos para assinantes premium
+                    {hasPremiumAccess
+                      ? "Livros exclusivos para assinantes premium"
+                      : "Disponíveis para todos — leia sem precisar assinar"}
                   </p>
                 </div>
               </div>
@@ -329,7 +333,7 @@ const Library = () => {
                   onMouseEnter={() => setActiveSection('premium')}
                   onTouchStart={() => setActiveSection('premium')}
                 >
-                  {premiumBooksWithFlag.map((book, index) => (
+                  {visiblePremiumBooks.map((book, index) => (
                     <div key={book.id} className="flex-shrink-0 w-48">
                       <LazyLoadWrapper
                         minHeight="280px"
