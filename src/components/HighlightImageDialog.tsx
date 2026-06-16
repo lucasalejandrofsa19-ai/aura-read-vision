@@ -568,6 +568,49 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
               Salvar Imagem
             </Button>
 
+            {/* Fallback buttons in fullscreen */}
+            {downloadFailedUrl === fullscreenImage && (
+              <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 flex gap-2 flex-wrap justify-center">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="gap-1 bg-white/90 hover:bg-white text-black"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openInNewTab(downloadFailedUrl);
+                  }}
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Abrir em nova aba
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="gap-1 bg-white/90 hover:bg-white text-black"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    copyImageUrl(downloadFailedUrl);
+                  }}
+                >
+                  {copiedUrl ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  {copiedUrl ? "Copiado!" : "Copiar link"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="gap-1 bg-white/90 hover:bg-white text-black"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDownloadFailedUrl(null);
+                    downloadImage(fullscreenImage);
+                  }}
+                >
+                  <Download className="w-3 h-3" />
+                  Tentar novamente
+                </Button>
+              </div>
+            )}
+
             {/* Image */}
             <img 
               src={fullscreenImage}
