@@ -48,6 +48,9 @@ serve(async (req) => {
 
     console.log(`[TEXT-TO-IMAGE] Generating image for user: ${user.id}, highlight: ${highlightId}, style: ${style}`);
 
+    // Admin bypass: unlimited image generation
+    const { data: isAdminUser } = await supabaseClient.rpc('is_admin', { _user_id: user.id });
+
     // Check how many images the user has generated
     const { count, error: countError } = await supabaseClient
       .from('highlight_images')
@@ -59,11 +62,12 @@ serve(async (req) => {
     }
 
     const imageCount = count || 0;
-    console.log(`[TEXT-TO-IMAGE] User has generated ${imageCount} images`);
+    console.log(`[TEXT-TO-IMAGE] User has generated ${imageCount} images (admin=${!!isAdminUser})`);
 
     // Check if user has premium access
     const FREE_IMAGE_LIMIT = 3;
-    if (imageCount >= FREE_IMAGE_LIMIT) {
+    if (!isAdminUser && imageCount >= FREE_IMAGE_LIMIT) {
+
       console.log('[TEXT-TO-IMAGE] User reached free limit, checking premium access...');
       
       // Verify premium access using edge function
