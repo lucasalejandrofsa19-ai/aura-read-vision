@@ -425,6 +425,48 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
                   Gerar Nova
                 </Button>
               </div>
+
+              {/* Download Fallback */}
+              {downloadFailedUrl === imageUrl && (
+                <Alert className="border-amber-500/50 bg-amber-500/10">
+                  <AlertCircle className="h-4 w-4 text-amber-500" />
+                  <AlertDescription className="text-sm space-y-2">
+                    <p>O download automático não funcionou no seu navegador. Escolha uma alternativa:</p>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1"
+                        onClick={() => openInNewTab(downloadFailedUrl)}
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Abrir em nova aba
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1"
+                        onClick={() => copyImageUrl(downloadFailedUrl)}
+                      >
+                        {copiedUrl ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copiedUrl ? "Copiado!" : "Copiar link"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1"
+                        onClick={() => {
+                          setDownloadFailedUrl(null);
+                          downloadImage();
+                        }}
+                      >
+                        <Download className="w-3 h-3" />
+                        Tentar novamente
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           )}
 
