@@ -172,9 +172,10 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
           if (fileInputRef.current) {
             fileInputRef.current.value = "";
           }
-        } catch (error) {
+        } catch (error: any) {
           captureError(error, { context: "pdf_upload" });
-          toast.error("Erro ao fazer upload do PDF");
+          const msg = error?.message || "Erro ao fazer upload do PDF";
+          toast.error(msg);
         } finally {
           setUploading(false);
         }
