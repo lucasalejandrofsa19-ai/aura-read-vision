@@ -3,11 +3,25 @@ import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserData } from "@/hooks/useUserData";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 import { useSentryTracking } from "@/hooks/use-sentry-tracking";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGenerateCover } from "@/hooks/useGenerateCover";
+
+// Remove acentos e caracteres não suportados pelo Supabase Storage
+const sanitizeFileName = (name: string) => {
+  const base = name.replace(/\.pdf$/i, "");
+  const clean = base
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 80) || "documento";
+  return `${clean}.pdf`;
+};
 
 interface UploadPDFProps {
   onUploadComplete?: () => void;
