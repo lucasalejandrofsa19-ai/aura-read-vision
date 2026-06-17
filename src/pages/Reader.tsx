@@ -161,24 +161,42 @@ const Reader = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      // Tenta primeiro nos livros do usuário
+      let { data, error } = await supabase
         .from("books")
         .select("*")
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      
-      setBook(data);
-      
-      if (data.current_page) {
-        setCurrentPage(data.current_page);
+      let isPremium = false;
+      let bucket = "pdfs";
+
+      // Se não achou, tenta nos premium (inclui livros gratuitos como a Bíblia)
+      if (!data) {
+        const { data: premiumData, error: premiumError } = await supabase
+          .from("premium_books")
+          .select("*")
+          .eq("id", id)
+          .maybeSingle();
+        if (premiumError) throw premiumError;
+        if (!premiumData) throw error ?? new Error("Livro não encontrado");
+        data = premiumData as any;
+        isPremium = true;
+        bucket = "premium-pdfs";
+      } else if (error) {
+        throw error;
       }
 
-      if (data.file_path) {
+      setBook({ ...(data as any), __isPremium: isPremium });
+
+      if ((data as any).current_page) {
+        setCurrentPage((data as any).current_page);
+      }
+
+      if ((data as any).file_path) {
         const { data: signedData, error: signedError } = await supabase.storage
-          .from("pdfs")
-          .createSignedUrl(data.file_path, 60 * 60); // 1 hour
+          .from(bucket)
+          .createSignedUrl((data as any).file_path, 60 * 60);
 
         if (signedError) throw signedError;
         setPdfUrl(signedData?.signedUrl ?? "");
@@ -195,7 +213,9 @@ const Reader = () => {
 
   const saveCurrentPage = async (page: number) => {
     if (!id) return;
-    
+    // Não salvar progresso para livros premium/gratuitos compartilhados
+    if ((book as any)?.__isPremium) return;
+
     try {
       const progress = book?.total_pages 
         ? Math.round((page / book.total_pages) * 100)
