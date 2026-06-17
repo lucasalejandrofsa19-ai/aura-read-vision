@@ -3,11 +3,25 @@ import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserData } from "@/hooks/useUserData";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 import { useSentryTracking } from "@/hooks/use-sentry-tracking";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGenerateCover } from "@/hooks/useGenerateCover";
+
+// Remove acentos e caracteres não suportados pelo Supabase Storage
+const sanitizeFileName = (name: string) => {
+  const base = name.replace(/\.pdf$/i, "");
+  const clean = base
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 80) || "documento";
+  return `${clean}.pdf`;
+};
 
 interface UploadPDFProps {
   onUploadComplete?: () => void;
@@ -17,41 +31,54 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
+  const { hasPremiumAccess, isAdmin } = useUserData();
   const { trackClick, trackAsyncOperation } = useSentryTracking();
   const queryClient = useQueryClient();
   const { generateCover } = useGenerateCover();
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user) {
+      if (!user) toast.error("Faça login para adicionar PDFs");
+      return;
+    }
 
     trackClick("pdf_upload_file_selected", {
       fileSize: file.size,
       fileType: file.type,
     });
 
-    // Check file type
-    if (file.type !== "application/pdf") {
+    // Validar tipo (alguns navegadores não setam file.type)
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+    if (!isPdf) {
       toast.error("Por favor, selecione um arquivo PDF");
       return;
     }
 
-    // Check file size (50MB limit)
+    // Limite de 50MB
     if (file.size > 52428800) {
       toast.error("Arquivo muito grande. Limite de 50MB");
       return;
     }
 
-    // Check subscription limits
-    const { count } = await supabase
+    // Limites por plano
+    const { count, error: countError } = await supabase
       .from("books")
       .select("*", { count: "exact", head: true })
       .eq("user_id", user.id);
 
-    const maxBooks = 5;
-    
+    if (countError) {
+      toast.error("Não foi possível verificar sua biblioteca. Tente novamente.");
+      return;
+    }
+
+    const maxBooks = isAdmin || hasPremiumAccess ? 1000 : 5;
     if ((count || 0) >= maxBooks) {
-      toast.error(`Limite de ${maxBooks} livros atingido. Faça upgrade para adicionar mais!`);
+      toast.error(
+        hasPremiumAccess || isAdmin
+          ? `Limite de ${maxBooks} livros atingido.`
+          : `Limite de ${maxBooks} livros atingido. Faça upgrade para adicionar mais!`
+      );
       return;
     }
 
@@ -60,16 +87,23 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
     await trackAsyncOperation(
       "pdf_upload_complete_flow",
       async () => {
+        let uploadedPath: string | null = null;
         try {
-          // Upload to storage
-          const fileName = `${user.id}/${Date.now()}-${file.name}`;
+          // Path seguro (sanitiza nome)
+          const safeName = sanitizeFileName(file.name);
+          const fileName = `${user.id}/${Date.now()}-${safeName}`;
+
           const { error: uploadError } = await supabase.storage
             .from("pdfs")
-            .upload(fileName, file);
+            .upload(fileName, file, {
+              contentType: "application/pdf",
+              upsert: false,
+            });
 
           if (uploadError) throw uploadError;
+          uploadedPath = fileName;
 
-          // Generate random cover color
+          // Cor aleatória de capa
           const colors = [
             "from-blue-500 to-blue-700",
             "from-amber-500 to-amber-700",
@@ -80,12 +114,12 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
           ];
           const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-          // Create book record
+          // Registrar no banco
           const { data: bookData, error: insertError } = await supabase
             .from("books")
             .insert({
               user_id: user.id,
-              title: file.name.replace(".pdf", ""),
+              title: file.name.replace(/\.pdf$/i, ""),
               file_path: fileName,
               file_size: file.size,
               cover_color: randomColor,
@@ -93,9 +127,16 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
             .select()
             .single();
 
-          if (insertError) throw insertError;
+          if (insertError) {
+            // Rollback do storage se o insert falhar
+            if (uploadedPath) {
+              await supabase.storage.from("pdfs").remove([uploadedPath]).catch(() => {});
+            }
+            throw insertError;
+          }
 
           toast.success("PDF adicionado com sucesso!");
+
 
           // Invalidar query imediatamente para mostrar o card com loading
           queryClient.invalidateQueries({ queryKey: ["books", user.id] });
@@ -131,9 +172,10 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
           if (fileInputRef.current) {
             fileInputRef.current.value = "";
           }
-        } catch (error) {
+        } catch (error: any) {
           captureError(error, { context: "pdf_upload" });
-          toast.error("Erro ao fazer upload do PDF");
+          const msg = error?.message || "Erro ao fazer upload do PDF";
+          toast.error(msg);
         } finally {
           setUploading(false);
         }
