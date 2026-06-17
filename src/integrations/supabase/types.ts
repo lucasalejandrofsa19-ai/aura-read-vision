@@ -81,15 +81,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "audiobook_progress_book_id_fkey"
-            columns: ["book_id"]
-            isOneToOne: false
-            referencedRelation: "books"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       blocked_ips: {
         Row: {
@@ -489,15 +481,7 @@ export type Database = {
           text?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "highlights_book_id_fkey"
-            columns: ["book_id"]
-            isOneToOne: false
-            referencedRelation: "books"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       notes: {
         Row: {
