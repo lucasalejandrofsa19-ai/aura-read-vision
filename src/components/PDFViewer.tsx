@@ -64,6 +64,9 @@ export const PDFViewer = ({
   const [autoFit, setAutoFit] = useState<boolean>(true);
   const pageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [loadError, setLoadError] = useState<Error | null>(null);
   
   // Search states
   const [searchTerm, setSearchTerm] = useState("");
