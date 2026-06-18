@@ -120,7 +120,8 @@ export const LibraryTour = () => {
           .from("profiles")
           .update({ has_seen_library_tour: true })
           .eq("id", user.id);
-        
+        queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
+
         toast.success("Tour concluído! Você está pronto para começar.");
       } catch (error) {
         console.error("Error updating tour status:", error);
@@ -137,6 +138,7 @@ export const LibraryTour = () => {
           .from("profiles")
           .update({ has_seen_library_tour: true })
           .eq("id", user.id);
+        queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
       } catch (error) {
         console.error("Error updating tour status:", error);
       }
