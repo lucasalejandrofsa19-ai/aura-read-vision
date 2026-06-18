@@ -11,6 +11,25 @@ interface SubscriptionStatus {
   role: string | null;
 }
 
+const SUB_CACHE_KEY = "subscription_status_cache";
+const SUB_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const readCache = (userId: string): SubscriptionStatus | null => {
+  try {
+    const raw = sessionStorage.getItem(`${SUB_CACHE_KEY}_${userId}`);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > SUB_CACHE_TTL) return null;
+    return data;
+  } catch { return null; }
+};
+
+const writeCache = (userId: string, data: SubscriptionStatus) => {
+  try {
+    sessionStorage.setItem(`${SUB_CACHE_KEY}_${userId}`, JSON.stringify({ data, ts: Date.now() }));
+  } catch {}
+};
+
 export const useSubscription = () => {
   const { user } = useAuth();
   const [status, setStatus] = useState<SubscriptionStatus>({
@@ -22,7 +41,7 @@ export const useSubscription = () => {
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
 
-  const checkSubscription = useCallback(async () => {
+  const checkSubscription = useCallback(async (forceRefresh = false) => {
     if (!user) {
       setStatus({
         subscribed: false,
@@ -32,6 +51,16 @@ export const useSubscription = () => {
       });
       setLoading(false);
       return;
+    }
+
+    // Try session cache first (skips network on route mounts within TTL)
+    if (!forceRefresh) {
+      const cached = readCache(user.id);
+      if (cached) {
+        setStatus(cached);
+        setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -70,6 +99,7 @@ export const useSubscription = () => {
         }
       } else {
         setStatus(data);
+        writeCache(user.id, data);
       }
     } catch (error) {
       console.error("Error checking subscription:", error);
@@ -132,8 +162,12 @@ export const useSubscription = () => {
   useEffect(() => {
     checkSubscription();
 
-    // Check subscription every minute
-    const interval = setInterval(checkSubscription, 60000);
+    // Re-check every 5 minutes, and only while tab is visible
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        checkSubscription(true);
+      }
+    }, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [checkSubscription]);
