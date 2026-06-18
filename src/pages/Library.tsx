@@ -10,7 +10,7 @@ import { useUserData } from "@/hooks/useUserData";
 import { useBooks } from "@/hooks/useBooks";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import BookCard from "@/components/BookCard";
-import UploadPDF from "@/components/UploadPDF";
+import UploadPDF, { type UploadPDFHandle } from "@/components/UploadPDF";
 import { UploadPremiumBook } from "@/components/UploadPremiumBook";
 import SubscriptionDialog from "@/components/SubscriptionDialog";
 import { PWAInstallDialog } from "@/components/PWAInstallDialog";
@@ -42,6 +42,7 @@ const Library = () => {
   // Refs for scroll containers
   const premiumScrollRef = useRef<HTMLDivElement>(null);
   const userBooksScrollRef = useRef<HTMLDivElement>(null);
+  const uploadPDFRef = useRef<UploadPDFHandle>(null);
   const [activeSection, setActiveSection] = useState<'premium' | 'user'>('user');
 
   const scrollLeft = (ref: React.RefObject<HTMLDivElement>) => {
@@ -373,12 +374,7 @@ const Library = () => {
               ) : books.length === 0 ? (
                 <LibraryCTA
                   variant="empty-state"
-                  onAction={() => {
-                    const fab = document.querySelector<HTMLButtonElement>(
-                      '[data-tour="upload-button"] button'
-                    );
-                    fab?.click();
-                  }}
+                  onAction={() => uploadPDFRef.current?.openPicker()}
                 />
               ) : (
                 <p className="text-center text-muted-foreground text-lg">
@@ -465,7 +461,7 @@ const Library = () => {
         className="fixed bottom-8 right-8"
         data-tour="upload-button"
       >
-        <UploadPDF />
+        <UploadPDF ref={uploadPDFRef} />
       </motion.div>
 
       {subscriptionDialogOpen && (

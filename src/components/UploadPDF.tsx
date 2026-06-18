@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, forwardRef, useImperativeHandle } from "react";
 import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,11 +23,15 @@ const sanitizeFileName = (name: string) => {
   return `${clean}.pdf`;
 };
 
+export interface UploadPDFHandle {
+  openPicker: () => void;
+}
+
 interface UploadPDFProps {
   onUploadComplete?: () => void;
 }
 
-const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
+const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplete } = {}, ref) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
@@ -35,6 +39,11 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
   const { trackClick, trackAsyncOperation } = useSentryTracking();
   const queryClient = useQueryClient();
   const { generateCover } = useGenerateCover();
+
+  useImperativeHandle(ref, () => ({
+    openPicker: () => fileInputRef.current?.click(),
+  }), []);
+
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -213,6 +222,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
       </Button>
     </>
   );
-};
+});
+UploadPDF.displayName = "UploadPDF";
 
 export default UploadPDF;
