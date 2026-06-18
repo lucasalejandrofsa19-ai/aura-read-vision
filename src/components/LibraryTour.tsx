@@ -73,6 +73,13 @@ export const LibraryTour = () => {
     };
 
     checkIfShouldShowTour();
+
+    const onRestart = () => {
+      setCurrentStep(0);
+      setShowTour(true);
+    };
+    window.addEventListener("library-tour:restart", onRestart);
+    return () => window.removeEventListener("library-tour:restart", onRestart);
   }, [user]);
 
   useEffect(() => {
