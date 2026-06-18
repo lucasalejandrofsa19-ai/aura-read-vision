@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getSignedStorageUrl } from "@/lib/storageUrl";
-import { ArrowLeft, Camera, Save, CreditCard, Shield, Zap } from "lucide-react";
+import { ArrowLeft, Camera, Save, CreditCard, Shield, Zap, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +40,21 @@ const Profile = () => {
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const { isUltraPerformanceMode, togglePerformanceMode, loading: perfLoading } = usePerformanceMode();
+  const [transitionsEnabled, setTransitionsEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("auraread:transitions-disabled") !== "1";
+  });
+
+  const toggleTransitions = (enabled: boolean) => {
+    setTransitionsEnabled(enabled);
+    if (enabled) {
+      localStorage.removeItem("auraread:transitions-disabled");
+      toast.success("Transições suaves ativadas");
+    } else {
+      localStorage.setItem("auraread:transitions-disabled", "1");
+      toast.success("Transições suaves desativadas");
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -398,6 +413,34 @@ const Profile = () => {
                     </p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Smooth Transitions Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  Transições suaves
+                </CardTitle>
+                <CardDescription>
+                  Ativa animações de transição entre páginas. Desative se preferir navegação instantânea.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5 flex-1">
+                    <Label htmlFor="smooth-transitions">Ativar transições entre páginas</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Respeita automaticamente a preferência de "reduzir movimento" do sistema.
+                    </p>
+                  </div>
+                  <Switch
+                    id="smooth-transitions"
+                    checked={transitionsEnabled}
+                    onCheckedChange={toggleTransitions}
+                  />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
