@@ -189,6 +189,15 @@ const Welcome = () => {
             <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
         </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.0 }}
+          className="mt-12"
+        >
+          <LibraryCTA />
+        </motion.div>
       </div>
     </div>
     </>
