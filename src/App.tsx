@@ -93,6 +93,7 @@ const AppContent = () => {
           <Route path="/resumo-academico" element={<AcademicSummary />} />
           <Route path="/guia" element={<Guide />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
+          <Route path="/demo" element={<Demo />} />
 
 
 
