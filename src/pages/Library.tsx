@@ -94,20 +94,14 @@ const LibraryInner = () => {
     [freePremiumBooks, books]
   );
 
-  const normalize = (s: string) =>
-    (s || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-
   const filteredBooks = useMemo(() => {
-    const q = normalize(searchQuery.trim());
+    const q = searchQuery.trim();
     if (!q) return allBooks;
-    return allBooks.filter((book) => {
-      const title = normalize(book.title ?? "");
-      const author = normalize((book as any).author ?? "");
-      return title.includes(q) || author.includes(q);
-    });
+    return allBooks.filter(
+      (book) =>
+        matchesSearch(book.title, q) ||
+        matchesSearch((book as any).author, q)
+    );
   }, [allBooks, searchQuery]);
 
 
