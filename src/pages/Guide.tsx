@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import LibraryCTA from "@/components/LibraryCTA";
 
 interface Tool {
   icon: typeof Upload;
@@ -321,16 +322,7 @@ const Guide = () => {
 
           {/* CTA */}
           <section>
-            <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-purple-500/10 p-8 text-center">
-              <h2 className="text-2xl font-bold mb-2">Pronto para começar a ler?</h2>
-              <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-                Acesse sua biblioteca agora e comece a aproveitar seus livros, destaques e resumos.
-              </p>
-              <Button size="lg" onClick={() => navigate("/library")} className="gap-2">
-                <BookOpen className="w-4 h-4" />
-                Ir para minha biblioteca
-              </Button>
-            </div>
+            <LibraryCTA />
           </section>
         </div>
       </div>
