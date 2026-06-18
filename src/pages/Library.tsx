@@ -31,6 +31,7 @@ import { AuthDialog } from "@/components/AuthDialog";
 import { LogIn } from "lucide-react";
 import LibraryCTA from "@/components/LibraryCTA";
 import { TourTargetsProvider, useTourTarget } from "@/contexts/TourTargetsContext";
+import { matchesSearch } from "@/lib/searchNormalize";
 
 
 // Memoizar BookCard para evitar re-renders desnecessários
