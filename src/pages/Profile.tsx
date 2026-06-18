@@ -40,6 +40,21 @@ const Profile = () => {
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const { isUltraPerformanceMode, togglePerformanceMode, loading: perfLoading } = usePerformanceMode();
+  const [transitionsEnabled, setTransitionsEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("auraread:transitions-disabled") !== "1";
+  });
+
+  const toggleTransitions = (enabled: boolean) => {
+    setTransitionsEnabled(enabled);
+    if (enabled) {
+      localStorage.removeItem("auraread:transitions-disabled");
+      toast.success("Transições suaves ativadas");
+    } else {
+      localStorage.setItem("auraread:transitions-disabled", "1");
+      toast.success("Transições suaves desativadas");
+    }
+  };
 
   useEffect(() => {
     if (user) {
