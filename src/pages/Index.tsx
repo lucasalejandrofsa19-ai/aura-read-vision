@@ -282,11 +282,11 @@ const Index = () => {
               className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-8 py-6 text-lg gap-2"
             >
               <PremiumBadge variant="icon-only" className="text-white" />
-              Ver Planos Premium
+              Começar com o Premium
               <ArrowRight className="w-5 h-5" />
             </Button>
             <p className="text-sm text-muted-foreground mt-4">
-              A partir de R$ 19,90/mês • Cancele quando quiser
+              A partir de R$ 19,90/mês. Sem fidelidade. Cancele em um clique.
             </p>
           </motion.div>
         </motion.div>
