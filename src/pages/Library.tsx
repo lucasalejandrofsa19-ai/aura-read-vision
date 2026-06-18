@@ -30,6 +30,7 @@ import { AuthDialog } from "@/components/AuthDialog";
 import { LogIn } from "lucide-react";
 import LibraryCTA from "@/components/LibraryCTA";
 import { TourTargetsProvider, useTourTarget } from "@/contexts/TourTargetsContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Memoizar BookCard para evitar re-renders desnecessários
 const MemoizedBookCard = memo(BookCard);
