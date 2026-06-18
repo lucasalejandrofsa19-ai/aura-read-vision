@@ -1,7 +1,10 @@
 import { SEO } from "@/components/SEO";
 import { useState, useEffect, useMemo, memo, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle } from "lucide-react";
+import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle, BookOpen, RotateCcw } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
