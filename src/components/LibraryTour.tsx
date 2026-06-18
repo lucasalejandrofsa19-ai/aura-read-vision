@@ -47,42 +47,32 @@ const tourSteps: TourStep[] = [
 export const LibraryTour = () => {
   const { user } = useAuth();
   const { getTarget } = useTourTargets();
+  const { profile, isLoading } = useUserData();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(0);
   const [showTour, setShowTour] = useState(false);
   const [targetPosition, setTargetPosition] = useState({ top: 0, left: 0, width: 0, height: 0 });
 
   useEffect(() => {
-    const checkIfShouldShowTour = async () => {
-      if (!user) return;
+    if (!user || isLoading) return;
+    if (!profile?.has_seen_library_tour) {
+      const t = setTimeout(() => {
+        setShowTour(true);
+        updateTargetPosition();
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isLoading, profile?.has_seen_library_tour]);
 
-      try {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("has_seen_library_tour")
-          .eq("id", user.id)
-          .single();
-
-        if (profile && !profile.has_seen_library_tour) {
-          // Small delay to ensure DOM elements are ready
-          setTimeout(() => {
-            setShowTour(true);
-            updateTargetPosition();
-          }, 1500);
-        }
-      } catch (error) {
-        console.error("Error checking tour status:", error);
-      }
-    };
-
-    checkIfShouldShowTour();
-
+  useEffect(() => {
     const onRestart = () => {
       setCurrentStep(0);
       setShowTour(true);
     };
     window.addEventListener("library-tour:restart", onRestart);
     return () => window.removeEventListener("library-tour:restart", onRestart);
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     if (showTour) {
