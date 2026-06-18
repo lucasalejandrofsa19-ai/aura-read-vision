@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowLeft, Sparkles, Zap, Crown, GraduationCap, Loader2 } from "lucide-react";
+import { Check, ArrowLeft, Sparkles, Zap, Crown, GraduationCap, Loader2, BookOpen } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -289,10 +289,26 @@ export default function Pricing() {
         )}
 
         <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-16 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-purple-500/10 p-8 text-center"
+        >
+          <h2 className="text-2xl font-bold mb-2">Pronto para começar a ler?</h2>
+          <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
+            Acesse sua biblioteca agora e comece a aproveitar seus livros, destaques e resumos.
+          </p>
+          <Button size="lg" onClick={() => navigate("/library")} className="gap-2">
+            <BookOpen className="w-4 h-4" />
+            Ir para minha biblioteca
+          </Button>
+        </motion.div>
+
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="mt-16 text-center text-muted-foreground"
+          className="mt-10 text-center text-muted-foreground"
         >
           <p>Pagamentos processados de forma segura pelo Stripe</p>
         </motion.div>
