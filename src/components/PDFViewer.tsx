@@ -41,6 +41,8 @@ interface PDFViewerProps {
   highlightColor?: string;
   penThickness?: number;
   spokenText?: string;
+  /** Renova a URL assinada quando expirar. Retorna a nova URL ou null. */
+  onRenewUrl?: () => Promise<string | null>;
 }
 
 type LikelyCause = {
