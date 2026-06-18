@@ -47,6 +47,7 @@ const LibraryInner = () => {
   const { isAdmin, hasPremiumAccess } = useUserData();
   const { books, premiumBooks, isLoading } = useBooks();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   // Refs for scroll containers
   const premiumScrollRef = useRef<HTMLDivElement>(null);
