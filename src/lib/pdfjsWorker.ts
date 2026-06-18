@@ -17,4 +17,24 @@ pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
 console.log('[PDF.js] Worker configured (bundled):', workerUrl);
 
+// Pré-aquece os workers de CDN (jsDelivr + unpkg) para fallback offline.
+// O Service Worker (workbox) intercepta e armazena em 'pdfjs-worker-cache'.
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  const prewarm = () => {
+    const urls = [
+      `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
+      `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
+    ];
+    urls.forEach((u) =>
+      fetch(u, { mode: 'no-cors', cache: 'force-cache' }).catch((e) =>
+        console.warn('[PDF.js] Pré-aquecimento falhou para', u, e),
+      ),
+    );
+  };
+  // Aguarda o SW ficar pronto antes de pré-aquecer
+  navigator.serviceWorker.ready
+    .then(prewarm)
+    .catch(() => prewarm()); // tenta mesmo sem SW (ainda popula o HTTP cache)
+}
+
 export { pdfjs };
