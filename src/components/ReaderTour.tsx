@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useTourTargets } from "@/contexts/TourTargetsContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserData } from "@/hooks/useUserData";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TourStep {
   target: string;
