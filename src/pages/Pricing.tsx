@@ -8,6 +8,7 @@ import { Check, ArrowLeft, Sparkles, Zap, Crown, GraduationCap, Loader2, BookOpe
 import { useSubscription } from "@/hooks/useSubscription";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import LibraryCTA from "@/components/LibraryCTA";
 
 interface PlanFeatures {
   name: string;
