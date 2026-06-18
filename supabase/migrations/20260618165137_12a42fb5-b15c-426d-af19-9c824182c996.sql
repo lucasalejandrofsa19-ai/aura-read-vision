@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS has_seen_reader_tour boolean NOT NULL DEFAULT false;

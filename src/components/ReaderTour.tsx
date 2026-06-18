@@ -4,6 +4,8 @@ import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTourTargets } from "@/contexts/TourTargetsContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TourStep {
   target: string;
@@ -37,16 +39,29 @@ const tourSteps: TourStep[] = [
 
 export const ReaderTour = () => {
   const { getTarget } = useTourTargets();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [showTour, setShowTour] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0, height: 0 });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (localStorage.getItem(STORAGE_KEY) === "1") return;
-    const t = setTimeout(() => setShowTour(true), 1200);
-    return () => clearTimeout(t);
-  }, []);
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("has_seen_reader_tour")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!data?.has_seen_reader_tour) {
+        setTimeout(() => !cancelled && setShowTour(true), 1200);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const update = () => {
     const step = tourSteps[currentStep];
@@ -69,11 +84,14 @@ export const ReaderTour = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showTour, currentStep]);
 
-  const finish = () => {
+  const finish = async () => {
     setShowTour(false);
-    try {
-      localStorage.setItem(STORAGE_KEY, "1");
-    } catch {}
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ has_seen_reader_tour: true })
+        .eq("id", user.id);
+    }
   };
 
   const next = () => (currentStep < tourSteps.length - 1 ? setCurrentStep((s) => s + 1) : finish());
