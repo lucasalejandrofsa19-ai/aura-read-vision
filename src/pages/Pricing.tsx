@@ -120,11 +120,11 @@ export default function Pricing() {
     const canceled = searchParams.get("canceled");
 
     if (success) {
-      toast.success("Assinatura realizada com sucesso!");
+      toast.success("Bem-vindo ao Premium ✨ Tudo liberado.");
       checkSubscription();
       window.history.replaceState({}, "", "/pricing");
     } else if (canceled) {
-      toast.error("Assinatura cancelada");
+      toast("Tudo bem — fica para a próxima.");
       window.history.replaceState({}, "", "/pricing");
     }
   }, [searchParams, checkSubscription]);
