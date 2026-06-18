@@ -116,7 +116,7 @@ export const PDFViewer = ({
   const onDocumentLoadSuccess = (pdfDoc: any) => {
     setNumPages(pdfDoc.numPages);
     setPageTexts(new Map());
-    // Reuse the same loaded document for highlight/search text extraction
+    setLoadError(null);
     pdfDocRef.current = pdfDoc;
   };
 
