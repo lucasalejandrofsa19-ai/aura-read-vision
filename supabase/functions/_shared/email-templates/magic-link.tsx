@@ -8,8 +8,10 @@ import {
   Container,
   Head,
   Heading,
+  Hr,
   Html,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
@@ -22,21 +24,32 @@ export const MagicLinkEmail = ({
   siteName,
   confirmationUrl,
 }: MagicLinkEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Your login link for {siteName}</Preview>
+    <Preview>Seu acesso instantâneo ao {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Your login link</Heading>
-        <Text style={text}>
-          Click the button below to log in to {siteName}. This link will expire
-          shortly.
+        <Section style={brandMark}>
+          <Text style={brandText}>AuraRead</Text>
+        </Section>
+
+        <Heading style={h1}>Entre com um clique.</Heading>
+
+        <Text style={lead}>
+          Sem senhas, sem fricção. Use o link abaixo para acessar sua biblioteca
+          inteligente — válido pelos próximos minutos.
         </Text>
-        <Button style={button} href={confirmationUrl}>
-          Log In
-        </Button>
-        <Text style={footer}>
-          If you didn't request this link, you can safely ignore this email.
+
+        <Section style={{ textAlign: 'center' as const, margin: '32px 0' }}>
+          <Button style={button} href={confirmationUrl}>
+            Acessar minha conta
+          </Button>
+        </Section>
+
+        <Hr style={hr} />
+
+        <Text style={subtle}>
+          Se você não solicitou esse acesso, ignore este e-mail.
         </Text>
       </Container>
     </Body>
@@ -45,26 +58,44 @@ export const MagicLinkEmail = ({
 
 export default MagicLinkEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = {
+  backgroundColor: '#ffffff',
+  fontFamily:
+    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+}
+const container = { padding: '40px 28px', maxWidth: '560px' }
+const brandMark = { marginBottom: '32px' }
+const brandText = {
+  fontSize: '13px',
+  fontWeight: '600' as const,
+  color: '#1a8cff',
+  letterSpacing: '2px',
+  textTransform: 'uppercase' as const,
+  margin: 0,
+}
 const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
+  fontSize: '26px',
+  fontWeight: '700' as const,
+  color: '#0f172a',
+  margin: '0 0 16px',
+  lineHeight: '1.25',
+  letterSpacing: '-0.02em',
+}
+const lead = {
+  fontSize: '16px',
+  color: '#334155',
+  lineHeight: '1.6',
   margin: '0 0 20px',
 }
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#1a8cff',
   color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
+  fontSize: '15px',
+  fontWeight: '600' as const,
+  borderRadius: '12px',
+  padding: '14px 28px',
   textDecoration: 'none',
+  display: 'inline-block',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const hr = { borderColor: '#e2e8f0', margin: '32px 0 20px' }
+const subtle = { fontSize: '13px', color: '#94a3b8', lineHeight: '1.6', margin: 0 }
