@@ -642,6 +642,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           has_seen_library_tour: boolean
+          has_seen_reader_tour: boolean
           has_seen_welcome: boolean
           highlight_sensitivity: number | null
           highlight_sound_enabled: boolean | null
@@ -666,6 +667,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           has_seen_library_tour?: boolean
+          has_seen_reader_tour?: boolean
           has_seen_welcome?: boolean
           highlight_sensitivity?: number | null
           highlight_sound_enabled?: boolean | null
@@ -690,6 +692,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           has_seen_library_tour?: boolean
+          has_seen_reader_tour?: boolean
           has_seen_welcome?: boolean
           highlight_sensitivity?: number | null
           highlight_sound_enabled?: boolean | null
