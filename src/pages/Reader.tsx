@@ -241,6 +241,19 @@ const Reader = () => {
     }
   }, [book]);
 
+  // Renovação proativa: refresh 5 min antes do TTL de 60 min
+  useEffect(() => {
+    if (!pdfUrl) return;
+    const TTL_MS = 60 * 60 * 1000; // 1h (igual ao createSignedUrl)
+    const REFRESH_BEFORE_MS = 5 * 60 * 1000; // 5 min de folga
+    const intervalMs = TTL_MS - REFRESH_BEFORE_MS;
+    const id = setInterval(() => {
+      console.info("[Reader] Renovando URL assinada proativamente...");
+      renewSignedUrl();
+    }, intervalMs);
+    return () => clearInterval(id);
+  }, [pdfUrl, renewSignedUrl]);
+
 
 
   const saveCurrentPage = async (page: number) => {
