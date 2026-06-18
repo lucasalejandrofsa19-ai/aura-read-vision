@@ -505,21 +505,31 @@ export const PDFViewer = ({
                   </p>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2 justify-center">
-                <Button
-                  onClick={() => {
-                    setLoadError(null);
-                    setLoadAttempt((n) => n + 1);
-                  }}
-                  className="gap-2"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Tentar novamente
-                </Button>
-                <Button variant="outline" onClick={() => navigate("/library")} className="gap-2">
-                  <ArrowLeft className="w-4 h-4" />
-                  Voltar à biblioteca
-                </Button>
+              <div className="flex flex-col items-center gap-2">
+                {retryCount >= MAX_RETRIES ? (
+                  <p className="text-xs text-destructive">
+                    Limite de {MAX_RETRIES} tentativas atingido.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Tentativa {retryCount} de {MAX_RETRIES}
+                    {retryDelay > 0 && ` — reabrindo em ${retryDelay}s...`}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <Button
+                    onClick={handleRetry}
+                    disabled={retryCount >= MAX_RETRIES || retryDelay > 0}
+                    className="gap-2"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${retryDelay > 0 ? "animate-spin" : ""}`} />
+                    {retryDelay > 0 ? `Aguardando ${retryDelay}s` : "Tentar novamente"}
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate("/library")} className="gap-2">
+                    <ArrowLeft className="w-4 h-4" />
+                    Voltar à biblioteca
+                  </Button>
+                </div>
               </div>
             </div>
           }
