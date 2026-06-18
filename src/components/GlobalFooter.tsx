@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Shield } from "lucide-react";
+import { Shield, Tag, BookOpen } from "lucide-react";
 
 const HIDDEN_PREFIXES = ["/reader", "/admin"];
 
@@ -11,7 +11,21 @@ const GlobalFooter = () => {
     <footer className="border-t border-border/50 bg-background/80 backdrop-blur-sm">
       <div className="container max-w-screen-2xl mx-auto px-4 lg:px-10 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
         <p>© {new Date().getFullYear()} AURA READ</p>
-        <nav className="flex items-center gap-4">
+        <nav className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <Link
+            to="/pricing"
+            className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
+          >
+            <Tag className="h-3.5 w-3.5" />
+            Pricing
+          </Link>
+          <Link
+            to="/guia"
+            className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+            Guia
+          </Link>
           <Link
             to="/trust"
             className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
