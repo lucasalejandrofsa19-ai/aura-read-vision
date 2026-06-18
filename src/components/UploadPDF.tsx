@@ -39,7 +39,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) {
-      if (!user) toast.error("Faça login para adicionar PDFs");
+      if (!user) toast.error("Faça login para começar sua biblioteca.");
       return;
     }
 
@@ -51,13 +51,13 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
     // Validar tipo (alguns navegadores não setam file.type)
     const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
     if (!isPdf) {
-      toast.error("Por favor, selecione um arquivo PDF");
+      toast.error("Só aceitamos PDFs por aqui.");
       return;
     }
 
     // Limite de 50MB
     if (file.size > 52428800) {
-      toast.error("Arquivo muito grande. Limite de 50MB");
+      toast.error("Esse PDF passa de 50MB. Tente um arquivo menor.");
       return;
     }
 
@@ -68,7 +68,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
       .eq("user_id", user.id);
 
     if (countError) {
-      toast.error("Não foi possível verificar sua biblioteca. Tente novamente.");
+      toast.error("Não conseguimos checar sua biblioteca agora. Tente em alguns segundos.");
       return;
     }
 
@@ -76,8 +76,8 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
     if ((count || 0) >= maxBooks) {
       toast.error(
         hasPremiumAccess || isAdmin
-          ? `Limite de ${maxBooks} livros atingido.`
-          : `Limite de ${maxBooks} livros atingido. Faça upgrade para adicionar mais!`
+          ? `Você atingiu o limite de ${maxBooks} livros.`
+          : `Você chegou ao limite do plano gratuito (${maxBooks} livros). Libere uploads ilimitados no Premium.`
       );
       return;
     }
@@ -135,7 +135,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
             throw insertError;
           }
 
-          toast.success("PDF adicionado com sucesso!");
+          toast.success("Pronto. Seu PDF está na biblioteca.");
 
 
           // Invalidar query imediatamente para mostrar o card com loading
@@ -144,7 +144,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
           // Generate cover from first page in the background
           const generateCoverAsync = async () => {
             try {
-              toast.loading("Gerando capa da primeira página...", { id: "cover-generation" });
+              toast.loading("Preparando a capa…", { id: "cover-generation" });
               
               // Get a signed URL for the PDF (private bucket)
               const { data: signedData } = await supabase.storage
@@ -152,11 +152,11 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
                 .createSignedUrl(fileName, 60 * 60);
 
               await generateCover(bookData.id, signedData?.signedUrl ?? "", 1);
-              toast.success("✨ Capa gerada com sucesso!", { id: "cover-generation" });
+              toast.success("Capa pronta ✨", { id: "cover-generation" });
               queryClient.invalidateQueries({ queryKey: ["books", user.id] });
             } catch (error) {
               captureError(error, { context: "auto_generate_cover" });
-              toast.error("Erro ao gerar capa", { id: "cover-generation" });
+              toast.error("Não conseguimos gerar a capa agora.", { id: "cover-generation" });
             }
           };
 
@@ -174,7 +174,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
           }
         } catch (error: any) {
           captureError(error, { context: "pdf_upload" });
-          const msg = error?.message || "Erro ao fazer upload do PDF";
+          const msg = error?.message || "Não conseguimos enviar seu PDF. Tente novamente.";
           toast.error(msg);
         } finally {
           setUploading(false);

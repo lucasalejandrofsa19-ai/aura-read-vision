@@ -366,11 +366,11 @@ const Library = () => {
               className="text-center py-20"
             >
               <p className="text-muted-foreground text-lg mb-4">
-                {searchQuery ? "Nenhum livro encontrado" : "Sua biblioteca está vazia"}
+                {searchQuery ? "Nada por aqui. Tente outro termo." : "Comece sua biblioteca."}
               </p>
               {!searchQuery && (
                 <p className="text-sm text-muted-foreground">
-                  Clique no botão abaixo para adicionar seu primeiro PDF
+                  Suba seu primeiro PDF — em segundos ele estará pronto para ler, marcar e resumir.
                 </p>
               )}
             </motion.div>

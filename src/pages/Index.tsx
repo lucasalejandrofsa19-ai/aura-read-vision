@@ -14,18 +14,18 @@ const Index = () => {
   const features = [
     {
       icon: Highlighter,
-      title: "Marca-texto Inteligente",
-      description: "Destaque trechos importantes com um toque. Tudo salvo automaticamente.",
+      title: "Destaques que viram conhecimento",
+      description: "Marque trechos com um toque. Vão para sua biblioteca automaticamente, prontos para revisar.",
     },
     {
       icon: BookmarkCheck,
-      title: "Resumos Automáticos",
-      description: "Visualize todas suas marcações organizadas em um só lugar.",
+      title: "Tudo o que importa, num só lugar",
+      description: "Seus destaques organizados por livro. Reveja em segundos o que levou horas para ler.",
     },
     {
       icon: Share2,
-      title: "Compartilhe Facilmente",
-      description: "Envie livros e trechos via QR Code ou link direto.",
+      title: "Compartilhe insights, não arquivos",
+      description: "Envie trechos por link ou QR Code. Quem recebe lê e marca sem instalar nada.",
     },
   ];
 
@@ -33,31 +33,31 @@ const Index = () => {
     {
       icon: Wand2,
       title: "Resumos com IA",
-      description: "Gere resumos inteligentes dos seus destaques usando inteligência artificial avançada.",
+      description: "Transforme dezenas de destaques em um resumo claro e estruturado — em segundos.",
       highlight: "Ilimitado",
     },
     {
       icon: FileDown,
-      title: "Exportação Avançada",
-      description: "Exporte seus destaques para Word, Notion e mais formatos profissionais.",
+      title: "Exporte para onde trabalha",
+      description: "Leve seus destaques para Word, Notion, Markdown e PDF. Formatados, prontos para usar.",
       highlight: "10+ formatos",
     },
     {
       icon: Image,
-      title: "Imagens com IA",
-      description: "Transforme seus destaques em ilustrações visuais usando geração de imagens com IA.",
+      title: "Visualize ideias com IA",
+      description: "Gere ilustrações dos seus destaques. Conceitos abstratos viram imagens memoráveis.",
       highlight: "Criação ilimitada",
     },
     {
       icon: InfinityIcon,
-      title: "Uploads Ilimitados",
-      description: "Adicione quantos livros quiser à sua biblioteca sem restrições.",
-      highlight: "Sem limites",
+      title: "Biblioteca sem teto",
+      description: "Suba quantos PDFs quiser. Sua coleção cresce com você, sem limites.",
+      highlight: "Sem restrições",
     },
     {
       icon: Library,
-      title: "Livros Premium",
-      description: "Acesso exclusivo à coleção de livros premium selecionados especialmente.",
+      title: "Curadoria Premium",
+      description: "Acesso a uma biblioteca de obras selecionadas — leituras escolhidas a dedo.",
       highlight: "Catálogo exclusivo",
     },
   ];
@@ -89,8 +89,8 @@ const Index = () => {
   return (
     <>
     <SEO
-      title="AURA READ — Biblioteca Interativa de PDFs com IA"
-      description="Leia, destaque e resuma PDFs com IA. Biblioteca pessoal interativa, marca-texto inteligente e geração de imagens. Comece grátis."
+      title="AURA READ — Leia menos. Retenha mais."
+      description="Marque, resuma e domine qualquer PDF com IA. Biblioteca pessoal, destaques inteligentes e resumos automáticos. Comece grátis."
       path="/"
       jsonLd={{
         "@context": "https://schema.org",
@@ -152,11 +152,11 @@ const Index = () => {
             </motion.div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-bold mb-6 bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent leading-tight">
-              AURA READ — Sua biblioteca pessoal interativa com IA
+              A biblioteca onde cada leitura vira conhecimento.
             </h1>
 
             <p className="text-lg lg:text-xl xl:text-2xl text-muted-foreground mb-10 max-w-2xl mx-auto lg:mx-0">
-              Sua biblioteca pessoal interativa com leitura futurista e inteligente
+              Marque, resuma e domine qualquer PDF com IA. Leia menos. Retenha mais.
             </p>
 
             <motion.div
@@ -170,7 +170,7 @@ const Index = () => {
                 onClick={() => navigate("/library")}
                 className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity text-lg px-8 py-6 aura-safira group"
               >
-                Começar Agora
+                Começar grátis
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button
@@ -179,7 +179,7 @@ const Index = () => {
                 onClick={() => navigate("/pricing")}
                 className="text-lg px-8 py-6"
               >
-                Ver Planos Premium
+                Conhecer o Premium
               </Button>
             </motion.div>
           </div>
@@ -231,10 +231,10 @@ const Index = () => {
               <PremiumBadge variant="default" />
             </motion.div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent">
-              Recursos Premium
+              Premium: para quem leva leitura a sério
             </h2>
             <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto">
-              Desbloqueie o potencial completo da sua leitura com recursos exclusivos
+              Ferramentas avançadas para estudantes, pesquisadores e leitores ávidos.
             </p>
           </div>
 
@@ -282,11 +282,11 @@ const Index = () => {
               className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-8 py-6 text-lg gap-2"
             >
               <PremiumBadge variant="icon-only" className="text-white" />
-              Ver Planos Premium
+              Começar com o Premium
               <ArrowRight className="w-5 h-5" />
             </Button>
             <p className="text-sm text-muted-foreground mt-4">
-              A partir de R$ 19,90/mês • Cancele quando quiser
+              A partir de R$ 19,90/mês. Sem fidelidade. Cancele em um clique.
             </p>
           </motion.div>
         </motion.div>

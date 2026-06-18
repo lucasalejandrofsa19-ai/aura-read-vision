@@ -25,7 +25,7 @@ const PLANS: Record<string, PlanFeatures> = {
   free: {
     name: "Gratuito",
     price: "R$ 0",
-    period: "para sempre",
+    period: "sempre grátis",
     icon: Sparkles,
     color: "from-slate-500 to-slate-700",
     features: [
@@ -120,11 +120,11 @@ export default function Pricing() {
     const canceled = searchParams.get("canceled");
 
     if (success) {
-      toast.success("Assinatura realizada com sucesso!");
+      toast.success("Bem-vindo ao Premium ✨ Tudo liberado.");
       checkSubscription();
       window.history.replaceState({}, "", "/pricing");
     } else if (canceled) {
-      toast.error("Assinatura cancelada");
+      toast("Tudo bem — fica para a próxima.");
       window.history.replaceState({}, "", "/pricing");
     }
   }, [searchParams, checkSubscription]);
@@ -159,8 +159,8 @@ export default function Pricing() {
   return (
     <>
     <SEO
-      title="Planos e Preços — AURA READ"
-      description="Compare os planos Gratuito, Pro e Premium. Recursos exclusivos como TTS, exportação, IA de imagens e biblioteca premium."
+      title="Planos AURA READ — Comece grátis, evolua quando quiser"
+      description="Free, Pro, Estudante e Premium. Resumos com IA, exportação, leitura em voz alta e mais. Sem fidelidade. Cancele em um clique."
       path="/pricing"
       jsonLd={productJsonLd}
     />
@@ -181,10 +181,10 @@ export default function Pricing() {
           className="text-center mb-12"
         >
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            Escolha seu Plano
+            Um plano para cada leitor
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Desbloqueie todo o potencial da sua leitura com recursos premium
+            Comece grátis. Evolua conforme sua leitura cresce.
           </p>
         </motion.div>
 
@@ -206,7 +206,7 @@ export default function Pricing() {
                 >
                   {plan.popular && (
                     <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500">
-                      Mais Popular
+                      Recomendado
                     </Badge>
                   )}
                   
@@ -250,15 +250,15 @@ export default function Pricing() {
                         {loading ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : isCurrentPlan(key) ? (
-                          "Plano Atual"
+                          "Seu plano atual"
                         ) : (
-                          "Assinar Agora"
+                          "Começar agora"
                         )}
                       </Button>
                     )}
                     {key === "free" && (
                       <div className="w-full text-center text-sm text-muted-foreground">
-                        Plano Gratuito
+                        Você está no plano gratuito
                       </div>
                     )}
                   </CardFooter>
@@ -283,7 +283,7 @@ export default function Pricing() {
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : null}
-              Gerenciar Assinatura
+              Gerenciar minha assinatura
             </Button>
           </motion.div>
         )}
