@@ -596,6 +596,7 @@ const Reader = () => {
 
             <ToolHelpTooltip {...TOOL_COPY.highlight}>
               <Button
+                ref={highlightTargetRef}
                 variant={isDrawingMode ? "default" : "ghost"}
                 size="icon"
                 onClick={() => setIsDrawingMode(!isDrawingMode)}
