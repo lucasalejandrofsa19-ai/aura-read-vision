@@ -177,7 +177,7 @@ const LibraryInner = () => {
               size="icon"
               className="aura-soft transition-aura"
               onClick={() => navigate("/profile")}
-              data-tour="profile-button"
+              ref={profileButtonRef}
              aria-label="Perfil">
               <User className="w-5 h-5" />
             </Button>
