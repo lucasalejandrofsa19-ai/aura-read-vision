@@ -55,16 +55,23 @@ export const ReaderBookSearch = () => {
       .slice(0, 12);
   }, [allBooks, query]);
 
+  const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
+  const shortcut = isMac ? "⌘K" : "Ctrl+K";
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          aria-label="Buscar livro"
-          className="aura-soft transition-aura"
+          size="sm"
+          aria-label={`Buscar livro (${shortcut})`}
+          title={`Buscar livro (${shortcut})`}
+          className="aura-soft transition-aura gap-1.5 px-2"
         >
           <Search className="w-5 h-5" />
+          <kbd className="hidden sm:inline-flex items-center h-5 px-1.5 rounded border border-border bg-muted text-[10px] font-mono text-muted-foreground">
+            {shortcut}
+          </kbd>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-2">
