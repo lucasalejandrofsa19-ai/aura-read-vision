@@ -569,6 +569,7 @@ const Reader = () => {
                       .from("profiles")
                       .update({ has_seen_reader_tour: false })
                       .eq("id", user.id);
+                    await queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
                     window.dispatchEvent(new CustomEvent("reader-tour:restart"));
                   }}
                 >
