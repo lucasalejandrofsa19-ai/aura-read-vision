@@ -115,6 +115,7 @@ const AppContent = () => {
       <Suspense fallback={<RouteFallback />}>
         <AnimatedRoutes />
       </Suspense>
+      <GlobalFooter />
       <StickyAdBanner />
       <CookieConsentBanner />
     </>
