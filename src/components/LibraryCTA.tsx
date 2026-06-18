@@ -3,7 +3,7 @@ import { BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export type LibraryCTAVariant = "default" | "onboarding" | "post-install";
+export type LibraryCTAVariant = "default" | "onboarding" | "post-install" | "empty-state";
 
 const PRESETS: Record<LibraryCTAVariant, { title: string; description: string; buttonLabel: string }> = {
   default: {
@@ -22,6 +22,12 @@ const PRESETS: Record<LibraryCTAVariant, { title: string; description: string; b
     description:
       "Seu app está instalado. Abra sua biblioteca para enviar o primeiro PDF e começar a ler com destaques, resumos e sincronização entre dispositivos.",
     buttonLabel: "Abrir minha biblioteca",
+  },
+  "empty-state": {
+    title: "Sua biblioteca está vazia 📖",
+    description:
+      "Envie seu primeiro PDF para começar a ler. Você poderá destacar trechos, gerar resumos com IA e acompanhar sua evolução de leitura.",
+    buttonLabel: "Enviar meu primeiro PDF",
   },
 };
 
