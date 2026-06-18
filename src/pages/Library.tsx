@@ -303,85 +303,7 @@ const LibraryInner = () => {
         </div>
       ) : (
         <>
-          {/* Premium Books Section */}
-          {visiblePremiumBooks.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold">
-                    {hasPremiumAccess ? "Biblioteca Premium" : "Livros Gratuitos"}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {hasPremiumAccess
-                      ? "Livros exclusivos para assinantes premium"
-                      : "Disponíveis para todos — leia sem precisar assinar"}
-                  </p>
-                </div>
-              </div>
-              <div className="relative mb-12">
-                {/* Wooden shelf effect */}
-                <div className="absolute -bottom-4 left-0 right-0 h-6 bg-gradient-to-b from-amber-800/30 to-amber-900/40 rounded-lg shadow-xl border-t border-amber-700/50" />
-                <div className="absolute -bottom-2 left-0 right-0 h-3 bg-gradient-to-b from-amber-900/20 to-transparent rounded-lg" />
-                
-                {/* Navigation buttons */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background/90 rounded-full shadow-lg"
-                  onClick={() => scrollLeft(premiumScrollRef)}
-                 aria-label="Anterior">
-                  <ChevronLeft className="w-6 h-6" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background/90 rounded-full shadow-lg"
-                  onClick={() => scrollRight(premiumScrollRef)}
-                 aria-label="Próximo">
-                  <ChevronRight className="w-6 h-6" />
-                </Button>
-                
-                {/* Books on shelf */}
-                <div 
-                  ref={premiumScrollRef} 
-                  className="flex gap-4 overflow-x-auto pb-8 px-2 scrollbar-hide"
-                  onMouseEnter={() => setActiveSection('premium')}
-                  onTouchStart={() => setActiveSection('premium')}
-                >
-                  {visiblePremiumBooks.map((book, index) => (
-                    <div key={book.id} className="flex-shrink-0 w-48">
-                      <LazyLoadWrapper
-                        minHeight="280px"
-                        rootMargin="200px"
-                        fallback={
-                          <div className="space-y-2">
-                            <Skeleton className="h-64 w-full rounded-lg" />
-                            <Skeleton className="h-4 w-3/4" />
-                          </div>
-                        }
-                      >
-                        <MemoizedBookCard 
-                          book={book} 
-                          index={index} 
-                          isPremiumBook={true}
-                          isAdmin={isAdmin}
-                        />
-                      </LazyLoadWrapper>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* User Books Section */}
+          {/* Books Section */}
           {filteredBooks.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
@@ -405,11 +327,9 @@ const LibraryInner = () => {
             </motion.div>
           ) : (
             <>
-              {visiblePremiumBooks.length > 0 && (
-                <div className="flex items-center gap-3 mb-4">
-                  <h2 className="text-2xl font-bold">Meus Livros</h2>
-                </div>
-              )}
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-2xl font-bold">Meus Livros</h2>
+              </div>
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -419,7 +339,7 @@ const LibraryInner = () => {
                 {/* Wooden shelf effect */}
                 <div className="absolute -bottom-4 left-0 right-0 h-6 bg-gradient-to-b from-amber-800/30 to-amber-900/40 rounded-lg shadow-xl border-t border-amber-700/50" />
                 <div className="absolute -bottom-2 left-0 right-0 h-3 bg-gradient-to-b from-amber-900/20 to-transparent rounded-lg" />
-                
+
                 {/* Navigation buttons */}
                 <Button
                   variant="ghost"
@@ -437,13 +357,11 @@ const LibraryInner = () => {
                  aria-label="Próximo">
                   <ChevronRight className="w-6 h-6" />
                 </Button>
-                
+
                 {/* Books on shelf */}
-                <div 
-                  ref={userBooksScrollRef} 
+                <div
+                  ref={userBooksScrollRef}
                   className="flex gap-4 overflow-x-auto pb-8 px-2 scrollbar-hide mb-8"
-                  onMouseEnter={() => setActiveSection('user')}
-                  onTouchStart={() => setActiveSection('user')}
                 >
                   {filteredBooks.map((book, index) => (
                     <div
@@ -464,6 +382,8 @@ const LibraryInner = () => {
                         <MemoizedBookCard
                           book={book}
                           index={index}
+                          isPremiumBook={(book as any).isPremiumBook === true}
+                          isAdmin={isAdmin}
                         />
                       </LazyLoadWrapper>
                     </div>
@@ -472,6 +392,7 @@ const LibraryInner = () => {
               </motion.div>
             </>
           )}
+
         </>
       )}
         </main>
