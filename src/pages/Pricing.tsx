@@ -245,7 +245,7 @@ export default function Pricing() {
                         onClick={() => handleSubscribe(plan.priceId!)}
                         disabled={loading || isCurrentPlan(key)}
                         className="w-full"
-                        variant={isCurrentPlan(key) ? "outline" : "default"}
+                        variant={isCurrentPlan(key) ? "outline" : "premium"}
                       >
                         {loading ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
