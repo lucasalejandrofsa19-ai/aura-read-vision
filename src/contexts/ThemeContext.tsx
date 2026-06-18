@@ -81,7 +81,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
         .eq("id", user.id);
 
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
+      queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
 
       toast.success("Tema salvo com sucesso!");
     } catch (error) {

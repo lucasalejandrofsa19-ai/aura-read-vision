@@ -33,7 +33,7 @@ export const usePerformanceMode = () => {
         .eq("id", user.id);
 
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
+      queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
 
       toast.success(
         newValue

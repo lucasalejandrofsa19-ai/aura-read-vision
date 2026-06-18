@@ -84,7 +84,7 @@ const Profile = () => {
         .eq("id", user.id);
 
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
+      queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
 
       toast.success("Perfil atualizado com sucesso!");
     } catch (error) {
@@ -118,7 +118,7 @@ const Profile = () => {
         .eq("id", user.id);
 
       if (updateError) throw updateError;
-      queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
+      queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
 
       const signed = await getSignedStorageUrl("avatars", filePath);
       setAvatarUrl(signed);

@@ -100,7 +100,7 @@ export const useAudiobook = ({
       .from('profiles')
       .update({ sync_reading_enabled: enabled })
       .eq('id', user.id);
-    queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
+    queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
   }, [user, queryClient]);
 
 

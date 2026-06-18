@@ -186,7 +186,7 @@ const LibraryInner = () => {
                       toast.error("Não foi possível reiniciar o tour");
                       return;
                     }
-                    await queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
+                    await queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
                     window.dispatchEvent(new CustomEvent("library-tour:restart"));
                   }}
                 >

@@ -67,7 +67,7 @@ export const PresentationMode = memo(({
       .from("profiles")
       .update({ zoom_sensitivity: value })
       .eq("id", user.id);
-    queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
+    queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
   };
 
   const goToPrevPage = useCallback(() => {
