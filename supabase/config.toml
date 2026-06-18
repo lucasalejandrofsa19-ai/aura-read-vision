@@ -1,69 +1,61 @@
 project_id = "qvtfaidgpsapjctxehhq"
 
-[functions.process-pdf]
+[functions]
+  [functions.academic-summary]
+    verify_jwt = true
+  [functions.audiobook-tts]
+    verify_jwt = true
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.auto-block-ip]
+    verify_jwt = false
+  [functions.check-ip-reputation]
+    verify_jwt = false
+  [functions.check-subscription]
+    verify_jwt = true
+  [functions.create-checkout]
+    verify_jwt = true
+  [functions.customer-portal]
+    verify_jwt = true
+  [functions.deepen-topic]
+    verify_jwt = true
+  [functions.detect-book-chapters]
+    verify_jwt = true
+  [functions.enhance-narration]
+    verify_jwt = true
+  [functions.generate-story-video]
+    verify_jwt = true
+  [functions.openai-tts]
+    verify_jwt = true
+  [functions.process-email-queue]
+    verify_jwt = true
+  [functions.process-pdf]
+    verify_jwt = true
+  [functions.process-premium-pdf]
+    verify_jwt = true
+  [functions.public-shared-book]
+    verify_jwt = false
+  [functions.send-security-alert]
+    verify_jwt = false
+  [functions.stripe-webhook]
+    verify_jwt = false
+  [functions.summarize-book]
+    verify_jwt = true
+  [functions.summarize-highlights]
+    verify_jwt = true
+  [functions.text-to-image]
+    verify_jwt = true
+  [functions.verify-premium-access]
+    verify_jwt = true
+
+[functions.send-transactional-email]
 verify_jwt = true
 
-[functions.process-premium-pdf]
-verify_jwt = true
-
-[functions.create-checkout]
-verify_jwt = true
-
-[functions.check-subscription]
-verify_jwt = true
-
-[functions.customer-portal]
-verify_jwt = true
-
-[functions.stripe-webhook]
+[functions.preview-transactional-email]
 verify_jwt = false
 
-[functions.public-shared-book]
+[functions.handle-email-unsubscribe]
 verify_jwt = false
 
-
-
-[functions.verify-premium-access]
-verify_jwt = true
-
-[functions.text-to-image]
-verify_jwt = true
-
-[functions.send-security-alert]
+[functions.handle-email-suppression]
 verify_jwt = false
-
-[functions.auto-block-ip]
-verify_jwt = false
-
-[functions.check-ip-reputation]
-verify_jwt = false
-
-[functions.summarize-highlights]
-verify_jwt = true
-
-[functions.summarize-book]
-verify_jwt = true
-
-[functions.academic-summary]
-verify_jwt = true
-
-[functions.deepen-topic]
-verify_jwt = true
-
-[functions.audiobook-tts]
-verify_jwt = true
-
-[functions.openai-tts]
-verify_jwt = true
-
-[functions.enhance-narration]
-verify_jwt = true
-
-[functions.generate-story-video]
-verify_jwt = true
-
-[functions.detect-book-chapters]
-verify_jwt = true
-
-[functions.process-email-queue]
-verify_jwt = true
