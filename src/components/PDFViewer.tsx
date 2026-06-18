@@ -66,7 +66,40 @@ export const PDFViewer = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
+  const [retryDelay, setRetryDelay] = useState(0); // segundos restantes
   const [loadError, setLoadError] = useState<Error | null>(null);
+  const MAX_RETRIES = 4;
+
+  // Reseta tentativas quando o arquivo muda
+  useEffect(() => {
+    setRetryCount(0);
+    setRetryDelay(0);
+    setLoadError(null);
+  }, [fileUrl]);
+
+  const handleRetry = useCallback(() => {
+    if (retryCount >= MAX_RETRIES || retryDelay > 0) return;
+    const next = retryCount + 1;
+    // backoff exponencial: 1s, 2s, 4s, 8s (cap)
+    const delayMs = Math.min(1000 * 2 ** retryCount, 8000);
+    const delaySec = Math.ceil(delayMs / 1000);
+    setRetryCount(next);
+    setRetryDelay(delaySec);
+    const tick = setInterval(() => {
+      setRetryDelay((s) => {
+        if (s <= 1) {
+          clearInterval(tick);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    setTimeout(() => {
+      setLoadError(null);
+      setLoadAttempt((n) => n + 1);
+    }, delayMs);
+  }, [retryCount, retryDelay]);
   
   // Search states
   const [searchTerm, setSearchTerm] = useState("");
@@ -472,21 +505,31 @@ export const PDFViewer = ({
                   </p>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2 justify-center">
-                <Button
-                  onClick={() => {
-                    setLoadError(null);
-                    setLoadAttempt((n) => n + 1);
-                  }}
-                  className="gap-2"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Tentar novamente
-                </Button>
-                <Button variant="outline" onClick={() => navigate("/library")} className="gap-2">
-                  <ArrowLeft className="w-4 h-4" />
-                  Voltar à biblioteca
-                </Button>
+              <div className="flex flex-col items-center gap-2">
+                {retryCount >= MAX_RETRIES ? (
+                  <p className="text-xs text-destructive">
+                    Limite de {MAX_RETRIES} tentativas atingido.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Tentativa {retryCount} de {MAX_RETRIES}
+                    {retryDelay > 0 && ` — reabrindo em ${retryDelay}s...`}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <Button
+                    onClick={handleRetry}
+                    disabled={retryCount >= MAX_RETRIES || retryDelay > 0}
+                    className="gap-2"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${retryDelay > 0 ? "animate-spin" : ""}`} />
+                    {retryDelay > 0 ? `Aguardando ${retryDelay}s` : "Tentar novamente"}
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate("/library")} className="gap-2">
+                    <ArrowLeft className="w-4 h-4" />
+                    Voltar à biblioteca
+                  </Button>
+                </div>
               </div>
             </div>
           }
