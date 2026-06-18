@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { userProfileQueryKey } from "@/lib/userProfileQuery";
+import { invalidateUserProfile } from "@/lib/userProfileQuery";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMobileOptimization } from "@/hooks/useMobileOptimization";
@@ -570,7 +570,7 @@ const Reader = () => {
                       .from("profiles")
                       .update({ has_seen_reader_tour: false })
                       .eq("id", user.id);
-                    await queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
+                    await invalidateUserProfile(queryClient, user.id);
                     window.dispatchEvent(new CustomEvent("reader-tour:restart"));
                   }}
                 >

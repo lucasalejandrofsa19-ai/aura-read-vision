@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { userProfileQueryKey } from "@/lib/userProfileQuery";
+import { invalidateUserProfile } from "@/lib/userProfileQuery";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserData } from "@/hooks/useUserData";
@@ -82,7 +82,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
         .eq("id", user.id);
 
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
+      invalidateUserProfile(queryClient, user.id);
 
       toast.success("Tema salvo com sucesso!");
     } catch (error) {

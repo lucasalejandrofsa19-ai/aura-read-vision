@@ -1,3 +1,4 @@
+import type { QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const USER_PROFILE_SELECT =
@@ -15,3 +16,8 @@ export const fetchUserProfile = async (userId: string) => {
   if (error) throw error;
   return data;
 };
+
+export const invalidateUserProfile = (
+  queryClient: QueryClient,
+  userId: string,
+) => queryClient.invalidateQueries({ queryKey: userProfileQueryKey(userId) });
