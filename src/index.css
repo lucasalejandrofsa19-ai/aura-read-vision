@@ -328,5 +328,130 @@ All colors MUST be HSL.
       transform: scale(1.02);
     }
   }
+
+  /* ─────────────────────────────────────────────────────────────
+     INTERACTIVE PRIMITIVES — opt-in animations
+     Exceptions to the global animation disable. Hover-only, GPU-cheap.
+     ─────────────────────────────────────────────────────────────
+  */
+
+  /* Refined card: subtle lift, gradient border on hover, layered shadow */
+  .card-refined {
+    position: relative;
+    background: linear-gradient(
+      180deg,
+      hsl(var(--card)) 0%,
+      hsl(var(--card) / 0.85) 100%
+    );
+    border: 1px solid hsl(var(--border) / 0.6);
+    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1) !important,
+                box-shadow 280ms cubic-bezier(0.22, 1, 0.36, 1) !important,
+                border-color 280ms ease !important;
+    transition-duration: 280ms !important;
+    will-change: transform;
+  }
+  .card-refined::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary) / 0) 0%,
+      hsl(var(--primary) / 0) 40%,
+      hsl(var(--accent) / 0) 100%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    transition: background 320ms ease !important;
+    transition-duration: 320ms !important;
+  }
+  .card-refined:hover {
+    transform: translateY(-3px);
+    border-color: hsl(var(--primary) / 0.35);
+    box-shadow:
+      0 1px 0 hsl(var(--primary) / 0.08) inset,
+      0 12px 32px -12px hsl(var(--primary) / 0.35),
+      0 2px 6px -2px hsl(0 0% 0% / 0.4);
+  }
+  .card-refined:hover::before {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary) / 0.6) 0%,
+      hsl(var(--primary) / 0.15) 40%,
+      hsl(var(--accent) / 0.5) 100%
+    );
+  }
+
+  /* Premium button: gradient + shine sweep on hover */
+  .btn-premium {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--primary-glow)) 50%,
+      hsl(var(--accent)) 100%
+    );
+    color: hsl(var(--primary-foreground));
+    box-shadow:
+      0 1px 0 hsl(0 0% 100% / 0.15) inset,
+      0 6px 16px -6px hsl(var(--primary) / 0.5);
+    transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1) !important,
+                box-shadow 240ms ease !important,
+                filter 200ms ease !important;
+    transition-duration: 240ms !important;
+  }
+  .btn-premium::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(0 0% 100% / 0.28) 50%,
+      transparent 100%
+    );
+    transform: skewX(-20deg);
+    transition: left 700ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+    transition-duration: 700ms !important;
+    pointer-events: none;
+  }
+  .btn-premium:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+    box-shadow:
+      0 1px 0 hsl(0 0% 100% / 0.2) inset,
+      0 10px 24px -8px hsl(var(--primary) / 0.65);
+  }
+  .btn-premium:hover::after {
+    left: 130%;
+  }
+  .btn-premium:active {
+    transform: translateY(0);
+    filter: brightness(0.98);
+  }
+
+  /* Tactile lift for any button: subtle press feedback */
+  .btn-tactile {
+    transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1) !important,
+                box-shadow 180ms ease !important,
+                background-color 180ms ease !important;
+    transition-duration: 180ms !important;
+  }
+  .btn-tactile:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px -6px hsl(var(--primary) / 0.35);
+  }
+  .btn-tactile:active {
+    transform: translateY(0);
+  }
 }
+
 
