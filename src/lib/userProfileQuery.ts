@@ -1,3 +1,4 @@
+import type { QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const USER_PROFILE_SELECT =
