@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,33 +14,50 @@ import { AppHealthMonitor } from "@/components/AppHealthMonitor";
 import { StickyAdBanner } from "@/components/StickyAdBanner";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import * as Sentry from "@sentry/react";
+
+// Landing carregada eager (LCP da home)
 import Index from "./pages/Index";
 
-import Welcome from "./pages/Welcome";
-import ResetPassword from "./pages/ResetPassword";
-import Library from "./pages/Library";
-import Reader from "./pages/Reader";
-import Summary from "./pages/Summary";
-import Share from "./pages/Share";
-import SharedBook from "./pages/SharedBook";
-import Profile from "./pages/Profile";
-import Pricing from "./pages/Pricing";
-import Download from "./pages/Download";
-import Install from "./pages/Install";
-import AdminPanel from "./pages/AdminPanel";
-import AdminAnalytics from "./pages/AdminAnalytics";
-import AdminFeedback from "./pages/AdminFeedback";
-import AdminAuditLogs from "./pages/AdminAuditLogs";
-import AdminBlockedIPs from "./pages/AdminBlockedIPs";
-import Achievements from "./pages/Achievements";
-import AcademicSummary from "./pages/AcademicSummary";
-import Guide from "./pages/Guide";
+// Demais rotas lazy — reduz bundle inicial drasticamente
+const Welcome = lazy(() => import("./pages/Welcome"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Library = lazy(() => import("./pages/Library"));
+const Reader = lazy(() => import("./pages/Reader"));
+const Summary = lazy(() => import("./pages/Summary"));
+const Share = lazy(() => import("./pages/Share"));
+const SharedBook = lazy(() => import("./pages/SharedBook"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Download = lazy(() => import("./pages/Download"));
+const Install = lazy(() => import("./pages/Install"));
+const AdminPanel = lazy(() => import("./pages/AdminPanel"));
+const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
+const AdminFeedback = lazy(() => import("./pages/AdminFeedback"));
+const AdminAuditLogs = lazy(() => import("./pages/AdminAuditLogs"));
+const AdminBlockedIPs = lazy(() => import("./pages/AdminBlockedIPs"));
+const Achievements = lazy(() => import("./pages/Achievements"));
+const AcademicSummary = lazy(() => import("./pages/AcademicSummary"));
+const Guide = lazy(() => import("./pages/Guide"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
-import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const SentryRoutes = Sentry.withSentryRouting(Routes);
+
+const RouteFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const AppContent = () => {
   // Hook para detectar e gerenciar instalação PWA
@@ -49,32 +67,34 @@ const AppContent = () => {
 
   return (
     <>
-      <SentryRoutes>
-        <Route path="/" element={<Index />} />
-        <Route path="/auth" element={<Navigate to="/library" replace />} />
-        <Route path="/welcome" element={<Welcome />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/library" element={<Library />} />
-        <Route path="/reader/:id" element={<Reader />} />
-        <Route path="/summary/:id" element={<Summary />} />
-        <Route path="/share/:id" element={<Share />} />
-        <Route path="/shared/:token" element={<SharedBook />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/download" element={<Download />} />
-        <Route path="/install" element={<Install />} />
-        <Route path="/admin" element={<AdminPanel />} />
-        <Route path="/admin/analytics" element={<AdminAnalytics />} />
-        <Route path="/admin/feedback" element={<AdminFeedback />} />
-        <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
-        <Route path="/admin/blocked-ips" element={<AdminBlockedIPs />} />
-        <Route path="/conquistas" element={<Achievements />} />
-        <Route path="/resumo-academico" element={<AcademicSummary />} />
-        <Route path="/guia" element={<Guide />} />
-        
-        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-        <Route path="*" element={<NotFound />} />
-      </SentryRoutes>
+      <Suspense fallback={<RouteFallback />}>
+        <SentryRoutes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Navigate to="/library" replace />} />
+          <Route path="/welcome" element={<Welcome />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/library" element={<Library />} />
+          <Route path="/reader/:id" element={<Reader />} />
+          <Route path="/summary/:id" element={<Summary />} />
+          <Route path="/share/:id" element={<Share />} />
+          <Route path="/shared/:token" element={<SharedBook />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/download" element={<Download />} />
+          <Route path="/install" element={<Install />} />
+          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/admin/analytics" element={<AdminAnalytics />} />
+          <Route path="/admin/feedback" element={<AdminFeedback />} />
+          <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+          <Route path="/admin/blocked-ips" element={<AdminBlockedIPs />} />
+          <Route path="/conquistas" element={<Achievements />} />
+          <Route path="/resumo-academico" element={<AcademicSummary />} />
+          <Route path="/guia" element={<Guide />} />
+
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </SentryRoutes>
+      </Suspense>
       <StickyAdBanner />
       <CookieConsentBanner />
     </>
