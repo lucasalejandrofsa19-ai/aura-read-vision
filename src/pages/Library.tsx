@@ -10,7 +10,7 @@ import { useUserData } from "@/hooks/useUserData";
 import { useBooks } from "@/hooks/useBooks";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import BookCard from "@/components/BookCard";
-import UploadPDF from "@/components/UploadPDF";
+import UploadPDF, { type UploadPDFHandle } from "@/components/UploadPDF";
 import { UploadPremiumBook } from "@/components/UploadPremiumBook";
 import SubscriptionDialog from "@/components/SubscriptionDialog";
 import { PWAInstallDialog } from "@/components/PWAInstallDialog";
