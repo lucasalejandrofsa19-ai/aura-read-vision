@@ -121,6 +121,7 @@ export const PDFViewer = ({
   highlightColor = "#fef08a",
   penThickness = 20,
   spokenText = '',
+  onRenewUrl,
 }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
