@@ -14,18 +14,18 @@ const Index = () => {
   const features = [
     {
       icon: Highlighter,
-      title: "Marca-texto Inteligente",
-      description: "Destaque trechos importantes com um toque. Tudo salvo automaticamente.",
+      title: "Destaques que viram conhecimento",
+      description: "Marque trechos com um toque. Vão para sua biblioteca automaticamente, prontos para revisar.",
     },
     {
       icon: BookmarkCheck,
-      title: "Resumos Automáticos",
-      description: "Visualize todas suas marcações organizadas em um só lugar.",
+      title: "Tudo o que importa, num só lugar",
+      description: "Seus destaques organizados por livro. Reveja em segundos o que levou horas para ler.",
     },
     {
       icon: Share2,
-      title: "Compartilhe Facilmente",
-      description: "Envie livros e trechos via QR Code ou link direto.",
+      title: "Compartilhe insights, não arquivos",
+      description: "Envie trechos por link ou QR Code. Quem recebe lê e marca sem instalar nada.",
     },
   ];
 
@@ -33,31 +33,31 @@ const Index = () => {
     {
       icon: Wand2,
       title: "Resumos com IA",
-      description: "Gere resumos inteligentes dos seus destaques usando inteligência artificial avançada.",
+      description: "Transforme dezenas de destaques em um resumo claro e estruturado — em segundos.",
       highlight: "Ilimitado",
     },
     {
       icon: FileDown,
-      title: "Exportação Avançada",
-      description: "Exporte seus destaques para Word, Notion e mais formatos profissionais.",
+      title: "Exporte para onde trabalha",
+      description: "Leve seus destaques para Word, Notion, Markdown e PDF. Formatados, prontos para usar.",
       highlight: "10+ formatos",
     },
     {
       icon: Image,
-      title: "Imagens com IA",
-      description: "Transforme seus destaques em ilustrações visuais usando geração de imagens com IA.",
+      title: "Visualize ideias com IA",
+      description: "Gere ilustrações dos seus destaques. Conceitos abstratos viram imagens memoráveis.",
       highlight: "Criação ilimitada",
     },
     {
       icon: InfinityIcon,
-      title: "Uploads Ilimitados",
-      description: "Adicione quantos livros quiser à sua biblioteca sem restrições.",
-      highlight: "Sem limites",
+      title: "Biblioteca sem teto",
+      description: "Suba quantos PDFs quiser. Sua coleção cresce com você, sem limites.",
+      highlight: "Sem restrições",
     },
     {
       icon: Library,
-      title: "Livros Premium",
-      description: "Acesso exclusivo à coleção de livros premium selecionados especialmente.",
+      title: "Curadoria Premium",
+      description: "Acesso a uma biblioteca de obras selecionadas — leituras escolhidas a dedo.",
       highlight: "Catálogo exclusivo",
     },
   ];
