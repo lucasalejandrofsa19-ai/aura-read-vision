@@ -256,7 +256,7 @@ const LibraryInner = () => {
         </div>
 
         {/* Search bar */}
-        <div className="relative" data-tour="search-bar">
+        <div className="relative" ref={searchBarRef}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
             placeholder="Buscar livros ou autores..."
