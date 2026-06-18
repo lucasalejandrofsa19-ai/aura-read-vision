@@ -85,8 +85,8 @@ export const LibraryTour = () => {
 
   const updateTargetPosition = () => {
     const step = tourSteps[currentStep];
-    const element = document.querySelector(`[data-tour="${step.target}"]`);
-    
+    const element = getTarget(step.target);
+
     if (element) {
       const rect = element.getBoundingClientRect();
       setTargetPosition({
