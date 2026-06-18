@@ -127,7 +127,8 @@ const Demo = () => {
     }
   };
 
-  const showBanner = highlights.length >= HIGHLIGHTS_THRESHOLD && !bannerDismissed;
+  const [threshold] = useState<number>(resolveThreshold);
+  const showBanner = highlights.length >= threshold && !bannerDismissed;
 
   const persist = (next: DemoHighlight[]) => {
     setHighlights(next);
