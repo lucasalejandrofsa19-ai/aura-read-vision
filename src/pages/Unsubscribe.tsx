@@ -2,18 +2,25 @@ import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, CheckCircle2, AlertCircle, MailX } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Loader2, CheckCircle2, AlertCircle, MailX, ShieldCheck } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
+interface Prefs {
+  marketing: boolean;
+  product_updates: boolean;
+}
+
 type State =
   | { kind: "validating" }
-  | { kind: "valid"; email: string }
-  | { kind: "already" }
+  | { kind: "ready"; email: string; prefs: Prefs; alreadyOff: boolean }
+  | { kind: "saving"; email: string; prefs: Prefs; alreadyOff: boolean }
+  | { kind: "saved"; email: string; prefs: Prefs; fullyUnsubscribed: boolean }
   | { kind: "invalid"; reason?: string }
-  | { kind: "submitting"; email: string }
-  | { kind: "success"; email: string }
   | { kind: "error"; message: string };
 
 const Unsubscribe = () => {
@@ -22,12 +29,11 @@ const Unsubscribe = () => {
   const [state, setState] = useState<State>({ kind: "validating" });
 
   useEffect(() => {
-    document.title = "Cancelar e-mails · AuraRead";
+    document.title = "Preferências de e-mail · AuraRead";
     if (!token) {
       setState({ kind: "invalid", reason: "Link inválido ou expirado." });
       return;
     }
-
     (async () => {
       try {
         const res = await fetch(
@@ -35,39 +41,52 @@ const Unsubscribe = () => {
           { headers: { apikey: SUPABASE_ANON } }
         );
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
+        if (!res.ok || !data?.valid) {
           setState({ kind: "invalid", reason: data?.error ?? "Link inválido ou expirado." });
           return;
         }
-        if (data?.already_unsubscribed) {
-          setState({ kind: "already" });
-          return;
-        }
-        setState({ kind: "valid", email: data?.email ?? "seu endereço" });
+        setState({
+          kind: "ready",
+          email: data.email ?? "seu endereço",
+          prefs: {
+            marketing: data.preferences?.marketing ?? !data.already_unsubscribed,
+            product_updates: data.preferences?.product_updates ?? !data.already_unsubscribed,
+          },
+          alreadyOff: !!data.already_unsubscribed,
+        });
       } catch {
         setState({ kind: "invalid", reason: "Não foi possível validar o link." });
       }
     })();
   }, [token]);
 
-  const confirm = async () => {
-    if (state.kind !== "valid" || !token) return;
-    setState({ kind: "submitting", email: state.email });
+  const updatePref = (key: keyof Prefs, value: boolean) => {
+    setState((s) =>
+      s.kind === "ready" ? { ...s, prefs: { ...s.prefs, [key]: value } } : s
+    );
+  };
+
+  const save = async (prefsOverride?: Prefs) => {
+    if (state.kind !== "ready" || !token) return;
+    const prefs = prefsOverride ?? state.prefs;
+    setState({ kind: "saving", email: state.email, prefs, alreadyOff: state.alreadyOff });
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/handle-email-unsubscribe`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: SUPABASE_ANON,
-        },
-        body: JSON.stringify({ token }),
+        headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON },
+        body: JSON.stringify({ token, preferences: prefs }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      if (!res.ok || !data?.success) {
         setState({ kind: "error", message: data?.error ?? "Algo deu errado. Tente novamente." });
         return;
       }
-      setState({ kind: "success", email: state.email });
+      setState({
+        kind: "saved",
+        email: state.email,
+        prefs: data.preferences ?? prefs,
+        fullyUnsubscribed: !!data.fully_unsubscribed,
+      });
     } catch {
       setState({ kind: "error", message: "Falha de conexão. Tente novamente em instantes." });
     }
@@ -95,53 +114,82 @@ const Unsubscribe = () => {
           </div>
         )}
 
-        {state.kind === "valid" && (
+        {(state.kind === "ready" || state.kind === "saving") && (
           <div className="space-y-5">
-            <p className="text-sm text-muted-foreground text-center leading-relaxed">
-              Quer mesmo deixar de receber e-mails da AuraRead em{" "}
-              <span className="font-medium text-foreground">{state.email}</span>?
-              Você não receberá mais novidades, dicas ou atualizações de produto.
+            <p className="text-sm text-muted-foreground text-center">
+              Gerenciando preferências de{" "}
+              <span className="font-medium text-foreground">{state.email}</span>
             </p>
+
+            <div className="space-y-4 rounded-lg border border-border p-4">
+              <PrefRow
+                id="marketing"
+                title="E-mails promocionais"
+                description="Ofertas, lançamentos e descontos."
+                checked={state.prefs.marketing}
+                disabled={state.kind === "saving"}
+                onChange={(v) => updatePref("marketing", v)}
+              />
+              <Separator />
+              <PrefRow
+                id="product_updates"
+                title="Novidades do produto"
+                description="Recursos novos, dicas e melhorias."
+                checked={state.prefs.product_updates}
+                disabled={state.kind === "saving"}
+                onChange={(v) => updatePref("product_updates", v)}
+              />
+            </div>
+
+            <div className="flex items-start gap-2 rounded-lg bg-muted/40 p-3">
+              <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" aria-hidden />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                E-mails essenciais (segurança, recibos, redefinição de senha e
+                avisos da sua conta) continuarão sendo enviados sempre — são
+                exigidos para o funcionamento da sua conta.
+              </p>
+            </div>
+
             <div className="flex flex-col gap-2">
-              <Button onClick={confirm} variant="destructive" className="w-full">
-                Confirmar cancelamento
+              <Button
+                onClick={() => save()}
+                disabled={state.kind === "saving"}
+                className="w-full"
+              >
+                {state.kind === "saving" ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  "Salvar preferências"
+                )}
               </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/">Manter inscrição</Link>
+              <Button
+                variant="ghost"
+                disabled={state.kind === "saving"}
+                onClick={() => save({ marketing: false, product_updates: false })}
+                className="w-full text-muted-foreground hover:text-destructive"
+              >
+                Cancelar todos os e-mails não-essenciais
               </Button>
             </div>
           </div>
         )}
 
-        {state.kind === "submitting" && (
-          <div className="flex flex-col items-center text-center gap-3 py-4">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Processando...</p>
-          </div>
-        )}
-
-        {state.kind === "success" && (
+        {state.kind === "saved" && (
           <div className="flex flex-col items-center text-center gap-4 py-2">
             <CheckCircle2 className="w-10 h-10 text-primary" />
             <div className="space-y-1">
-              <h2 className="font-semibold text-foreground">Inscrição cancelada</h2>
+              <h2 className="font-semibold text-foreground">
+                {state.fullyUnsubscribed ? "Inscrição cancelada" : "Preferências atualizadas"}
+              </h2>
               <p className="text-sm text-muted-foreground">
-                Pronto. <span className="font-medium text-foreground">{state.email}</span>{" "}
-                não receberá mais e-mails da AuraRead. Mudou de ideia? É só voltar a usar a plataforma.
+                {state.fullyUnsubscribed
+                  ? `${state.email} não receberá mais e-mails promocionais. Mensagens essenciais da conta continuam ativas.`
+                  : "Aplicamos suas escolhas. Você pode voltar aqui a qualquer momento."}
               </p>
             </div>
-            <Button asChild variant="outline" className="w-full">
-              <Link to="/">Voltar para o início</Link>
-            </Button>
-          </div>
-        )}
-
-        {state.kind === "already" && (
-          <div className="flex flex-col items-center text-center gap-4 py-2">
-            <CheckCircle2 className="w-10 h-10 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              Este endereço já está com a inscrição cancelada. Nenhuma ação é necessária.
-            </p>
             <Button asChild variant="outline" className="w-full">
               <Link to="/">Voltar para o início</Link>
             </Button>
@@ -152,7 +200,7 @@ const Unsubscribe = () => {
           <div className="flex flex-col items-center text-center gap-3 py-2">
             <AlertCircle className="w-10 h-10 text-destructive" />
             <p className="text-sm text-muted-foreground">
-              {state.reason ?? "Este link de cancelamento não é válido ou já expirou."}
+              {state.reason ?? "Este link não é válido ou já expirou."}
             </p>
             <Button asChild variant="outline" className="w-full">
               <Link to="/">Voltar para o início</Link>
@@ -173,5 +221,26 @@ const Unsubscribe = () => {
     </main>
   );
 };
+
+interface PrefRowProps {
+  id: string;
+  title: string;
+  description: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (v: boolean) => void;
+}
+
+const PrefRow = ({ id, title, description, checked, disabled, onChange }: PrefRowProps) => (
+  <div className="flex items-start justify-between gap-4">
+    <div className="space-y-0.5">
+      <Label htmlFor={id} className="text-sm font-medium text-foreground cursor-pointer">
+        {title}
+      </Label>
+      <p className="text-xs text-muted-foreground">{description}</p>
+    </div>
+    <Switch id={id} checked={checked} disabled={disabled} onCheckedChange={onChange} />
+  </div>
+);
 
 export default Unsubscribe;
