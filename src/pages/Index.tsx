@@ -175,6 +175,15 @@ const Index = () => {
               </Button>
               <Button
                 size="lg"
+                variant="secondary"
+                onClick={() => navigate("/demo")}
+                className="text-lg px-8 py-6 group"
+              >
+                <Sparkles className="mr-2 w-5 h-5" />
+                Experimente sem login
+              </Button>
+              <Button
+                size="lg"
                 variant="outline"
                 onClick={() => navigate("/pricing")}
                 className="text-lg px-8 py-6"
