@@ -9,51 +9,47 @@ function jsonResponse(data: Record<string, unknown>, status = 200): Response {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
-
   if (req.method !== 'GET' && req.method !== 'POST') {
     return jsonResponse({ error: 'Method not allowed' }, 405)
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
   if (!supabaseUrl || !supabaseServiceKey) {
     return jsonResponse({ error: 'Server configuration error' }, 500)
   }
 
-  // Extract token from query params (GET) or body (POST)
   const url = new URL(req.url)
   let token: string | null = url.searchParams.get('token')
+  let preferences: { marketing?: boolean; product_updates?: boolean } | null = null
+  let isOneClick = false
 
   if (req.method === 'POST') {
-    // Detect RFC 8058 one-click unsubscribe: POST with form-encoded body
-    // containing "List-Unsubscribe=One-Click". Email clients (Gmail, Apple Mail,
-    // etc.) send this when the user clicks "Unsubscribe" in the mail UI.
     const contentType = req.headers.get('content-type') ?? ''
     if (contentType.includes('application/x-www-form-urlencoded')) {
       const formText = await req.text()
       const params = new URLSearchParams(formText)
-      // For one-click, token comes from query param (already set above).
-      // Otherwise, token may be in the form body.
-      if (!params.get('List-Unsubscribe')) {
+      if (params.get('List-Unsubscribe') === 'One-Click') {
+        isOneClick = true
+      } else {
         const formToken = params.get('token')
-        if (formToken) {
-          token = formToken
-        }
+        if (formToken) token = formToken
       }
     } else {
-      // JSON body (from the app's unsubscribe page)
       try {
         const body = await req.json()
-        if (body.token) {
-          token = body.token
+        if (body.token) token = body.token
+        if (body.preferences && typeof body.preferences === 'object') {
+          preferences = {
+            marketing: !!body.preferences.marketing,
+            product_updates: !!body.preferences.product_updates,
+          }
         }
       } catch {
-        // Fall through — token stays from query param
+        // ignore
       }
     }
   }
@@ -64,7 +60,6 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-  // Look up the token
   const { data: tokenRecord, error: lookupError } = await supabase
     .from('email_unsubscribe_tokens')
     .select('*')
@@ -75,17 +70,78 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Invalid or expired token' }, 404)
   }
 
-  if (tokenRecord.used_at) {
-    return jsonResponse({ valid: false, reason: 'already_unsubscribed' })
+  const emailLower = String(tokenRecord.email).toLowerCase()
+
+  // Always return current preferences for the page
+  const { data: prefs } = await supabase
+    .from('email_preferences')
+    .select('marketing, product_updates')
+    .eq('email', emailLower)
+    .maybeSingle()
+
+  const currentPrefs = {
+    marketing: prefs?.marketing ?? true,
+    product_updates: prefs?.product_updates ?? true,
   }
 
-  // GET: Validate token (the app's unsubscribe page calls this on load)
+  const { data: suppressed } = await supabase
+    .from('suppressed_emails')
+    .select('email')
+    .eq('email', emailLower)
+    .maybeSingle()
+
   if (req.method === 'GET') {
-    return jsonResponse({ valid: true })
+    return jsonResponse({
+      valid: true,
+      email: tokenRecord.email,
+      already_unsubscribed: !!suppressed,
+      preferences: currentPrefs,
+    })
   }
 
-  // POST: Process the unsubscribe
-  // Atomic check-and-update to avoid TOCTOU race
+  // POST — granular preferences flow
+  if (preferences && !isOneClick) {
+    const nextPrefs = {
+      email: emailLower,
+      marketing: preferences.marketing ?? true,
+      product_updates: preferences.product_updates ?? true,
+      updated_at: new Date().toISOString(),
+    }
+    const { error: upsertErr } = await supabase
+      .from('email_preferences')
+      .upsert(nextPrefs, { onConflict: 'email' })
+    if (upsertErr) {
+      console.error('prefs upsert failed', upsertErr)
+      return jsonResponse({ error: 'Failed to save preferences' }, 500)
+    }
+
+    const allOff = !nextPrefs.marketing && !nextPrefs.product_updates
+    if (allOff) {
+      await supabase
+        .from('suppressed_emails')
+        .upsert({ email: emailLower, reason: 'unsubscribe' }, { onConflict: 'email' })
+      await supabase
+        .from('email_unsubscribe_tokens')
+        .update({ used_at: new Date().toISOString() })
+        .eq('token', token)
+        .is('used_at', null)
+    } else if (suppressed) {
+      // Re-enable transactional/essentials by removing suppression
+      await supabase.from('suppressed_emails').delete().eq('email', emailLower)
+    }
+
+    return jsonResponse({
+      success: true,
+      preferences: { marketing: nextPrefs.marketing, product_updates: nextPrefs.product_updates },
+      fully_unsubscribed: allOff,
+    })
+  }
+
+  // Legacy / one-click full unsubscribe
+  if (tokenRecord.used_at && suppressed) {
+    return jsonResponse({ success: false, reason: 'already_unsubscribed' })
+  }
+
   const { data: updated, error: updateError } = await supabase
     .from('email_unsubscribe_tokens')
     .update({ used_at: new Date().toISOString() })
@@ -95,31 +151,32 @@ Deno.serve(async (req) => {
     .maybeSingle()
 
   if (updateError) {
-    console.error('Failed to mark token as used', { error: updateError, token })
+    console.error('Failed to mark token as used', updateError)
     return jsonResponse({ error: 'Failed to process unsubscribe' }, 500)
   }
 
-  if (!updated) {
+  if (!updated && !suppressed) {
     return jsonResponse({ success: false, reason: 'already_unsubscribed' })
   }
 
-  // Add email to suppressed list (upsert to handle duplicates)
   const { error: suppressError } = await supabase
     .from('suppressed_emails')
     .upsert(
-      { email: tokenRecord.email.toLowerCase(), reason: 'unsubscribe' },
+      { email: emailLower, reason: 'unsubscribe' },
       { onConflict: 'email' },
     )
 
   if (suppressError) {
-    console.error('Failed to suppress email', {
-      error: suppressError,
-      email: tokenRecord.email,
-    })
+    console.error('Failed to suppress email', suppressError)
     return jsonResponse({ error: 'Failed to process unsubscribe' }, 500)
   }
 
-  console.log('Email unsubscribed', { email: tokenRecord.email })
+  await supabase
+    .from('email_preferences')
+    .upsert(
+      { email: emailLower, marketing: false, product_updates: false, updated_at: new Date().toISOString() },
+      { onConflict: 'email' },
+    )
 
-  return jsonResponse({ success: true })
+  return jsonResponse({ success: true, fully_unsubscribed: true })
 })
