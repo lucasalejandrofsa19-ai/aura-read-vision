@@ -118,6 +118,7 @@ const Profile = () => {
         .eq("id", user.id);
 
       if (updateError) throw updateError;
+      queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
 
       const signed = await getSignedStorageUrl("avatars", filePath);
       setAvatarUrl(signed);
