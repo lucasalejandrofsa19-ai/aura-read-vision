@@ -196,7 +196,11 @@ const Welcome = () => {
           transition={{ delay: 1.0 }}
           className="mt-12"
         >
-          <LibraryCTA />
+          <LibraryCTA
+            title="Vamos montar sua primeira estante 📚"
+            description="Sua conta está pronta. Acesse a biblioteca, envie seu primeiro PDF e descubra destaques, resumos e gamificação de leitura."
+            buttonLabel="Criar minha biblioteca"
+          />
         </motion.div>
       </div>
     </div>
