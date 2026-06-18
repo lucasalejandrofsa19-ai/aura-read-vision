@@ -37,6 +37,8 @@ interface LibraryCTAProps {
   description?: string;
   buttonLabel?: string;
   className?: string;
+  /** Override do clique no botão. Quando definido, evita a navegação para /library. */
+  onAction?: () => void;
 }
 
 const LibraryCTA = ({
@@ -45,9 +47,14 @@ const LibraryCTA = ({
   description,
   buttonLabel,
   className,
+  onAction,
 }: LibraryCTAProps) => {
   const navigate = useNavigate();
   const preset = PRESETS[variant];
+  const handleClick = () => {
+    if (onAction) onAction();
+    else navigate("/library");
+  };
   return (
     <div
       className={cn(
@@ -59,7 +66,7 @@ const LibraryCTA = ({
       <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
         {description ?? preset.description}
       </p>
-      <Button size="lg" onClick={() => navigate("/library")} className="gap-2">
+      <Button size="lg" onClick={handleClick} className="gap-2">
         <BookOpen className="w-4 h-4" />
         {buttonLabel ?? preset.buttonLabel}
       </Button>
