@@ -152,11 +152,11 @@ const Index = () => {
             </motion.div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-bold mb-6 bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent leading-tight">
-              AURA READ — Sua biblioteca pessoal interativa com IA
+              A biblioteca onde cada leitura vira conhecimento.
             </h1>
 
             <p className="text-lg lg:text-xl xl:text-2xl text-muted-foreground mb-10 max-w-2xl mx-auto lg:mx-0">
-              Sua biblioteca pessoal interativa com leitura futurista e inteligente
+              Marque, resuma e domine qualquer PDF com IA. Leia menos. Retenha mais.
             </p>
 
             <motion.div
@@ -170,7 +170,7 @@ const Index = () => {
                 onClick={() => navigate("/library")}
                 className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity text-lg px-8 py-6 aura-safira group"
               >
-                Começar Agora
+                Começar grátis
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button
@@ -179,7 +179,7 @@ const Index = () => {
                 onClick={() => navigate("/pricing")}
                 className="text-lg px-8 py-6"
               >
-                Ver Planos Premium
+                Conhecer o Premium
               </Button>
             </motion.div>
           </div>
