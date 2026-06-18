@@ -25,7 +25,7 @@ const PLANS: Record<string, PlanFeatures> = {
   free: {
     name: "Gratuito",
     price: "R$ 0",
-    period: "para sempre",
+    period: "sempre grátis",
     icon: Sparkles,
     color: "from-slate-500 to-slate-700",
     features: [
