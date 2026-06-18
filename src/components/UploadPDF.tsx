@@ -40,6 +40,11 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
   const queryClient = useQueryClient();
   const { generateCover } = useGenerateCover();
 
+  useImperativeHandle(ref, () => ({
+    openPicker: () => fileInputRef.current?.click(),
+  }), []);
+
+
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) {
