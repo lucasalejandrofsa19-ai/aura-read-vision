@@ -806,4 +806,11 @@ const Reader = () => {
   );
 };
 
-export default Reader;
+const ReaderWithTour = () => (
+  <TourTargetsProvider>
+    <Reader />
+    <ReaderTour />
+  </TourTargetsProvider>
+);
+
+export default ReaderWithTour;
