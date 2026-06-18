@@ -51,10 +51,8 @@ const LibraryInner = () => {
   const invalidateProfile = useInvalidateUserProfile();
   
   // Refs for scroll containers
-  const premiumScrollRef = useRef<HTMLDivElement>(null);
   const userBooksScrollRef = useRef<HTMLDivElement>(null);
   const uploadPDFRef = useRef<UploadPDFHandle>(null);
-  const [activeSection, setActiveSection] = useState<'premium' | 'user'>('user');
 
   const scrollLeft = (ref: React.RefObject<HTMLDivElement>) => {
     if (ref.current) {
@@ -70,20 +68,8 @@ const LibraryInner = () => {
 
   // Setup swipe gestures
   useSwipeGesture({
-    onSwipeLeft: () => {
-      if (activeSection === 'premium') {
-        scrollRight(premiumScrollRef);
-      } else {
-        scrollRight(userBooksScrollRef);
-      }
-    },
-    onSwipeRight: () => {
-      if (activeSection === 'premium') {
-        scrollLeft(premiumScrollRef);
-      } else {
-        scrollLeft(userBooksScrollRef);
-      }
-    },
+    onSwipeLeft: () => scrollRight(userBooksScrollRef),
+    onSwipeRight: () => scrollLeft(userBooksScrollRef),
     threshold: 50,
   });
 
@@ -93,34 +79,31 @@ const LibraryInner = () => {
     else setAuthDialogOpen(false);
   }, [user]);
 
-  // Memoizar livros premium com flag
-  const premiumBooksWithFlag = useMemo(() => 
-    premiumBooks.map(book => ({
-      ...book,
-      isPremiumBook: true,
-      progress: 0,
-    })),
+  // Livros premium gratuitos exibidos junto com os do usuário
+  const freePremiumBooks = useMemo(
+    () =>
+      premiumBooks
+        .filter((b: any) => b.is_free)
+        .map((book) => ({ ...book, isPremiumBook: true, progress: 0 })),
     [premiumBooks]
   );
 
-  // Livros premium gratuitos (acessíveis a todos)
-  const freePremiumBooks = useMemo(
-    () => premiumBooksWithFlag.filter((b: any) => b.is_free),
-    [premiumBooksWithFlag]
+  // Lista unificada: livros do usuário + livros premium gratuitos
+  const allBooks = useMemo(
+    () => [...freePremiumBooks, ...books],
+    [freePremiumBooks, books]
   );
 
-  // Mostrar carrossel premium se usuário tem acesso OU se há livros gratuitos disponíveis
-  const visiblePremiumBooks = hasPremiumAccess ? premiumBooksWithFlag : freePremiumBooks;
-
-  // Memoizar filtro de livros
-  const filteredBooks = useMemo(() => 
-    books.filter(
-      (book) =>
-        book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (book.author && book.author.toLowerCase().includes(searchQuery.toLowerCase()))
-    ),
-    [books, searchQuery]
+  const filteredBooks = useMemo(
+    () =>
+      allBooks.filter(
+        (book) =>
+          book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (book.author && book.author.toLowerCase().includes(searchQuery.toLowerCase()))
+      ),
+    [allBooks, searchQuery]
   );
+
 
   return (
     <>
