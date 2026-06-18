@@ -3,7 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+import PageTransition from "@/components/PageTransition";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SentryUserContext } from "./components/SentryUserContext";
@@ -61,16 +63,12 @@ const RouteFallback = () => (
   </div>
 );
 
-const AppContent = () => {
-  // Hook para detectar e gerenciar instalação PWA
-  usePWAInstallPrompt();
-  // Banner AdMob (apenas em build nativo iOS/Android e para usuários free)
-  useAdMobBanner();
-
+const AnimatedRoutes = () => {
+  const location = useLocation();
   return (
-    <>
-      <Suspense fallback={<RouteFallback />}>
-        <SentryRoutes>
+    <AnimatePresence mode="wait" initial={false}>
+      <PageTransition key={location.pathname} variant="fade" duration={0.22}>
+        <SentryRoutes location={location}>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Navigate to="/library" replace />} />
           <Route path="/welcome" element={<Welcome />} />
@@ -95,11 +93,24 @@ const AppContent = () => {
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/demo" element={<Demo />} />
 
-
-
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </SentryRoutes>
+      </PageTransition>
+    </AnimatePresence>
+  );
+};
+
+const AppContent = () => {
+  // Hook para detectar e gerenciar instalação PWA
+  usePWAInstallPrompt();
+  // Banner AdMob (apenas em build nativo iOS/Android e para usuários free)
+  useAdMobBanner();
+
+  return (
+    <>
+      <Suspense fallback={<RouteFallback />}>
+        <AnimatedRoutes />
       </Suspense>
       <StickyAdBanner />
       <CookieConsentBanner />
