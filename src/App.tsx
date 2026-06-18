@@ -63,16 +63,12 @@ const RouteFallback = () => (
   </div>
 );
 
-const AppContent = () => {
-  // Hook para detectar e gerenciar instalação PWA
-  usePWAInstallPrompt();
-  // Banner AdMob (apenas em build nativo iOS/Android e para usuários free)
-  useAdMobBanner();
-
+const AnimatedRoutes = () => {
+  const location = useLocation();
   return (
-    <>
-      <Suspense fallback={<RouteFallback />}>
-        <SentryRoutes>
+    <AnimatePresence mode="wait" initial={false}>
+      <PageTransition key={location.pathname} variant="fade" duration={0.22}>
+        <SentryRoutes location={location}>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Navigate to="/library" replace />} />
           <Route path="/welcome" element={<Welcome />} />
@@ -97,11 +93,24 @@ const AppContent = () => {
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/demo" element={<Demo />} />
 
-
-
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </SentryRoutes>
+      </PageTransition>
+    </AnimatePresence>
+  );
+};
+
+const AppContent = () => {
+  // Hook para detectar e gerenciar instalação PWA
+  usePWAInstallPrompt();
+  // Banner AdMob (apenas em build nativo iOS/Android e para usuários free)
+  useAdMobBanner();
+
+  return (
+    <>
+      <Suspense fallback={<RouteFallback />}>
+        <AnimatedRoutes />
       </Suspense>
       <StickyAdBanner />
       <CookieConsentBanner />
