@@ -33,8 +33,7 @@ describe("pdfjsWorker prewarm", () => {
   beforeEach(() => {
     vi.resetModules();
     mockFetch.mockClear();
-    // @ts-expect-error global override em jsdom
-    global.fetch = mockFetch;
+    (globalThis as unknown as { fetch: typeof fetch }).fetch = mockFetch as unknown as typeof fetch;
     Object.defineProperty(navigator, "serviceWorker", {
       configurable: true,
       value: { ready: Promise.resolve({} as ServiceWorkerRegistration) },
