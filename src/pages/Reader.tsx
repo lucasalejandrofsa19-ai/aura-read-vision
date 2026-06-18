@@ -88,6 +88,9 @@ const Reader = () => {
   }, [penThickness]);
   const [spokenText, setSpokenText] = useState('');
   const mobileConfig = useMobileOptimization();
+  const highlightTargetRef = useTourTarget("reader-highlight");
+  const aiSummaryTargetRef = useTourTarget("reader-ai-summary");
+  const shareTargetRef = useTourTarget("reader-share");
 
   const { highlights, allHighlights, addHighlight, deleteHighlight } = useHighlights(id || "", currentPage);
 
