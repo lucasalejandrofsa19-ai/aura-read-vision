@@ -15,6 +15,7 @@ import { UpdateNotification } from "@/components/UpdateNotification";
 import { AppHealthMonitor } from "@/components/AppHealthMonitor";
 import { StickyAdBanner } from "@/components/StickyAdBanner";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
+import GlobalFooter from "@/components/GlobalFooter";
 import * as Sentry from "@sentry/react";
 
 // Landing carregada eager (LCP da home)
@@ -114,6 +115,7 @@ const AppContent = () => {
       <Suspense fallback={<RouteFallback />}>
         <AnimatedRoutes />
       </Suspense>
+      <GlobalFooter />
       <StickyAdBanner />
       <CookieConsentBanner />
     </>
