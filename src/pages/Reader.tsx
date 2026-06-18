@@ -42,6 +42,7 @@ import { ReaderTour } from "@/components/ReaderTour";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 import { useReadingSession } from "@/hooks/useReadingSession";
 import { useHighlights } from "@/hooks/useHighlights";
 import { HighlightsList } from "@/components/HighlightsList";
