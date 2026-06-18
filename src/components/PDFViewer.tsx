@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, RefreshCw, ArrowLeft, AlertTriangle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { PDFSearchBar } from "@/components/PDFSearchBar";
 import { usePDFPrefetch } from "@/hooks/usePDFPrefetch";
 import { HighlightCanvas } from "@/components/HighlightCanvas";
