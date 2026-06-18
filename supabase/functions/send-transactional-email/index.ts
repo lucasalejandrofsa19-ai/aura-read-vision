@@ -160,6 +160,61 @@ Deno.serve(async (req) => {
     )
   }
 
+  // 2b. Promotional-category opt-out check (ads / content / product_updates).
+  // Essential transactional emails (no category) always bypass this filter.
+  const promoCategory = template.category
+  if (
+    promoCategory === 'ads' ||
+    promoCategory === 'content' ||
+    promoCategory === 'product_updates'
+  ) {
+    const { data: prefs, error: prefsError } = await supabase
+      .from('email_preferences')
+      .select('ads, content, product_updates')
+      .eq('email', normalizedEmailLookup(effectiveRecipient))
+      .maybeSingle()
+
+    if (prefsError) {
+      console.error('Preferences check failed — refusing to send promo', {
+        error: prefsError,
+        effectiveRecipient,
+        templateName,
+      })
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify email preferences' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+
+    // Default is opt-in (true) when no row exists.
+    const allowed = prefs ? !!prefs[promoCategory] : true
+    if (!allowed) {
+      await supabase.from('email_send_log').insert({
+        message_id: messageId,
+        template_name: templateName,
+        recipient_email: effectiveRecipient,
+        status: 'suppressed',
+        error_message: `Opted out of category: ${promoCategory}`,
+      })
+      console.log('Promotional email skipped by user preference', {
+        effectiveRecipient,
+        templateName,
+        category: promoCategory,
+      })
+      return new Response(
+        JSON.stringify({ success: false, reason: 'category_opt_out', category: promoCategory }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+  }
+
+
   // 3. Get or create unsubscribe token (one token per email address)
   const normalizedEmail = effectiveRecipient.toLowerCase()
   let unsubscribeToken: string
