@@ -444,10 +444,11 @@ const Reader = () => {
              aria-label="Voltar">
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <div className="flex-1">
-              <h1 className="font-semibold">{book.title}</h1>
-              <p className="text-xs text-muted-foreground">{book.author || "Autor Desconhecido"}</p>
+            <div className="flex-1 min-w-0">
+              <h1 className="font-semibold truncate">{book.title}</h1>
+              <p className="text-xs text-muted-foreground truncate">{book.author || "Autor Desconhecido"}</p>
             </div>
+            <ReaderBookSearch />
           </div>
 
           <div className="flex md:hidden items-center gap-2 ml-14 flex-wrap">
