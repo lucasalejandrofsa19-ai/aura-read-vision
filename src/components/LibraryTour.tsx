@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useTourTargets } from "@/contexts/TourTargetsContext";
+import { useUserData } from "@/hooks/useUserData";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TourStep {
   target: string;
