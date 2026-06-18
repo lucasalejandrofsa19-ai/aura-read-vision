@@ -10,8 +10,35 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-const HIGHLIGHTS_THRESHOLD = 3;
+// Default value when nothing is configured. Override at runtime via:
+//   1. URL: /demo?banner=5   (highest priority, also persists)
+//   2. localStorage key 'auraread:demo:banner-threshold'
+//   3. DevTools console: localStorage.setItem('auraread:demo:banner-threshold','5')
+const DEFAULT_HIGHLIGHTS_THRESHOLD = 3;
+const THRESHOLD_KEY = "auraread:demo:banner-threshold";
 const BANNER_DISMISS_KEY = "auraread:demo:banner-dismissed";
+
+const resolveThreshold = (): number => {
+  try {
+    const url = new URL(window.location.href);
+    const fromUrl = url.searchParams.get("banner");
+    if (fromUrl) {
+      const n = Number.parseInt(fromUrl, 10);
+      if (Number.isFinite(n) && n >= 1 && n <= 100) {
+        localStorage.setItem(THRESHOLD_KEY, String(n));
+        return n;
+      }
+    }
+    const stored = localStorage.getItem(THRESHOLD_KEY);
+    if (stored) {
+      const n = Number.parseInt(stored, 10);
+      if (Number.isFinite(n) && n >= 1 && n <= 100) return n;
+    }
+  } catch {
+    // ignore — fall through to default
+  }
+  return DEFAULT_HIGHLIGHTS_THRESHOLD;
+};
 
 interface DemoBook {
   id: string;
