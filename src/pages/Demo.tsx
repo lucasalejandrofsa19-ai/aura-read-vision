@@ -83,6 +83,24 @@ const Demo = () => {
   const [activeBook, setActiveBook] = useState<DemoBook | null>(null);
   const [highlights, setHighlights] = useState<DemoHighlight[]>(loadHighlights);
   const [selection, setSelection] = useState<string>("");
+  const [bannerDismissed, setBannerDismissed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(BANNER_DISMISS_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const dismissBanner = () => {
+    setBannerDismissed(true);
+    try {
+      localStorage.setItem(BANNER_DISMISS_KEY, "1");
+    } catch {
+      // ignore
+    }
+  };
+
+  const showBanner = highlights.length >= HIGHLIGHTS_THRESHOLD && !bannerDismissed;
 
   const persist = (next: DemoHighlight[]) => {
     setHighlights(next);
