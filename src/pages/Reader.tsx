@@ -667,6 +667,7 @@ const Reader = () => {
 
             <ToolHelpTooltip {...TOOL_COPY.aiSummary}>
               <Button
+                ref={aiSummaryTargetRef}
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/summary/" + id)}
@@ -679,6 +680,7 @@ const Reader = () => {
 
             <ToolHelpTooltip {...TOOL_COPY.share}>
               <Button
+                ref={shareTargetRef}
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/share/" + id)}
