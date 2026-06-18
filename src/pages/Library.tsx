@@ -467,7 +467,7 @@ const LibraryInner = () => {
         animate={{ scale: 1 }}
         transition={{ delay: 0.4, type: "spring" }}
         className="fixed bottom-8 right-8"
-        data-tour="upload-button"
+        ref={uploadButtonRef}
       >
         <UploadPDF ref={uploadPDFRef} />
       </motion.div>
