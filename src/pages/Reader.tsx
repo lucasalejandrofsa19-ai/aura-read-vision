@@ -39,6 +39,7 @@ import { ToolHelpTooltip } from "@/components/ToolHelpTooltip";
 import { TOOL_COPY } from "@/lib/toolGuide";
 import { TourTargetsProvider, useTourTarget } from "@/contexts/TourTargetsContext";
 import { ReaderTour } from "@/components/ReaderTour";
+import { ReaderBookSearch } from "@/components/ReaderBookSearch";
 
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
