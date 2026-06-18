@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowLeft, Sparkles, Zap, Crown, GraduationCap, Loader2 } from "lucide-react";
+import { Check, ArrowLeft, Sparkles, Zap, Crown, GraduationCap, Loader2, BookOpen } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useEffect } from "react";
 import { toast } from "sonner";
