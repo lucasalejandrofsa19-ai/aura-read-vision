@@ -776,6 +776,7 @@ const Reader = () => {
         {pdfUrl ? (
           <PDFViewer 
             fileUrl={pdfUrl} 
+            onRenewUrl={renewSignedUrl}
             initialPage={currentPage}
             onPageChange={handlePageChange}
             onTextSelect={handleTextSelect}
