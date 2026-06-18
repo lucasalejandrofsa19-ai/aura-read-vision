@@ -219,9 +219,8 @@ const Library = () => {
             {true && (
               <div className="flex flex-col gap-2">
                 <Button
-                  variant="outline"
+                  variant="premium"
                   size="sm"
-                  className="aura-soft transition-aura border-accent hover:bg-accent/10"
                   onClick={() => navigate("/pricing")}
                 >
                   <CreditCard className="w-4 h-4 mr-2" />
