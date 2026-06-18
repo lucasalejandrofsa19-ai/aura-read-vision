@@ -11,6 +11,25 @@ interface SubscriptionStatus {
   role: string | null;
 }
 
+const SUB_CACHE_KEY = "subscription_status_cache";
+const SUB_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const readCache = (userId: string): SubscriptionStatus | null => {
+  try {
+    const raw = sessionStorage.getItem(`${SUB_CACHE_KEY}_${userId}`);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > SUB_CACHE_TTL) return null;
+    return data;
+  } catch { return null; }
+};
+
+const writeCache = (userId: string, data: SubscriptionStatus) => {
+  try {
+    sessionStorage.setItem(`${SUB_CACHE_KEY}_${userId}`, JSON.stringify({ data, ts: Date.now() }));
+  } catch {}
+};
+
 export const useSubscription = () => {
   const { user } = useAuth();
   const [status, setStatus] = useState<SubscriptionStatus>({
