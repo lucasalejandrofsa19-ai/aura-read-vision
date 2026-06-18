@@ -1,9 +1,9 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { invalidateUserProfile } from "@/lib/userProfileQuery";
+import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserData } from "@/hooks/useUserData";
-import { useQueryClient } from "@tanstack/react-query";
+
 import { toast } from "sonner";
 
 export type ThemeType = "safira" | "sepia" | "noturno" | "contraste";
@@ -31,7 +31,7 @@ interface ThemeProviderProps {
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const { user } = useAuth();
   const { profile, isLoading: profileLoading } = useUserData();
-  const queryClient = useQueryClient();
+  const invalidateProfile = useInvalidateUserProfile();
   const [theme, setThemeState] = useState<ThemeType>("safira");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -82,7 +82,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
         .eq("id", user.id);
 
       if (error) throw error;
-      invalidateUserProfile(queryClient, user.id);
+      invalidateProfile();
 
       toast.success("Tema salvo com sucesso!");
     } catch (error) {

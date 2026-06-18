@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { invalidateUserProfile } from "@/lib/userProfileQuery";
+import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { useTourTargets } from "@/contexts/TourTargetsContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserData } from "@/hooks/useUserData";
-import { useQueryClient } from "@tanstack/react-query";
+
 
 interface TourStep {
   target: string;
@@ -44,7 +44,7 @@ export const ReaderTour = () => {
   const { getTarget } = useTourTargets();
   const { user } = useAuth();
   const { profile, isLoading } = useUserData();
-  const queryClient = useQueryClient();
+  const invalidateProfile = useInvalidateUserProfile();
   const [currentStep, setCurrentStep] = useState(0);
   const [showTour, setShowTour] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0, height: 0 });
@@ -98,7 +98,7 @@ export const ReaderTour = () => {
         .from("profiles")
         .update({ has_seen_reader_tour: true })
         .eq("id", user.id);
-      invalidateUserProfile(queryClient, user.id);
+      invalidateProfile();
     }
   };
 
