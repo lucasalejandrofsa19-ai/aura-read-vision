@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2 } from "lucide-re
 import { PDFSearchBar } from "@/components/PDFSearchBar";
 import { usePDFPrefetch } from "@/hooks/usePDFPrefetch";
 import { HighlightCanvas } from "@/components/HighlightCanvas";
+import { captureError } from "@/lib/sentry";
 // Type for PDF text items - using any to avoid deep import issues
 interface PDFTextItem {
   str?: string;
@@ -413,6 +414,36 @@ export const PDFViewer = ({
         <Document
           file={fileUrl}
           onLoadSuccess={onDocumentLoadSuccess}
+          onLoadError={(error: Error) => {
+            const ctx = {
+              fileUrl: typeof fileUrl === "string" ? fileUrl : "[non-string file]",
+              fileName:
+                typeof fileUrl === "string"
+                  ? fileUrl.split("?")[0].split("/").pop()
+                  : undefined,
+              errorName: error?.name,
+              errorMessage: error?.message,
+              stack: error?.stack,
+              userAgent:
+                typeof navigator !== "undefined" ? navigator.userAgent : "n/a",
+              platform:
+                typeof navigator !== "undefined" ? navigator.platform : "n/a",
+              timestamp: new Date().toISOString(),
+            };
+            console.error("[PDFViewer] Falha ao carregar PDF:", ctx);
+            try {
+              captureError(error, { tags: { component: "PDFViewer" }, extra: ctx });
+            } catch (e) {
+              console.warn("[PDFViewer] captureError falhou:", e);
+            }
+          }}
+          onSourceError={(error: Error) => {
+            console.error("[PDFViewer] Falha na fonte do PDF:", {
+              fileUrl,
+              errorMessage: error?.message,
+              stack: error?.stack,
+            });
+          }}
           loading={
             <div className="flex items-center justify-center p-12">
               <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -421,6 +452,9 @@ export const PDFViewer = ({
           error={
             <div className="p-12 text-center">
               <p className="text-destructive">Erro ao carregar o PDF</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Detalhes técnicos enviados para diagnóstico. Verifique o console.
+              </p>
             </div>
           }
         >
