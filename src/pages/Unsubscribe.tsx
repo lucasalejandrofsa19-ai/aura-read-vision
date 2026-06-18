@@ -125,23 +125,33 @@ const Unsubscribe = () => {
 
             <div className="space-y-4 rounded-lg border border-border p-4">
               <PrefRow
-                id="marketing"
-                title="E-mails promocionais"
-                description="Ofertas, lançamentos e descontos."
-                checked={state.prefs.marketing}
+                id="ads"
+                title="Anúncios e promoções"
+                description="Ofertas, descontos exclusivos e campanhas sazonais."
+                checked={state.prefs.ads}
                 disabled={state.kind === "saving"}
-                onChange={(v) => updatePref("marketing", v)}
+                onChange={(v) => updatePref("ads", v)}
+              />
+              <Separator />
+              <PrefRow
+                id="content"
+                title="Conteúdo e dicas"
+                description="Newsletters, artigos e dicas de leitura."
+                checked={state.prefs.content}
+                disabled={state.kind === "saving"}
+                onChange={(v) => updatePref("content", v)}
               />
               <Separator />
               <PrefRow
                 id="product_updates"
-                title="Novidades do produto"
-                description="Recursos novos, dicas e melhorias."
+                title="Atualizações de produto"
+                description="Novos recursos, melhorias e mudanças importantes."
                 checked={state.prefs.product_updates}
                 disabled={state.kind === "saving"}
                 onChange={(v) => updatePref("product_updates", v)}
               />
             </div>
+
 
             <div className="flex items-start gap-2 rounded-lg bg-muted/40 p-3">
               <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" aria-hidden />
@@ -170,7 +180,7 @@ const Unsubscribe = () => {
               <Button
                 variant="ghost"
                 disabled={state.kind === "saving"}
-                onClick={() => save({ marketing: false, product_updates: false })}
+                onClick={() => save({ ads: false, content: false, product_updates: false })}
                 className="w-full text-muted-foreground hover:text-destructive"
               >
                 Cancelar todos os e-mails não-essenciais
