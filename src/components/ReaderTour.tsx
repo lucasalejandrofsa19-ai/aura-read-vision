@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useTourTargets } from "@/contexts/TourTargetsContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserData } from "@/hooks/useUserData";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TourStep {
   target: string;
@@ -40,34 +42,32 @@ const tourSteps: TourStep[] = [
 export const ReaderTour = () => {
   const { getTarget } = useTourTargets();
   const { user } = useAuth();
+  const { profile, isLoading } = useUserData();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(0);
   const [showTour, setShowTour] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0, height: 0 });
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || isLoading) return;
     let cancelled = false;
-    (async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("has_seen_reader_tour")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (cancelled) return;
-      if (!data?.has_seen_reader_tour) {
-        setTimeout(() => !cancelled && setShowTour(true), 1200);
-      }
-    })();
+    if (!profile?.has_seen_reader_tour) {
+      const t = setTimeout(() => !cancelled && setShowTour(true), 1200);
+      return () => {
+        cancelled = true;
+        clearTimeout(t);
+      };
+    }
+  }, [user, isLoading, profile?.has_seen_reader_tour]);
+
+  useEffect(() => {
     const onRestart = () => {
       setCurrentStep(0);
       setShowTour(true);
     };
     window.addEventListener("reader-tour:restart", onRestart);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("reader-tour:restart", onRestart);
-    };
-  }, [user]);
+    return () => window.removeEventListener("reader-tour:restart", onRestart);
+  }, []);
 
   const update = () => {
     const step = tourSteps[currentStep];
@@ -97,6 +97,7 @@ export const ReaderTour = () => {
         .from("profiles")
         .update({ has_seen_reader_tour: true })
         .eq("id", user.id);
+      queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
     }
   };
 
