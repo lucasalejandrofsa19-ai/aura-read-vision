@@ -32,7 +32,7 @@ export const useUserData = () => {
       
       const { data, error } = await supabase
         .from("profiles")
-        .select("theme_preference, has_seen_library_tour, has_seen_welcome, has_seen_reader_tour, ultra_performance_mode, zoom_sensitivity, sync_reading_enabled")
+        .select("full_name, avatar_url, theme_preference, has_seen_library_tour, has_seen_welcome, has_seen_reader_tour, ultra_performance_mode, zoom_sensitivity, sync_reading_enabled")
         .eq("id", user.id)
         .single();
 
