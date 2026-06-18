@@ -35,6 +35,8 @@ import { FloatingControls } from "@/components/FloatingControls";
 import { AudiobookPlayer } from "@/components/AudiobookPlayer";
 import { ToolHelpTooltip } from "@/components/ToolHelpTooltip";
 import { TOOL_COPY } from "@/lib/toolGuide";
+import { TourTargetsProvider, useTourTarget } from "@/contexts/TourTargetsContext";
+import { ReaderTour } from "@/components/ReaderTour";
 
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
@@ -86,6 +88,9 @@ const Reader = () => {
   }, [penThickness]);
   const [spokenText, setSpokenText] = useState('');
   const mobileConfig = useMobileOptimization();
+  const highlightTargetRef = useTourTarget("reader-highlight");
+  const aiSummaryTargetRef = useTourTarget("reader-ai-summary");
+  const shareTargetRef = useTourTarget("reader-share");
 
   const { highlights, allHighlights, addHighlight, deleteHighlight } = useHighlights(id || "", currentPage);
 
@@ -591,6 +596,7 @@ const Reader = () => {
 
             <ToolHelpTooltip {...TOOL_COPY.highlight}>
               <Button
+                ref={highlightTargetRef}
                 variant={isDrawingMode ? "default" : "ghost"}
                 size="icon"
                 onClick={() => setIsDrawingMode(!isDrawingMode)}
@@ -661,6 +667,7 @@ const Reader = () => {
 
             <ToolHelpTooltip {...TOOL_COPY.aiSummary}>
               <Button
+                ref={aiSummaryTargetRef}
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/summary/" + id)}
@@ -673,6 +680,7 @@ const Reader = () => {
 
             <ToolHelpTooltip {...TOOL_COPY.share}>
               <Button
+                ref={shareTargetRef}
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/share/" + id)}
@@ -804,4 +812,11 @@ const Reader = () => {
   );
 };
 
-export default Reader;
+const ReaderWithTour = () => (
+  <TourTargetsProvider>
+    <Reader />
+    <ReaderTour />
+  </TourTargetsProvider>
+);
+
+export default ReaderWithTour;
