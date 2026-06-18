@@ -58,8 +58,14 @@ export const ReaderTour = () => {
         setTimeout(() => !cancelled && setShowTour(true), 1200);
       }
     })();
+    const onRestart = () => {
+      setCurrentStep(0);
+      setShowTour(true);
+    };
+    window.addEventListener("reader-tour:restart", onRestart);
     return () => {
       cancelled = true;
+      window.removeEventListener("reader-tour:restart", onRestart);
     };
   }, [user]);
 
