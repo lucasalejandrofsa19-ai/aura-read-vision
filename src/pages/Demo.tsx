@@ -1,13 +1,17 @@
 import { useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Highlighter, Plus, Sparkles, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, Highlighter, Plus, Sparkles, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+const HIGHLIGHTS_THRESHOLD = 3;
+const BANNER_DISMISS_KEY = "auraread:demo:banner-dismissed";
 
 interface DemoBook {
   id: string;
