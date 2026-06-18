@@ -206,7 +206,7 @@ export default function Pricing() {
                 >
                   {plan.popular && (
                     <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500">
-                      Mais Popular
+                      Recomendado
                     </Badge>
                   )}
                   
