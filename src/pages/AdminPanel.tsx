@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import { SEO } from "@/components/SEO";
+import { matchesSearch } from "@/lib/searchNormalize";
 
 const AdminPanel = () => {
   const navigate = useNavigate();
