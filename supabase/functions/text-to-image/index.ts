@@ -29,6 +29,15 @@ serve(async (req) => {
       throw new Error('Highlight ID is required');
     }
 
+    // Validate highlightId is a UUID to prevent path traversal in storage paths
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (typeof highlightId !== 'string' || !UUID_RE.test(highlightId)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid highlightId format' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
     // Get user from auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -47,6 +56,20 @@ serve(async (req) => {
     }
 
     console.log(`[TEXT-TO-IMAGE] Generating image for user: ${user.id}, highlight: ${highlightId}, style: ${style}`);
+
+    // Verify the highlight belongs to the authenticated user
+    const { data: highlightRow, error: highlightErr } = await supabaseClient
+      .from('highlights')
+      .select('id, user_id')
+      .eq('id', highlightId)
+      .maybeSingle();
+
+    if (highlightErr || !highlightRow || highlightRow.user_id !== user.id) {
+      return new Response(
+        JSON.stringify({ error: 'Highlight not found or access denied' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
 
     // Admin bypass: unlimited image generation
     const { data: isAdminUser } = await supabaseClient.rpc('is_admin', { _user_id: user.id });
