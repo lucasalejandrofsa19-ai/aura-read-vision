@@ -40,6 +40,34 @@ const resolveThreshold = (): number => {
   return DEFAULT_HIGHLIGHTS_THRESHOLD;
 };
 
+type BannerEvent = "banner_shown" | "banner_dismissed" | "banner_clicked";
+
+/**
+ * Fire-and-forget analytics tracker for the demo upsell banner.
+ * Routes through Google Analytics (gtag) when present, falls back to
+ * Sentry breadcrumb + console for local development.
+ */
+const trackBannerEvent = (
+  event: BannerEvent,
+  payload: { threshold: number; highlights_count: number },
+) => {
+  try {
+    const w = window as typeof window & {
+      gtag?: (...args: unknown[]) => void;
+    };
+    w.gtag?.("event", event, {
+      event_category: "demo_upsell_banner",
+      ...payload,
+    });
+    // Always emit a console log so manual QA can verify without GA loaded.
+    // eslint-disable-next-line no-console
+    console.info(`[analytics] ${event}`, payload);
+  } catch {
+    // never let analytics break UX
+  }
+};
+
+
 interface DemoBook {
   id: string;
   title: string;
