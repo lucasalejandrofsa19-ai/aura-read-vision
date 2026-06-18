@@ -619,7 +619,11 @@ const Install = () => {
 
         {/* CTA */}
         <div className="mt-8">
-          <LibraryCTA />
+          <LibraryCTA
+            title="Tudo pronto! Bem-vindo ao AURA READ 🎉"
+            description="Seu app está instalado. Abra sua biblioteca para enviar o primeiro PDF e começar a ler com destaques, resumos e sincronização entre dispositivos."
+            buttonLabel="Abrir minha biblioteca"
+          />
         </div>
       </motion.main>
     </div>
