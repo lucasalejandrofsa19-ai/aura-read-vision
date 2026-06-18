@@ -41,7 +41,7 @@ export const useSubscription = () => {
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
 
-  const checkSubscription = useCallback(async () => {
+  const checkSubscription = useCallback(async (forceRefresh = false) => {
     if (!user) {
       setStatus({
         subscribed: false,
@@ -51,6 +51,16 @@ export const useSubscription = () => {
       });
       setLoading(false);
       return;
+    }
+
+    // Try session cache first (skips network on route mounts within TTL)
+    if (!forceRefresh) {
+      const cached = readCache(user.id);
+      if (cached) {
+        setStatus(cached);
+        setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -89,6 +99,7 @@ export const useSubscription = () => {
         }
       } else {
         setStatus(data);
+        writeCache(user.id, data);
       }
     } catch (error) {
       console.error("Error checking subscription:", error);
