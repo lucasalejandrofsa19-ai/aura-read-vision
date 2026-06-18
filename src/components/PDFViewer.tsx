@@ -143,10 +143,9 @@ export const PDFViewer = ({
     setLoadError(null);
   }, [fileUrl]);
 
-  const handleRetry = useCallback(() => {
+  const handleRetry = useCallback(async () => {
     if (retryCount >= MAX_RETRIES || retryDelay > 0) return;
     const next = retryCount + 1;
-    // backoff exponencial: 1s, 2s, 4s, 8s (cap)
     const delayMs = Math.min(1000 * 2 ** retryCount, 8000);
     const delaySec = Math.ceil(delayMs / 1000);
     setRetryCount(next);
@@ -160,11 +159,27 @@ export const PDFViewer = ({
         return s - 1;
       });
     }, 1000);
+
+    // Se a causa provável é URL expirada, tenta renovar antes do reload
+    const cause = classifyPdfError(loadError, fileUrl);
+    if (cause.title === "URL expirada" && onRenewUrl) {
+      try {
+        const newUrl = await onRenewUrl();
+        if (newUrl) {
+          console.info("[PDFViewer] URL assinada renovada com sucesso.");
+        } else {
+          console.warn("[PDFViewer] Renovação de URL retornou vazio.");
+        }
+      } catch (e) {
+        console.error("[PDFViewer] Erro ao renovar URL assinada:", e);
+      }
+    }
+
     setTimeout(() => {
       setLoadError(null);
       setLoadAttempt((n) => n + 1);
     }, delayMs);
-  }, [retryCount, retryDelay]);
+  }, [retryCount, retryDelay, loadError, fileUrl, onRenewUrl]);
   
   // Search states
   const [searchTerm, setSearchTerm] = useState("");
