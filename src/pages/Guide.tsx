@@ -320,26 +320,17 @@ const Guide = () => {
           </section>
 
           {/* CTA */}
-          <section className="text-center">
-            <Card className="glass border-primary/20 aura-soft inline-block">
-              <CardContent className="p-8">
-                <h3 className="text-2xl font-semibold mb-2">Pronto para começar?</h3>
-                <p className="text-muted-foreground mb-6 max-w-md">
-                  Abra sua biblioteca e envie seu primeiro livro. Você pode voltar aqui a qualquer momento.
-                </p>
-                <div className="flex gap-3 justify-center flex-wrap">
-                  <Button
-                    onClick={() => navigate("/library")}
-                    className="bg-gradient-to-r from-primary to-accent"
-                  >
-                    Ir para a Biblioteca
-                  </Button>
-                  <Button variant="outline" onClick={() => navigate("/pricing")}>
-                    Ver planos Premium
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <section>
+            <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-purple-500/10 p-8 text-center">
+              <h2 className="text-2xl font-bold mb-2">Pronto para começar a ler?</h2>
+              <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
+                Acesse sua biblioteca agora e comece a aproveitar seus livros, destaques e resumos.
+              </p>
+              <Button size="lg" onClick={() => navigate("/library")} className="gap-2">
+                <BookOpen className="w-4 h-4" />
+                Ir para minha biblioteca
+              </Button>
+            </div>
           </section>
         </div>
       </div>
