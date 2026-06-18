@@ -231,10 +231,10 @@ const Index = () => {
               <PremiumBadge variant="default" />
             </motion.div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent">
-              Recursos Premium
+              Premium: para quem leva leitura a sério
             </h2>
             <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto">
-              Desbloqueie o potencial completo da sua leitura com recursos exclusivos
+              Ferramentas avançadas para estudantes, pesquisadores e leitores ávidos.
             </p>
           </div>
 
