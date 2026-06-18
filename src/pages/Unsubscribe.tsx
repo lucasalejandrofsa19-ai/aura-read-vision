@@ -11,7 +11,8 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 interface Prefs {
-  marketing: boolean;
+  ads: boolean;
+  content: boolean;
   product_updates: boolean;
 }
 
@@ -49,7 +50,8 @@ const Unsubscribe = () => {
           kind: "ready",
           email: data.email ?? "seu endereço",
           prefs: {
-            marketing: data.preferences?.marketing ?? !data.already_unsubscribed,
+            ads: data.preferences?.ads ?? !data.already_unsubscribed,
+            content: data.preferences?.content ?? !data.already_unsubscribed,
             product_updates: data.preferences?.product_updates ?? !data.already_unsubscribed,
           },
           alreadyOff: !!data.already_unsubscribed,

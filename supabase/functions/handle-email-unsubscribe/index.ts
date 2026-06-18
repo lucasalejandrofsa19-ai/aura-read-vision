@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
   await supabase
     .from('email_preferences')
     .upsert(
-      { email: emailLower, marketing: false, product_updates: false, updated_at: new Date().toISOString() },
+      { email: emailLower, ads: false, content: false, product_updates: false, marketing: false, updated_at: new Date().toISOString() },
       { onConflict: 'email' },
     )
 
