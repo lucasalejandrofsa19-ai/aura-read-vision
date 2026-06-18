@@ -39,6 +39,7 @@ const Achievements = lazy(() => import("./pages/Achievements"));
 const AcademicSummary = lazy(() => import("./pages/AcademicSummary"));
 const Guide = lazy(() => import("./pages/Guide"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -90,6 +91,9 @@ const AppContent = () => {
           <Route path="/conquistas" element={<Achievements />} />
           <Route path="/resumo-academico" element={<AcademicSummary />} />
           <Route path="/guia" element={<Guide />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
+
+
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
