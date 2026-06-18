@@ -42,6 +42,7 @@ const Library = () => {
   // Refs for scroll containers
   const premiumScrollRef = useRef<HTMLDivElement>(null);
   const userBooksScrollRef = useRef<HTMLDivElement>(null);
+  const uploadPDFRef = useRef<UploadPDFHandle>(null);
   const [activeSection, setActiveSection] = useState<'premium' | 'user'>('user');
 
   const scrollLeft = (ref: React.RefObject<HTMLDivElement>) => {
