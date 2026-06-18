@@ -197,7 +197,7 @@ const Reader = () => {
         throw error;
       }
 
-      setBook({ ...(data as any), __isPremium: isPremium });
+      setBook({ ...(data as any), __isPremium: isPremium, __bucket: bucket });
 
       if ((data as any).current_page) {
         setCurrentPage((data as any).current_page);
