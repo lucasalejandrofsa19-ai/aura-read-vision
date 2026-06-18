@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useTourTargets } from "@/contexts/TourTargetsContext";
 
 interface TourStep {
   target: string;
@@ -43,6 +44,7 @@ const tourSteps: TourStep[] = [
 
 export const LibraryTour = () => {
   const { user } = useAuth();
+  const { getTarget } = useTourTargets();
   const [currentStep, setCurrentStep] = useState(0);
   const [showTour, setShowTour] = useState(false);
   const [targetPosition, setTargetPosition] = useState({ top: 0, left: 0, width: 0, height: 0 });
@@ -83,8 +85,8 @@ export const LibraryTour = () => {
 
   const updateTargetPosition = () => {
     const step = tourSteps[currentStep];
-    const element = document.querySelector(`[data-tour="${step.target}"]`);
-    
+    const element = getTarget(step.target);
+
     if (element) {
       const rect = element.getBoundingClientRect();
       setTargetPosition({

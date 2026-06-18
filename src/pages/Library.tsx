@@ -26,11 +26,16 @@ import { ADSENSE_SLOTS } from "@/lib/adsense";
 import { AuthDialog } from "@/components/AuthDialog";
 import { LogIn } from "lucide-react";
 import LibraryCTA from "@/components/LibraryCTA";
+import { TourTargetsProvider, useTourTarget } from "@/contexts/TourTargetsContext";
 
 // Memoizar BookCard para evitar re-renders desnecessários
 const MemoizedBookCard = memo(BookCard);
 
-const Library = () => {
+const LibraryInner = () => {
+  const profileButtonRef = useTourTarget("profile-button");
+  const searchBarRef = useTourTarget("search-bar");
+  const bookCardRef = useTourTarget("book-card");
+  const uploadButtonRef = useTourTarget("upload-button");
   const [searchQuery, setSearchQuery] = useState("");
   const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
@@ -172,7 +177,7 @@ const Library = () => {
               size="icon"
               className="aura-soft transition-aura"
               onClick={() => navigate("/profile")}
-              data-tour="profile-button"
+              ref={profileButtonRef}
              aria-label="Perfil">
               <User className="w-5 h-5" />
             </Button>
@@ -251,7 +256,7 @@ const Library = () => {
         </div>
 
         {/* Search bar */}
-        <div className="relative" data-tour="search-bar">
+        <div className="relative" ref={searchBarRef}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
             placeholder="Buscar livros ou autores..."
@@ -425,7 +430,11 @@ const Library = () => {
                   onTouchStart={() => setActiveSection('user')}
                 >
                   {filteredBooks.map((book, index) => (
-                    <div key={book.id} className="flex-shrink-0 w-48">
+                    <div
+                      key={book.id}
+                      className="flex-shrink-0 w-48"
+                      ref={index === 0 ? bookCardRef : undefined}
+                    >
                       <LazyLoadWrapper
                         minHeight="280px"
                         rootMargin="200px"
@@ -436,10 +445,9 @@ const Library = () => {
                           </div>
                         }
                       >
-                        <MemoizedBookCard 
-                          book={book} 
-                          index={index} 
-                          data-tour={index === 0 ? "book-card" : undefined}
+                        <MemoizedBookCard
+                          book={book}
+                          index={index}
                         />
                       </LazyLoadWrapper>
                     </div>
@@ -459,7 +467,7 @@ const Library = () => {
         animate={{ scale: 1 }}
         transition={{ delay: 0.4, type: "spring" }}
         className="fixed bottom-8 right-8"
-        data-tour="upload-button"
+        ref={uploadButtonRef}
       >
         <UploadPDF ref={uploadPDFRef} />
       </motion.div>
@@ -480,5 +488,11 @@ const Library = () => {
 
   );
 };
+
+const Library = () => (
+  <TourTargetsProvider>
+    <LibraryInner />
+  </TourTargetsProvider>
+);
 
 export default Library;
