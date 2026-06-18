@@ -374,12 +374,7 @@ const Library = () => {
               ) : books.length === 0 ? (
                 <LibraryCTA
                   variant="empty-state"
-                  onAction={() => {
-                    const fab = document.querySelector<HTMLButtonElement>(
-                      '[data-tour="upload-button"] button'
-                    );
-                    fab?.click();
-                  }}
+                  onAction={() => uploadPDFRef.current?.openPicker()}
                 />
               ) : (
                 <p className="text-center text-muted-foreground text-lg">
