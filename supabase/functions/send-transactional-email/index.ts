@@ -2,7 +2,7 @@ import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
-import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
+import { TEMPLATES, validateTemplateCategory } from '../_shared/transactional-email-templates/registry.ts'
 
 // Configuration baked in at scaffold time — do NOT change these manually.
 // To update, re-run the email domain setup flow.
@@ -95,6 +95,27 @@ Deno.serve(async (req) => {
       }),
       {
         status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
+  }
+
+  // Validate template category configuration before doing any work.
+  // Misconfigured promotional templates must NOT be enqueued.
+  const categoryIssue = validateTemplateCategory(templateName, template)
+  if (categoryIssue) {
+    console.error('[send-transactional-email] Template category invalid', {
+      templateName,
+      reason: categoryIssue.reason,
+    })
+    return new Response(
+      JSON.stringify({
+        error: 'Template category misconfigured',
+        templateName,
+        reason: categoryIssue.reason,
+      }),
+      {
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
