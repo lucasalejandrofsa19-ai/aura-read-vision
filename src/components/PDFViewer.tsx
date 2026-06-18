@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2 } from "lucide-re
 import { PDFSearchBar } from "@/components/PDFSearchBar";
 import { usePDFPrefetch } from "@/hooks/usePDFPrefetch";
 import { HighlightCanvas } from "@/components/HighlightCanvas";
+import { captureError } from "@/lib/sentry";
 // Type for PDF text items - using any to avoid deep import issues
 interface PDFTextItem {
   str?: string;
