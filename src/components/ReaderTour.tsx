@@ -97,6 +97,7 @@ export const ReaderTour = () => {
         .from("profiles")
         .update({ has_seen_reader_tour: true })
         .eq("id", user.id);
+      queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
     }
   };
 
