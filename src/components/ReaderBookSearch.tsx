@@ -22,6 +22,18 @@ export const ReaderBookSearch = () => {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
 
+  // Atalho Ctrl/Cmd+K para abrir a busca
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   const allBooks = useMemo(() => {
     const freePremium = (premiumBooks ?? [])
       .filter((b: any) => b.is_free)
