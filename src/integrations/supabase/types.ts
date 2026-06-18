@@ -283,6 +283,27 @@ export type Database = {
         }
         Relationships: []
       }
+      email_preferences: {
+        Row: {
+          email: string
+          marketing: boolean
+          product_updates: boolean
+          updated_at: string
+        }
+        Insert: {
+          email: string
+          marketing?: boolean
+          product_updates?: boolean
+          updated_at?: string
+        }
+        Update: {
+          email?: string
+          marketing?: boolean
+          product_updates?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
