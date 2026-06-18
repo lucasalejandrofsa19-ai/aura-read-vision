@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import LibraryCTA from "@/components/LibraryCTA";
 
 const Welcome = () => {
   const [loading, setLoading] = useState(false);
