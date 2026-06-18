@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
@@ -197,7 +197,7 @@ const Reader = () => {
         throw error;
       }
 
-      setBook({ ...(data as any), __isPremium: isPremium });
+      setBook({ ...(data as any), __isPremium: isPremium, __bucket: bucket });
 
       if ((data as any).current_page) {
         setCurrentPage((data as any).current_page);
@@ -220,6 +220,28 @@ const Reader = () => {
       setLoading(false);
     }
   };
+
+  const renewSignedUrl = useCallback(async (): Promise<string | null> => {
+    const filePath = (book as any)?.file_path;
+    const bucket = (book as any)?.__bucket ?? "pdfs";
+    if (!filePath) return null;
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(filePath, 60 * 60);
+      if (error || !data?.signedUrl) {
+        console.error("[Reader] Falha ao renovar URL assinada:", error);
+        return null;
+      }
+      setPdfUrl(data.signedUrl);
+      return data.signedUrl;
+    } catch (e) {
+      console.error("[Reader] Exceção ao renovar URL assinada:", e);
+      return null;
+    }
+  }, [book]);
+
+
 
   const saveCurrentPage = async (page: number) => {
     if (!id) return;
@@ -754,6 +776,7 @@ const Reader = () => {
         {pdfUrl ? (
           <PDFViewer 
             fileUrl={pdfUrl} 
+            onRenewUrl={renewSignedUrl}
             initialPage={currentPage}
             onPageChange={handlePageChange}
             onTextSelect={handleTextSelect}
