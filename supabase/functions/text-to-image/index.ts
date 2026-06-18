@@ -57,6 +57,20 @@ serve(async (req) => {
 
     console.log(`[TEXT-TO-IMAGE] Generating image for user: ${user.id}, highlight: ${highlightId}, style: ${style}`);
 
+    // Verify the highlight belongs to the authenticated user
+    const { data: highlightRow, error: highlightErr } = await supabaseClient
+      .from('highlights')
+      .select('id, user_id')
+      .eq('id', highlightId)
+      .maybeSingle();
+
+    if (highlightErr || !highlightRow || highlightRow.user_id !== user.id) {
+      return new Response(
+        JSON.stringify({ error: 'Highlight not found or access denied' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
+
     // Admin bypass: unlimited image generation
     const { data: isAdminUser } = await supabaseClient.rpc('is_admin', { _user_id: user.id });
 
