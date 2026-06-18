@@ -100,6 +100,27 @@ Deno.serve(async (req) => {
     )
   }
 
+  // Validate template category configuration before doing any work.
+  // Misconfigured promotional templates must NOT be enqueued.
+  const categoryIssue = validateTemplateCategory(templateName, template)
+  if (categoryIssue) {
+    console.error('[send-transactional-email] Template category invalid', {
+      templateName,
+      reason: categoryIssue.reason,
+    })
+    return new Response(
+      JSON.stringify({
+        error: 'Template category misconfigured',
+        templateName,
+        reason: categoryIssue.reason,
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
+  }
+
   // Resolve effective recipient: template-level `to` takes precedence over
   // the caller-provided recipientEmail. This allows notification templates
   // to always send to a fixed address (e.g., site owner from env var).
