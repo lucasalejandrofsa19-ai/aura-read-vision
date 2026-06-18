@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, memo } from "react";
-import { userProfileQueryKey } from "@/lib/userProfileQuery";
+import { invalidateUserProfile } from "@/lib/userProfileQuery";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMobileOptimization } from "@/hooks/useMobileOptimization";
 import { Document, Page } from "react-pdf";
@@ -68,7 +68,7 @@ export const PresentationMode = memo(({
       .from("profiles")
       .update({ zoom_sensitivity: value })
       .eq("id", user.id);
-    queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
+    invalidateUserProfile(queryClient, user.id);
   };
 
   const goToPrevPage = useCallback(() => {

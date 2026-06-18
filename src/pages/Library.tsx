@@ -1,5 +1,5 @@
 import { SEO } from "@/components/SEO";
-import { userProfileQueryKey } from "@/lib/userProfileQuery";
+import { invalidateUserProfile } from "@/lib/userProfileQuery";
 import { useState, useEffect, useMemo, memo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle, BookOpen, RotateCcw } from "lucide-react";
@@ -187,7 +187,7 @@ const LibraryInner = () => {
                       toast.error("Não foi possível reiniciar o tour");
                       return;
                     }
-                    await queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
+                    await invalidateUserProfile(queryClient, user.id);
                     window.dispatchEvent(new CustomEvent("library-tour:restart"));
                   }}
                 >

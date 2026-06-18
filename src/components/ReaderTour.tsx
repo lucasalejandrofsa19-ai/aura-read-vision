@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { userProfileQueryKey } from "@/lib/userProfileQuery";
+import { invalidateUserProfile } from "@/lib/userProfileQuery";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -98,7 +98,7 @@ export const ReaderTour = () => {
         .from("profiles")
         .update({ has_seen_reader_tour: true })
         .eq("id", user.id);
-      queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
+      invalidateUserProfile(queryClient, user.id);
     }
   };
 
