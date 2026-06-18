@@ -107,6 +107,12 @@ const classifyPdfError = (
       hint: "Este PDF requer senha para ser aberto.",
     };
   }
+  if (/worker|fake worker|module specifier|pdf\.worker/.test(msg)) {
+    return {
+      title: "Worker do PDF.js não carregou",
+      hint: "Recarregue a página (Ctrl/Cmd+Shift+R) para atualizar o worker bundled.",
+    };
+  }
   return {
     title: "Causa desconhecida",
     hint: "Não foi possível identificar a origem do erro automaticamente.",
