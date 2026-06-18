@@ -10,7 +10,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "validate:emails": "node scripts/validate-email-templates.mjs"
+    "validate:emails": "node scripts/validate-email-templates.mjs",
+    "validate:emails:smoke": "node scripts/smoke-validate-emails.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",
