@@ -58,6 +58,19 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         sourcemap: false,
         runtimeCaching: [
+          // pdf.js worker (CDN fallback) — CacheFirst para sobreviver offline
+          {
+            urlPattern: /^https:\/\/(cdn\.jsdelivr\.net|unpkg\.com)\/.*pdfjs-dist.*pdf\.worker.*\.mjs.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'pdfjs-worker-cache',
+              expiration: {
+                maxEntries: 4,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 ano
+              },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           // Google Fonts
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
