@@ -174,7 +174,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
           }
         } catch (error: any) {
           captureError(error, { context: "pdf_upload" });
-          const msg = error?.message || "Erro ao fazer upload do PDF";
+          const msg = error?.message || "Não conseguimos enviar seu PDF. Tente novamente.";
           toast.error(msg);
         } finally {
           setUploading(false);
