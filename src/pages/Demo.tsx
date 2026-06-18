@@ -146,7 +146,26 @@ const Demo = () => {
     }
   });
 
+  const [threshold] = useState<number>(resolveThreshold);
+  const showBanner = highlights.length >= threshold && !bannerDismissed;
+
+  // Fire `banner_shown` exactly once per session when the banner first appears.
+  const shownTrackedRef = useRef(false);
+  useEffect(() => {
+    if (showBanner && !shownTrackedRef.current) {
+      shownTrackedRef.current = true;
+      trackBannerEvent("banner_shown", {
+        threshold,
+        highlights_count: highlights.length,
+      });
+    }
+  }, [showBanner, threshold, highlights.length]);
+
   const dismissBanner = () => {
+    trackBannerEvent("banner_dismissed", {
+      threshold,
+      highlights_count: highlights.length,
+    });
     setBannerDismissed(true);
     try {
       localStorage.setItem(BANNER_DISMISS_KEY, "1");
@@ -155,8 +174,12 @@ const Demo = () => {
     }
   };
 
-  const [threshold] = useState<number>(resolveThreshold);
-  const showBanner = highlights.length >= threshold && !bannerDismissed;
+  const handleBannerClick = () => {
+    trackBannerEvent("banner_clicked", {
+      threshold,
+      highlights_count: highlights.length,
+    });
+  };
 
   const persist = (next: DemoHighlight[]) => {
     setHighlights(next);
