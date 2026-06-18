@@ -36,6 +36,8 @@ const Profile = () => {
   const { user } = useAuth();
   const { theme } = useTheme();
   const { isAdmin, hasPremiumAccess } = useUserRole();
+  const { profile } = useUserData();
+  const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -59,30 +61,17 @@ const Profile = () => {
   };
 
   useEffect(() => {
-    if (user) {
-      loadProfile();
-    }
-  }, [user]);
-
-  const loadProfile = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("full_name, avatar_url")
-        .eq("id", user.id)
-        .single();
-
-      if (error) throw error;
-
-      setFullName(data?.full_name || "");
-      const signed = await getSignedStorageUrl("avatars", data?.avatar_url);
-      setAvatarUrl(signed);
-    } catch (error) {
-      captureError(error, { context: "load_profile" });
-    }
-  };
+    if (!profile) return;
+    setFullName(profile.full_name || "");
+    let cancelled = false;
+    (async () => {
+      const signed = await getSignedStorageUrl("avatars", profile.avatar_url);
+      if (!cancelled) setAvatarUrl(signed);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.full_name, profile?.avatar_url]);
 
   const updateProfile = async () => {
     if (!user) return;
@@ -95,6 +84,7 @@ const Profile = () => {
         .eq("id", user.id);
 
       if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
 
       toast.success("Perfil atualizado com sucesso!");
     } catch (error) {
