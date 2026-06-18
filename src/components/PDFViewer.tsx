@@ -564,11 +564,22 @@ export const PDFViewer = ({
                 <p className="text-sm text-muted-foreground mt-1">
                   O arquivo pode estar corrompido, indisponível ou sua conexão caiu.
                 </p>
-                {loadError?.message && (
-                  <p className="text-xs text-muted-foreground/70 mt-2 font-mono break-all">
-                    {loadError.message}
-                  </p>
-                )}
+                {(() => {
+                  const cause = classifyPdfError(loadError, fileUrl);
+                  return (
+                    <div className="mt-3 rounded-md border border-border bg-muted/40 p-3 text-left">
+                      <p className="text-xs font-semibold">
+                        Causa provável: <span className="text-primary">{cause.title}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{cause.hint}</p>
+                      {loadError?.message && (
+                        <p className="text-[10px] text-muted-foreground/70 mt-2 font-mono break-all">
+                          {loadError.message}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div className="flex flex-col items-center gap-2">
                 {retryCount >= MAX_RETRIES ? (
