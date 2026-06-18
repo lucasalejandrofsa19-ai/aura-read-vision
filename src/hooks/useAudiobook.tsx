@@ -2,6 +2,8 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserData } from '@/hooks/useUserData';
+import { useQueryClient } from '@tanstack/react-query';
 import { pdfjs } from 'react-pdf';
 
 // Worker is configured globally in src/lib/pdfjsWorker.ts
@@ -77,37 +79,30 @@ export const useAudiobook = ({
   const [currentSpokenText, setCurrentSpokenText] = useState<string>('');
   const [syncPreferenceLoaded, setSyncPreferenceLoaded] = useState(false);
 
-  // Load sync preference from profile
+  // Load sync preference from cached profile
+  const { profile, isLoading: profileLoading } = useUserData();
+  const queryClient = useQueryClient();
   useEffect(() => {
-    if (!user) return;
-
-    const loadSyncPreference = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('sync_reading_enabled')
-        .eq('id', user.id)
-        .single();
-
-      if (data && data.sync_reading_enabled !== null) {
-        setSyncEnabledState(data.sync_reading_enabled);
-      }
-      setSyncPreferenceLoaded(true);
-    };
-
-    loadSyncPreference();
-  }, [user]);
+    if (!user || profileLoading) return;
+    if (profile?.sync_reading_enabled !== null && profile?.sync_reading_enabled !== undefined) {
+      setSyncEnabledState(!!profile.sync_reading_enabled);
+    }
+    setSyncPreferenceLoaded(true);
+  }, [user, profileLoading, profile?.sync_reading_enabled]);
 
   // Save sync preference to profile
   const setSyncEnabled = useCallback(async (enabled: boolean) => {
     setSyncEnabledState(enabled);
-    
+
     if (!user) return;
-    
+
     await supabase
       .from('profiles')
       .update({ sync_reading_enabled: enabled })
       .eq('id', user.id);
-  }, [user]);
+    queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
+  }, [user, queryClient]);
+
 
   // Browser TTS refs
   const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);

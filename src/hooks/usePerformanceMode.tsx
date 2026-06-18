@@ -1,42 +1,22 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserData } from "@/hooks/useUserData";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export const usePerformanceMode = () => {
   const { user } = useAuth();
+  const { profile, isLoading } = useUserData();
+  const queryClient = useQueryClient();
   const [isUltraPerformanceMode, setIsUltraPerformanceMode] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  // Load performance mode preference from profile
   useEffect(() => {
-    const loadPreference = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+    if (profile) {
+      setIsUltraPerformanceMode(!!profile.ultra_performance_mode);
+    }
+  }, [profile?.ultra_performance_mode]);
 
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("ultra_performance_mode")
-          .eq("id", user.id)
-          .single();
-
-        if (!error && data) {
-          setIsUltraPerformanceMode(data.ultra_performance_mode || false);
-        }
-      } catch (error) {
-        console.error("Error loading performance mode:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPreference();
-  }, [user]);
-
-  // Toggle performance mode and save to database
   const togglePerformanceMode = async () => {
     if (!user) {
       toast.error("Faça login para alterar esta configuração");
@@ -53,6 +33,7 @@ export const usePerformanceMode = () => {
         .eq("id", user.id);
 
       if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
 
       toast.success(
         newValue
@@ -61,7 +42,7 @@ export const usePerformanceMode = () => {
       );
     } catch (error) {
       console.error("Error saving performance mode:", error);
-      setIsUltraPerformanceMode(!newValue); // Revert on error
+      setIsUltraPerformanceMode(!newValue);
       toast.error("Erro ao salvar configuração");
     }
   };
@@ -69,6 +50,6 @@ export const usePerformanceMode = () => {
   return {
     isUltraPerformanceMode,
     togglePerformanceMode,
-    loading,
+    loading: isLoading,
   };
 };

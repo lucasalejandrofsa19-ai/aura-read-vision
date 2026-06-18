@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserData } from "@/hooks/useUserData";
+import { useQueryClient } from "@tanstack/react-query";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -48,35 +50,24 @@ export const PresentationMode = memo(({
   // Desabilita animações do Framer Motion
   const shouldAnimate = false;
   
-  // Load zoom sensitivity from profile
+  // Load zoom sensitivity from cached profile
+  const { profile } = useUserData();
+  const queryClient = useQueryClient();
   useEffect(() => {
-    const loadZoomSensitivity = async () => {
-      if (!user) return;
-      
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("zoom_sensitivity")
-        .eq("id", user.id)
-        .single();
-      
-      if (!error && data?.zoom_sensitivity) {
-        setZoomSensitivity(data.zoom_sensitivity);
-      }
-    };
-    
-    loadZoomSensitivity();
-  }, [user]);
-  
+    if (profile?.zoom_sensitivity) {
+      setZoomSensitivity(profile.zoom_sensitivity);
+    }
+  }, [profile?.zoom_sensitivity]);
+
   // Save zoom sensitivity to profile
   const handleZoomSensitivityChange = async (value: number) => {
     setZoomSensitivity(value);
-    
     if (!user) return;
-    
     await supabase
       .from("profiles")
       .update({ zoom_sensitivity: value })
       .eq("id", user.id);
+    queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
   };
 
   const goToPrevPage = useCallback(() => {
