@@ -112,6 +112,7 @@ const Reader = () => {
 
   const { enterFullscreen } = useFullscreen();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { startSession, endSession, updateSession, isSessionActive } = useReadingSession(id || "");
 
   useEffect(() => {
