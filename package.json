@@ -11,7 +11,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "validate:emails": "node scripts/validate-email-templates.mjs",
-    "validate:emails:smoke": "node scripts/smoke-validate-emails.mjs"
+    "validate:emails:smoke": "node scripts/smoke-validate-emails.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",
@@ -88,6 +90,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6",
     "@types/node": "^22.16.5",
