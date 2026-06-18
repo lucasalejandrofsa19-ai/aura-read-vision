@@ -12,7 +12,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
  *  3) Erros de fetch não derrubam o app.
  */
 
-const mockFetch = vi.fn(() => Promise.resolve(new Response("", { status: 200 })));
+const mockFetch = vi.fn((..._args: unknown[]) =>
+  Promise.resolve(new Response("", { status: 200 })),
+);
 
 // Mock react-pdf antes do import dinâmico
 vi.mock("react-pdf", () => ({
