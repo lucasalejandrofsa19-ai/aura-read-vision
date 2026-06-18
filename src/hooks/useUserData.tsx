@@ -32,7 +32,7 @@ export const useUserData = () => {
       
       const { data, error } = await supabase
         .from("profiles")
-        .select("theme_preference, has_seen_library_tour, has_seen_welcome")
+        .select("theme_preference, has_seen_library_tour, has_seen_welcome, has_seen_reader_tour")
         .eq("id", user.id)
         .single();
 
