@@ -40,6 +40,7 @@ const AcademicSummary = lazy(() => import("./pages/AcademicSummary"));
 const Guide = lazy(() => import("./pages/Guide"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const Demo = lazy(() => import("./pages/Demo"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
