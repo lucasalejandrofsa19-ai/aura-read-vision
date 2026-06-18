@@ -363,6 +363,53 @@ const Demo = () => {
           )}
         </AnimatePresence>
       </main>
+
+      <AnimatePresence>
+        {showBanner && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 280, damping: 28 }}
+            className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-card/80"
+            role="region"
+            aria-label="Convite para criar conta"
+          >
+            <div className="container mx-auto flex flex-col items-start gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-primary/10 p-2 text-primary">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Você já salvou {highlights.length} destaques nesta demo
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Crie sua conta grátis para guardar tudo na nuvem, gerar resumos com IA e
+                    acessar de qualquer dispositivo.
+                  </p>
+                </div>
+              </div>
+              <div className="flex w-full items-center gap-2 sm:w-auto">
+                <Button asChild className="flex-1 gap-2 sm:flex-initial">
+                  <Link to="/library">
+                    Criar conta grátis
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={dismissBanner}
+                  aria-label="Dispensar convite"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
