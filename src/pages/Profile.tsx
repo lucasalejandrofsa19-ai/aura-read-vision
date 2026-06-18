@@ -459,8 +459,9 @@ const Profile = () => {
                 {/* Actions */}
                 <div className="flex gap-3">
                   <Button
+                    variant="premium"
                     onClick={() => navigate("/pricing")}
-                    className="flex-1 bg-gradient-to-r from-primary to-accent hover:opacity-90 gap-2"
+                    className="flex-1 gap-2"
                   >
                     <PremiumBadge variant="icon-only" />
                     Ver Planos Premium
