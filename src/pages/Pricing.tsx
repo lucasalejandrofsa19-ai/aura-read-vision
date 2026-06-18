@@ -283,7 +283,7 @@ export default function Pricing() {
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : null}
-              Gerenciar Assinatura
+              Gerenciar minha assinatura
             </Button>
           </motion.div>
         )}
