@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
+import { fetchUserProfile, userProfileQueryKey } from "@/lib/userProfileQuery";
 
 interface AuthContextType {
   user: User | null;
