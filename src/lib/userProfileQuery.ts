@@ -16,3 +16,8 @@ export const fetchUserProfile = async (userId: string) => {
   if (error) throw error;
   return data;
 };
+
+export const invalidateUserProfile = (
+  queryClient: QueryClient,
+  userId: string,
+) => queryClient.invalidateQueries({ queryKey: userProfileQueryKey(userId) });
