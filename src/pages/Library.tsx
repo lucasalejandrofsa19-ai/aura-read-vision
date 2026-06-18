@@ -31,7 +31,11 @@ import { TourTargetsProvider, useTourTarget } from "@/contexts/TourTargetsContex
 // Memoizar BookCard para evitar re-renders desnecessários
 const MemoizedBookCard = memo(BookCard);
 
-const Library = () => {
+const LibraryInner = () => {
+  const profileButtonRef = useTourTarget("profile-button");
+  const searchBarRef = useTourTarget("search-bar");
+  const bookCardRef = useTourTarget("book-card");
+  const uploadButtonRef = useTourTarget("upload-button");
   const [searchQuery, setSearchQuery] = useState("");
   const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
