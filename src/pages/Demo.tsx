@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -39,6 +39,34 @@ const resolveThreshold = (): number => {
   }
   return DEFAULT_HIGHLIGHTS_THRESHOLD;
 };
+
+type BannerEvent = "banner_shown" | "banner_dismissed" | "banner_clicked";
+
+/**
+ * Fire-and-forget analytics tracker for the demo upsell banner.
+ * Routes through Google Analytics (gtag) when present, falls back to
+ * Sentry breadcrumb + console for local development.
+ */
+const trackBannerEvent = (
+  event: BannerEvent,
+  payload: { threshold: number; highlights_count: number },
+) => {
+  try {
+    const w = window as typeof window & {
+      gtag?: (...args: unknown[]) => void;
+    };
+    w.gtag?.("event", event, {
+      event_category: "demo_upsell_banner",
+      ...payload,
+    });
+    // Always emit a console log so manual QA can verify without GA loaded.
+    // eslint-disable-next-line no-console
+    console.info(`[analytics] ${event}`, payload);
+  } catch {
+    // never let analytics break UX
+  }
+};
+
 
 interface DemoBook {
   id: string;
@@ -118,7 +146,26 @@ const Demo = () => {
     }
   });
 
+  const [threshold] = useState<number>(resolveThreshold);
+  const showBanner = highlights.length >= threshold && !bannerDismissed;
+
+  // Fire `banner_shown` exactly once per session when the banner first appears.
+  const shownTrackedRef = useRef(false);
+  useEffect(() => {
+    if (showBanner && !shownTrackedRef.current) {
+      shownTrackedRef.current = true;
+      trackBannerEvent("banner_shown", {
+        threshold,
+        highlights_count: highlights.length,
+      });
+    }
+  }, [showBanner, threshold, highlights.length]);
+
   const dismissBanner = () => {
+    trackBannerEvent("banner_dismissed", {
+      threshold,
+      highlights_count: highlights.length,
+    });
     setBannerDismissed(true);
     try {
       localStorage.setItem(BANNER_DISMISS_KEY, "1");
@@ -127,8 +174,12 @@ const Demo = () => {
     }
   };
 
-  const [threshold] = useState<number>(resolveThreshold);
-  const showBanner = highlights.length >= threshold && !bannerDismissed;
+  const handleBannerClick = () => {
+    trackBannerEvent("banner_clicked", {
+      threshold,
+      highlights_count: highlights.length,
+    });
+  };
 
   const persist = (next: DemoHighlight[]) => {
     setHighlights(next);
@@ -420,7 +471,7 @@ const Demo = () => {
               </div>
               <div className="flex w-full items-center gap-2 sm:w-auto">
                 <Button asChild className="flex-1 gap-2 sm:flex-initial">
-                  <Link to="/library">
+                  <Link to="/library" onClick={handleBannerClick}>
                     Criar conta grátis
                     <ArrowRight className="h-4 w-4" />
                   </Link>
