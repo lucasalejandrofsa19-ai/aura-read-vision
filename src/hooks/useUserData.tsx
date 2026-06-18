@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchUserProfile, userProfileQueryKey } from "@/lib/userProfileQuery";
 
 export const useUserData = () => {
   const { user } = useAuth();
