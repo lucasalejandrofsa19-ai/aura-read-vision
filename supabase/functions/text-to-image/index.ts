@@ -29,6 +29,15 @@ serve(async (req) => {
       throw new Error('Highlight ID is required');
     }
 
+    // Validate highlightId is a UUID to prevent path traversal in storage paths
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (typeof highlightId !== 'string' || !UUID_RE.test(highlightId)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid highlightId format' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
     // Get user from auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
