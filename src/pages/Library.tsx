@@ -131,7 +131,7 @@ const Library = () => {
       >
         <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6 flex-wrap">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Minha Biblioteca
             </h1>
             <div className="flex gap-2">
