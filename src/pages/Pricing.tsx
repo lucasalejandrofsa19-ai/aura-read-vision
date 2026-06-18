@@ -292,16 +292,9 @@ export default function Pricing() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mt-16 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-purple-500/10 p-8 text-center"
+          className="mt-16"
         >
-          <h2 className="text-2xl font-bold mb-2">Pronto para começar a ler?</h2>
-          <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-            Acesse sua biblioteca agora e comece a aproveitar seus livros, destaques e resumos.
-          </p>
-          <Button size="lg" onClick={() => navigate("/library")} className="gap-2">
-            <BookOpen className="w-4 h-4" />
-            Ir para minha biblioteca
-          </Button>
+          <LibraryCTA />
         </motion.div>
 
         <motion.div
