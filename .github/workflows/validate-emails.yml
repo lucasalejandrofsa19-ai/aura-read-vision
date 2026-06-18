@@ -31,3 +31,7 @@ jobs:
 
       - name: Run email template validator
         run: npm run validate:emails
+
+      - name: Smoke test — validator must block invalid templates
+        run: npm run validate:emails:smoke
+
