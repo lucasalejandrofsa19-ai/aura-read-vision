@@ -74,10 +74,6 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
       return;
     }
 
-    // Atualizar cache imediatamente
-    const cacheKey = `theme_${user.id}`;
-    sessionStorage.setItem(cacheKey, newTheme);
-
     try {
       const { error } = await supabase
         .from("profiles")
@@ -85,7 +81,8 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
         .eq("id", user.id);
 
       if (error) throw error;
-      
+      queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
+
       toast.success("Tema salvo com sucesso!");
     } catch (error) {
       console.error("Error saving theme:", error);
