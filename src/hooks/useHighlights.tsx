@@ -20,14 +20,18 @@ export interface Highlight {
   user_id: string;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const useHighlights = (bookId: string, pageNumber: number) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { awardActionXP } = useGamification();
+  const validBook = !!bookId && UUID_RE.test(bookId);
 
   // Query para highlights da página atual
   const { data: highlights = [], isLoading } = useQuery({
     queryKey: ["highlights", bookId, pageNumber],
+    enabled: validBook,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("highlights")
@@ -44,6 +48,7 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
   // Query para todos os highlights do livro
   const { data: allHighlights = [] } = useQuery({
     queryKey: ["highlights", bookId, "all"],
+    enabled: validBook,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("highlights")
@@ -59,35 +64,43 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
   const addHighlightMutation = useMutation({
     mutationFn: async ({ position, text, color }: { position: { x: number; y: number; width: number; height: number }, text: string, color: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Usuário não autenticado");
+      if (!user) throw new Error("Faça login para criar destaques");
+      if (!validBook) throw new Error("ID do livro inválido");
+
+      const payload = {
+        book_id: bookId,
+        page_number: Math.max(1, Number(pageNumber) || 1),
+        text: ((text ?? "").toString().slice(0, 5000)) || " ",
+        color: color || "#fef08a",
+        position_data: {
+          x: Number(position?.x) || 0,
+          y: Number(position?.y) || 0,
+          width: Number(position?.width) || 0,
+          height: Number(position?.height) || 0,
+        },
+        user_id: user.id,
+      };
 
       const { data, error } = await supabase
         .from("highlights")
-        .insert({
-          book_id: bookId,
-          page_number: pageNumber,
-          text: text || "",
-          color: color || "#fef08a",
-          position_data: position,
-          user_id: user.id,
-        })
+        .insert(payload)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("[useHighlights] insert error:", error);
+        throw error;
+      }
       return { data, text };
     },
     onSuccess: ({ data, text }) => {
       queryClient.invalidateQueries({ queryKey: ["highlights", bookId, pageNumber] });
       queryClient.invalidateQueries({ queryKey: ["highlights", bookId, "all"] });
       awardActionXP("highlight").catch(() => {});
-      
-      // Copiar texto automaticamente para área de transferência e mostrar preview
+
       if (text && text.trim()) {
         navigator.clipboard.writeText(text).then(() => {
-          // Preview do texto extraído (máximo 150 caracteres)
           const preview = text.length > 150 ? text.substring(0, 150) + "..." : text;
-          
           toast({
             title: "✨ Destaque criado com sucesso",
             description: (
@@ -106,9 +119,7 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
         }).catch(() => {
           toast({
             title: "Destaque adicionado",
-            description: text.length > 100 
-              ? `"${text.substring(0, 100)}..."` 
-              : `"${text}"`,
+            description: text.length > 100 ? `"${text.substring(0, 100)}..."` : `"${text}"`,
             duration: 4000,
           });
         });
@@ -120,10 +131,16 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
         });
       }
     },
-    onError: () => {
+    onError: (error: any) => {
+      const msg =
+        error?.message ||
+        error?.error_description ||
+        error?.hint ||
+        "Não foi possível adicionar o destaque";
+      console.error("[useHighlights] mutation error:", error);
       toast({
-        title: "Erro",
-        description: "Não foi possível adicionar o destaque",
+        title: "Erro ao adicionar destaque",
+        description: msg,
         variant: "destructive",
       });
     },
@@ -144,6 +161,13 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
       toast({
         title: "Destaque removido",
         description: "Seu destaque foi excluído",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao remover destaque",
+        description: error?.message || "Tente novamente",
+        variant: "destructive",
       });
     },
   });
