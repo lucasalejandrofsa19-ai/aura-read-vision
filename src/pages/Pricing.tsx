@@ -250,15 +250,15 @@ export default function Pricing() {
                         {loading ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : isCurrentPlan(key) ? (
-                          "Plano Atual"
+                          "Seu plano atual"
                         ) : (
-                          "Assinar Agora"
+                          "Começar agora"
                         )}
                       </Button>
                     )}
                     {key === "free" && (
                       <div className="w-full text-center text-sm text-muted-foreground">
-                        Plano Gratuito
+                        Você está no plano gratuito
                       </div>
                     )}
                   </CardFooter>
