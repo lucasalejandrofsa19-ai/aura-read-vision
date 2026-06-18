@@ -1,0 +1,29 @@
+name: Validate Email Templates
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/transactional-email-templates/**'
+      - 'scripts/validate-email-templates.mjs'
+      - 'package.json'
+      - '.github/workflows/validate-emails.yml'
+  push:
+    branches: [main]
+
+jobs:
+  validate-emails:
+    name: Validate promotional template categories
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run email template validator
+        run: npm run validate:emails
