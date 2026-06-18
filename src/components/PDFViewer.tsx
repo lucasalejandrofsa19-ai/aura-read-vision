@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, RefreshCw, ArrowLeft, AlertTriangle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { PDFSearchBar } from "@/components/PDFSearchBar";
 import { usePDFPrefetch } from "@/hooks/usePDFPrefetch";
 import { HighlightCanvas } from "@/components/HighlightCanvas";
@@ -63,6 +64,9 @@ export const PDFViewer = ({
   const [autoFit, setAutoFit] = useState<boolean>(true);
   const pageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [loadError, setLoadError] = useState<Error | null>(null);
   
   // Search states
   const [searchTerm, setSearchTerm] = useState("");
@@ -112,7 +116,7 @@ export const PDFViewer = ({
   const onDocumentLoadSuccess = (pdfDoc: any) => {
     setNumPages(pdfDoc.numPages);
     setPageTexts(new Map());
-    // Reuse the same loaded document for highlight/search text extraction
+    setLoadError(null);
     pdfDocRef.current = pdfDoc;
   };
 
@@ -412,9 +416,11 @@ export const PDFViewer = ({
       >
         
         <Document
+          key={loadAttempt}
           file={fileUrl}
           onLoadSuccess={onDocumentLoadSuccess}
           onLoadError={(error: Error) => {
+            setLoadError(error);
             const ctx = {
               fileUrl: typeof fileUrl === "string" ? fileUrl : "[non-string file]",
               fileName:
@@ -438,6 +444,7 @@ export const PDFViewer = ({
             }
           }}
           onSourceError={(error: Error) => {
+            setLoadError(error);
             console.error("[PDFViewer] Falha na fonte do PDF:", {
               fileUrl,
               errorMessage: error?.message,
@@ -450,11 +457,37 @@ export const PDFViewer = ({
             </div>
           }
           error={
-            <div className="p-12 text-center">
-              <p className="text-destructive">Erro ao carregar o PDF</p>
-              <p className="text-xs text-muted-foreground mt-2">
-                Detalhes técnicos enviados para diagnóstico. Verifique o console.
-              </p>
+            <div className="p-8 sm:p-12 text-center flex flex-col items-center gap-4 max-w-md mx-auto">
+              <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertTriangle className="w-7 h-7 text-destructive" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">Não foi possível abrir o PDF</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  O arquivo pode estar corrompido, indisponível ou sua conexão caiu.
+                </p>
+                {loadError?.message && (
+                  <p className="text-xs text-muted-foreground/70 mt-2 font-mono break-all">
+                    {loadError.message}
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <Button
+                  onClick={() => {
+                    setLoadError(null);
+                    setLoadAttempt((n) => n + 1);
+                  }}
+                  className="gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Tentar novamente
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/library")} className="gap-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  Voltar à biblioteca
+                </Button>
+              </div>
             </div>
           }
         >
