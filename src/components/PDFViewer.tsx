@@ -516,7 +516,10 @@ export const PDFViewer = ({
           onLoadSuccess={onDocumentLoadSuccess}
           onLoadError={(error: Error) => {
             setLoadError(error);
+            const cause = classifyPdfError(error, fileUrl);
             const ctx = {
+              likelyCause: cause.title,
+              likelyCauseHint: cause.hint,
               fileUrl: typeof fileUrl === "string" ? fileUrl : "[non-string file]",
               fileName:
                 typeof fileUrl === "string"
