@@ -162,8 +162,12 @@ export const useSubscription = () => {
   useEffect(() => {
     checkSubscription();
 
-    // Check subscription every minute
-    const interval = setInterval(checkSubscription, 60000);
+    // Re-check every 5 minutes, and only while tab is visible
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        checkSubscription(true);
+      }
+    }, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [checkSubscription]);
