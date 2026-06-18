@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
+import { fetchUserProfile, userProfileQueryKey } from "@/lib/userProfileQuery";
 
 interface AuthContextType {
   user: User | null;
@@ -88,18 +89,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       const profile = authUser
         ? await queryClient.fetchQuery({
-            queryKey: ["user-profile", authUser.id],
-            queryFn: async () => {
-              const { data, error } = await supabase
-                .from("profiles")
-                .select(
-                  "full_name, avatar_url, theme_preference, has_seen_library_tour, has_seen_welcome, has_seen_reader_tour, ultra_performance_mode, zoom_sensitivity, sync_reading_enabled"
-                )
-                .eq("id", authUser.id)
-                .single();
-              if (error) throw error;
-              return data;
-            },
+            queryKey: userProfileQueryKey(authUser.id),
+            queryFn: () => fetchUserProfile(authUser.id),
           })
         : null;
 

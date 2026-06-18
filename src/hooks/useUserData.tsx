@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchUserProfile, userProfileQueryKey } from "@/lib/userProfileQuery";
 
 export const useUserData = () => {
   const { user } = useAuth();
@@ -26,18 +27,10 @@ export const useUserData = () => {
 
   // Fetch user profile with cache
   const { data: profileData, isLoading: profileLoading } = useQuery({
-    queryKey: ["user-profile", user?.id],
+    queryKey: user ? userProfileQueryKey(user.id) : ["user-profile", "anon"],
     queryFn: async () => {
       if (!user) return null;
-      
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("full_name, avatar_url, theme_preference, has_seen_library_tour, has_seen_welcome, has_seen_reader_tour, ultra_performance_mode, zoom_sensitivity, sync_reading_enabled")
-        .eq("id", user.id)
-        .single();
-
-      if (error) throw error;
-      return data;
+      return fetchUserProfile(user.id);
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
