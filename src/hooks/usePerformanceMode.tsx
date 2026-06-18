@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { userProfileQueryKey } from "@/lib/userProfileQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserData } from "@/hooks/useUserData";
@@ -33,7 +34,7 @@ export const usePerformanceMode = () => {
         .eq("id", user.id);
 
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
+      queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
 
       toast.success(
         newValue

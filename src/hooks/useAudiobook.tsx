@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { userProfileQueryKey } from "@/lib/userProfileQuery";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -100,7 +101,7 @@ export const useAudiobook = ({
       .from('profiles')
       .update({ sync_reading_enabled: enabled })
       .eq('id', user.id);
-    queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
+    queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
   }, [user, queryClient]);
 
 

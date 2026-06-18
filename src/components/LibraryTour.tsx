@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { userProfileQueryKey } from "@/lib/userProfileQuery";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -120,7 +121,7 @@ export const LibraryTour = () => {
           .from("profiles")
           .update({ has_seen_library_tour: true })
           .eq("id", user.id);
-        queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
+        queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
 
         toast.success("Tour concluído! Você está pronto para começar.");
       } catch (error) {
@@ -138,7 +139,7 @@ export const LibraryTour = () => {
           .from("profiles")
           .update({ has_seen_library_tour: true })
           .eq("id", user.id);
-        queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
+        queryClient.invalidateQueries({ queryKey: userProfileQueryKey(user.id) });
       } catch (error) {
         console.error("Error updating tour status:", error);
       }
