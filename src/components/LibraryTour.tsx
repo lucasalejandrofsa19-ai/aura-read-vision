@@ -44,6 +44,7 @@ const tourSteps: TourStep[] = [
 
 export const LibraryTour = () => {
   const { user } = useAuth();
+  const { getTarget } = useTourTargets();
   const [currentStep, setCurrentStep] = useState(0);
   const [showTour, setShowTour] = useState(false);
   const [targetPosition, setTargetPosition] = useState({ top: 0, left: 0, width: 0, height: 0 });
