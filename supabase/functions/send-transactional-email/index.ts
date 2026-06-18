@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
     const { data: prefs, error: prefsError } = await supabase
       .from('email_preferences')
       .select('ads, content, product_updates')
-      .eq('email', normalizedEmailLookup(effectiveRecipient))
+      .eq('email', effectiveRecipient.toLowerCase())
       .maybeSingle()
 
     if (prefsError) {
