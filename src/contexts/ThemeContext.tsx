@@ -29,59 +29,28 @@ interface ThemeProviderProps {
 
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const { user } = useAuth();
+  const { profile, isLoading: profileLoading } = useUserData();
+  const queryClient = useQueryClient();
   const [theme, setThemeState] = useState<ThemeType>("safira");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load theme from user profile with cache
   useEffect(() => {
-    const loadTheme = async () => {
-      if (!user) {
-        // Use local storage for non-authenticated users
-        const savedTheme = localStorage.getItem("theme") as ThemeType;
-        if (savedTheme) {
-          setThemeState(savedTheme);
-          applyTheme(savedTheme);
-        }
-        setIsLoading(false);
-        return;
+    if (!user) {
+      const savedTheme = localStorage.getItem("theme") as ThemeType;
+      if (savedTheme) {
+        setThemeState(savedTheme);
+        applyTheme(savedTheme);
       }
+      setIsLoading(false);
+      return;
+    }
+    if (profileLoading) return;
+    const userTheme = (profile?.theme_preference as ThemeType) || "safira";
+    setThemeState(userTheme);
+    applyTheme(userTheme);
+    setIsLoading(false);
+  }, [user, profileLoading, profile?.theme_preference]);
 
-      // Verificar cache primeiro
-      const cacheKey = `theme_${user.id}`;
-      const cachedTheme = sessionStorage.getItem(cacheKey);
-      
-      if (cachedTheme) {
-        const theme = cachedTheme as ThemeType;
-        setThemeState(theme);
-        applyTheme(theme);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("theme_preference")
-          .eq("id", user.id)
-          .single();
-
-        if (error) throw error;
-
-        const userTheme = (data?.theme_preference as ThemeType) || "safira";
-        setThemeState(userTheme);
-        applyTheme(userTheme);
-        
-        // Salvar no cache da sessão
-        sessionStorage.setItem(cacheKey, userTheme);
-      } catch (error) {
-        console.error("Error loading theme:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadTheme();
-  }, [user]);
 
   const applyTheme = (newTheme: ThemeType) => {
     // Remove all theme classes
