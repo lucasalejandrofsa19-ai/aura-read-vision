@@ -23,11 +23,15 @@ const sanitizeFileName = (name: string) => {
   return `${clean}.pdf`;
 };
 
+export interface UploadPDFHandle {
+  openPicker: () => void;
+}
+
 interface UploadPDFProps {
   onUploadComplete?: () => void;
 }
 
-const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
+const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplete } = {}, ref) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
