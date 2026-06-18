@@ -42,6 +42,7 @@ import { ReaderTour } from "@/components/ReaderTour";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 import { useReadingSession } from "@/hooks/useReadingSession";
 import { useHighlights } from "@/hooks/useHighlights";
 import { HighlightsList } from "@/components/HighlightsList";
@@ -112,6 +113,7 @@ const Reader = () => {
 
   const { enterFullscreen } = useFullscreen();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { startSession, endSession, updateSession, isSessionActive } = useReadingSession(id || "");
 
   useEffect(() => {
@@ -567,6 +569,7 @@ const Reader = () => {
                       .from("profiles")
                       .update({ has_seen_reader_tour: false })
                       .eq("id", user.id);
+                    await queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
                     window.dispatchEvent(new CustomEvent("reader-tour:restart"));
                   }}
                 >
