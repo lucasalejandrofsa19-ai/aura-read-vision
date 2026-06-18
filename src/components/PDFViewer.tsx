@@ -565,7 +565,6 @@ export const PDFViewer = ({
           file={fileUrl}
           onLoadSuccess={onDocumentLoadSuccess}
           onLoadError={(error: Error) => {
-            setLoadError(error);
             const cause = classifyPdfError(error, fileUrl);
             const ctx = {
               likelyCause: cause.title,
@@ -578,6 +577,7 @@ export const PDFViewer = ({
               errorName: error?.name,
               errorMessage: error?.message,
               stack: error?.stack,
+              currentWorkerSrc: pdfjs.GlobalWorkerOptions.workerSrc,
               userAgent:
                 typeof navigator !== "undefined" ? navigator.userAgent : "n/a",
               platform:
@@ -585,6 +585,16 @@ export const PDFViewer = ({
               timestamp: new Date().toISOString(),
             };
             console.error("[PDFViewer] Falha ao carregar PDF:", ctx);
+
+            // Fallback automático para falhas de worker antes de exibir erro
+            if (cause.title === "Worker do PDF.js não carregou") {
+              if (tryWorkerFallback()) {
+                console.info("[PDFViewer] Aplicando fallback de worker automaticamente.");
+                return; // não exibe erro nem reporta a Sentry — nova tentativa em curso
+              }
+            }
+
+            setLoadError(error);
             try {
               captureError(error, { tags: { component: "PDFViewer" }, extra: ctx });
             } catch (e) {
