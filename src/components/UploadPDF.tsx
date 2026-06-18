@@ -135,7 +135,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
             throw insertError;
           }
 
-          toast.success("PDF adicionado com sucesso!");
+          toast.success("Pronto. Seu PDF está na biblioteca.");
 
 
           // Invalidar query imediatamente para mostrar o card com loading
