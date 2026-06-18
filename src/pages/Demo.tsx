@@ -471,7 +471,7 @@ const Demo = () => {
               </div>
               <div className="flex w-full items-center gap-2 sm:w-auto">
                 <Button asChild className="flex-1 gap-2 sm:flex-initial">
-                  <Link to="/library">
+                  <Link to="/library" onClick={handleBannerClick}>
                     Criar conta grátis
                     <ArrowRight className="h-4 w-4" />
                   </Link>
