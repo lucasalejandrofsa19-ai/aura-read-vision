@@ -1,7 +1,10 @@
 import { SEO } from "@/components/SEO";
 import { useState, useEffect, useMemo, memo, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle } from "lucide-react";
+import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle, BookOpen, RotateCcw } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -154,15 +157,41 @@ const LibraryInner = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="aura-soft transition-aura"
-              onClick={() => navigate("/guia")}
-              title="Guia de uso"
-              aria-label="Guia de uso">
-              <HelpCircle className="w-5 h-5" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="aura-soft transition-aura"
+                  title="Ajuda"
+                  aria-label="Ajuda">
+                  <HelpCircle className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="glass w-56">
+                <DropdownMenuItem onClick={() => navigate("/guia")}>
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Guia de uso
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={async () => {
+                    if (!user) return;
+                    const { error } = await supabase
+                      .from("profiles")
+                      .update({ has_seen_library_tour: false })
+                      .eq("id", user.id);
+                    if (error) {
+                      toast.error("Não foi possível reiniciar o tour");
+                      return;
+                    }
+                    window.dispatchEvent(new CustomEvent("library-tour:restart"));
+                  }}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Rever tour
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="ghost"
               size="icon"
