@@ -43,6 +43,68 @@ interface PDFViewerProps {
   spokenText?: string;
 }
 
+type LikelyCause = {
+  title: string;
+  hint: string;
+};
+
+const classifyPdfError = (
+  error: Error | null,
+  fileUrl: unknown
+): LikelyCause => {
+  const msg = (error?.message || "").toLowerCase();
+  const name = (error?.name || "").toLowerCase();
+  const url = typeof fileUrl === "string" ? fileUrl : "";
+
+  // URL assinada do Supabase Storage expirada
+  if (url.includes("token=") && /expired|signature|403|forbidden/.test(msg)) {
+    return {
+      title: "URL expirada",
+      hint: "O link assinado do arquivo expirou. Recarregue a página para gerar um novo.",
+    };
+  }
+  if (/cors|cross-origin|blocked by cors/.test(msg)) {
+    return {
+      title: "Bloqueio de CORS",
+      hint: "O servidor do arquivo não permite acesso desta origem.",
+    };
+  }
+  if (/mime|unexpectedresponseexception|invalid pdf|invalidpdfexception|missing pdf/.test(msg) || name.includes("invalidpdf")) {
+    return {
+      title: "Arquivo inválido ou MIME incorreto",
+      hint: "O conteúdo retornado não é um PDF válido (verifique Content-Type e integridade).",
+    };
+  }
+  if (/404|not.?found/.test(msg)) {
+    return {
+      title: "Arquivo não encontrado (404)",
+      hint: "O PDF foi removido do storage ou o caminho está incorreto.",
+    };
+  }
+  if (/401|403|unauthor|forbidden/.test(msg)) {
+    return {
+      title: "Acesso negado",
+      hint: "Sem permissão para baixar o arquivo (verifique RLS/policies do bucket).",
+    };
+  }
+  if (/network|failed to fetch|load failed|timeout|aborted/.test(msg)) {
+    return {
+      title: "Falha de rede",
+      hint: "Conexão instável ou servidor indisponível. Tente novamente.",
+    };
+  }
+  if (/password/.test(msg)) {
+    return {
+      title: "PDF protegido por senha",
+      hint: "Este PDF requer senha para ser aberto.",
+    };
+  }
+  return {
+    title: "Causa desconhecida",
+    hint: "Não foi possível identificar a origem do erro automaticamente.",
+  };
+};
+
 export const PDFViewer = ({ 
   fileUrl, 
   initialPage = 1, 
@@ -454,7 +516,10 @@ export const PDFViewer = ({
           onLoadSuccess={onDocumentLoadSuccess}
           onLoadError={(error: Error) => {
             setLoadError(error);
+            const cause = classifyPdfError(error, fileUrl);
             const ctx = {
+              likelyCause: cause.title,
+              likelyCauseHint: cause.hint,
               fileUrl: typeof fileUrl === "string" ? fileUrl : "[non-string file]",
               fileName:
                 typeof fileUrl === "string"
@@ -499,11 +564,22 @@ export const PDFViewer = ({
                 <p className="text-sm text-muted-foreground mt-1">
                   O arquivo pode estar corrompido, indisponível ou sua conexão caiu.
                 </p>
-                {loadError?.message && (
-                  <p className="text-xs text-muted-foreground/70 mt-2 font-mono break-all">
-                    {loadError.message}
-                  </p>
-                )}
+                {(() => {
+                  const cause = classifyPdfError(loadError, fileUrl);
+                  return (
+                    <div className="mt-3 rounded-md border border-border bg-muted/40 p-3 text-left">
+                      <p className="text-xs font-semibold">
+                        Causa provável: <span className="text-primary">{cause.title}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{cause.hint}</p>
+                      {loadError?.message && (
+                        <p className="text-[10px] text-muted-foreground/70 mt-2 font-mono break-all">
+                          {loadError.message}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div className="flex flex-col items-center gap-2">
                 {retryCount >= MAX_RETRIES ? (
