@@ -89,8 +89,8 @@ const Index = () => {
   return (
     <>
     <SEO
-      title="AURA READ — Biblioteca Interativa de PDFs com IA"
-      description="Leia, destaque e resuma PDFs com IA. Biblioteca pessoal interativa, marca-texto inteligente e geração de imagens. Comece grátis."
+      title="AURA READ — Leia menos. Retenha mais."
+      description="Marque, resuma e domine qualquer PDF com IA. Biblioteca pessoal, destaques inteligentes e resumos automáticos. Comece grátis."
       path="/"
       jsonLd={{
         "@context": "https://schema.org",
