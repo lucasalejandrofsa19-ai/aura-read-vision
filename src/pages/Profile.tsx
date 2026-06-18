@@ -21,6 +21,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useUserData } from "@/hooks/useUserData";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePerformanceMode } from "@/hooks/usePerformanceMode";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LazyLoadWrapper } from "@/components/LazyLoadWrapper";
