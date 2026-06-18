@@ -222,6 +222,7 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
       </Button>
     </>
   );
-};
+});
+UploadPDF.displayName = "UploadPDF";
 
 export default UploadPDF;
