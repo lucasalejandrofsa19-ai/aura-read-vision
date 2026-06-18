@@ -121,15 +121,15 @@ const Library = () => {
            backgroundImage: `radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.05), transparent 50%)`
          }}
     >
-    <div className="mx-auto w-full max-w-screen-2xl p-4 sm:p-6 lg:p-8 xl:p-10">
+    <div className="mx-auto w-full max-w-screen-2xl p-3 sm:p-6 lg:p-8 xl:p-10">
 
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass rounded-2xl p-6 mb-8 aura-soft"
+        className="glass rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 aura-soft"
       >
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6 flex-wrap">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Minha Biblioteca
