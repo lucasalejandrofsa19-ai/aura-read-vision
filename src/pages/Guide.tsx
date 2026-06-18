@@ -19,6 +19,7 @@ import {
   Image as ImageIcon,
   Presentation,
   Target,
+  BookOpen,
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
