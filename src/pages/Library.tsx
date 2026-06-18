@@ -30,6 +30,7 @@ import { AuthDialog } from "@/components/AuthDialog";
 import { LogIn } from "lucide-react";
 import LibraryCTA from "@/components/LibraryCTA";
 import { TourTargetsProvider, useTourTarget } from "@/contexts/TourTargetsContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Memoizar BookCard para evitar re-renders desnecessários
 const MemoizedBookCard = memo(BookCard);
@@ -46,6 +47,7 @@ const LibraryInner = () => {
   const { isAdmin, hasPremiumAccess } = useUserData();
   const { books, premiumBooks, isLoading } = useBooks();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   // Refs for scroll containers
   const premiumScrollRef = useRef<HTMLDivElement>(null);
@@ -184,6 +186,7 @@ const LibraryInner = () => {
                       toast.error("Não foi possível reiniciar o tour");
                       return;
                     }
+                    await queryClient.invalidateQueries({ queryKey: ["user-profile", user.id] });
                     window.dispatchEvent(new CustomEvent("library-tour:restart"));
                   }}
                 >
