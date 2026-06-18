@@ -430,7 +430,11 @@ const LibraryInner = () => {
                   onTouchStart={() => setActiveSection('user')}
                 >
                   {filteredBooks.map((book, index) => (
-                    <div key={book.id} className="flex-shrink-0 w-48">
+                    <div
+                      key={book.id}
+                      className="flex-shrink-0 w-48"
+                      ref={index === 0 ? bookCardRef : undefined}
+                    >
                       <LazyLoadWrapper
                         minHeight="280px"
                         rootMargin="200px"
@@ -441,10 +445,9 @@ const LibraryInner = () => {
                           </div>
                         }
                       >
-                        <MemoizedBookCard 
-                          book={book} 
-                          index={index} 
-                          data-tour={index === 0 ? "book-card" : undefined}
+                        <MemoizedBookCard
+                          book={book}
+                          index={index}
                         />
                       </LazyLoadWrapper>
                     </div>
