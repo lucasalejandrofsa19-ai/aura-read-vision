@@ -144,7 +144,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
           // Generate cover from first page in the background
           const generateCoverAsync = async () => {
             try {
-              toast.loading("Gerando capa da primeira página...", { id: "cover-generation" });
+              toast.loading("Preparando a capa…", { id: "cover-generation" });
               
               // Get a signed URL for the PDF (private bucket)
               const { data: signedData } = await supabase.storage
@@ -152,11 +152,11 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
                 .createSignedUrl(fileName, 60 * 60);
 
               await generateCover(bookData.id, signedData?.signedUrl ?? "", 1);
-              toast.success("✨ Capa gerada com sucesso!", { id: "cover-generation" });
+              toast.success("Capa pronta ✨", { id: "cover-generation" });
               queryClient.invalidateQueries({ queryKey: ["books", user.id] });
             } catch (error) {
               captureError(error, { context: "auto_generate_cover" });
-              toast.error("Erro ao gerar capa", { id: "cover-generation" });
+              toast.error("Não conseguimos gerar a capa agora.", { id: "cover-generation" });
             }
           };
 
