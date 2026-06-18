@@ -1,5 +1,5 @@
 import { SEO } from "@/components/SEO";
-import { invalidateUserProfile } from "@/lib/userProfileQuery";
+import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserData } from "@/hooks/useUserData";
-import { useQueryClient } from "@tanstack/react-query";
+
 import { usePerformanceMode } from "@/hooks/usePerformanceMode";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LazyLoadWrapper } from "@/components/LazyLoadWrapper";
@@ -38,7 +38,7 @@ const Profile = () => {
   const { theme } = useTheme();
   const { isAdmin, hasPremiumAccess } = useUserRole();
   const { profile } = useUserData();
-  const queryClient = useQueryClient();
+  const invalidateProfile = useInvalidateUserProfile();
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -85,7 +85,7 @@ const Profile = () => {
         .eq("id", user.id);
 
       if (error) throw error;
-      invalidateUserProfile(queryClient, user.id);
+      invalidateProfile();
 
       toast.success("Perfil atualizado com sucesso!");
     } catch (error) {
@@ -119,7 +119,7 @@ const Profile = () => {
         .eq("id", user.id);
 
       if (updateError) throw updateError;
-      invalidateUserProfile(queryClient, user.id);
+      invalidateProfile();
 
       const signed = await getSignedStorageUrl("avatars", filePath);
       setAvatarUrl(signed);

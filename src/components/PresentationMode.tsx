@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, memo } from "react";
-import { invalidateUserProfile } from "@/lib/userProfileQuery";
+import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMobileOptimization } from "@/hooks/useMobileOptimization";
 import { Document, Page } from "react-pdf";
@@ -16,7 +16,7 @@ import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserData } from "@/hooks/useUserData";
-import { useQueryClient } from "@tanstack/react-query";
+
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -53,7 +53,7 @@ export const PresentationMode = memo(({
   
   // Load zoom sensitivity from cached profile
   const { profile } = useUserData();
-  const queryClient = useQueryClient();
+  const invalidateProfile = useInvalidateUserProfile();
   useEffect(() => {
     if (profile?.zoom_sensitivity) {
       setZoomSensitivity(profile.zoom_sensitivity);
@@ -68,7 +68,7 @@ export const PresentationMode = memo(({
       .from("profiles")
       .update({ zoom_sensitivity: value })
       .eq("id", user.id);
-    invalidateUserProfile(queryClient, user.id);
+    invalidateProfile();
   };
 
   const goToPrevPage = useCallback(() => {

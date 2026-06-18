@@ -1,10 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { invalidateUserProfile } from "@/lib/userProfileQuery";
+import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserData } from '@/hooks/useUserData';
-import { useQueryClient } from '@tanstack/react-query';
+
 import { pdfjs } from 'react-pdf';
 
 // Worker is configured globally in src/lib/pdfjsWorker.ts
@@ -82,7 +82,7 @@ export const useAudiobook = ({
 
   // Load sync preference from cached profile
   const { profile, isLoading: profileLoading } = useUserData();
-  const queryClient = useQueryClient();
+  const invalidateProfile = useInvalidateUserProfile();
   useEffect(() => {
     if (!user || profileLoading) return;
     if (profile?.sync_reading_enabled !== null && profile?.sync_reading_enabled !== undefined) {
@@ -101,8 +101,8 @@ export const useAudiobook = ({
       .from('profiles')
       .update({ sync_reading_enabled: enabled })
       .eq('id', user.id);
-    invalidateUserProfile(queryClient, user.id);
-  }, [user, queryClient]);
+    invalidateProfile();
+  }, [user, invalidateProfile]);
 
 
   // Browser TTS refs

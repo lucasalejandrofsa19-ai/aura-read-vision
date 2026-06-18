@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
-import { invalidateUserProfile } from "@/lib/userProfileQuery";
+import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserData } from "@/hooks/useUserData";
-import { useQueryClient } from "@tanstack/react-query";
+
 import { toast } from "sonner";
 
 export const usePerformanceMode = () => {
   const { user } = useAuth();
   const { profile, isLoading } = useUserData();
-  const queryClient = useQueryClient();
+  const invalidateProfile = useInvalidateUserProfile();
   const [isUltraPerformanceMode, setIsUltraPerformanceMode] = useState(false);
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export const usePerformanceMode = () => {
         .eq("id", user.id);
 
       if (error) throw error;
-      invalidateUserProfile(queryClient, user.id);
+      invalidateProfile();
 
       toast.success(
         newValue
