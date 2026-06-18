@@ -285,18 +285,24 @@ export type Database = {
       }
       email_preferences: {
         Row: {
+          ads: boolean
+          content: boolean
           email: string
           marketing: boolean
           product_updates: boolean
           updated_at: string
         }
         Insert: {
+          ads?: boolean
+          content?: boolean
           email: string
           marketing?: boolean
           product_updates?: boolean
           updated_at?: string
         }
         Update: {
+          ads?: boolean
+          content?: boolean
           email?: string
           marketing?: boolean
           product_updates?: boolean

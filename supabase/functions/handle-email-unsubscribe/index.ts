@@ -24,7 +24,9 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url)
   let token: string | null = url.searchParams.get('token')
-  let preferences: { marketing?: boolean; product_updates?: boolean } | null = null
+  let preferences:
+    | { ads?: boolean; content?: boolean; product_updates?: boolean }
+    | null = null
   let isOneClick = false
 
   if (req.method === 'POST') {
@@ -44,7 +46,8 @@ Deno.serve(async (req) => {
         if (body.token) token = body.token
         if (body.preferences && typeof body.preferences === 'object') {
           preferences = {
-            marketing: !!body.preferences.marketing,
+            ads: !!body.preferences.ads,
+            content: !!body.preferences.content,
             product_updates: !!body.preferences.product_updates,
           }
         }
@@ -53,6 +56,7 @@ Deno.serve(async (req) => {
       }
     }
   }
+
 
   if (!token) {
     return jsonResponse({ error: 'Token is required' }, 400)
@@ -75,12 +79,13 @@ Deno.serve(async (req) => {
   // Always return current preferences for the page
   const { data: prefs } = await supabase
     .from('email_preferences')
-    .select('marketing, product_updates')
+    .select('ads, content, product_updates')
     .eq('email', emailLower)
     .maybeSingle()
 
   const currentPrefs = {
-    marketing: prefs?.marketing ?? true,
+    ads: prefs?.ads ?? true,
+    content: prefs?.content ?? true,
     product_updates: prefs?.product_updates ?? true,
   }
 
@@ -103,8 +108,10 @@ Deno.serve(async (req) => {
   if (preferences && !isOneClick) {
     const nextPrefs = {
       email: emailLower,
-      marketing: preferences.marketing ?? true,
+      ads: preferences.ads ?? true,
+      content: preferences.content ?? true,
       product_updates: preferences.product_updates ?? true,
+      marketing: !!(preferences.ads || preferences.content),
       updated_at: new Date().toISOString(),
     }
     const { error: upsertErr } = await supabase
@@ -115,7 +122,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Failed to save preferences' }, 500)
     }
 
-    const allOff = !nextPrefs.marketing && !nextPrefs.product_updates
+    const allOff = !nextPrefs.ads && !nextPrefs.content && !nextPrefs.product_updates
     if (allOff) {
       await supabase
         .from('suppressed_emails')
@@ -126,16 +133,20 @@ Deno.serve(async (req) => {
         .eq('token', token)
         .is('used_at', null)
     } else if (suppressed) {
-      // Re-enable transactional/essentials by removing suppression
       await supabase.from('suppressed_emails').delete().eq('email', emailLower)
     }
 
     return jsonResponse({
       success: true,
-      preferences: { marketing: nextPrefs.marketing, product_updates: nextPrefs.product_updates },
+      preferences: {
+        ads: nextPrefs.ads,
+        content: nextPrefs.content,
+        product_updates: nextPrefs.product_updates,
+      },
       fully_unsubscribed: allOff,
     })
   }
+
 
   // Legacy / one-click full unsubscribe
   if (tokenRecord.used_at && suppressed) {
@@ -174,7 +185,7 @@ Deno.serve(async (req) => {
   await supabase
     .from('email_preferences')
     .upsert(
-      { email: emailLower, marketing: false, product_updates: false, updated_at: new Date().toISOString() },
+      { email: emailLower, ads: false, content: false, product_updates: false, marketing: false, updated_at: new Date().toISOString() },
       { onConflict: 'email' },
     )
 
