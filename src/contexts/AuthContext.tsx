@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { captureError } from "@/lib/sentry";
 
@@ -21,6 +22,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     let mounted = true;
@@ -82,21 +84,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      // Check if user has seen welcome page
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("has_seen_welcome")
-        .eq("id", (await supabase.auth.getUser()).data.user?.id)
-        .single();
+      // Reuse the same query as useUserData — populates cache, no duplicate fetch
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const profile = authUser
+        ? await queryClient.fetchQuery({
+            queryKey: ["user-profile", authUser.id],
+            queryFn: async () => {
+              const { data, error } = await supabase
+                .from("profiles")
+                .select(
+                  "full_name, avatar_url, theme_preference, has_seen_library_tour, has_seen_welcome, has_seen_reader_tour, ultra_performance_mode, zoom_sensitivity, sync_reading_enabled"
+                )
+                .eq("id", authUser.id)
+                .single();
+              if (error) throw error;
+              return data;
+            },
+          })
+        : null;
 
       toast.success("Login realizado com sucesso!");
-      
+
       if (profile && !profile.has_seen_welcome) {
         navigate("/welcome");
       } else {
         navigate("/library");
       }
-      
+
       return { error: null };
     } catch (error) {
       return { error: error as Error };
