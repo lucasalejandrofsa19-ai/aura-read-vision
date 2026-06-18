@@ -26,6 +26,7 @@ import { ADSENSE_SLOTS } from "@/lib/adsense";
 import { AuthDialog } from "@/components/AuthDialog";
 import { LogIn } from "lucide-react";
 import LibraryCTA from "@/components/LibraryCTA";
+import { TourTargetsProvider, useTourTarget } from "@/contexts/TourTargetsContext";
 
 // Memoizar BookCard para evitar re-renders desnecessários
 const MemoizedBookCard = memo(BookCard);
