@@ -10,6 +10,7 @@ import { useABTest } from "@/hooks/useABTest";
 import installIOS from "@/assets/install-ios.png";
 import installAndroid from "@/assets/install-android.png";
 import installDesktop from "@/assets/install-desktop.png";
+import LibraryCTA from "@/components/LibraryCTA";
 
 const Install = () => {
   const navigate = useNavigate();
@@ -617,14 +618,8 @@ const Install = () => {
         </Card>
 
         {/* CTA */}
-        <div className="mt-8 text-center">
-          <Button
-            onClick={() => navigate("/library")}
-            size="lg"
-            className="aura-soft transition-aura"
-          >
-            Ir para Biblioteca
-          </Button>
+        <div className="mt-8">
+          <LibraryCTA />
         </div>
       </motion.main>
     </div>
