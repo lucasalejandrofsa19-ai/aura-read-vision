@@ -461,7 +461,7 @@ const Library = () => {
         className="fixed bottom-8 right-8"
         data-tour="upload-button"
       >
-        <UploadPDF />
+        <UploadPDF ref={uploadPDFRef} />
       </motion.div>
 
       {subscriptionDialogOpen && (
