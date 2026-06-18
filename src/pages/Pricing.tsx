@@ -159,8 +159,8 @@ export default function Pricing() {
   return (
     <>
     <SEO
-      title="Planos e Preços — AURA READ"
-      description="Compare os planos Gratuito, Pro e Premium. Recursos exclusivos como TTS, exportação, IA de imagens e biblioteca premium."
+      title="Planos AURA READ — Comece grátis, evolua quando quiser"
+      description="Free, Pro, Estudante e Premium. Resumos com IA, exportação, leitura em voz alta e mais. Sem fidelidade. Cancele em um clique."
       path="/pricing"
       jsonLd={productJsonLd}
     />
