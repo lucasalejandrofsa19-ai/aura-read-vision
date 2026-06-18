@@ -181,10 +181,10 @@ export default function Pricing() {
           className="text-center mb-12"
         >
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            Escolha seu Plano
+            Um plano para cada leitor
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Desbloqueie todo o potencial da sua leitura com recursos premium
+            Comece grátis. Evolua conforme sua leitura cresce.
           </p>
         </motion.div>
 
