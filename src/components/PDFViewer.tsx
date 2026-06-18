@@ -146,7 +146,26 @@ export const PDFViewer = ({
   const [retryCount, setRetryCount] = useState(0);
   const [retryDelay, setRetryDelay] = useState(0); // segundos restantes
   const [loadError, setLoadError] = useState<Error | null>(null);
+  const workerFallbackTriedRef = useRef(false);
   const MAX_RETRIES = 4;
+
+  // Lista ordenada de workerSrc para tentar em sequência ao detectar falha de worker
+  const workerFallbacks = [
+    `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
+    `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
+  ];
+  const workerFallbackIndexRef = useRef(0);
+
+  const tryWorkerFallback = useCallback((): boolean => {
+    if (workerFallbackIndexRef.current >= workerFallbacks.length) return false;
+    const nextSrc = workerFallbacks[workerFallbackIndexRef.current++];
+    console.warn("[PDFViewer] Tentando workerSrc alternativo:", nextSrc);
+    pdfjs.GlobalWorkerOptions.workerSrc = nextSrc;
+    workerFallbackTriedRef.current = true;
+    setLoadError(null);
+    setLoadAttempt((n) => n + 1);
+    return true;
+  }, []);
 
   // Reseta tentativas quando o arquivo muda
   useEffect(() => {
@@ -154,6 +173,7 @@ export const PDFViewer = ({
     setRetryDelay(0);
     setLoadError(null);
   }, [fileUrl]);
+
 
   const handleRetry = useCallback(async () => {
     if (retryCount >= MAX_RETRIES || retryDelay > 0) return;
