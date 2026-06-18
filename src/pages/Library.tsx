@@ -486,4 +486,10 @@ const LibraryInner = () => {
   );
 };
 
+const Library = () => (
+  <TourTargetsProvider>
+    <LibraryInner />
+  </TourTargetsProvider>
+);
+
 export default Library;
