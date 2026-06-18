@@ -39,7 +39,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) {
-      if (!user) toast.error("Faça login para adicionar PDFs");
+      if (!user) toast.error("Faça login para começar sua biblioteca.");
       return;
     }
 
@@ -51,13 +51,13 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
     // Validar tipo (alguns navegadores não setam file.type)
     const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
     if (!isPdf) {
-      toast.error("Por favor, selecione um arquivo PDF");
+      toast.error("Só aceitamos PDFs por aqui.");
       return;
     }
 
     // Limite de 50MB
     if (file.size > 52428800) {
-      toast.error("Arquivo muito grande. Limite de 50MB");
+      toast.error("Esse PDF passa de 50MB. Tente um arquivo menor.");
       return;
     }
 
@@ -68,7 +68,7 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
       .eq("user_id", user.id);
 
     if (countError) {
-      toast.error("Não foi possível verificar sua biblioteca. Tente novamente.");
+      toast.error("Não conseguimos checar sua biblioteca agora. Tente em alguns segundos.");
       return;
     }
 
@@ -76,8 +76,8 @@ const UploadPDF = ({ onUploadComplete }: UploadPDFProps = {}) => {
     if ((count || 0) >= maxBooks) {
       toast.error(
         hasPremiumAccess || isAdmin
-          ? `Limite de ${maxBooks} livros atingido.`
-          : `Limite de ${maxBooks} livros atingido. Faça upgrade para adicionar mais!`
+          ? `Você atingiu o limite de ${maxBooks} livros.`
+          : `Você chegou ao limite do plano gratuito (${maxBooks} livros). Libere uploads ilimitados no Premium.`
       );
       return;
     }
