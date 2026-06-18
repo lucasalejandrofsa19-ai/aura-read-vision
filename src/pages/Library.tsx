@@ -457,10 +457,12 @@ const Library = () => {
         <UploadPDF />
       </motion.div>
 
-      <SubscriptionDialog
-        open={subscriptionDialogOpen}
-        onOpenChange={setSubscriptionDialogOpen}
-      />
+      {subscriptionDialogOpen && (
+        <SubscriptionDialog
+          open={subscriptionDialogOpen}
+          onOpenChange={setSubscriptionDialogOpen}
+        />
+      )}
 
       <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
 
