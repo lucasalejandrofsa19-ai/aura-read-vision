@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import { SEO } from "@/components/SEO";
+import { matchesSearch } from "@/lib/searchNormalize";
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -167,9 +168,9 @@ const AdminPanel = () => {
 
     // Search by email or name
     if (searchQuery) {
-      filtered = filtered.filter(user => 
-        user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
+      filtered = filtered.filter(user =>
+        matchesSearch(user.email, searchQuery) ||
+        matchesSearch(user.full_name, searchQuery)
       );
     }
 
