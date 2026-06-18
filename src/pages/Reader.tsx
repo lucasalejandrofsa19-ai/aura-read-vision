@@ -560,6 +560,19 @@ const Reader = () => {
                   <Share2 className="w-4 h-4 mr-2" />
                   Compartilhar
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={async () => {
+                    if (!user) return;
+                    await supabase
+                      .from("profiles")
+                      .update({ has_seen_reader_tour: false })
+                      .eq("id", user.id);
+                    window.dispatchEvent(new CustomEvent("reader-tour:restart"));
+                  }}
+                >
+                  <HelpCircle className="w-4 h-4 mr-2" />
+                  Rever tour
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
