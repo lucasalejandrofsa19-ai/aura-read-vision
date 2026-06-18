@@ -66,7 +66,40 @@ export const PDFViewer = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
+  const [retryDelay, setRetryDelay] = useState(0); // segundos restantes
   const [loadError, setLoadError] = useState<Error | null>(null);
+  const MAX_RETRIES = 4;
+
+  // Reseta tentativas quando o arquivo muda
+  useEffect(() => {
+    setRetryCount(0);
+    setRetryDelay(0);
+    setLoadError(null);
+  }, [fileUrl]);
+
+  const handleRetry = useCallback(() => {
+    if (retryCount >= MAX_RETRIES || retryDelay > 0) return;
+    const next = retryCount + 1;
+    // backoff exponencial: 1s, 2s, 4s, 8s (cap)
+    const delayMs = Math.min(1000 * 2 ** retryCount, 8000);
+    const delaySec = Math.ceil(delayMs / 1000);
+    setRetryCount(next);
+    setRetryDelay(delaySec);
+    const tick = setInterval(() => {
+      setRetryDelay((s) => {
+        if (s <= 1) {
+          clearInterval(tick);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    setTimeout(() => {
+      setLoadError(null);
+      setLoadAttempt((n) => n + 1);
+    }, delayMs);
+  }, [retryCount, retryDelay]);
   
   // Search states
   const [searchTerm, setSearchTerm] = useState("");
