@@ -25,6 +25,7 @@ import { ReadingInsightsCard } from "@/components/ReadingInsightsCard";
 import { ADSENSE_SLOTS } from "@/lib/adsense";
 import { AuthDialog } from "@/components/AuthDialog";
 import { LogIn } from "lucide-react";
+import LibraryCTA from "@/components/LibraryCTA";
 
 // Memoizar BookCard para evitar re-renders desnecessários
 const MemoizedBookCard = memo(BookCard);
@@ -363,14 +364,17 @@ const Library = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-20"
+              className="py-12"
             >
-              <p className="text-muted-foreground text-lg mb-4">
-                {searchQuery ? "Nada por aqui. Tente outro termo." : "Comece sua biblioteca."}
-              </p>
-              {!searchQuery && (
-                <p className="text-sm text-muted-foreground">
-                  Suba seu primeiro PDF — em segundos ele estará pronto para ler, marcar e resumir.
+              {searchQuery ? (
+                <p className="text-center text-muted-foreground text-lg">
+                  Nada por aqui. Tente outro termo.
+                </p>
+              ) : books.length === 0 ? (
+                <LibraryCTA variant="empty-state" />
+              ) : (
+                <p className="text-center text-muted-foreground text-lg">
+                  Nenhum livro corresponde ao filtro atual.
                 </p>
               )}
             </motion.div>
