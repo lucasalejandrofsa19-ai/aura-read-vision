@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { userProfileQueryKey } from "@/lib/userProfileQuery";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";

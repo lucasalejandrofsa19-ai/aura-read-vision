@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { userProfileQueryKey } from "@/lib/userProfileQuery";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMobileOptimization } from "@/hooks/useMobileOptimization";

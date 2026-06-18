@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, memo } from "react";
+import { userProfileQueryKey } from "@/lib/userProfileQuery";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMobileOptimization } from "@/hooks/useMobileOptimization";
 import { Document, Page } from "react-pdf";

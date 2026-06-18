@@ -1,4 +1,5 @@
 import { SEO } from "@/components/SEO";
+import { userProfileQueryKey } from "@/lib/userProfileQuery";
 import { useState, useEffect, useMemo, memo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle, BookOpen, RotateCcw } from "lucide-react";
