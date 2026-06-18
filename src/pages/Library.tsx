@@ -371,7 +371,15 @@ const Library = () => {
                   Nada por aqui. Tente outro termo.
                 </p>
               ) : books.length === 0 ? (
-                <LibraryCTA variant="empty-state" />
+                <LibraryCTA
+                  variant="empty-state"
+                  onAction={() => {
+                    const fab = document.querySelector<HTMLButtonElement>(
+                      '[data-tour="upload-button"] button'
+                    );
+                    fab?.click();
+                  }}
+                />
               ) : (
                 <p className="text-center text-muted-foreground text-lg">
                   Nenhum livro corresponde ao filtro atual.
