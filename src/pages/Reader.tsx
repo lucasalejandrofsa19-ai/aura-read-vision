@@ -221,6 +221,28 @@ const Reader = () => {
     }
   };
 
+  const renewSignedUrl = useCallback(async (): Promise<string | null> => {
+    const filePath = (book as any)?.file_path;
+    const bucket = (book as any)?.__bucket ?? "pdfs";
+    if (!filePath) return null;
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(filePath, 60 * 60);
+      if (error || !data?.signedUrl) {
+        console.error("[Reader] Falha ao renovar URL assinada:", error);
+        return null;
+      }
+      setPdfUrl(data.signedUrl);
+      return data.signedUrl;
+    } catch (e) {
+      console.error("[Reader] Exceção ao renovar URL assinada:", e);
+      return null;
+    }
+  }, [book]);
+
+
+
   const saveCurrentPage = async (page: number) => {
     if (!id) return;
     // Não salvar progresso para livros premium/gratuitos compartilhados
