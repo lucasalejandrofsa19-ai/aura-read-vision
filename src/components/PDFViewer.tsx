@@ -18,8 +18,14 @@ interface PDFTextItem {
   fontName?: string;
 }
 import "react-pdf/dist/Page/TextLayer.css";
+// Garante o workerSrc também aqui (defensivo) — alguns chunks podem carregar
+// react-pdf antes do bootstrap de src/lib/pdfjsWorker.ts ser executado.
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+  console.info("[PDFViewer] workerSrc configurado defensivamente:", pdfWorkerUrl);
+}
 
-// Worker is configured globally in src/lib/pdfjsWorker.ts
 
 interface PDFViewerProps {
   fileUrl: string;
@@ -99,6 +105,12 @@ const classifyPdfError = (
     return {
       title: "PDF protegido por senha",
       hint: "Este PDF requer senha para ser aberto.",
+    };
+  }
+  if (/worker|fake worker|module specifier|pdf\.worker/.test(msg)) {
+    return {
+      title: "Worker do PDF.js não carregou",
+      hint: "Recarregue a página (Ctrl/Cmd+Shift+R) para atualizar o worker bundled.",
     };
   }
   return {
