@@ -618,14 +618,8 @@ const Install = () => {
         </Card>
 
         {/* CTA */}
-        <div className="mt-8 text-center">
-          <Button
-            onClick={() => navigate("/library")}
-            size="lg"
-            className="aura-soft transition-aura"
-          >
-            Ir para Biblioteca
-          </Button>
+        <div className="mt-8">
+          <LibraryCTA />
         </div>
       </motion.main>
     </div>
