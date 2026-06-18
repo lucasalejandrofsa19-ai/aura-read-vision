@@ -415,6 +415,34 @@ const Profile = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Smooth Transitions Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  Transições suaves
+                </CardTitle>
+                <CardDescription>
+                  Ativa animações de transição entre páginas. Desative se preferir navegação instantânea.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5 flex-1">
+                    <Label htmlFor="smooth-transitions">Ativar transições entre páginas</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Respeita automaticamente a preferência de "reduzir movimento" do sistema.
+                    </p>
+                  </div>
+                  <Switch
+                    id="smooth-transitions"
+                    checked={transitionsEnabled}
+                    onCheckedChange={toggleTransitions}
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="stats" className="space-y-6">
