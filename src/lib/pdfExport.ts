@@ -151,6 +151,11 @@ class PdfWriter {
     this.y += 4;
   }
 
+  newPage() {
+    this.doc.addPage();
+    this.y = MARGIN;
+  }
+
   toBlob(): Blob {
     return this.doc.output("blob");
   }
@@ -159,6 +164,13 @@ class PdfWriter {
     const blob = this.doc.output("blob");
     void savePdfBlobWithFallback(blob, name);
   }
+}
+
+const PER_PAGE = 60;
+function chunkArr<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
 }
 
 export function generateSimpleTextPdfBlob(title: string, body: string): Blob {
@@ -226,15 +238,23 @@ export function exportHighlightsPDF(
     }
   } else {
     if (hi.length) {
-      w.text("Destaques", { size: 14, bold: true, color: [40, 40, 60] });
-      w.spacer(1);
-      for (const h of hi) {
-        w.text(`Página ${h.page_number}`, { size: 9, bold: true, color: [110, 110, 110] });
-        w.text(`"${h.text}"`, { size: 11, italic: true });
-        if (options.includeColors && h.color) w.text(`Cor: ${h.color}`, { size: 9, color: [120, 120, 120] });
-        if (options.includeTimestamps) w.text(fmtDate(h.created_at), { size: 8, color: [150, 150, 150] });
-        w.spacer(2);
-      }
+      const groups = chunkArr(hi, PER_PAGE);
+      groups.forEach((group, gi) => {
+        if (gi > 0) w.newPage();
+        const header =
+          groups.length > 1
+            ? `Destaques — Página ${gi + 1} de ${groups.length}`
+            : "Destaques";
+        w.text(header, { size: 14, bold: true, color: [40, 40, 60] });
+        w.spacer(1);
+        for (const h of group) {
+          w.text(`Página ${h.page_number}`, { size: 9, bold: true, color: [110, 110, 110] });
+          w.text(`"${h.text}"`, { size: 11, italic: true });
+          if (options.includeColors && h.color) w.text(`Cor: ${h.color}`, { size: 9, color: [120, 120, 120] });
+          if (options.includeTimestamps) w.text(fmtDate(h.created_at), { size: 8, color: [150, 150, 150] });
+          w.spacer(2);
+        }
+      });
     }
     if (no.length) {
       w.spacer(2);
