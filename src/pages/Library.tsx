@@ -164,6 +164,10 @@ const LibraryInner = () => {
                   <BookOpen className="w-4 h-4 mr-2" />
                   Guia de uso
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/pdfs-publicos")}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  PDFs Públicos
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
                     if (!user) return;
