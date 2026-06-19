@@ -35,6 +35,18 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  // 1.1 fix: require server-to-server INTERNAL_FUNCTION_SECRET to block abuse
+  // by anon callers (any leaked anon key could otherwise dispatch templates).
+  const internalSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET')
+  const providedSecret = req.headers.get('x-internal-secret')
+  if (!internalSecret || providedSecret !== internalSecret) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized: missing or invalid x-internal-secret header' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
