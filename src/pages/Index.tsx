@@ -197,6 +197,7 @@ const Index = () => {
                 className="text-lg px-8 py-6"
               >
                 PDFs Públicos
+                <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
               </Button>
             </motion.div>
           </div>
