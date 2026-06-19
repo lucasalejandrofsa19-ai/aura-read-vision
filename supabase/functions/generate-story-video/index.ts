@@ -296,14 +296,20 @@ IMPORTANTE: Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{
       });
     }
 
-    const { data: newQuota } = await supabaseClient.rpc("can_generate_story_video", { _user_id: user.id });
+    const result = { title, author, scenes: built, targetDurationSeconds: TARGET_TOTAL_SECONDS };
+    await supabaseClient.from("story_video_jobs").update({
+      status: "completed",
+      result,
+      processed_at: new Date().toISOString(),
+    }).eq("id", jobId);
 
-    return new Response(JSON.stringify({ title, author, scenes: built, quota: newQuota, targetDurationSeconds: TARGET_TOTAL_SECONDS }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ ok: true, job_id: jobId }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
-    console.error("generate-story-video error", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("generate-story-video worker error", msg);
+    await markFailed(msg).catch(() => {});
+    return new Response(JSON.stringify({ ok: false, error: msg, job_id: jobId }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
