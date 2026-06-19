@@ -44,13 +44,19 @@ const LibraryInner = () => {
   const uploadButtonRef = useTourTarget("upload-button");
   const [searchQuery, setSearchQuery] = useState("");
   const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
-  const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { isAdmin, hasPremiumAccess } = useUserData();
   const { books, premiumBooks, isLoading } = useBooks();
   const navigate = useNavigate();
   const invalidateProfile = useInvalidateUserProfile();
-  
+
+  // Estado derivado — sem useEffect: dialog de auth abre sempre que não há user.
+  const authDialogOpen = !user;
+  const setAuthDialogOpen = (_open: boolean) => {
+    // No-op intencional: o dialog é puramente reativo ao estado de auth.
+    // Mantido para compatibilidade com o controlled prop do AuthDialog.
+  };
+
   // Refs for scroll containers
   const userBooksScrollRef = useRef<HTMLDivElement>(null);
   const uploadPDFRef = useRef<UploadPDFHandle>(null);
@@ -74,11 +80,6 @@ const LibraryInner = () => {
     threshold: 50,
   });
 
-  // Modal de auth abre automaticamente quando o usuário não está logado
-  useEffect(() => {
-    if (!user) setAuthDialogOpen(true);
-    else setAuthDialogOpen(false);
-  }, [user]);
 
   // Livros premium gratuitos exibidos junto com os do usuário
   const freePremiumBooks = useMemo(
