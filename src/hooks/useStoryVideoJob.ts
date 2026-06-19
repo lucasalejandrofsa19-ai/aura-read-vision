@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Scene = {
@@ -29,6 +30,7 @@ export type StartParams = {
 const POLL_INTERVAL_MS = 5000;
 
 export function useStoryVideoJob() {
+  const queryClient = useQueryClient();
   const [jobId, setJobId] = useState<string | null>(null);
   const [status, setStatus] = useState<JobStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -58,12 +60,13 @@ export function useStoryVideoJob() {
     setAttempts(data.attempts ?? 0);
     if (data.status === "completed" && data.result) {
       setResult(data.result as unknown as StoryVideoResult);
+      queryClient.invalidateQueries({ queryKey: ["story-video-quota"] });
       stopPolling();
     } else if (data.status === "failed") {
       setError(data.error || "Falha na geração");
       stopPolling();
     }
-  }, [stopPolling]);
+  }, [stopPolling, queryClient]);
 
   const startPolling = useCallback((id: string) => {
     stopPolling();
