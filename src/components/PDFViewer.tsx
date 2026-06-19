@@ -42,7 +42,7 @@ interface PDFViewerProps {
     height: number;
     color: string;
   }>;
-  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string; color: string }) => void;
+  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string; color: string }) => Promise<{ id?: string } | undefined | void> | void;
   isDrawingMode?: boolean;
   highlightColor?: string;
   penThickness?: number;
