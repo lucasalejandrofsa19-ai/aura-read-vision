@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Trash2, RefreshCw, Images, ImagePlus, FileImage } from "lucide-react";
+import { BookOpen, Trash2, RefreshCw, Images, ImagePlus, FileImage, Clapperboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getSignedStorageUrl } from "@/lib/storageUrl";
