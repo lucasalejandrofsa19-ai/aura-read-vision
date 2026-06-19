@@ -172,9 +172,12 @@ const Reader = () => {
     if (!id) {
       console.error("[Reader] No book ID provided");
       setLoadError("ID do livro ausente na URL.");
+      setLoading(false);
       return;
     }
     setLoadError("");
+    setPdfUrl("");
+
 
     try {
       // Tenta primeiro nos livros do usuário
