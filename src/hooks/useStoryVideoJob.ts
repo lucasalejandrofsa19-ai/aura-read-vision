@@ -60,6 +60,7 @@ export function useStoryVideoJob() {
     setAttempts(data.attempts ?? 0);
     if (data.status === "completed" && data.result) {
       setResult(data.result as unknown as StoryVideoResult);
+      queryClient.invalidateQueries({ queryKey: ["story-video-quota"] });
       stopPolling();
     } else if (data.status === "failed") {
       setError(data.error || "Falha na geração");
