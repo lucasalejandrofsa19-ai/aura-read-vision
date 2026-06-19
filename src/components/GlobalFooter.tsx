@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Shield, Tag, BookOpen, FileText } from "lucide-react";
+import { Shield, Tag, BookOpen, FileText, ExternalLink } from "lucide-react";
 
 const HIDDEN_PREFIXES = ["/reader", "/admin"];
 
@@ -34,6 +34,7 @@ const GlobalFooter = () => {
           >
             <FileText className="h-3.5 w-3.5" />
             PDFs Públicos
+            <ExternalLink className="h-3 w-3" aria-hidden="true" />
           </a>
           <Link
             to="/trust"
