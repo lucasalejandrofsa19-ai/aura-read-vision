@@ -164,6 +164,11 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
         error?.hint ||
         "Não foi possível adicionar o destaque";
       console.error("[useHighlights] mutation error:", error);
+      sonnerToast.error("Falha ao salvar highlight", {
+        id: HIGHLIGHT_TOAST_ID,
+        description: msg,
+        duration: 5000,
+      });
       toast({
         title: "Erro ao adicionar destaque",
         description: msg,
