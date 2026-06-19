@@ -7,6 +7,7 @@ const HIDDEN_PREFIXES = ["/reader", "/admin"];
 
 const GlobalFooter = () => {
   const { pathname } = useLocation();
+  const publicPdfsDescId = useId();
   if (HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))) return null;
 
   return (
