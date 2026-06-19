@@ -67,7 +67,7 @@ export const PDFSearchBar = ({
                 <Input
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
-                  placeholder="Buscar no documento..."
+                  placeholder="Buscar palavra ou frase..."
                   className="pl-9 pr-9 bg-background/50"
                   autoFocus
                 />
