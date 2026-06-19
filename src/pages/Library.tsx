@@ -164,9 +164,9 @@ const LibraryInner = () => {
                   <BookOpen className="w-4 h-4 mr-2" />
                   Guia de uso
                 </DropdownMenuItem>
-                <DropdownMenuItem title="Abre em nova aba" onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}>
+                <DropdownMenuItem title={PUBLIC_PDFS_TOOLTIP} aria-label={PUBLIC_PDFS_TOOLTIP} onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}>
                   <FileText className="w-4 h-4 mr-2" />
-                  PDFs Públicos
+                  {PUBLIC_PDFS_LABEL}
                   <ExternalLink className="w-3 h-3 ml-auto opacity-60" aria-hidden="true" />
                 </DropdownMenuItem>
                 <DropdownMenuItem
