@@ -269,10 +269,17 @@ export const PDFViewer = ({
     try {
       const page = await pdfDoc.getPage(pageNum);
       const textContent = await page.getTextContent();
-      const text = textContent.items
+      const raw = textContent.items
         .map((item: PDFTextItem) => ('str' in item ? item.str : ''))
-        .join(' ')
-        .toLowerCase();
+        .join(' ');
+      // Normaliza: minúsculas, sem acentos, espaços colapsados.
+      // Permite busca por frase mesmo cruzando quebras de linha/itens.
+      const text = raw
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
       return text;
     } catch (error) {
       console.error(`Error extracting text from page ${pageNum}:`, error);
