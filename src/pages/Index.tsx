@@ -1,6 +1,6 @@
 import { SEO } from "@/components/SEO";
 import { motion } from "framer-motion";
-import { Book, Sparkles, ArrowRight, Highlighter, BookmarkCheck, Share2, Wand2, FileDown, Image, Infinity as InfinityIcon, Library, Star, Quote } from "lucide-react";
+import { Book, Sparkles, ArrowRight, Highlighter, BookmarkCheck, Share2, Wand2, FileDown, Image, Infinity as InfinityIcon, Library, Star, Quote, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import PWAPromoBanner from "@/components/PWAPromoBanner";
