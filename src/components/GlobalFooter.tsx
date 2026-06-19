@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Shield, Tag, BookOpen } from "lucide-react";
+import { Shield, Tag, BookOpen, FileText } from "lucide-react";
 
 const HIDDEN_PREFIXES = ["/reader", "/admin"];
 
@@ -25,6 +25,13 @@ const GlobalFooter = () => {
           >
             <BookOpen className="h-3.5 w-3.5" />
             Guia
+          </Link>
+          <Link
+            to="/pdfs-publicos"
+            className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            PDFs Públicos
           </Link>
           <Link
             to="/trust"

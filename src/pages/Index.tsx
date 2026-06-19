@@ -190,6 +190,14 @@ const Index = () => {
               >
                 Conhecer o Premium
               </Button>
+              <Button
+                size="lg"
+                variant="ghost"
+                onClick={() => navigate("/pdfs-publicos")}
+                className="text-lg px-8 py-6"
+              >
+                PDFs Públicos
+              </Button>
             </motion.div>
           </div>
 
