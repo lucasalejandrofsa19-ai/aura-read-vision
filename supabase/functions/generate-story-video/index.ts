@@ -52,7 +52,7 @@ serve(async (req) => {
 
 
   // Atomically claim the next pending job.
-  const { data: job, error: claimErr } = await supabaseClient.rpc("claim_next_story_video_job");
+  const { data: job, error: claimErr } = await sb.rpc("claim_next_story_video_job");
   if (claimErr) {
     console.error("claim error", claimErr);
     return new Response(JSON.stringify({ error: claimErr.message }),
@@ -74,7 +74,7 @@ serve(async (req) => {
   const variationSeed = params.variationSeed as number | null | undefined;
 
   const markFailed = async (msg: string) => {
-    await supabaseClient.from("story_video_jobs").update({
+    await sb.from("story_video_jobs").update({
       status: "failed",
       error: msg,
       processed_at: new Date().toISOString(),
@@ -84,12 +84,12 @@ serve(async (req) => {
   try {
     // Fetch book
     let title = ""; let author = ""; let extractedText: string | null = null;
-    const { data: bookData } = await supabaseClient.from("books")
+    const { data: bookData } = await sb.from("books")
       .select("title, author, extracted_text, user_id").eq("id", book_id).maybeSingle();
     if (bookData && bookData.user_id === userId) {
       title = bookData.title; author = bookData.author || ""; extractedText = bookData.extracted_text;
     } else {
-      const { data: pb } = await supabaseClient.from("premium_books")
+      const { data: pb } = await sb.from("premium_books")
         .select("title, author, extracted_text").eq("id", book_id).maybeSingle();
       if (pb) { title = pb.title; author = pb.author || ""; extractedText = pb.extracted_text; }
     }
@@ -310,7 +310,7 @@ IMPORTANTE: Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{
     }
 
     const result = { title, author, scenes: built, targetDurationSeconds: TARGET_TOTAL_SECONDS };
-    await supabaseClient.from("story_video_jobs").update({
+    await sb.from("story_video_jobs").update({
       status: "completed",
       result,
       processed_at: new Date().toISOString(),
