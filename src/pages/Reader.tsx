@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId } from "react";
 import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
@@ -61,9 +61,10 @@ import { captureError } from "@/lib/sentry";
 import { SEO } from "@/components/SEO";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
 import { ADSENSE_SLOTS } from "@/lib/adsense";
-import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP } from "@/lib/publicPdfs";
+import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP, PUBLIC_PDFS_DESCRIPTION } from "@/lib/publicPdfs";
 
 const Reader = () => {
+  const publicPdfsDescId = useId();
   const { id } = useParams();
   const navigate = useNavigate();
   const [bookmarkedPage, setBookmarkedPage] = useState<number | null>(null);
@@ -602,10 +603,11 @@ const Reader = () => {
                   <Share2 className="w-4 h-4 mr-2" />
                   Compartilhar
                 </DropdownMenuItem>
-                <DropdownMenuItem title={PUBLIC_PDFS_TOOLTIP} aria-label={PUBLIC_PDFS_TOOLTIP} onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}>
+                <DropdownMenuItem title={PUBLIC_PDFS_TOOLTIP} aria-label={PUBLIC_PDFS_TOOLTIP} aria-describedby={publicPdfsDescId} onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}>
                   <FileText className="w-4 h-4 mr-2" />
                   {PUBLIC_PDFS_LABEL}
                   <ExternalLink className="w-3 h-3 ml-auto opacity-60" aria-hidden="true" />
+                  <span id={publicPdfsDescId} className="sr-only">{PUBLIC_PDFS_DESCRIPTION}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {

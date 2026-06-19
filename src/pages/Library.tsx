@@ -1,6 +1,6 @@
 import { SEO } from "@/components/SEO";
 import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
-import { useState, useEffect, useMemo, memo, useRef } from "react";
+import { useState, useEffect, useMemo, memo, useRef, useId } from "react";
 import { motion } from "framer-motion";
 import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle, BookOpen, RotateCcw, FileText, ExternalLink } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -32,7 +32,7 @@ import { LogIn } from "lucide-react";
 import LibraryCTA from "@/components/LibraryCTA";
 import { TourTargetsProvider, useTourTarget } from "@/contexts/TourTargetsContext";
 import { matchesSearch } from "@/lib/searchNormalize";
-import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP } from "@/lib/publicPdfs";
+import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP, PUBLIC_PDFS_DESCRIPTION } from "@/lib/publicPdfs";
 
 
 // Memoizar BookCard para evitar re-renders desnecessários
@@ -43,6 +43,7 @@ const LibraryInner = () => {
   const searchBarRef = useTourTarget("search-bar");
   const bookCardRef = useTourTarget("book-card");
   const uploadButtonRef = useTourTarget("upload-button");
+  const publicPdfsDescId = useId();
   const [searchQuery, setSearchQuery] = useState("");
   const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
   const { user, signOut } = useAuth();
@@ -165,10 +166,11 @@ const LibraryInner = () => {
                   <BookOpen className="w-4 h-4 mr-2" />
                   Guia de uso
                 </DropdownMenuItem>
-                <DropdownMenuItem title={PUBLIC_PDFS_TOOLTIP} aria-label={PUBLIC_PDFS_TOOLTIP} onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}>
+                <DropdownMenuItem title={PUBLIC_PDFS_TOOLTIP} aria-label={PUBLIC_PDFS_TOOLTIP} aria-describedby={publicPdfsDescId} onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}>
                   <FileText className="w-4 h-4 mr-2" />
                   {PUBLIC_PDFS_LABEL}
                   <ExternalLink className="w-3 h-3 ml-auto opacity-60" aria-hidden="true" />
+                  <span id={publicPdfsDescId} className="sr-only">{PUBLIC_PDFS_DESCRIPTION}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {

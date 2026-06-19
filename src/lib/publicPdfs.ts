@@ -20,6 +20,8 @@ export interface PublicPdf {
 }
 export const PUBLIC_PDFS_LABEL = "PDFs Públicos";
 export const PUBLIC_PDFS_TOOLTIP = "PDFs Públicos (abre em nova aba)";
+export const PUBLIC_PDFS_DESCRIPTION =
+  "Abre o catálogo de PDFs públicos em uma nova aba do navegador, sem interromper a página atual.";
 
 
 export const PUBLIC_PDFS: PublicPdf[] = [

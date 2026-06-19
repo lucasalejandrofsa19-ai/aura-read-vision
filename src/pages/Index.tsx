@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { SEO } from "@/components/SEO";
 import { motion } from "framer-motion";
 import { Book, Sparkles, ArrowRight, Highlighter, BookmarkCheck, Share2, Wand2, FileDown, Image, Infinity as InfinityIcon, Library, Star, Quote, ExternalLink } from "lucide-react";
@@ -7,10 +8,11 @@ import PWAPromoBanner from "@/components/PWAPromoBanner";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP } from "@/lib/publicPdfs";
+import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP, PUBLIC_PDFS_DESCRIPTION } from "@/lib/publicPdfs";
 
 const Index = () => {
   const navigate = useNavigate();
+  const publicPdfsDescId = useId();
 
   const features = [
     {
@@ -197,10 +199,12 @@ const Index = () => {
                 onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}
                 title={PUBLIC_PDFS_TOOLTIP}
                 aria-label={PUBLIC_PDFS_TOOLTIP}
+                aria-describedby={publicPdfsDescId}
                 className="text-lg px-8 py-6"
               >
                 {PUBLIC_PDFS_LABEL}
                 <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
+                <span id={publicPdfsDescId} className="sr-only">{PUBLIC_PDFS_DESCRIPTION}</span>
               </Button>
             </motion.div>
           </div>
