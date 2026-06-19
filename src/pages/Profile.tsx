@@ -255,19 +255,19 @@ const Profile = () => {
         </motion.div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="profile">Perfil</TabsTrigger>
-            <TabsTrigger value="stats">Estatísticas</TabsTrigger>
-            <TabsTrigger value="subscription">Assinatura</TabsTrigger>
-            <TabsTrigger value="highlights">Destaques</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 rounded-2xl border border-border/60 bg-card/80 backdrop-blur-xl p-1">
+            <TabsTrigger value="profile" className="rounded-xl">Perfil</TabsTrigger>
+            <TabsTrigger value="stats" className="rounded-xl">Estatísticas</TabsTrigger>
+            <TabsTrigger value="subscription" className="rounded-xl">Assinatura</TabsTrigger>
+            <TabsTrigger value="highlights" className="rounded-xl">Destaques</TabsTrigger>
           </TabsList>
 
 
           <TabsContent value="profile" className="space-y-6">
             {/* Profile Info Card */}
-            <Card>
+            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
-                <CardTitle>Informações do Perfil</CardTitle>
+                <CardTitle className="font-display">Informações do Perfil</CardTitle>
                 <CardDescription>
                   Atualize suas informações pessoais e avatar
                 </CardDescription>
@@ -353,9 +353,9 @@ const Profile = () => {
             </Card>
 
             {/* Theme Settings Card */}
-            <Card>
+            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
-                <CardTitle>Preferências de Tema</CardTitle>
+                <CardTitle className="font-display">Preferências de Tema</CardTitle>
                 <CardDescription>
                   Escolha o tema que melhor se adapta à sua leitura
                 </CardDescription>
@@ -369,9 +369,9 @@ const Profile = () => {
             </Card>
 
             {/* Ultra Performance Mode Card */}
-            <Card className="border-primary/20">
+            <Card className="rounded-2xl border-primary/30 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="font-display flex items-center gap-2">
                   <Zap className="w-5 h-5 text-primary" />
                   Modo Ultra Performance
                 </CardTitle>
@@ -411,9 +411,9 @@ const Profile = () => {
             </Card>
 
             {/* Smooth Transitions Card */}
-            <Card>
+            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="font-display flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-primary" />
                   Transições suaves
                 </CardTitle>
@@ -443,7 +443,7 @@ const Profile = () => {
             <LazyLoadWrapper
               minHeight="300px"
               fallback={
-                <Card>
+                <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
                   <CardHeader>
                     <Skeleton className="h-6 w-48" />
                     <Skeleton className="h-4 w-64 mt-2" />
@@ -461,9 +461,9 @@ const Profile = () => {
           </TabsContent>
 
           <TabsContent value="subscription" className="space-y-6">
-            <Card>
+            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="font-display flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
                   Plano e Assinatura
                 </CardTitle>
@@ -473,7 +473,7 @@ const Profile = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Current Plan */}
-                <div className="flex items-start justify-between p-4 rounded-lg border bg-card">
+                <div className="flex items-start justify-between p-4 rounded-2xl border border-border/60 bg-background/60 backdrop-blur-xl">
                   <div className="flex items-start gap-4">
                     <div className="p-3 rounded-full bg-gradient-to-br from-amber-500 to-orange-500">
                       <PremiumBadge variant="icon-only" className="w-6 h-6 text-white" />
@@ -509,9 +509,9 @@ const Profile = () => {
           </TabsContent>
 
           <TabsContent value="highlights">
-            <Card>
+            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
-                <CardTitle>Seus Destaques</CardTitle>
+                <CardTitle className="font-display">Seus Destaques</CardTitle>
                 <CardDescription>
                   Visualize todos os destaques que você fez em seus livros e exporte-os como PDF
                 </CardDescription>
