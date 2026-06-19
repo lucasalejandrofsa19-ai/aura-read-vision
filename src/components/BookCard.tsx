@@ -18,6 +18,8 @@ import { ptBR } from "date-fns/locale";
 import { LazyImage } from "@/components/LazyImage";
 import { SelectCoverPageDialog } from "@/components/SelectCoverPageDialog";
 import { useGenerateCover } from "@/hooks/useGenerateCover";
+import { isCoverFailed, markCoverFailed, clearCoverFailed } from "@/lib/coverFallback";
+import { BookMarked } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -218,16 +220,21 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
             { id: "generate-cover", duration: 10000 }
           );
           fallbackRetriesRef.current = 0;
+          markCoverFailed(book.id);
+          queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
         }
       } else {
         fallbackRetriesRef.current = 0;
+        clearCoverFailed(book.id);
         toast.success("✨ Capa gerada com sucesso!", { id: "generate-cover" });
         setShowSelectPage(false);
       }
       onReprocess?.();
     } catch (error) {
       captureError(error, { context: "generate_cover_from_page" });
-      toast.error("Erro ao gerar capa", { id: "generate-cover" });
+      markCoverFailed(book.id);
+      queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
+      toast.error("Erro ao gerar capa — usando placeholder.", { id: "generate-cover" });
     }
   };
 
@@ -310,6 +317,23 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                   className="absolute inset-0 w-full h-full object-cover"
                   containerClassName="absolute inset-0"
                 />
+              ) : isCoverFailed(book.id) ? (
+                <>
+                  {/* Fallback placeholder — geração da capa falhou/timeout */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${book.cover_color || 'from-primary to-secondary'}`} />
+                  <div className="absolute inset-0 opacity-[0.10] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] pointer-events-none" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
+                    <div className="w-14 h-14 rounded-2xl bg-background/20 backdrop-blur-md border border-foreground/20 flex items-center justify-center mb-3">
+                      <BookMarked className="w-7 h-7 text-foreground/90" />
+                    </div>
+                    <p className="text-foreground/90 text-sm font-semibold line-clamp-3 leading-tight">
+                      {book.title}
+                    </p>
+                    <p className="text-foreground/60 text-[10px] mt-2 uppercase tracking-wider">
+                      Capa indisponível
+                    </p>
+                  </div>
+                </>
               ) : (
                 <>
                   <div className="absolute inset-0 opacity-[0.08] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] pointer-events-none" />
