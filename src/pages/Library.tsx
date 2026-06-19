@@ -328,68 +328,44 @@ const LibraryInner = () => {
             </motion.div>
           ) : (
             <>
-              <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-2xl font-bold">Meus Livros</h2>
+              <div className="flex items-end justify-between gap-3 mb-6">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Meus Livros</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {filteredBooks.length} {filteredBooks.length === 1 ? "título" : "títulos"} disponíveis
+                  </p>
+                </div>
               </div>
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="relative"
+                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5 lg:gap-6 mb-8"
               >
-                {/* Wooden shelf effect */}
-                <div className="absolute -bottom-4 left-0 right-0 h-6 bg-gradient-to-b from-amber-800/30 to-amber-900/40 rounded-lg shadow-xl border-t border-amber-700/50" />
-                <div className="absolute -bottom-2 left-0 right-0 h-3 bg-gradient-to-b from-amber-900/20 to-transparent rounded-lg" />
-
-                {/* Navigation buttons */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background/90 rounded-full shadow-lg"
-                  onClick={() => scrollLeft(userBooksScrollRef)}
-                 aria-label="Anterior">
-                  <ChevronLeft className="w-6 h-6" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background/90 rounded-full shadow-lg"
-                  onClick={() => scrollRight(userBooksScrollRef)}
-                 aria-label="Próximo">
-                  <ChevronRight className="w-6 h-6" />
-                </Button>
-
-                {/* Books on shelf */}
-                <div
-                  ref={userBooksScrollRef}
-                  className="flex gap-4 overflow-x-auto pb-8 px-2 scrollbar-hide mb-8"
-                >
-                  {filteredBooks.map((book, index) => (
-                    <div
-                      key={book.id}
-                      className="flex-shrink-0 w-48"
-                      ref={index === 0 ? bookCardRef : undefined}
+                {filteredBooks.map((book, index) => (
+                  <div
+                    key={book.id}
+                    ref={index === 0 ? bookCardRef : undefined}
+                  >
+                    <LazyLoadWrapper
+                      minHeight="320px"
+                      rootMargin="200px"
+                      fallback={
+                        <div className="space-y-2">
+                          <Skeleton className="h-72 w-full rounded-xl" />
+                          <Skeleton className="h-4 w-3/4" />
+                        </div>
+                      }
                     >
-                      <LazyLoadWrapper
-                        minHeight="280px"
-                        rootMargin="200px"
-                        fallback={
-                          <div className="space-y-2">
-                            <Skeleton className="h-64 w-full rounded-lg" />
-                            <Skeleton className="h-4 w-3/4" />
-                          </div>
-                        }
-                      >
-                        <MemoizedBookCard
-                          book={book}
-                          index={index}
-                          isPremiumBook={(book as any).isPremiumBook === true}
-                          isAdmin={isAdmin}
-                        />
-                      </LazyLoadWrapper>
-                    </div>
-                  ))}
-                </div>
+                      <MemoizedBookCard
+                        book={book}
+                        index={index}
+                        isPremiumBook={(book as any).isPremiumBook === true}
+                        isAdmin={isAdmin}
+                      />
+                    </LazyLoadWrapper>
+                  </div>
+                ))}
               </motion.div>
             </>
           )}
