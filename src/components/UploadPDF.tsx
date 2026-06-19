@@ -9,6 +9,7 @@ import { captureError } from "@/lib/sentry";
 import { useSentryTracking } from "@/hooks/use-sentry-tracking";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGenerateCover } from "@/hooks/useGenerateCover";
+import { markCoverFailed, clearCoverFailed } from "@/lib/coverFallback";
 
 // Remove acentos e caracteres não suportados pelo Supabase Storage
 const sanitizeFileName = (name: string) => {
@@ -188,27 +189,36 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
                     { id: "cover-generation", duration: 10000 }
                   );
                   fallbackRetriesRef.current = 0;
+                  markCoverFailed(bookData.id);
                 }
               } else {
                 fallbackRetriesRef.current = 0;
+                clearCoverFailed(bookData.id);
                 toast.success("Capa pronta ✨", { id: "cover-generation" });
               }
               queryClient.invalidateQueries({ queryKey: ["books", user.id] });
             } catch (error) {
               captureError(error, { context: "auto_generate_cover" });
               const canRetry = fallbackRetriesRef.current < MAX_FALLBACK_RETRIES;
-              toast.error("Não conseguimos gerar a capa agora.", {
-                id: "cover-generation",
-                action: canRetry
-                  ? {
-                      label: "Tentar novamente",
-                      onClick: () => {
-                        fallbackRetriesRef.current += 1;
-                        void generateCoverAsync(true);
-                      },
-                    }
-                  : undefined,
-              });
+              if (!canRetry) markCoverFailed(bookData.id);
+              queryClient.invalidateQueries({ queryKey: ["books", user.id] });
+              toast.error(
+                canRetry
+                  ? "Não conseguimos gerar a capa agora."
+                  : "Não conseguimos gerar a capa — usando placeholder.",
+                {
+                  id: "cover-generation",
+                  action: canRetry
+                    ? {
+                        label: "Tentar novamente",
+                        onClick: () => {
+                          fallbackRetriesRef.current += 1;
+                          void generateCoverAsync(true);
+                        },
+                      }
+                    : undefined,
+                }
+              );
             }
           };
 
