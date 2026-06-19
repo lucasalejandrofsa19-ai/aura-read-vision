@@ -220,21 +220,23 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
             { id: "generate-cover", duration: 10000 }
           );
           fallbackRetriesRef.current = 0;
+          markCoverFailed(book.id);
+          queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
         }
       } else {
-          fallbackRetriesRef.current = 0;
-          clearCoverFailed(book.id);
-          toast.success("✨ Capa gerada com sucesso!", { id: "generate-cover" });
-          setShowSelectPage(false);
-        }
-        onReprocess?.();
-      } catch (error) {
-        captureError(error, { context: "generate_cover_from_page" });
-        markCoverFailed(book.id);
-        queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
-        toast.error("Erro ao gerar capa — usando placeholder.", { id: "generate-cover" });
+        fallbackRetriesRef.current = 0;
+        clearCoverFailed(book.id);
+        toast.success("✨ Capa gerada com sucesso!", { id: "generate-cover" });
+        setShowSelectPage(false);
       }
-    };
+      onReprocess?.();
+    } catch (error) {
+      captureError(error, { context: "generate_cover_from_page" });
+      markCoverFailed(book.id);
+      queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
+      toast.error("Erro ao gerar capa — usando placeholder.", { id: "generate-cover" });
+    }
+  };
 
   const handleOpenGallery = async (e: React.MouseEvent) => {
     e.stopPropagation();
