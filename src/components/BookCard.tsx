@@ -419,17 +419,27 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                   <Button
                     variant="ghost"
                     size="icon"
-                    disabled={storyVideoQuotaLoading || storyVideoBlocked}
+                    disabled={storyVideoQuotaLoading}
                     onClick={(e) => {
                       e.stopPropagation();
                       if (storyVideoBlocked) {
-                        toast.error("Limite mensal de vídeos atingido. Faça upgrade para Premium.");
+                        toast.error("Limite diário de vídeos atingido (3/dia).", {
+                          action: {
+                            label: "Upgrade Premium",
+                            onClick: () => navigate("/pricing"),
+                          },
+                          duration: 8000,
+                        });
                         return;
                       }
                       navigate(`/story-video/${book.id}`);
                     }}
-                    className="w-7 h-7 rounded-lg bg-primary/80 hover:bg-primary border border-primary/40 text-primary-foreground backdrop-blur-md disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={storyVideoBlocked ? "Limite mensal atingido — upgrade para Premium" : "Gerar vídeo IA"}
+                    className={`w-7 h-7 rounded-lg border backdrop-blur-md ${
+                      storyVideoBlocked
+                        ? "bg-muted/70 border-border/40 text-muted-foreground hover:bg-muted"
+                        : "bg-primary/80 hover:bg-primary border-primary/40 text-primary-foreground"
+                    }`}
+                    title={storyVideoBlocked ? "Limite diário atingido — clique para fazer upgrade" : "Gerar vídeo IA"}
                   >
                     <Clapperboard className="w-3.5 h-3.5" />
                   </Button>
