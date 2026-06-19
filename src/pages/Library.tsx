@@ -124,18 +124,21 @@ const LibraryInner = () => {
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 aura-soft"
+        className="relative rounded-2xl border border-border/60 bg-card/80 backdrop-blur-xl shadow-lg shadow-background/40 p-5 sm:p-6 mb-6 sm:mb-8 overflow-hidden"
       >
-        <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6 flex-wrap">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+        <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
+
+        <div className="relative flex items-center justify-between gap-3 mb-5 sm:mb-6 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent">
               Minha Biblioteca
             </h1>
             <div className="flex gap-2">
               {isAdmin && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30">
-                  <Shield className="w-3.5 h-3.5 text-red-500" />
-                  <span className="text-xs font-semibold text-red-500">Admin</span>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/30">
+                  <Shield className="w-3.5 h-3.5 text-accent" />
+                  <span className="text-xs font-semibold text-accent">Admin</span>
                 </div>
               )}
               {hasPremiumAccess && !isAdmin && (
