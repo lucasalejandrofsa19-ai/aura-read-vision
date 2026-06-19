@@ -180,26 +180,43 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
     }
   };
 
-  const handleSelectCoverPage = async (pageNumber: number) => {
+  const MAX_FALLBACK_RETRIES = 2;
+  const fallbackRetriesRef = useRef(0);
+
+  const handleSelectCoverPage = async (pageNumber: number, isRetry = false) => {
     if (!book.file_url) {
       toast.error("URL do PDF não disponível");
       return;
     }
+
+    if (!isRetry) fallbackRetriesRef.current = 0;
 
     toast.loading("Gerando capa...", { id: "generate-cover" });
 
     try {
       const result = await generateCover(book.id, book.file_url, pageNumber);
       if (result?.fallback) {
-        toast.warning("Não foi possível verificar a capa — usando fallback", {
-          id: "generate-cover",
-          duration: 10000,
-          action: {
-            label: "Tentar novamente",
-            onClick: () => handleSelectCoverPage(pageNumber),
-          },
-        });
+        const canRetry = fallbackRetriesRef.current < MAX_FALLBACK_RETRIES;
+        toast.warning(
+          canRetry
+            ? `Não foi possível verificar a capa — usando fallback (tentativa ${fallbackRetriesRef.current + 1}/${MAX_FALLBACK_RETRIES})`
+            : "Não foi possível verificar a capa após várias tentativas — usando fallback",
+          {
+            id: "generate-cover",
+            duration: 10000,
+            action: canRetry
+              ? {
+                  label: "Tentar novamente",
+                  onClick: () => {
+                    fallbackRetriesRef.current += 1;
+                    void handleSelectCoverPage(pageNumber, true);
+                  },
+                }
+              : undefined,
+          }
+        );
       } else {
+        fallbackRetriesRef.current = 0;
         toast.success("✨ Capa gerada com sucesso!", { id: "generate-cover" });
         setShowSelectPage(false);
       }
