@@ -51,7 +51,7 @@ d("highlights RLS — UPDATE policy", () => {
   let highlightId: string;
 
   const seed = {
-    book_id: "00000000-0000-0000-0000-000000000000",
+    book_id: TEST_BOOK_ID!,
     page_number: 1,
     text: "rls-test-original",
     color: "#ffeb3b",
