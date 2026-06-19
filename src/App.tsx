@@ -17,6 +17,8 @@ import { StickyAdBanner } from "@/components/StickyAdBanner";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import GlobalFooter from "@/components/GlobalFooter";
 import * as Sentry from "@sentry/react";
+import { AppErrorFallback } from "@/components/AppErrorFallback";
+import { captureError } from "@/lib/sentry";
 
 // Landing carregada eager (LCP da home)
 import Index from "./pages/Index";
