@@ -48,6 +48,7 @@ const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const Demo = lazy(() => import("./pages/Demo"));
 const Trust = lazy(() => import("./pages/Trust"));
 const DevExportTest = lazy(() => import("./pages/DevExportTest"));
+const PublicPdfs = lazy(() => import("./pages/PublicPdfs"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
