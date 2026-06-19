@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Shield, Tag, BookOpen } from "lucide-react";
+import { Shield, Tag, BookOpen, FileText } from "lucide-react";
 
 const HIDDEN_PREFIXES = ["/reader", "/admin"];
 
