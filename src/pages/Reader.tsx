@@ -600,7 +600,7 @@ const Reader = () => {
                   <Share2 className="w-4 h-4 mr-2" />
                   Compartilhar
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/pdfs-publicos")}>
+                <DropdownMenuItem onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}>
                   <FileText className="w-4 h-4 mr-2" />
                   PDFs Públicos
                 </DropdownMenuItem>
