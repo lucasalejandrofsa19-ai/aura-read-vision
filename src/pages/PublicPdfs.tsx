@@ -11,6 +11,7 @@ const PublicPdfs = () => {
       <SEO
         title="PDFs Públicos — Biblioteca Gratuita | AuraRead"
         description="Baixe gratuitamente PDFs públicos disponíveis para qualquer usuário, sem necessidade de cadastro."
+        path="/pdfs-publicos"
       />
 
       <div className="container max-w-5xl mx-auto px-4 py-10">
