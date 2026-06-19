@@ -193,7 +193,7 @@ const Index = () => {
               <Button
                 size="lg"
                 variant="ghost"
-                onClick={() => navigate("/pdfs-publicos")}
+                onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}
                 className="text-lg px-8 py-6"
               >
                 PDFs Públicos
