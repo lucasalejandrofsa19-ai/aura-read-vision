@@ -353,9 +353,9 @@ const Profile = () => {
             </Card>
 
             {/* Theme Settings Card */}
-            <Card>
+            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
-                <CardTitle>Preferências de Tema</CardTitle>
+                <CardTitle className="font-display">Preferências de Tema</CardTitle>
                 <CardDescription>
                   Escolha o tema que melhor se adapta à sua leitura
                 </CardDescription>
