@@ -150,8 +150,8 @@ export const HighlightCanvas = ({
         }
         setStatus({ state: "saving", rect: rectToSave });
         try {
-          const result = await onHighlightAdded?.(rectToSave);
-          setStatus({ state: "saved", rect: rectToSave, id: result?.id });
+          const result = (await onHighlightAdded?.(rectToSave)) as { id?: string } | undefined | void;
+          setStatus({ state: "saved", rect: rectToSave, id: (result as { id?: string } | undefined)?.id });
         } catch {
           setStatus({ state: "error", rect: rectToSave });
         }
