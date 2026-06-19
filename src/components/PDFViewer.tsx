@@ -738,7 +738,8 @@ export const PDFViewer = ({
                     height: coords.height / scale,
                   };
                   
-                  onHighlightDrawn?.({ ...originalCoords, text, color: highlightColor });
+                  const res = await onHighlightDrawn?.({ ...originalCoords, text, color: highlightColor });
+                  return res ?? undefined;
                 }}
                 isDrawing={isDrawingMode}
                 drawColor={highlightColor}
