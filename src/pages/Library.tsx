@@ -276,13 +276,13 @@ const LibraryInner = () => {
         </div>
 
         {/* Search bar */}
-        <div className="relative" ref={searchBarRef}>
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        <div className="relative group" ref={searchBarRef}>
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <Input
-            placeholder="Buscar livros ou autores..."
+            placeholder="Buscar por título ou autor…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 glass border-primary/20 focus:border-primary"
+            className="h-11 pl-10 pr-4 rounded-xl bg-background/60 border-border/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground/60 transition-all"
           />
         </div>
       </motion.header>
