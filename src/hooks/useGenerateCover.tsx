@@ -73,15 +73,23 @@ export const useGenerateCover = () => {
         throw new Error("Upload não retornou path do arquivo");
       }
 
-      // Confirma que o objeto realmente existe no bucket
-      const { data: listed, error: listError } = await supabase.storage
-        .from("premium-covers")
-        .list("", { search: coverFileName, limit: 1 });
+      // Confirma que o objeto realmente existe no bucket (com 1 retry exponencial)
+      const findUploaded = async () => {
+        const { data, error } = await supabase.storage
+          .from("premium-covers")
+          .list("", { search: coverFileName, limit: 1 });
+        if (error) throw error;
+        return data?.find((o) => o.name === coverFileName) ?? null;
+      };
 
-      if (listError) throw listError;
-      const found = listed?.find((o) => o.name === coverFileName);
+      let found = await findUploaded();
       if (!found) {
-        throw new Error("Capa não encontrada no bucket após upload");
+        // Backoff exponencial: 1ª tentativa após 500ms
+        await new Promise((r) => setTimeout(r, 500));
+        found = await findUploaded();
+      }
+      if (!found) {
+        throw new Error("Capa não encontrada no bucket após upload (com retry)");
       }
       const uploadedSize = (found.metadata as { size?: number } | null)?.size;
       if (typeof uploadedSize === "number" && uploadedSize !== blob.size) {
@@ -89,6 +97,8 @@ export const useGenerateCover = () => {
           `Tamanho divergente: enviado ${blob.size}B, gravado ${uploadedSize}B`
         );
       }
+
+
 
       // Atualiza o registro do livro com o caminho da capa
       const { data: updated, error: updateError } = await supabase
