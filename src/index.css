@@ -7,70 +7,83 @@ All colors MUST be HSL.
 */
 
 @layer base {
-  /* Desabilita todas animações para performance máxima no PWA */
-  *, *::before, *::after {
-    animation-duration: 0s !important;
+  /*
+   * Motion policy (Phase 1)
+   * — Desktop: motion enabled (subtle transitions/animations).
+   * — Mobile / coarse pointer: motion disabled for performance.
+   * — Users with prefers-reduced-motion: motion disabled.
+   * — Ultra-performance mode (html.ultra-performance): motion disabled.
+   * Override individually by adding `motion-safe:` Tailwind variants or
+   * inline styles when truly required.
+   */
+  @media (prefers-reduced-motion: reduce), (hover: none) and (pointer: coarse) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-delay: 0s !important;
+      transition-duration: 0.001ms !important;
+      transition-delay: 0s !important;
+    }
+  }
+  html.ultra-performance,
+  html.ultra-performance *,
+  html.ultra-performance *::before,
+  html.ultra-performance *::after {
+    animation-duration: 0.001ms !important;
     animation-delay: 0s !important;
-    transition-duration: 0s !important;
+    transition-duration: 0.001ms !important;
     transition-delay: 0s !important;
   }
 
-  /* Theme: Safira (Default) */
+  /* Theme: Safira / Midnight Indigo (Default — Phase 1 refresh) */
   :root,
   .theme-safira {
-    /* Base colors - Safira (Sapphire Blue) */
-    --background: 220 15% 8%;
-    --foreground: 210 20% 98%;
+    /* Base — #0a0a1a → #141432 surface, #1e1e5a deep accent */
+    --background: 240 43% 7%;          /* #0a0a1a */
+    --foreground: 220 25% 96%;
 
-    /* Safira translúcido - Primary brand color */
-    --primary: 210 100% 60%;
-    --primary-foreground: 220 15% 8%;
-    --primary-glow: 210 100% 70%;
-    
-    /* Âmbar quente - Accent color */
-    --accent: 35 100% 55%;
-    --accent-foreground: 220 15% 8%;
-    --accent-glow: 35 100% 65%;
-    
-    /* Grafite fosco - Secondary surfaces */
-    --secondary: 220 10% 18%;
-    --secondary-foreground: 210 20% 95%;
-    
-    /* Papel velho digital - Alternative background */
+    /* Primary — Indigo 600 (#4f46e5) with violet glow */
+    --primary: 244 75% 59%;            /* #4f46e5 */
+    --primary-foreground: 220 25% 98%;
+    --primary-glow: 250 80% 70%;
+
+    /* Accent — warm amber kept for premium signals (gold-ish on dark indigo) */
+    --accent: 38 95% 60%;
+    --accent-foreground: 240 43% 7%;
+    --accent-glow: 38 95% 70%;
+
+    /* Surfaces — #1e1e5a translúcido para secundário, #141432 para card */
+    --secondary: 240 51% 23%;          /* #1e1e5a */
+    --secondary-foreground: 220 25% 96%;
+
     --paper: 40 30% 92%;
-    --paper-foreground: 220 15% 15%;
+    --paper-foreground: 240 30% 12%;
 
-    /* Card with glassmorphism */
-    --card: 220 12% 12%;
-    --card-foreground: 210 20% 95%;
+    --card: 240 43% 11%;               /* slight lift from background */
+    --card-foreground: 220 25% 96%;
 
-    /* Muted elements */
-    --muted: 220 10% 25%;
-    --muted-foreground: 215 15% 65%;
+    --muted: 240 25% 18%;
+    --muted-foreground: 225 15% 72%;   /* WCAG AA against --background */
 
-    /* Popover */
-    --popover: 220 12% 10%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 240 43% 9%;
+    --popover-foreground: 220 25% 96%;
 
-    /* Destructive */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 20% 98%;
+    --destructive: 0 84% 62%;
+    --destructive-foreground: 220 25% 98%);
 
-    /* Borders and inputs */
-    --border: 220 10% 22%;
-    --input: 220 10% 22%;
-    --ring: 210 100% 60%;
+    --border: 240 30% 20%;
+    --input: 240 30% 20%;
+    --ring: 244 75% 59%;
 
     --radius: 0.75rem;
 
-    /* Aura glow effects */
-    --glow-safira: 0 0 30px hsl(210 100% 60% / 0.3);
-    --glow-amber: 0 0 30px hsl(35 100% 55% / 0.3);
-    --glow-soft: 0 0 20px hsl(210 100% 60% / 0.2);
-    
+    /* Aura glow effects (re-tuned to indigo) */
+    --glow-safira: 0 0 32px hsl(244 75% 59% / 0.35);
+    --glow-amber: 0 0 30px hsl(38 95% 60% / 0.30);
+    --glow-soft: 0 0 22px hsl(244 75% 59% / 0.22);
+
     /* Glass effect */
-    --glass-bg: hsl(220 12% 12% / 0.7);
-    --glass-border: hsl(210 100% 60% / 0.1);
+    --glass-bg: hsl(240 43% 11% / 0.72);
+    --glass-border: hsl(244 75% 59% / 0.14);
   }
 
   /* Theme: Sepia (Vintage Reading) */
