@@ -473,7 +473,7 @@ const Profile = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Current Plan */}
-                <div className="flex items-start justify-between p-4 rounded-lg border bg-card">
+                <div className="flex items-start justify-between p-4 rounded-2xl border border-border/60 bg-background/60 backdrop-blur-xl">
                   <div className="flex items-start gap-4">
                     <div className="p-3 rounded-full bg-gradient-to-br from-amber-500 to-orange-500">
                       <PremiumBadge variant="icon-only" className="w-6 h-6 text-white" />
