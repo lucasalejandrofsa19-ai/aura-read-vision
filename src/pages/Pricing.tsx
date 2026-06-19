@@ -28,7 +28,7 @@ const PLANS: Record<string, PlanFeatures> = {
     price: "R$ 0",
     period: "sempre grátis",
     icon: Sparkles,
-    color: "from-slate-500 to-slate-700",
+    color: "from-muted to-muted-foreground/40",
     features: [
       "Até 5 PDFs",
       "Leitura básica de PDFs",
@@ -52,7 +52,7 @@ const PLANS: Record<string, PlanFeatures> = {
     period: "/mês",
     priceId: "price_1SX79qFGn21ViXD3SRtlkbgi",
     icon: Zap,
-    color: "from-blue-500 to-blue-700",
+    color: "from-primary/80 to-primary",
     features: [
       "Até 100 PDFs",
       "Todos os recursos do plano gratuito",
@@ -71,7 +71,7 @@ const PLANS: Record<string, PlanFeatures> = {
     period: "/mês",
     priceId: "price_1TcWuoFGn21ViXD3g9dai6D8",
     icon: GraduationCap,
-    color: "from-emerald-500 to-teal-700",
+    color: "from-primary to-accent",
     popular: true,
     features: [
       "Até 200 PDFs",
@@ -90,7 +90,7 @@ const PLANS: Record<string, PlanFeatures> = {
     period: "/mês",
     priceId: "price_1SX79rFGn21ViXD3aVs533MV",
     icon: Crown,
-    color: "from-purple-500 to-purple-700",
+    color: "from-accent to-accent/60",
     features: [
       "PDFs ilimitados",
       "Todos os recursos do plano Pro",
@@ -181,7 +181,7 @@ export default function Pricing() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tight mb-4 bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent">
             Um plano para cada leitor
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -189,7 +189,7 @@ export default function Pricing() {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-8 max-w-screen-2xl mx-auto px-4 lg:px-12">
+        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-8 max-w-screen-2xl mx-auto px-4 lg:px-12">
           {Object.entries(PLANS).map(([key, plan], index) => {
             const Icon = plan.icon;
 
@@ -199,45 +199,52 @@ export default function Pricing() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
+                whileHover={{ y: -4 }}
+                className="relative group"
               >
-                <Card 
-                  className={`relative h-full ${
-                    plan.popular ? "border-blue-500 shadow-lg shadow-blue-500/20" : ""
+                {/* Glow on hover */}
+                <div className={`absolute -inset-px rounded-2xl bg-gradient-to-br ${plan.color} opacity-0 group-hover:opacity-40 blur-md transition-opacity duration-300 pointer-events-none ${plan.popular ? "opacity-30" : ""}`} />
+
+                <Card
+                  className={`relative h-full rounded-2xl border bg-card/80 backdrop-blur-xl shadow-lg shadow-background/40 overflow-hidden ${
+                    plan.popular ? "border-primary/60" : "border-border/60"
                   }`}
                 >
+                  <div className={`absolute -top-20 -right-20 w-40 h-40 rounded-full bg-gradient-to-br ${plan.color} opacity-20 blur-3xl pointer-events-none`} />
+
                   {plan.popular && (
-                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500">
+                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground border-0 shadow-md shadow-primary/40">
                       Recomendado
                     </Badge>
                   )}
-                  
-                  <CardHeader className="text-center pb-8">
-                    <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br ${plan.color} flex items-center justify-center`}>
-                      <Icon className="w-8 h-8 text-white" />
+
+                  <CardHeader className="relative text-center pb-6">
+                    <div className={`w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center shadow-md shadow-primary/20`}>
+                      <Icon className="w-7 h-7 text-primary-foreground" />
                     </div>
-                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                    <CardDescription className="text-3xl font-bold text-foreground mt-4">
+                    <CardTitle className="text-xl font-display tracking-tight">{plan.name}</CardTitle>
+                    <CardDescription className="text-3xl font-display font-bold text-foreground mt-3">
                       {plan.price}
-                      <span className="text-sm font-normal text-muted-foreground">
+                      <span className="text-sm font-normal text-muted-foreground ml-1">
                         {plan.period}
                       </span>
                     </CardDescription>
                   </CardHeader>
 
-                  <CardContent className="space-y-4">
-                    <div className="space-y-3">
-                      {plan.features.map((feature, i) => (
-                        <div key={i} className="flex items-start gap-3">
-                          <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                          <span className="text-sm">{feature}</span>
+                  <CardContent className="relative space-y-3">
+                    {plan.features.map((feature, i) => (
+                      <div key={i} className="flex items-start gap-2.5">
+                        <div className="mt-0.5 p-0.5 rounded-full bg-primary/10 border border-primary/20">
+                          <Check className="w-3 h-3 text-primary" strokeWidth={3} />
                         </div>
-                      ))}
-                      {plan.limitations?.map((limitation, i) => (
-                        <div key={i} className="flex items-start gap-3 opacity-50">
-                          <span className="text-sm line-through">{limitation}</span>
-                        </div>
-                      ))}
-                    </div>
+                        <span className="text-sm text-foreground/90 leading-snug">{feature}</span>
+                      </div>
+                    ))}
+                    {plan.limitations?.map((limitation, i) => (
+                      <div key={i} className="flex items-start gap-2.5 opacity-50">
+                        <span className="text-sm line-through text-muted-foreground leading-snug">{limitation}</span>
+                      </div>
+                    ))}
                   </CardContent>
 
                   <CardFooter className="pt-6">
