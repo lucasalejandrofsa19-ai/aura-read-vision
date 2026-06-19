@@ -268,7 +268,7 @@ All colors MUST be HSL.
   }
 
   /* Display typography — Sora for prominent headings */
-  h1, h2, h3, .font-display {
+  h1, h2, h3 {
     @apply font-display;
     letter-spacing: -0.02em;
   }
