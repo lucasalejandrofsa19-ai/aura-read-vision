@@ -229,8 +229,9 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: "liga" 1, "calt" 1;
+    @apply bg-background text-foreground antialiased font-sans;
+    font-feature-settings: "liga" 1, "calt" 1, "ss01" 1;
+    letter-spacing: -0.005em;
     min-height: 100%;
     min-height: -webkit-fill-available;
     overflow-x: hidden;
