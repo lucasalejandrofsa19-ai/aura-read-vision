@@ -99,7 +99,7 @@ export const useGenerateCover = () => {
         found = await findUploaded();
       }
 
-      // Fallback: verificação falhou — preserva capa anterior (ou null = placeholder no BookCard)
+      // Fallback: verificação falhou — preserva capa anterior e marca status 'failed'
       if (!found) {
         const { data: existing } = await supabase
           .from("books")
@@ -108,6 +108,11 @@ export const useGenerateCover = () => {
           .maybeSingle();
 
         const fallbackPath = existing?.cover_image_url ?? null;
+        await supabase
+          .from("books")
+          .update({ cover_status: "failed" })
+          .eq("id", bookId);
+
         captureError(
           new Error("Capa não verificada no bucket após retry — usando fallback"),
           { context: "generate_cover_fallback", bookId, fallbackPath }
@@ -127,10 +132,10 @@ export const useGenerateCover = () => {
         );
       }
 
-      // Atualiza o registro do livro com o caminho da capa
+      // Atualiza o registro do livro com o caminho da capa e marca status 'ready'
       const { data: updated, error: updateError } = await supabase
         .from("books")
-        .update({ cover_image_url: coverFileName })
+        .update({ cover_image_url: coverFileName, cover_status: "ready" })
         .eq("id", bookId)
         .select("id, cover_image_url")
         .maybeSingle();

@@ -18,7 +18,7 @@ import { ptBR } from "date-fns/locale";
 import { LazyImage } from "@/components/LazyImage";
 import { SelectCoverPageDialog } from "@/components/SelectCoverPageDialog";
 import { useGenerateCover } from "@/hooks/useGenerateCover";
-import { isCoverFailed, markCoverFailed, clearCoverFailed } from "@/lib/coverFallback";
+import { isCoverFailedLocal, markCoverFailed, clearCoverFailed } from "@/lib/coverFallback";
 import { BookMarked } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,6 +31,7 @@ interface Book {
   progress?: number;
   file_path: string;
   cover_image_url?: string;
+  cover_status?: "pending" | "ready" | "failed" | string;
   total_pages?: number;
   file_url?: string;
 }
@@ -317,7 +318,7 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                   className="absolute inset-0 w-full h-full object-cover"
                   containerClassName="absolute inset-0"
                 />
-              ) : isCoverFailed(book.id) ? (
+              ) : (book.cover_status === "failed" || isCoverFailedLocal(book.id)) ? (
                 <>
                   {/* Fallback placeholder — geração da capa falhou/timeout */}
                   <div className={`absolute inset-0 bg-gradient-to-br ${book.cover_color || 'from-primary to-secondary'}`} />
