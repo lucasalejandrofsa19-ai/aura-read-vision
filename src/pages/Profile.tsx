@@ -369,9 +369,9 @@ const Profile = () => {
             </Card>
 
             {/* Ultra Performance Mode Card */}
-            <Card className="border-primary/20">
+            <Card className="rounded-2xl border-primary/30 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="font-display flex items-center gap-2">
                   <Zap className="w-5 h-5 text-primary" />
                   Modo Ultra Performance
                 </CardTitle>
