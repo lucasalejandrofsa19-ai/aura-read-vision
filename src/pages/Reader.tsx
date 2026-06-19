@@ -640,14 +640,16 @@ const Reader = () => {
               notes={notes}
             />
 
-            <NotesPanel
-              notes={notes}
-              currentPage={currentPage}
-              onAddNote={addNote}
-              onUpdateNote={updateNote}
-              onDeleteNote={deleteNote}
-              onNavigateToPage={handleNavigateToPage}
-            />
+            <div className="lg:hidden">
+              <NotesPanel
+                notes={notes}
+                currentPage={currentPage}
+                onAddNote={addNote}
+                onUpdateNote={updateNote}
+                onDeleteNote={deleteNote}
+                onNavigateToPage={handleNavigateToPage}
+              />
+            </div>
 
             <ToolHelpTooltip {...TOOL_COPY.highlight}>
               <Button
