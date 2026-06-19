@@ -55,6 +55,7 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
   const [loadingGallery, setLoadingGallery] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [showSelectPage, setShowSelectPage] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const { generateCover, generating: generatingCover } = useGenerateCover();
 
