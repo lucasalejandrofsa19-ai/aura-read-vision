@@ -171,6 +171,7 @@ export type Database = {
           author: string | null
           cover_color: string | null
           cover_image_url: string | null
+          cover_status: string
           created_at: string | null
           current_page: number | null
           extracted_text: string | null
@@ -188,6 +189,7 @@ export type Database = {
           author?: string | null
           cover_color?: string | null
           cover_image_url?: string | null
+          cover_status?: string
           created_at?: string | null
           current_page?: number | null
           extracted_text?: string | null
@@ -205,6 +207,7 @@ export type Database = {
           author?: string | null
           cover_color?: string | null
           cover_image_url?: string | null
+          cover_status?: string
           created_at?: string | null
           current_page?: number | null
           extracted_text?: string | null
