@@ -76,8 +76,8 @@ export const useBooks = () => {
       
       return booksWithUrls;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutos (premium books mudam menos)
-    gcTime: 15 * 60 * 1000,
+    staleTime: 30 * 60 * 1000, // 30 min (premium muda pouco, URL vale 1h)
+    gcTime: 60 * 60 * 1000,
   });
 
   // Mutation para deletar livro
