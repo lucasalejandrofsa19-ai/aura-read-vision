@@ -43,6 +43,7 @@ const LibraryInner = () => {
   const searchBarRef = useTourTarget("search-bar");
   const bookCardRef = useTourTarget("book-card");
   const uploadButtonRef = useTourTarget("upload-button");
+  const publicPdfsDescId = useId();
   const [searchQuery, setSearchQuery] = useState("");
   const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
   const { user, signOut } = useAuth();
