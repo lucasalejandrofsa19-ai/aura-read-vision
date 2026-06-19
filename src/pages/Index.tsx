@@ -12,6 +12,7 @@ import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP, PUBLIC_PDFS_DESCRIPTION } from 
 
 const Index = () => {
   const navigate = useNavigate();
+  const publicPdfsDescId = useId();
 
   const features = [
     {
