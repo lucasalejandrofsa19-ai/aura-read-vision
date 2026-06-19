@@ -6,37 +6,57 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Rate limiting configuration
+// Rate limiting configuration (1.3 fix: persisted in DB so it works across
+// multiple Edge Function instances; the in-memory Map was per-instance only).
 const RATE_LIMIT_MAX = 20; // requests
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in ms
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_SECONDS = 60;
 
-function checkRateLimit(userId: string): { allowed: boolean; remaining: number } {
+async function checkRateLimit(
+  supabase: ReturnType<typeof createClient>,
+  userId: string
+): Promise<{ allowed: boolean; remaining: number; count: number; resetAt: number }> {
   const now = Date.now();
-  const userLimit = rateLimitMap.get(userId);
+  // Bucket the window so concurrent requests collapse into a single row.
+  const windowStartSec = Math.floor(now / 1000 / RATE_LIMIT_WINDOW_SECONDS) * RATE_LIMIT_WINDOW_SECONDS;
+  const windowStart = new Date(windowStartSec * 1000).toISOString();
+  const resetAt = (windowStartSec + RATE_LIMIT_WINDOW_SECONDS) * 1000;
+  const bucketKey = `verify-premium-access:${userId}`;
 
-  // Clean up expired entries
-  if (userLimit && now > userLimit.resetAt) {
-    rateLimitMap.delete(userId);
+  // Atomic upsert + increment via RPC-less pattern: try insert, on conflict select+update.
+  const { data: inserted, error: insertErr } = await supabase
+    .from('rate_limit_buckets')
+    .insert({ bucket_key: bucketKey, window_start: windowStart, request_count: 1 })
+    .select('request_count')
+    .maybeSingle();
+
+  let count: number;
+  if (insertErr) {
+    // Conflict — increment existing row.
+    const { data: existing } = await supabase
+      .from('rate_limit_buckets')
+      .select('request_count')
+      .eq('bucket_key', bucketKey)
+      .eq('window_start', windowStart)
+      .maybeSingle();
+    const newCount = ((existing?.request_count as number | undefined) ?? 0) + 1;
+    await supabase
+      .from('rate_limit_buckets')
+      .update({ request_count: newCount })
+      .eq('bucket_key', bucketKey)
+      .eq('window_start', windowStart);
+    count = newCount;
+  } else {
+    count = (inserted?.request_count as number | undefined) ?? 1;
   }
 
-  if (!rateLimitMap.has(userId)) {
-    rateLimitMap.set(userId, {
-      count: 1,
-      resetAt: now + RATE_LIMIT_WINDOW,
-    });
-    return { allowed: true, remaining: RATE_LIMIT_MAX - 1 };
-  }
-
-  const limit = rateLimitMap.get(userId)!;
-
-  if (limit.count >= RATE_LIMIT_MAX) {
-    return { allowed: false, remaining: 0 };
-  }
-
-  limit.count++;
-  return { allowed: true, remaining: RATE_LIMIT_MAX - limit.count };
+  return {
+    allowed: count <= RATE_LIMIT_MAX,
+    remaining: Math.max(0, RATE_LIMIT_MAX - count),
+    count,
+    resetAt,
+  };
 }
+
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -126,12 +146,12 @@ serve(async (req) => {
       console.log(`[VERIFY-PREMIUM] IP ${ipAddress} is whitelisted, bypassing block check`);
     }
 
-    // Apply rate limiting
-    const rateLimit = checkRateLimit(user.id);
-    
+    // Apply rate limiting (DB-backed)
+    const rateLimit = await checkRateLimit(supabaseClient, user.id);
+
     if (!rateLimit.allowed) {
       console.warn(`[VERIFY-PREMIUM] Rate limit exceeded for user: ${user.id}`);
-      
+
       // Audit log: Rate limit exceeded
       await supabaseClient.from('premium_access_audit').insert({
         user_id: user.id,
@@ -143,8 +163,8 @@ serve(async (req) => {
         reason: 'rate_limit_exceeded',
         metadata: {
           rate_limit_max: RATE_LIMIT_MAX,
-          rate_limit_window: RATE_LIMIT_WINDOW,
-          attempts: rateLimitMap.get(user.id)?.count,
+          rate_limit_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+          attempts: rateLimit.count,
         },
       });
 
@@ -159,9 +179,9 @@ serve(async (req) => {
             userId: user.id,
             ipAddress,
             details: {
-              attempts: rateLimitMap.get(user.id)?.count,
+              attempts: rateLimit.count,
               maxAllowed: RATE_LIMIT_MAX,
-              window: `${RATE_LIMIT_WINDOW / 1000}s`,
+              window: `${RATE_LIMIT_WINDOW_SECONDS}s`,
               userAgent,
             },
           },
@@ -180,22 +200,23 @@ serve(async (req) => {
       }).catch(err => console.error('[VERIFY-PREMIUM] Auto-block error:', err));
 
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Too many requests. Please try again later.',
-          hasPremiumAccess: false 
+          hasPremiumAccess: false
         }),
-        { 
-          headers: { 
-            ...corsHeaders, 
+        {
+          headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json',
             'X-RateLimit-Limit': RATE_LIMIT_MAX.toString(),
             'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': rateLimitMap.get(user.id)!.resetAt.toString(),
+            'X-RateLimit-Reset': rateLimit.resetAt.toString(),
           },
-          status: 429 
+          status: 429
         }
       );
     }
+
 
     // Check if user is admin or has premium role
     const { data: roles, error: rolesError } = await supabaseClient

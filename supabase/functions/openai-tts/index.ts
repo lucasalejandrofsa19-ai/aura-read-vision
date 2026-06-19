@@ -24,8 +24,30 @@ serve(async (req) => {
   }
 
   try {
+    // 1.4 fix: auth + size validation BEFORE parsing body
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "No authorization header" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const contentLength = parseInt(req.headers.get("content-length") || "0", 10);
+    if (contentLength > 100_000) {
+      return new Response(JSON.stringify({ error: "Payload too large" }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "User not authenticated" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     const { text, voice = "alloy" } = await req.json();
-    
+
     if (!text) {
       throw new Error('Text is required');
     }
@@ -36,23 +58,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Create user client for auth verification
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
-
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("No authorization header");
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-    
-    if (authError || !user) {
-      throw new Error("User not authenticated");
-    }
 
     // Check premium access
     const { data: hasPremium, error: premiumError } = await supabaseClient

@@ -81,15 +81,20 @@ serve(async (req) => {
 
         logStep("Customer found", { email: customer.email });
 
-        // Get user by email
-        const { data: users, error: userError } = await supabaseClient.auth.admin.listUsers();
+        // 1.2 fix: lookup user via profiles (indexed) instead of auth.admin.listUsers()
+        const { data: profile, error: userError } = await supabaseClient
+          .from("profiles")
+          .select("id")
+          .eq("email", customer.email)
+          .maybeSingle();
         if (userError) throw userError;
 
-        const user = users.users.find(u => u.email === customer.email);
+        const user = profile ? { id: profile.id as string } : null;
         if (!user) {
           logStep("No user found for email", { email: customer.email });
           break;
         }
+
 
         logStep("User found", { userId: user.id });
 
@@ -143,15 +148,20 @@ serve(async (req) => {
           break;
         }
 
-        // Get user by email
-        const { data: users, error: userError } = await supabaseClient.auth.admin.listUsers();
+        // 1.2 fix: lookup user via profiles instead of auth.admin.listUsers()
+        const { data: profile, error: userError } = await supabaseClient
+          .from("profiles")
+          .select("id")
+          .eq("email", customer.email)
+          .maybeSingle();
         if (userError) throw userError;
 
-        const user = users.users.find(u => u.email === customer.email);
+        const user = profile ? { id: profile.id as string } : null;
         if (!user) {
           logStep("No user found for email", { email: customer.email });
           break;
         }
+
 
         // Remove premium role
         const { error: roleError } = await supabaseClient
