@@ -194,6 +194,7 @@ const Index = () => {
                 size="lg"
                 variant="ghost"
                 onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}
+                title="Abre em nova aba"
                 className="text-lg px-8 py-6"
               >
                 PDFs Públicos

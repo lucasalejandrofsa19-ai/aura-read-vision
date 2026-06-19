@@ -30,6 +30,7 @@ const GlobalFooter = () => {
             href="/pdfs-publicos"
             target="_blank"
             rel="noopener noreferrer"
+            title="Abre em nova aba"
             className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
           >
             <FileText className="h-3.5 w-3.5" />
