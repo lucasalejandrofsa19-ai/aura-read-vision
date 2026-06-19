@@ -269,10 +269,17 @@ export const PDFViewer = ({
     try {
       const page = await pdfDoc.getPage(pageNum);
       const textContent = await page.getTextContent();
-      const text = textContent.items
+      const raw = textContent.items
         .map((item: PDFTextItem) => ('str' in item ? item.str : ''))
-        .join(' ')
-        .toLowerCase();
+        .join(' ');
+      // Normaliza: minúsculas, sem acentos, espaços colapsados.
+      // Permite busca por frase mesmo cruzando quebras de linha/itens.
+      const text = raw
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
       return text;
     } catch (error) {
       console.error(`Error extracting text from page ${pageNum}:`, error);
@@ -343,18 +350,25 @@ export const PDFViewer = ({
   };
 
   const handleSearch = async (term: string) => {
-    if (!term || term.length < 2) {
+    if (!term || term.trim().length < 2) {
       setSearchResults([]);
       setSearchTerm("");
       return;
     }
 
+    // Normaliza a frase de busca igual ao texto extraído
+    const normalizedTerm = term
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
     setIsSearching(true);
-    setSearchTerm(term.toLowerCase());
+    setSearchTerm(normalizedTerm);
     const results: number[] = [];
 
     try {
-      // Reuse cached pdfDoc instead of re-downloading the PDF
       const pdfDoc = pdfDocRef.current;
       if (!pdfDoc) {
         console.warn("[search] PDF document not yet loaded");
@@ -369,14 +383,14 @@ export const PDFViewer = ({
           setPageTexts(prev => new Map(prev).set(i, text));
         }
 
-        if (text.includes(term.toLowerCase())) {
+        if (text.includes(normalizedTerm)) {
           results.push(i);
         }
       }
 
       setSearchResults(results);
       setCurrentResultIndex(0);
-      
+
       if (results.length > 0) {
         changePage(results[0]);
       }
