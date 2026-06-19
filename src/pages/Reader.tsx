@@ -812,6 +812,7 @@ const Reader = () => {
                 <span className="text-xs font-display font-bold tabular-nums">{notes.length}</span>
               </div>
               <NotesPanel
+                inline
                 notes={notes}
                 currentPage={currentPage}
                 onAddNote={addNote}
