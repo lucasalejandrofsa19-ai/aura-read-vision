@@ -16,6 +16,8 @@ interface NotesPanelProps {
   onUpdateNote: (noteId: string, noteText: string) => void;
   onDeleteNote: (noteId: string) => void;
   onNavigateToPage: (pageNumber: number) => void;
+  /** When true, renders content inline (no trigger button, no floating panel). */
+  inline?: boolean;
 }
 
 export const NotesPanel = ({
@@ -25,6 +27,7 @@ export const NotesPanel = ({
   onUpdateNote,
   onDeleteNote,
   onNavigateToPage,
+  inline = false,
 }: NotesPanelProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
