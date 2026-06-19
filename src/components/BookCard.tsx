@@ -219,7 +219,6 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
           );
           fallbackRetriesRef.current = 0;
         }
-      }
       } else {
         fallbackRetriesRef.current = 0;
         toast.success("✨ Capa gerada com sucesso!", { id: "generate-cover" });
