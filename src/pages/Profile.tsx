@@ -443,7 +443,7 @@ const Profile = () => {
             <LazyLoadWrapper
               minHeight="300px"
               fallback={
-                <Card>
+                <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
                   <CardHeader>
                     <Skeleton className="h-6 w-48" />
                     <Skeleton className="h-4 w-64 mt-2" />
