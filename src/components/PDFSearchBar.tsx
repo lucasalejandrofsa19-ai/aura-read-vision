@@ -47,7 +47,8 @@ export const PDFSearchBar = ({
         size="icon"
         onClick={() => setIsOpen(!isOpen)}
         className="aura-soft transition-aura"
-        title="Buscar no PDF (Ctrl+F)"
+        title="Buscar palavra ou frase no PDF (Ctrl+F)"
+        aria-label="Buscar palavra ou frase no PDF"
       >
         <Search className="w-5 h-5" />
       </Button>
