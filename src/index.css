@@ -266,6 +266,17 @@ All colors MUST be HSL.
       padding-right: env(safe-area-inset-right);
     }
   }
+
+  /* Display typography — Sora for prominent headings */
+  h1, h2, h3, .font-display {
+    @apply font-display;
+    letter-spacing: -0.02em;
+  }
+  h1 { line-height: 1.08; }
+  h2 { line-height: 1.15; }
+  h3 { line-height: 1.25; }
+
+
   
   
   /* Glassmorphism utility - Simplificado */
