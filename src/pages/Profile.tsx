@@ -255,19 +255,19 @@ const Profile = () => {
         </motion.div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="profile">Perfil</TabsTrigger>
-            <TabsTrigger value="stats">Estatísticas</TabsTrigger>
-            <TabsTrigger value="subscription">Assinatura</TabsTrigger>
-            <TabsTrigger value="highlights">Destaques</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 rounded-2xl border border-border/60 bg-card/80 backdrop-blur-xl p-1">
+            <TabsTrigger value="profile" className="rounded-xl">Perfil</TabsTrigger>
+            <TabsTrigger value="stats" className="rounded-xl">Estatísticas</TabsTrigger>
+            <TabsTrigger value="subscription" className="rounded-xl">Assinatura</TabsTrigger>
+            <TabsTrigger value="highlights" className="rounded-xl">Destaques</TabsTrigger>
           </TabsList>
 
 
           <TabsContent value="profile" className="space-y-6">
             {/* Profile Info Card */}
-            <Card>
+            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
-                <CardTitle>Informações do Perfil</CardTitle>
+                <CardTitle className="font-display">Informações do Perfil</CardTitle>
                 <CardDescription>
                   Atualize suas informações pessoais e avatar
                 </CardDescription>
