@@ -8,6 +8,8 @@ interface HighlightItem {
   created_at: string;
 }
 
+const PER_IMAGE = 60;
+
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string)
@@ -22,19 +24,13 @@ const sanitizeFilename = (name: string) =>
     .replace(/^_|_$/g, "")
     .slice(0, 80) || "destaques";
 
-/**
- * Exporta a lista de destaques como uma imagem PNG (poster vertical).
- * Renderiza um node offscreen estilizado e captura via html2canvas.
- */
-export const exportHighlightsAsImage = async (
+const renderChunk = async (
   bookTitle: string,
-  highlights: HighlightItem[]
-): Promise<void> => {
-  if (!highlights.length) throw new Error("Nenhum destaque para exportar");
-
-  // Limitamos a 60 destaques por imagem para manter legibilidade
-  const items = highlights.slice(0, 60);
-
+  chunk: HighlightItem[],
+  totalCount: number,
+  partIndex: number,
+  totalParts: number
+): Promise<Blob> => {
   const container = document.createElement("div");
   container.style.cssText = [
     "position:fixed",
@@ -48,19 +44,22 @@ export const exportHighlightsAsImage = async (
     "box-sizing:border-box",
   ].join(";");
 
+  const partLabel =
+    totalParts > 1 ? `Parte ${partIndex + 1} de ${totalParts}` : "Meus destaques";
+
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;border-bottom:1px solid rgba(248,250,252,0.15);padding-bottom:20px;">
       <div>
-        <p style="margin:0 0 6px 0;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#94a3b8;">AURA READ · Meus destaques</p>
+        <p style="margin:0 0 6px 0;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#94a3b8;">AURA READ · ${escapeHtml(partLabel)}</p>
         <h1 style="margin:0;font-size:28px;font-weight:700;line-height:1.2;">${escapeHtml(bookTitle)}</h1>
       </div>
       <div style="text-align:right;">
-        <p style="margin:0;font-size:36px;font-weight:800;background:linear-gradient(135deg,#fbbf24,#f59e0b);-webkit-background-clip:text;background-clip:text;color:transparent;">${highlights.length}</p>
-        <p style="margin:0;font-size:11px;color:#94a3b8;letter-spacing:.1em;text-transform:uppercase;">trechos</p>
+        <p style="margin:0;font-size:36px;font-weight:800;background:linear-gradient(135deg,#fbbf24,#f59e0b);-webkit-background-clip:text;background-clip:text;color:transparent;">${totalCount}</p>
+        <p style="margin:0;font-size:11px;color:#94a3b8;letter-spacing:.1em;text-transform:uppercase;">trechos no total</p>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;gap:14px;">
-      ${items
+      ${chunk
         .map(
           (h) => `
             <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(248,250,252,0.08);border-left:4px solid ${escapeHtml(h.color || "#fef08a")};border-radius:10px;padding:14px 18px;">
@@ -73,13 +72,8 @@ export const exportHighlightsAsImage = async (
           `
         )
         .join("")}
-      ${
-        highlights.length > items.length
-          ? `<p style="text-align:center;color:#94a3b8;font-size:12px;margin-top:8px;">+ ${highlights.length - items.length} destaques não exibidos nesta imagem</p>`
-          : ""
-      }
     </div>
-    <p style="margin-top:32px;text-align:center;font-size:11px;color:#64748b;letter-spacing:.1em;">gerado em ${new Date().toLocaleString("pt-BR")} · auraread.store</p>
+    <p style="margin-top:32px;text-align:center;font-size:11px;color:#64748b;letter-spacing:.1em;">gerado em ${new Date().toLocaleString("pt-BR")} · auraread.store${totalParts > 1 ? ` · parte ${partIndex + 1}/${totalParts}` : ""}</p>
   `;
 
   document.body.appendChild(container);
@@ -92,22 +86,52 @@ export const exportHighlightsAsImage = async (
       logging: false,
     });
 
-    const blob: Blob = await new Promise((resolve, reject) =>
+    return await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob(
         (b) => (b ? resolve(b) : reject(new Error("Falha ao gerar imagem"))),
         "image/png"
       )
     );
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${sanitizeFilename(bookTitle)}-destaques-${Date.now()}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
   } finally {
     container.remove();
+  }
+};
+
+const downloadBlob = (blob: Blob, filename: string) => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+};
+
+/**
+ * Exporta a lista de destaques como uma ou mais imagens PNG.
+ * Quando houver mais de 60 destaques, gera múltiplas imagens
+ * (parte-01, parte-02, ...) com layout coerente entre elas.
+ */
+export const exportHighlightsAsImage = async (
+  bookTitle: string,
+  highlights: HighlightItem[]
+): Promise<void> => {
+  if (!highlights.length) throw new Error("Nenhum destaque para exportar");
+
+  const chunks: HighlightItem[][] = [];
+  for (let i = 0; i < highlights.length; i += PER_IMAGE) {
+    chunks.push(highlights.slice(i, i + PER_IMAGE));
+  }
+
+  const base = sanitizeFilename(bookTitle);
+  const stamp = Date.now();
+  const total = chunks.length;
+
+  for (let i = 0; i < chunks.length; i++) {
+    const blob = await renderChunk(bookTitle, chunks[i], highlights.length, i, total);
+    const suffix =
+      total > 1 ? `-parte-${String(i + 1).padStart(2, "0")}-de-${String(total).padStart(2, "0")}` : "";
+    downloadBlob(blob, `${base}-destaques${suffix}-${stamp}.png`);
   }
 };
