@@ -28,7 +28,7 @@ const PLANS: Record<string, PlanFeatures> = {
     price: "R$ 0",
     period: "sempre grátis",
     icon: Sparkles,
-    color: "from-slate-500 to-slate-700",
+    color: "from-muted to-muted-foreground/40",
     features: [
       "Até 5 PDFs",
       "Leitura básica de PDFs",
@@ -52,7 +52,7 @@ const PLANS: Record<string, PlanFeatures> = {
     period: "/mês",
     priceId: "price_1SX79qFGn21ViXD3SRtlkbgi",
     icon: Zap,
-    color: "from-blue-500 to-blue-700",
+    color: "from-primary/80 to-primary",
     features: [
       "Até 100 PDFs",
       "Todos os recursos do plano gratuito",
@@ -71,7 +71,7 @@ const PLANS: Record<string, PlanFeatures> = {
     period: "/mês",
     priceId: "price_1TcWuoFGn21ViXD3g9dai6D8",
     icon: GraduationCap,
-    color: "from-emerald-500 to-teal-700",
+    color: "from-primary to-accent",
     popular: true,
     features: [
       "Até 200 PDFs",
@@ -90,7 +90,7 @@ const PLANS: Record<string, PlanFeatures> = {
     period: "/mês",
     priceId: "price_1SX79rFGn21ViXD3aVs533MV",
     icon: Crown,
-    color: "from-purple-500 to-purple-700",
+    color: "from-accent to-accent/60",
     features: [
       "PDFs ilimitados",
       "Todos os recursos do plano Pro",
