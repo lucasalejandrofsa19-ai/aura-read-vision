@@ -45,17 +45,20 @@ serve(async (req) => {
       );
     }
 
-    // Decode base64 image
+    // Decode base64 image — detecta mime do data URL (jpeg ou png)
+    const mimeMatch = /^data:(image\/(jpeg|png));base64,/.exec(coverImage);
+    const mimeType = mimeMatch?.[1] ?? "image/jpeg";
+    const ext = mimeType === "image/png" ? "png" : "jpg";
     const base64Data = coverImage.split(',')[1];
     const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-    const blob = new Blob([binaryData], { type: 'image/png' });
+    const blob = new Blob([binaryData], { type: mimeType });
 
     // Upload cover to storage
-    const coverFileName = `${bookId}-cover.png`;
+    const coverFileName = `${bookId}-cover.${ext}`;
     const { error: uploadError } = await supabaseClient.storage
       .from("premium-covers")
       .upload(coverFileName, blob, {
-        contentType: "image/png",
+        contentType: mimeType,
         upsert: true
       });
 
