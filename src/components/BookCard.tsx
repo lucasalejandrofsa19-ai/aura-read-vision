@@ -22,6 +22,7 @@ import { isCoverFailedLocal, markCoverFailed, clearCoverFailed } from "@/lib/cov
 import { BookMarked } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { StoryVideoQuotaBadge } from "@/components/StoryVideoQuotaBadge";
 
 interface Book {
   id: string;
