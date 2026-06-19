@@ -146,12 +146,12 @@ serve(async (req) => {
       console.log(`[VERIFY-PREMIUM] IP ${ipAddress} is whitelisted, bypassing block check`);
     }
 
-    // Apply rate limiting
-    const rateLimit = checkRateLimit(user.id);
-    
+    // Apply rate limiting (DB-backed)
+    const rateLimit = await checkRateLimit(supabaseClient, user.id);
+
     if (!rateLimit.allowed) {
       console.warn(`[VERIFY-PREMIUM] Rate limit exceeded for user: ${user.id}`);
-      
+
       // Audit log: Rate limit exceeded
       await supabaseClient.from('premium_access_audit').insert({
         user_id: user.id,
@@ -163,8 +163,8 @@ serve(async (req) => {
         reason: 'rate_limit_exceeded',
         metadata: {
           rate_limit_max: RATE_LIMIT_MAX,
-          rate_limit_window: RATE_LIMIT_WINDOW,
-          attempts: rateLimitMap.get(user.id)?.count,
+          rate_limit_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+          attempts: rateLimit.count,
         },
       });
 
@@ -179,9 +179,9 @@ serve(async (req) => {
             userId: user.id,
             ipAddress,
             details: {
-              attempts: rateLimitMap.get(user.id)?.count,
+              attempts: rateLimit.count,
               maxAllowed: RATE_LIMIT_MAX,
-              window: `${RATE_LIMIT_WINDOW / 1000}s`,
+              window: `${RATE_LIMIT_WINDOW_SECONDS}s`,
               userAgent,
             },
           },
@@ -200,22 +200,23 @@ serve(async (req) => {
       }).catch(err => console.error('[VERIFY-PREMIUM] Auto-block error:', err));
 
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Too many requests. Please try again later.',
-          hasPremiumAccess: false 
+          hasPremiumAccess: false
         }),
-        { 
-          headers: { 
-            ...corsHeaders, 
+        {
+          headers: {
+            ...corsHeaders,
             'Content-Type': 'application/json',
             'X-RateLimit-Limit': RATE_LIMIT_MAX.toString(),
             'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': rateLimitMap.get(user.id)!.resetAt.toString(),
+            'X-RateLimit-Reset': rateLimit.resetAt.toString(),
           },
-          status: 429 
+          status: 429
         }
       );
     }
+
 
     // Check if user is admin or has premium role
     const { data: roles, error: rolesError } = await supabaseClient
