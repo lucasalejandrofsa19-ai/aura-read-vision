@@ -204,8 +204,17 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
   });
 
   const addHighlight = useCallback(
-    (position: { x: number; y: number; width: number; height: number }, text: string = "", color: string = "#fef08a") => {
-      addHighlightMutation.mutate({ position, text, color });
+    async (
+      position: { x: number; y: number; width: number; height: number },
+      text: string = "",
+      color: string = "#fef08a"
+    ): Promise<{ id?: string } | undefined> => {
+      try {
+        const result = await addHighlightMutation.mutateAsync({ position, text, color });
+        return { id: result?.data?.id };
+      } catch {
+        return undefined;
+      }
     },
     [addHighlightMutation]
   );

@@ -42,7 +42,7 @@ interface PDFViewerProps {
     height: number;
     color: string;
   }>;
-  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string; color: string }) => void;
+  onHighlightDrawn?: (coords: { x: number; y: number; width: number; height: number; text: string; color: string }) => Promise<{ id?: string } | undefined | void> | void;
   isDrawingMode?: boolean;
   highlightColor?: string;
   penThickness?: number;
@@ -738,7 +738,8 @@ export const PDFViewer = ({
                     height: coords.height / scale,
                   };
                   
-                  onHighlightDrawn?.({ ...originalCoords, text, color: highlightColor });
+                  const res = await onHighlightDrawn?.({ ...originalCoords, text, color: highlightColor });
+                  return res ?? undefined;
                 }}
                 isDrawing={isDrawingMode}
                 drawColor={highlightColor}
