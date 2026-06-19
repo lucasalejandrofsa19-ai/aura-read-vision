@@ -34,6 +34,8 @@ interface UploadPDFProps {
 const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplete } = {}, ref) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fallbackRetriesRef = useRef(0);
+  const MAX_FALLBACK_RETRIES = 2;
   const { user } = useAuth();
   const { hasPremiumAccess, isAdmin } = useUserData();
   const { trackClick, trackAsyncOperation } = useSentryTracking();
