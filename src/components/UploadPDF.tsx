@@ -153,7 +153,9 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
           queryClient.invalidateQueries({ queryKey: ["books", user.id] });
 
           // Generate cover from first page in the background
-          const generateCoverAsync = async (): Promise<void> => {
+          fallbackRetriesRef.current = 0;
+          const generateCoverAsync = async (isRetry = false): Promise<void> => {
+            if (!isRetry) fallbackRetriesRef.current = 0;
             try {
               toast.loading("Preparando a capa…", { id: "cover-generation" });
 
@@ -164,26 +166,44 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
 
               const result = await generateCover(bookData.id, signedData?.signedUrl ?? "", 1);
               if (result?.fallback) {
-                toast.warning("Não foi possível verificar a capa — usando fallback", {
-                  id: "cover-generation",
-                  duration: 10000,
-                  action: {
-                    label: "Tentar novamente",
-                    onClick: () => { void generateCoverAsync(); },
-                  },
-                });
+                const canRetry = fallbackRetriesRef.current < MAX_FALLBACK_RETRIES;
+                toast.warning(
+                  canRetry
+                    ? `Não foi possível verificar a capa — usando fallback (tentativa ${fallbackRetriesRef.current + 1}/${MAX_FALLBACK_RETRIES})`
+                    : "Não foi possível verificar a capa após várias tentativas — usando fallback",
+                  {
+                    id: "cover-generation",
+                    duration: 10000,
+                    action: canRetry
+                      ? {
+                          label: "Tentar novamente",
+                          onClick: () => {
+                            fallbackRetriesRef.current += 1;
+                            void generateCoverAsync(true);
+                          },
+                        }
+                      : undefined,
+                  }
+                );
               } else {
+                fallbackRetriesRef.current = 0;
                 toast.success("Capa pronta ✨", { id: "cover-generation" });
               }
               queryClient.invalidateQueries({ queryKey: ["books", user.id] });
             } catch (error) {
               captureError(error, { context: "auto_generate_cover" });
+              const canRetry = fallbackRetriesRef.current < MAX_FALLBACK_RETRIES;
               toast.error("Não conseguimos gerar a capa agora.", {
                 id: "cover-generation",
-                action: {
-                  label: "Tentar novamente",
-                  onClick: () => { void generateCoverAsync(); },
-                },
+                action: canRetry
+                  ? {
+                      label: "Tentar novamente",
+                      onClick: () => {
+                        fallbackRetriesRef.current += 1;
+                        void generateCoverAsync(true);
+                      },
+                    }
+                  : undefined,
               });
             }
           };
