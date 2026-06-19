@@ -41,8 +41,10 @@ export const useBooks = () => {
       return booksWithUrls;
     },
     enabled: !!user,
-    staleTime: 3 * 60 * 1000, // 3 minutos
-    gcTime: 5 * 60 * 1000,
+    // URLs assinadas valem 1h; alinhar staleTime evita refetches que
+    // disparam N requests de createSignedUrl sem ganho real para o usuário.
+    staleTime: 45 * 60 * 1000, // 45 min
+    gcTime: 60 * 60 * 1000,    // 1 hora
   });
 
   // Fetch premium books with cache
@@ -74,8 +76,8 @@ export const useBooks = () => {
       
       return booksWithUrls;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutos (premium books mudam menos)
-    gcTime: 15 * 60 * 1000,
+    staleTime: 30 * 60 * 1000, // 30 min (premium muda pouco, URL vale 1h)
+    gcTime: 60 * 60 * 1000,
   });
 
   // Mutation para deletar livro
