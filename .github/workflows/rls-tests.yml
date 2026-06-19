@@ -1,0 +1,39 @@
+name: RLS Tests (highlights)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  rls:
+    name: Vitest — highlights RLS
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      TEST_USER_A_EMAIL: ${{ secrets.TEST_USER_A_EMAIL }}
+      TEST_USER_A_PASSWORD: ${{ secrets.TEST_USER_A_PASSWORD }}
+      TEST_USER_B_EMAIL: ${{ secrets.TEST_USER_B_EMAIL }}
+      TEST_USER_B_PASSWORD: ${{ secrets.TEST_USER_B_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Provision test users + seed book
+        run: node scripts/seed-rls-test-data.mjs >> "$GITHUB_ENV"
+
+      - name: Run RLS tests
+        run: npx vitest run src/lib/highlightsRls.test.ts

@@ -31,13 +31,16 @@ const USER_B = {
   password: process.env.TEST_USER_B_PASSWORD,
 };
 
+const TEST_BOOK_ID = process.env.TEST_BOOK_ID;
+
 const ready =
   !!SUPABASE_URL &&
   !!SUPABASE_KEY &&
   !!USER_A.email &&
   !!USER_A.password &&
   !!USER_B.email &&
-  !!USER_B.password;
+  !!USER_B.password &&
+  !!TEST_BOOK_ID;
 
 const d = ready ? describe : describe.skip;
 
@@ -48,7 +51,7 @@ d("highlights RLS — UPDATE policy", () => {
   let highlightId: string;
 
   const seed = {
-    book_id: "00000000-0000-0000-0000-000000000000",
+    book_id: TEST_BOOK_ID!,
     page_number: 1,
     text: "rls-test-original",
     color: "#ffeb3b",
