@@ -783,54 +783,91 @@ const Reader = () => {
 
       <MotionMain
         {...mainProps}
-        className="max-w-screen-2xl mx-auto px-4 lg:px-10 xl:px-16 py-8 lg:py-12 space-y-6"
+        className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-12 py-6 lg:py-10"
       >
-        <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" className="mb-4" />
-        {pdfUrl ? (
-          <PDFViewer 
-            fileUrl={pdfUrl} 
-            onRenewUrl={renewSignedUrl}
-            initialPage={currentPage}
-            onPageChange={handlePageChange}
-            onTextSelect={handleTextSelect}
-            externalScale={scale}
-            onScaleChange={setScale}
-            highlights={highlights.map(h => ({
-              x: h.position_data.x,
-              y: h.position_data.y,
-              width: h.position_data.width,
-              height: h.position_data.height,
-              color: h.color,
-            }))}
-            onHighlightDrawn={handleHighlightDrawn}
-            isDrawingMode={isDrawingMode}
-            highlightColor={highlightColor}
-            penThickness={penThickness}
-            spokenText={spokenText}
-            bookmarkIndicator={
-              bookmarkedPage === currentPage && !mobileConfig.shouldReduceAnimations ? (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-accent/90 backdrop-blur text-accent-foreground px-6 py-3 rounded-full shadow-xl border-2 border-accent flex items-center gap-3 font-semibold"
-                >
-                  <BookmarkCheck className="w-6 h-6" />
-                  <span className="text-base">Página marcada</span>
-                </motion.div>
-              ) : bookmarkedPage === currentPage ? (
-                <div className="bg-accent/90 backdrop-blur text-accent-foreground px-6 py-3 rounded-full shadow-xl border-2 border-accent flex items-center gap-3 font-semibold">
-                  <BookmarkCheck className="w-6 h-6" />
-                  <span className="text-base">Página marcada</span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+          {/* Left rail (desktop) */}
+          <aside className="hidden lg:block lg:col-span-2 xl:col-span-2 space-y-4 lg:sticky lg:top-32 lg:self-start">
+            <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-4 shadow-sm shadow-background/40">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Progresso</p>
+              <div className="text-3xl font-display font-bold tabular-nums">{currentPage}</div>
+              <p className="text-xs text-muted-foreground">de {book.total_pages || "—"} páginas</p>
+              <div className="mt-3 h-1.5 rounded-full bg-muted/60 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all"
+                  style={{ width: `${Math.min(100, Math.round((currentPage / Math.max(1, book.total_pages || 1)) * 100))}%` }}
+                />
+              </div>
+            </div>
+          </aside>
+
+          {/* Center: PDF */}
+          <div className="lg:col-span-8 xl:col-span-8 space-y-4">
+            <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" />
+            <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl shadow-lg shadow-background/40 overflow-hidden">
+              {pdfUrl ? (
+                <PDFViewer
+                  fileUrl={pdfUrl}
+                  onRenewUrl={renewSignedUrl}
+                  initialPage={currentPage}
+                  onPageChange={handlePageChange}
+                  onTextSelect={handleTextSelect}
+                  externalScale={scale}
+                  onScaleChange={setScale}
+                  highlights={highlights.map(h => ({
+                    x: h.position_data.x,
+                    y: h.position_data.y,
+                    width: h.position_data.width,
+                    height: h.position_data.height,
+                    color: h.color,
+                  }))}
+                  onHighlightDrawn={handleHighlightDrawn}
+                  isDrawingMode={isDrawingMode}
+                  highlightColor={highlightColor}
+                  penThickness={penThickness}
+                  spokenText={spokenText}
+                  bookmarkIndicator={
+                    bookmarkedPage === currentPage && !mobileConfig.shouldReduceAnimations ? (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-accent/90 backdrop-blur text-accent-foreground px-6 py-3 rounded-full shadow-xl border-2 border-accent flex items-center gap-3 font-semibold"
+                      >
+                        <BookmarkCheck className="w-6 h-6" />
+                        <span className="text-base">Página marcada</span>
+                      </motion.div>
+                    ) : bookmarkedPage === currentPage ? (
+                      <div className="bg-accent/90 backdrop-blur text-accent-foreground px-6 py-3 rounded-full shadow-xl border-2 border-accent flex items-center gap-3 font-semibold">
+                        <BookmarkCheck className="w-6 h-6" />
+                        <span className="text-base">Página marcada</span>
+                      </div>
+                    ) : null
+                  }
+                />
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Nenhum arquivo PDF disponível</p>
                 </div>
-              ) : null
-            }
-          />
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Nenhum arquivo PDF disponível</p>
+              )}
+            </div>
           </div>
-        )}
+
+          {/* Right rail (desktop) */}
+          <aside className="hidden lg:block lg:col-span-2 xl:col-span-2 space-y-4 lg:sticky lg:top-32 lg:self-start">
+            <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-4 shadow-sm shadow-background/40">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Destaques</p>
+              <div className="text-3xl font-display font-bold tabular-nums">{allHighlights.length}</div>
+              <p className="text-xs text-muted-foreground">neste livro</p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-4 shadow-sm shadow-background/40">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Anotações</p>
+              <div className="text-3xl font-display font-bold tabular-nums">{notes.length}</div>
+              <p className="text-xs text-muted-foreground">salvas</p>
+            </div>
+          </aside>
+        </div>
       </MotionMain>
+
 
       <FloatingControls
         onZoomIn={() => {
