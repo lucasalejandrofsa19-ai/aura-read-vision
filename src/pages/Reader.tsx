@@ -467,9 +467,24 @@ const Reader = () => {
     <div className="min-h-screen bg-background transition-colors duration-500">
       <MotionHeader
         {...headerProps}
-        className="glass sticky top-0 z-50 border-b border-border/50"
+        className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-xl shadow-sm shadow-background/40"
       >
-        <div className="max-w-screen-2xl mx-auto px-4 lg:px-8 py-4">
+        <div className="max-w-screen-2xl mx-auto px-4 lg:px-8 py-3 lg:py-4">
+          <div className="flex items-center gap-3 mb-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/library")}
+              className="rounded-xl hover:bg-primary/10 hover:text-primary"
+             aria-label="Voltar">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex-1 min-w-0">
+              <h1 className="font-display font-semibold tracking-tight truncate text-base lg:text-lg">{book.title}</h1>
+              <p className="text-xs text-muted-foreground truncate">{book.author || "Autor desconhecido"}</p>
+            </div>
+            <ReaderBookSearch />
+          </div>
           <div className="flex items-center gap-4 mb-3">
             <Button
               variant="ghost"
