@@ -195,6 +195,7 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
 
     if (!isRetry) fallbackRetriesRef.current = 0;
 
+    setRetrying(true);
     toast.loading("Gerando capa...", { id: "generate-cover" });
 
     try {
@@ -222,21 +223,24 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
             { id: "generate-cover", duration: 10000 }
           );
           fallbackRetriesRef.current = 0;
-          markCoverFailed(book.id);
-          queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
+          await markCoverFailed(book.id);
+          await queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
         }
       } else {
         fallbackRetriesRef.current = 0;
-        clearCoverFailed(book.id);
+        await clearCoverFailed(book.id);
         toast.success("✨ Capa gerada com sucesso!", { id: "generate-cover" });
         setShowSelectPage(false);
+        await queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
       }
       onReprocess?.();
     } catch (error) {
       captureError(error, { context: "generate_cover_from_page" });
-      markCoverFailed(book.id);
-      queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
+      await markCoverFailed(book.id);
+      await queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
       toast.error("Erro ao gerar capa — usando placeholder.", { id: "generate-cover" });
+    } finally {
+      setRetrying(false);
     }
   };
 
