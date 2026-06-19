@@ -664,39 +664,43 @@ const Reader = () => {
             </ToolHelpTooltip>
             {penToolbar}
 
-            <Sheet>
-              <ToolHelpTooltip {...TOOL_COPY.highlightsList}>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="aura-soft transition-aura"
-                    aria-label="Lista de destaques">
-                    <List className="w-5 h-5" />
-                  </Button>
-                </SheetTrigger>
-              </ToolHelpTooltip>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Destaques</SheetTitle>
-                  <SheetDescription>
-                    {allHighlights.length} destaque{allHighlights.length !== 1 ? "s" : ""} neste livro
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="mt-6">
-                  <HighlightsList
-                    highlights={allHighlights}
-                    currentPage={currentPage}
-                    onDelete={(highlightId) => {
-                      deleteHighlight(highlightId);
-                    }}
-                    onNavigate={(pageNumber) => {
-                      handlePageChange(pageNumber);
-                    }}
-                  />
-                </div>
-              </SheetContent>
-            </Sheet>
+            <div className="lg:hidden">
+              <Sheet>
+                <ToolHelpTooltip {...TOOL_COPY.highlightsList}>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="aura-soft transition-aura"
+                      aria-label="Lista de destaques">
+                      <List className="w-5 h-5" />
+                    </Button>
+                  </SheetTrigger>
+                </ToolHelpTooltip>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Destaques</SheetTitle>
+                    <SheetDescription>
+                      {allHighlights.length} destaque{allHighlights.length !== 1 ? "s" : ""} neste livro
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="mt-6">
+                    <HighlightsList
+                      highlights={allHighlights}
+                      currentPage={currentPage}
+                      onDelete={(highlightId) => {
+                        deleteHighlight(highlightId);
+                      }}
+                      onNavigate={(pageNumber) => {
+                        handlePageChange(pageNumber);
+                      }}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+
 
             <DropdownMenu>
               <ToolHelpTooltip {...TOOL_COPY.bookmark}>
