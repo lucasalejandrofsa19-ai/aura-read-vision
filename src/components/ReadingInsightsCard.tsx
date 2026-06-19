@@ -174,10 +174,10 @@ const LABELS = {
 };
 
 const ACCENT = {
-  quote: "from-purple-500 to-pink-500",
-  fact: "from-blue-500 to-cyan-500",
-  motivation: "from-rose-500 to-orange-500",
-  tip: "from-amber-500 to-yellow-500",
+  quote: "from-primary to-accent",
+  fact: "from-primary to-primary/60",
+  motivation: "from-accent to-primary",
+  tip: "from-accent to-accent/60",
 };
 
 export const ReadingInsightsCard = () => {
