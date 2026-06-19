@@ -47,6 +47,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const Demo = lazy(() => import("./pages/Demo"));
 const Trust = lazy(() => import("./pages/Trust"));
+const DevExportTest = lazy(() => import("./pages/DevExportTest"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -97,6 +98,7 @@ const AnimatedRoutes = () => {
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/demo" element={<Demo />} />
           <Route path="/trust" element={<Trust />} />
+          <Route path="/dev/export-test" element={<DevExportTest />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
