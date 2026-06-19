@@ -174,10 +174,10 @@ const LABELS = {
 };
 
 const ACCENT = {
-  quote: "from-purple-500 to-pink-500",
-  fact: "from-blue-500 to-cyan-500",
-  motivation: "from-rose-500 to-orange-500",
-  tip: "from-amber-500 to-yellow-500",
+  quote: "from-primary to-accent",
+  fact: "from-primary to-primary/60",
+  motivation: "from-accent to-primary",
+  tip: "from-accent to-accent/60",
 };
 
 export const ReadingInsightsCard = () => {
@@ -205,17 +205,16 @@ export const ReadingInsightsCard = () => {
 
   return (
     <Card
-      className="relative overflow-hidden glass border-primary/20 p-6 sm:p-8 mb-6 min-h-[260px]"
+      className="relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-lg shadow-background/40 p-5 min-h-[240px]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-[0.06] pointer-events-none transition-all duration-700`} />
-      <div className={`absolute -top-20 -right-20 w-64 h-64 rounded-full bg-gradient-to-br ${gradient} opacity-20 blur-3xl pointer-events-none transition-all duration-700`} />
-      <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+      <div className={`absolute -top-16 -right-16 w-48 h-48 rounded-full bg-gradient-to-br ${gradient} opacity-20 blur-3xl pointer-events-none transition-all duration-700`} />
+      <div className="absolute -bottom-12 -left-12 w-36 h-36 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
 
-      <div className="relative flex flex-col sm:flex-row items-start gap-5">
-        <div className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-xl`}>
-          <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+      <div className="relative flex flex-col gap-4">
+        <div className={`flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md shadow-primary/20`}>
+          <Icon className="w-5 h-5 text-primary-foreground" />
         </div>
 
         <div className="flex-1 min-w-0 w-full">
@@ -240,7 +239,7 @@ export const ReadingInsightsCard = () => {
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.45 }}
             >
-              <p className="text-base sm:text-lg md:text-xl text-foreground leading-relaxed font-medium">
+              <p className="text-sm sm:text-base text-foreground leading-relaxed font-medium">
                 {current.text}
               </p>
               {current.author && (
