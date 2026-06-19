@@ -167,24 +167,28 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
               const result = await generateCover(bookData.id, signedData?.signedUrl ?? "", 1);
               if (result?.fallback) {
                 const canRetry = fallbackRetriesRef.current < MAX_FALLBACK_RETRIES;
-                toast.warning(
-                  canRetry
-                    ? `Não foi possível verificar a capa — usando fallback (tentativa ${fallbackRetriesRef.current + 1}/${MAX_FALLBACK_RETRIES})`
-                    : "Não foi possível verificar a capa após várias tentativas — usando fallback",
-                  {
-                    id: "cover-generation",
-                    duration: 10000,
-                    action: canRetry
-                      ? {
-                          label: "Tentar novamente",
-                          onClick: () => {
-                            fallbackRetriesRef.current += 1;
-                            void generateCoverAsync(true);
-                          },
-                        }
-                      : undefined,
-                  }
-                );
+                if (canRetry) {
+                  toast.warning(
+                    `Não foi possível verificar a capa — usando fallback (tentativa ${fallbackRetriesRef.current + 1}/${MAX_FALLBACK_RETRIES})`,
+                    {
+                      id: "cover-generation",
+                      duration: 10000,
+                      action: {
+                        label: "Tentar novamente",
+                        onClick: () => {
+                          fallbackRetriesRef.current += 1;
+                          void generateCoverAsync(true);
+                        },
+                      },
+                    }
+                  );
+                } else {
+                  toast.info(
+                    "Limite de tentativas atingido. Tente gerar a capa novamente mais tarde.",
+                    { id: "cover-generation", duration: 10000 }
+                  );
+                  fallbackRetriesRef.current = 0;
+                }
               } else {
                 fallbackRetriesRef.current = 0;
                 toast.success("Capa pronta ✨", { id: "cover-generation" });
