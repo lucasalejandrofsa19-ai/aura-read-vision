@@ -81,16 +81,30 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
         user_id: user.id,
       };
 
+      console.info("[useHighlights] INSERT iniciando…", {
+        bookId,
+        pageNumber: payload.page_number,
+        textLength: payload.text.length,
+        color: payload.color,
+        userId: user.id,
+      });
+      const t0 = performance.now();
+
       const { data, error } = await supabase
         .from("highlights")
         .insert(payload)
         .select()
         .single();
 
+      const elapsed = Math.round(performance.now() - t0);
       if (error) {
-        console.error("[useHighlights] insert error:", error);
+        console.error("[useHighlights] INSERT falhou:", { elapsed, error });
         throw error;
       }
+      console.info("[useHighlights] INSERT confirmado ✅", {
+        elapsed,
+        highlightId: data?.id,
+      });
       return { data, text };
     },
     onSuccess: ({ data, text }) => {
