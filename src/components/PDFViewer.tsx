@@ -713,16 +713,32 @@ export const PDFViewer = ({
                   }
                 }
                 
-                // Secondary: search term highlight
-                if (searchTerm && text.toLowerCase().includes(searchTerm)) {
-                  return text
-                    .split(new RegExp(`(${searchTerm})`, 'gi'))
-                    .map((part, i) => 
-                      part.toLowerCase() === searchTerm 
-                        ? `<mark style="background-color: #fef08a; color: #000; padding: 2px 0;">${part}</mark>`
-                        : part
-                    )
-                    .join('');
+                // Secondary: search term highlight (normaliza para casar com acentos)
+                if (searchTerm) {
+                  const normalize = (s: string) =>
+                    s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                  const normText = normalize(text);
+                  const normTerm = searchTerm;
+                  if (normTerm && normText.includes(normTerm)) {
+                    // Reconstrói com marcação preservando texto original (com acentos)
+                    let result = '';
+                    let i = 0;
+                    while (i < text.length) {
+                      const slice = normalize(text.slice(i, i + normTerm.length));
+                      if (slice === normTerm) {
+                        const original = text.slice(i, i + normTerm.length);
+                        const isActive = searchResults[currentResultIndex] === pageNumber;
+                        const bg = isActive ? '#fb923c' : '#fef08a';
+                        const ring = isActive ? 'box-shadow:0 0 0 2px #ea580c;' : '';
+                        result += `<mark style="background-color:${bg};color:#000;padding:2px 0;border-radius:2px;${ring}">${original}</mark>`;
+                        i += normTerm.length;
+                      } else {
+                        result += text[i];
+                        i++;
+                      }
+                    }
+                    return result;
+                  }
                 }
                 return text;
               }}
