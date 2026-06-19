@@ -32,6 +32,7 @@ import { LogIn } from "lucide-react";
 import LibraryCTA from "@/components/LibraryCTA";
 import { TourTargetsProvider, useTourTarget } from "@/contexts/TourTargetsContext";
 import { matchesSearch } from "@/lib/searchNormalize";
+import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP } from "@/lib/publicPdfs";
 
 
 // Memoizar BookCard para evitar re-renders desnecessários
