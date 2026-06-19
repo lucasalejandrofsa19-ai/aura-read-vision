@@ -18,6 +18,14 @@ export const usePerformanceMode = () => {
     }
   }, [profile?.ultra_performance_mode]);
 
+  // Reflect the flag on <html> so the global motion-disable CSS can hook in.
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      "ultra-performance",
+      isUltraPerformanceMode,
+    );
+  }, [isUltraPerformanceMode]);
+
   const togglePerformanceMode = async () => {
     if (!user) {
       toast.error("Faça login para alterar esta configuração");
