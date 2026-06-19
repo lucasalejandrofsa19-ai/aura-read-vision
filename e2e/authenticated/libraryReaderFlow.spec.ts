@@ -29,10 +29,19 @@ test("Reader carrega o PDF do livro selecionado", async ({ page }) => {
 
   const firstBookLink = page.locator('a[href^="/reader/"]').first();
   await expect(firstBookLink).toBeVisible({ timeout: 15_000 });
+
+  // Captura o id esperado a partir do href ANTES de clicar.
+  const href = await firstBookLink.getAttribute("href");
+  const expectedId = href?.replace(/^\/reader\//, "").split(/[/?#]/)[0];
+  expect(expectedId, "href deve conter um id de livro").toBeTruthy();
+
   await firstBookLink.click();
 
-  // Navegou para o Reader.
-  await expect(page).toHaveURL(/\/reader\/.+/, { timeout: 15_000 });
+  // URL deve corresponder exatamente ao id capturado.
+  await expect(page).toHaveURL(
+    new RegExp(`/reader/${expectedId}(?:[/?#]|$)`),
+    { timeout: 15_000 },
+  );
 
   // pdf.js renderiza páginas em <canvas> dentro de .react-pdf__Page.
   const firstPage = page.locator(".react-pdf__Page canvas").first();
