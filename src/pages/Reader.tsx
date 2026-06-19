@@ -7,7 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowLeft,
   Bookmark,
-  FileText,
+ FileText,
+ ExternalLink,
   Share2,
   BookmarkCheck,
   Maximize,
