@@ -32,20 +32,69 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify required secrets & env vars
+      - name: Pre-flight — secrets, env vars & tool versions
         run: |
+          set -u
+          fail=0
+
+          # --- 1. Required secrets / env vars ---
           missing=()
           for v in VITE_SUPABASE_URL VITE_SUPABASE_PUBLISHABLE_KEY \
                    TEST_USER_A_EMAIL TEST_USER_A_PASSWORD \
                    TEST_USER_B_EMAIL TEST_USER_B_PASSWORD; do
-            if [ -z "${!v}" ]; then missing+=("$v"); fi
+            if [ -z "${!v:-}" ]; then missing+=("$v"); fi
           done
           if [ ${#missing[@]} -gt 0 ]; then
             echo "::error::Missing required secrets: ${missing[*]}"
             echo "Configure them in repo Settings → Secrets and variables → Actions."
-            exit 1
+            fail=1
           fi
-          echo "✓ All required secrets present."
+
+          # --- 2. Format sanity checks ---
+          if [ -n "${VITE_SUPABASE_URL:-}" ] && ! [[ "$VITE_SUPABASE_URL" =~ ^https://[a-z0-9-]+\.supabase\.co$ ]]; then
+            echo "::error::VITE_SUPABASE_URL must look like https://<ref>.supabase.co"
+            fail=1
+          fi
+          for v in TEST_USER_A_EMAIL TEST_USER_B_EMAIL; do
+            val="${!v:-}"
+            if [ -n "$val" ] && ! [[ "$val" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]]; then
+              echo "::error::$v is not a valid email: $val"
+              fail=1
+            fi
+          done
+          for v in TEST_USER_A_PASSWORD TEST_USER_B_PASSWORD; do
+            val="${!v:-}"
+            if [ -n "$val" ] && [ ${#val} -lt 8 ]; then
+              echo "::error::$v must be at least 8 characters."
+              fail=1
+            fi
+          done
+          if [ -n "${TEST_USER_A_EMAIL:-}" ] && [ "${TEST_USER_A_EMAIL}" = "${TEST_USER_B_EMAIL:-}" ]; then
+            echo "::error::TEST_USER_A_EMAIL and TEST_USER_B_EMAIL must differ."
+            fail=1
+          fi
+
+          # --- 3. Tool versions ---
+          EXPECTED_NODE_MAJOR=20
+          node_major=$(node -p "process.versions.node.split('.')[0]")
+          if [ "$node_major" != "$EXPECTED_NODE_MAJOR" ]; then
+            echo "::error::Node $EXPECTED_NODE_MAJOR.x required, found $(node --version)"
+            fail=1
+          fi
+          npm_major=$(npm -v | cut -d. -f1)
+          if [ "$npm_major" -lt 9 ]; then
+            echo "::error::npm >=9 required, found $(npm -v)"
+            fail=1
+          fi
+          for pkg in vitest @supabase/supabase-js; do
+            if ! node -e "require.resolve('$pkg/package.json')" >/dev/null 2>&1; then
+              echo "::error::Dependency '$pkg' not installed. Did npm ci succeed?"
+              fail=1
+            fi
+          done
+
+          if [ "$fail" -ne 0 ]; then exit 1; fi
+          echo "✓ Pre-flight passed — secrets, formats and versions OK."
 
       - name: Provision test users + seed book
         run: node scripts/seed-rls-test-data.mjs >> "$GITHUB_ENV"
