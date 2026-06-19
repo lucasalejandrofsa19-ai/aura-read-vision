@@ -64,6 +64,7 @@ import { ADSENSE_SLOTS } from "@/lib/adsense";
 import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP, PUBLIC_PDFS_DESCRIPTION } from "@/lib/publicPdfs";
 
 const Reader = () => {
+  const publicPdfsDescId = useId();
   const { id } = useParams();
   const navigate = useNavigate();
   const [bookmarkedPage, setBookmarkedPage] = useState<number | null>(null);
