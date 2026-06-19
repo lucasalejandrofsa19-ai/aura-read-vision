@@ -206,8 +206,6 @@ export const HighlightCanvas = ({
 
   const badge = (() => {
     if (!status) return null;
-    const top = Math.max(0, status.rect.y - 28);
-    const left = status.rect.x;
     const label =
       status.state === "saving"
         ? "Salvando highlight..."
@@ -220,10 +218,35 @@ export const HighlightCanvas = ({
         : status.state === "saved"
           ? "bg-emerald-600 text-white"
           : "bg-destructive text-destructive-foreground";
+
+    const PAD = 4;
+    const BADGE_H = 24;
+    // Estimativa de largura (px). Após montar, o ref refina via layout effect (clamp re-aplicado no render seguinte).
+    const estimatedWidth = Math.min(280, Math.max(120, label.length * 7 + 16));
+
+    // Preferir acima do trecho; se não couber, colocar abaixo; se não couber, dentro do trecho.
+    let top = status.rect.y - BADGE_H - PAD;
+    if (top < PAD) {
+      top = status.rect.y + status.rect.height + PAD;
+      if (top + BADGE_H > height - PAD) {
+        top = Math.max(PAD, Math.min(height - BADGE_H - PAD, status.rect.y + PAD));
+      }
+    }
+
+    let left = status.rect.x;
+    left = Math.max(PAD, Math.min(left, width - estimatedWidth - PAD));
+
     return (
       <div
-        className={`absolute px-2 py-1 rounded-md text-xs font-medium shadow-md pointer-events-none animate-in fade-in slide-in-from-bottom-1 ${tone}`}
-        style={{ top, left, zIndex: 20, maxWidth: Math.max(120, status.rect.width) }}
+        ref={(el) => {
+          if (!el) return;
+          // Refina clamp horizontal com largura real
+          const realW = el.offsetWidth;
+          const clampedLeft = Math.max(PAD, Math.min(status.rect.x, width - realW - PAD));
+          if (el.offsetLeft !== clampedLeft) el.style.left = `${clampedLeft}px`;
+        }}
+        className={`absolute px-2 py-1 rounded-md text-xs font-medium shadow-md pointer-events-none animate-in fade-in slide-in-from-bottom-1 whitespace-nowrap ${tone}`}
+        style={{ top, left, zIndex: 20, maxWidth: width - PAD * 2 }}
       >
         {status.state === "saving" && (
           <span className="inline-block w-2 h-2 mr-1 align-middle rounded-full bg-current animate-pulse" />
