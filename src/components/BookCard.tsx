@@ -22,6 +22,7 @@ import { isCoverFailedLocal, markCoverFailed, clearCoverFailed } from "@/lib/cov
 import { BookMarked } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { StoryVideoQuotaBadge } from "@/components/StoryVideoQuotaBadge";
 
 interface Book {
   id: string;
@@ -421,6 +422,7 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                   >
                     <Clapperboard className="w-3.5 h-3.5" />
                   </Button>
+                  <StoryVideoQuotaBadge />
                   <Button
                     variant="ghost"
                     size="icon"
