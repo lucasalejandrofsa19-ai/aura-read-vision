@@ -84,21 +84,37 @@ export const useGenerateCover = () => {
 
       let found = await findUploaded();
       if (!found) {
-        // Backoff exponencial: 1ª tentativa após 500ms
         await new Promise((r) => setTimeout(r, 500));
         found = await findUploaded();
       }
+
+      // Fallback: verificação falhou — preserva capa anterior (ou null = placeholder no BookCard)
       if (!found) {
-        throw new Error("Capa não encontrada no bucket após upload (com retry)");
+        const { data: existing } = await supabase
+          .from("books")
+          .select("cover_image_url")
+          .eq("id", bookId)
+          .maybeSingle();
+
+        const fallbackPath = existing?.cover_image_url ?? null;
+        captureError(
+          new Error("Capa não verificada no bucket após retry — usando fallback"),
+          { context: "generate_cover_fallback", bookId, fallbackPath }
+        );
+        return {
+          success: false,
+          fallback: true as const,
+          coverImageUrl: fallbackPath,
+          size: blob.size,
+        };
       }
+
       const uploadedSize = (found.metadata as { size?: number } | null)?.size;
       if (typeof uploadedSize === "number" && uploadedSize !== blob.size) {
         throw new Error(
           `Tamanho divergente: enviado ${blob.size}B, gravado ${uploadedSize}B`
         );
       }
-
-
 
       // Atualiza o registro do livro com o caminho da capa
       const { data: updated, error: updateError } = await supabase
@@ -118,7 +134,7 @@ export const useGenerateCover = () => {
         );
       }
 
-      return { success: true, coverImageUrl: coverFileName, size: blob.size };
+      return { success: true, fallback: false as const, coverImageUrl: coverFileName, size: blob.size };
     } catch (error) {
       captureError(error, { context: "generate_cover" });
       throw error;
