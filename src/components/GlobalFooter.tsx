@@ -34,6 +34,7 @@ const GlobalFooter = () => {
           >
             <FileText className="h-3.5 w-3.5" />
             PDFs Públicos
+            <ExternalLink className="h-3 w-3" aria-hidden="true" />
           </a>
           <Link
             to="/trust"
