@@ -61,6 +61,7 @@ import { captureError } from "@/lib/sentry";
 import { SEO } from "@/components/SEO";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
 import { ADSENSE_SLOTS } from "@/lib/adsense";
+import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP } from "@/lib/publicPdfs";
 
 const Reader = () => {
   const { id } = useParams();
