@@ -47,7 +47,7 @@ export const useGenerateCover = () => {
       context.fillStyle = "#ffffff";
       context.fillRect(0, 0, canvas.width, canvas.height);
 
-      await page.render({ canvasContext: context, viewport }).promise;
+      await withTimeout(page.render({ canvasContext: context, viewport }).promise, 30_000, "render da página");
 
       const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob(
