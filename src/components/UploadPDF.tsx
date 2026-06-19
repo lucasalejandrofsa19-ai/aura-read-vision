@@ -151,10 +151,10 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
           queryClient.invalidateQueries({ queryKey: ["books", user.id] });
 
           // Generate cover from first page in the background
-          const generateCoverAsync = async () => {
+          const generateCoverAsync = async (): Promise<void> => {
             try {
               toast.loading("Preparando a capa…", { id: "cover-generation" });
-              
+
               // Get a signed URL for the PDF (private bucket)
               const { data: signedData } = await supabase.storage
                 .from("pdfs")
@@ -162,14 +162,27 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
 
               const result = await generateCover(bookData.id, signedData?.signedUrl ?? "", 1);
               if (result?.fallback) {
-                toast.warning("Não foi possível verificar a capa — usando fallback", { id: "cover-generation" });
+                toast.warning("Não foi possível verificar a capa — usando fallback", {
+                  id: "cover-generation",
+                  duration: 10000,
+                  action: {
+                    label: "Tentar novamente",
+                    onClick: () => { void generateCoverAsync(); },
+                  },
+                });
               } else {
                 toast.success("Capa pronta ✨", { id: "cover-generation" });
               }
               queryClient.invalidateQueries({ queryKey: ["books", user.id] });
             } catch (error) {
               captureError(error, { context: "auto_generate_cover" });
-              toast.error("Não conseguimos gerar a capa agora.", { id: "cover-generation" });
+              toast.error("Não conseguimos gerar a capa agora.", {
+                id: "cover-generation",
+                action: {
+                  label: "Tentar novamente",
+                  onClick: () => { void generateCoverAsync(); },
+                },
+              });
             }
           };
 
