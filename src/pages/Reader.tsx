@@ -349,9 +349,9 @@ const Reader = () => {
     setIsFocusedMode(false);
   };
 
-  const handleHighlightDrawn = (data: { x: number; y: number; width: number; height: number; text: string; color: string }) => {
+  const handleHighlightDrawn = async (data: { x: number; y: number; width: number; height: number; text: string; color: string }) => {
     const { text, color, ...coords } = data;
-    addHighlight(coords, text, color);
+    return await addHighlight(coords, text, color);
   };
 
   const HIGHLIGHT_COLORS: Array<{ value: string; label: string }> = [
