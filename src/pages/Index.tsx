@@ -199,10 +199,12 @@ const Index = () => {
                 onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}
                 title={PUBLIC_PDFS_TOOLTIP}
                 aria-label={PUBLIC_PDFS_TOOLTIP}
+                aria-describedby={publicPdfsDescId}
                 className="text-lg px-8 py-6"
               >
                 {PUBLIC_PDFS_LABEL}
                 <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
+                <span id={publicPdfsDescId} className="sr-only">{PUBLIC_PDFS_DESCRIPTION}</span>
               </Button>
             </motion.div>
           </div>
