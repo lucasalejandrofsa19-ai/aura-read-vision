@@ -239,7 +239,7 @@ export const ReadingInsightsCard = () => {
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.45 }}
             >
-              <p className="text-base sm:text-lg md:text-xl text-foreground leading-relaxed font-medium">
+              <p className="text-sm sm:text-base text-foreground leading-relaxed font-medium">
                 {current.text}
               </p>
               {current.author && (
