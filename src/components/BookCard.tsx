@@ -341,7 +341,7 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                     <Button
                       size="sm"
                       variant="secondary"
-                      disabled={generatingCover}
+                      disabled={generatingCover || retrying}
                       onClick={(e) => {
                         e.stopPropagation();
                         void handleSelectCoverPage(1);
@@ -349,7 +349,7 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                       className="mt-3 h-7 px-3 text-[11px] rounded-full bg-background/80 hover:bg-background backdrop-blur-md border border-foreground/20"
                       title="Tentar gerar a capa novamente"
                     >
-                      {generatingCover ? (
+                      {generatingCover || retrying ? (
                         <>
                           <div className="w-3 h-3 mr-1.5 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
                           Gerando…
