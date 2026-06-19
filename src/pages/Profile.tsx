@@ -509,9 +509,9 @@ const Profile = () => {
           </TabsContent>
 
           <TabsContent value="highlights">
-            <Card>
+            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
-                <CardTitle>Seus Destaques</CardTitle>
+                <CardTitle className="font-display">Seus Destaques</CardTitle>
                 <CardDescription>
                   Visualize todos os destaques que você fez em seus livros e exporte-os como PDF
                 </CardDescription>
