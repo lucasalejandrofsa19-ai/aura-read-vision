@@ -7,6 +7,7 @@ import PWAPromoBanner from "@/components/PWAPromoBanner";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP } from "@/lib/publicPdfs";
 
 const Index = () => {
   const navigate = useNavigate();
