@@ -72,6 +72,7 @@ const Reader = () => {
   const [book, setBook] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string>("");
+  const [loadError, setLoadError] = useState<string>("");
   const [selectedText, setSelectedText] = useState("");
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [isFocusedMode, setIsFocusedMode] = useState(false);
