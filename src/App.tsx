@@ -98,6 +98,7 @@ const AnimatedRoutes = () => {
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/demo" element={<Demo />} />
           <Route path="/trust" element={<Trust />} />
+          <Route path="/dev/export-test" element={<DevExportTest />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
