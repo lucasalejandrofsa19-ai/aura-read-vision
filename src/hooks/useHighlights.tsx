@@ -65,10 +65,14 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
   });
 
   const addHighlightMutation = useMutation({
+    onMutate: () => {
+      sonnerToast.loading("Salvando highlight…", { id: HIGHLIGHT_TOAST_ID });
+    },
     mutationFn: async ({ position, text, color }: { position: { x: number; y: number; width: number; height: number }, text: string, color: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Faça login para criar destaques");
       if (!validBook) throw new Error("ID do livro inválido");
+
 
       const payload = {
         book_id: bookId,
