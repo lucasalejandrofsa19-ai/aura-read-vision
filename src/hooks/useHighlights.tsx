@@ -1,8 +1,11 @@
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useGamification } from "@/hooks/useGamification";
+
+const HIGHLIGHT_TOAST_ID = "highlight-save-status";
 
 export interface Highlight {
   id: string;
@@ -62,10 +65,14 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
   });
 
   const addHighlightMutation = useMutation({
+    onMutate: () => {
+      sonnerToast.loading("Salvando highlight…", { id: HIGHLIGHT_TOAST_ID });
+    },
     mutationFn: async ({ position, text, color }: { position: { x: number; y: number; width: number; height: number }, text: string, color: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Faça login para criar destaques");
       if (!validBook) throw new Error("ID do livro inválido");
+
 
       const payload = {
         book_id: bookId,
@@ -108,6 +115,11 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
       return { data, text };
     },
     onSuccess: ({ data, text }) => {
+      sonnerToast.success(`Highlight salvo · ${data?.id ?? "—"}`, {
+        id: HIGHLIGHT_TOAST_ID,
+        description: "Persistido no banco com sucesso",
+        duration: 4000,
+      });
       queryClient.invalidateQueries({ queryKey: ["highlights", bookId, pageNumber] });
       queryClient.invalidateQueries({ queryKey: ["highlights", bookId, "all"] });
       awardActionXP("highlight").catch(() => {});
@@ -152,6 +164,11 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
         error?.hint ||
         "Não foi possível adicionar o destaque";
       console.error("[useHighlights] mutation error:", error);
+      sonnerToast.error("Falha ao salvar highlight", {
+        id: HIGHLIGHT_TOAST_ID,
+        description: msg,
+        duration: 5000,
+      });
       toast({
         title: "Erro ao adicionar destaque",
         description: msg,
