@@ -2,7 +2,7 @@ import { SEO } from "@/components/SEO";
 import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
 import { useState, useEffect, useMemo, memo, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle, BookOpen, RotateCcw } from "lucide-react";
+import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle, BookOpen, RotateCcw, FileText } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -163,6 +163,10 @@ const LibraryInner = () => {
                 <DropdownMenuItem onClick={() => navigate("/guia")}>
                   <BookOpen className="w-4 h-4 mr-2" />
                   Guia de uso
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/pdfs-publicos")}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  PDFs Públicos
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
