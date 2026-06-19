@@ -32,6 +32,7 @@ import { LogIn } from "lucide-react";
 import LibraryCTA from "@/components/LibraryCTA";
 import { TourTargetsProvider, useTourTarget } from "@/contexts/TourTargetsContext";
 import { matchesSearch } from "@/lib/searchNormalize";
+import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP } from "@/lib/publicPdfs";
 
 
 // Memoizar BookCard para evitar re-renders desnecessários
@@ -164,9 +165,9 @@ const LibraryInner = () => {
                   <BookOpen className="w-4 h-4 mr-2" />
                   Guia de uso
                 </DropdownMenuItem>
-                <DropdownMenuItem title="Abre em nova aba" onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}>
+                <DropdownMenuItem title={PUBLIC_PDFS_TOOLTIP} aria-label={PUBLIC_PDFS_TOOLTIP} onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}>
                   <FileText className="w-4 h-4 mr-2" />
-                  PDFs Públicos
+                  {PUBLIC_PDFS_LABEL}
                   <ExternalLink className="w-3 h-3 ml-auto opacity-60" aria-hidden="true" />
                 </DropdownMenuItem>
                 <DropdownMenuItem

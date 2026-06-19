@@ -18,6 +18,9 @@ export interface PublicPdf {
   sizeBytes: number;
   filename: string;
 }
+export const PUBLIC_PDFS_LABEL = "PDFs Públicos";
+export const PUBLIC_PDFS_TOOLTIP = "PDFs Públicos (abre em nova aba)";
+
 
 export const PUBLIC_PDFS: PublicPdf[] = [
   {

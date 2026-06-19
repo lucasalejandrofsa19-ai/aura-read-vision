@@ -7,6 +7,7 @@ import PWAPromoBanner from "@/components/PWAPromoBanner";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP } from "@/lib/publicPdfs";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -194,10 +195,11 @@ const Index = () => {
                 size="lg"
                 variant="ghost"
                 onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}
-                title="Abre em nova aba"
+                title={PUBLIC_PDFS_TOOLTIP}
+                aria-label={PUBLIC_PDFS_TOOLTIP}
                 className="text-lg px-8 py-6"
               >
-                PDFs Públicos
+                {PUBLIC_PDFS_LABEL}
                 <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
               </Button>
             </motion.div>

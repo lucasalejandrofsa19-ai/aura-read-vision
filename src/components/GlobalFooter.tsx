@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Shield, Tag, BookOpen, FileText, ExternalLink } from "lucide-react";
+import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP } from "@/lib/publicPdfs";
 
 const HIDDEN_PREFIXES = ["/reader", "/admin"];
 
@@ -30,11 +31,12 @@ const GlobalFooter = () => {
             href="/pdfs-publicos"
             target="_blank"
             rel="noopener noreferrer"
-            title="Abre em nova aba"
+            title={PUBLIC_PDFS_TOOLTIP}
+            aria-label={PUBLIC_PDFS_TOOLTIP}
             className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
           >
             <FileText className="h-3.5 w-3.5" />
-            PDFs Públicos
+            {PUBLIC_PDFS_LABEL}
             <ExternalLink className="h-3 w-3" aria-hidden="true" />
           </a>
           <Link
