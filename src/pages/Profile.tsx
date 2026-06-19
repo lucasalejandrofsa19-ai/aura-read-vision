@@ -411,9 +411,9 @@ const Profile = () => {
             </Card>
 
             {/* Smooth Transitions Card */}
-            <Card>
+            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="font-display flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-primary" />
                   Transições suaves
                 </CardTitle>
