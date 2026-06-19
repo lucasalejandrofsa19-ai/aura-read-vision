@@ -1,0 +1,1 @@
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.highlights TO authenticated; GRANT ALL ON public.highlights TO service_role;
