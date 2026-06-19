@@ -1,10 +1,14 @@
+// 1.5 fix: worker mode. Invoked by pg_cron every 30s (or directly for debug).
+// Auth: requires `x-internal-secret` header matching INTERNAL_FUNCTION_SECRET.
+// Pulls 1 pending job atomically via claim_next_story_video_job(), processes,
+// writes result/error back to story_video_jobs.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-secret",
 };
 
 interface ChapterSegment {
@@ -20,46 +24,72 @@ interface ChapterScene {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Worker auth: validates `x-internal-secret` against a server-stored token
+  // in `private.cron_tokens`. Only pg_cron (and admins with DB access) know it.
+  const providedSecret = req.headers.get("x-internal-secret") || "";
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false }, db: { schema: "private" } as any }
+  );
+  // Use a separate client for non-private queries (default public schema).
+  const sb = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } }
+  );
+
+  const { data: tokenRow } = await supabaseClient
+    .from("cron_tokens")
+    .select("token")
+    .eq("name", "story_video_worker")
+    .maybeSingle();
+
+  if (!tokenRow?.token || providedSecret !== tokenRow.token) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+
+
+  // Atomically claim the next pending job.
+  const { data: job, error: claimErr } = await sb.rpc("claim_next_story_video_job");
+  if (claimErr) {
+    console.error("claim error", claimErr);
+    return new Response(JSON.stringify({ error: claimErr.message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+  if (!job) {
+    return new Response(JSON.stringify({ idle: true }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+
+  const jobId: string = job.id;
+  const userId: string = job.user_id;
+  const params = (job.params || {}) as Record<string, unknown>;
+  const book_id = params.book_id as string;
+  const mode = (params.mode as string) || "summary";
+  const clientText = params.text as string | undefined;
+  const voice = (params.voice as string) || "nova";
+  const scenesCount = Number(params.scenesCount) || 5;
+  const variationSeed = params.variationSeed as number | null | undefined;
+
+  const markFailed = async (msg: string) => {
+    await sb.from("story_video_jobs").update({
+      status: "failed",
+      error: msg,
+      processed_at: new Date().toISOString(),
+    }).eq("id", jobId);
+  };
+
   try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Não autenticado" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Token inválido" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    const { book_id, mode = "summary", text: clientText, voice = "nova", scenesCount = 5, variationSeed } = await req.json();
-    if (!book_id) {
-      return new Response(JSON.stringify({ error: "book_id é obrigatório" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    // Check quota
-    const { data: quota, error: quotaErr } = await supabaseClient.rpc("can_generate_story_video", { _user_id: user.id });
-    if (quotaErr) console.error("quota error", quotaErr);
-    if (quota && quota.allowed === false) {
-      return new Response(JSON.stringify({
-        error: "Limite mensal de vídeos atingido. Faça upgrade para Premium para vídeos ilimitados.",
-        quota,
-      }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
     // Fetch book
     let title = ""; let author = ""; let extractedText: string | null = null;
-    const { data: bookData } = await supabaseClient.from("books")
+    const { data: bookData } = await sb.from("books")
       .select("title, author, extracted_text, user_id").eq("id", book_id).maybeSingle();
-    if (bookData && bookData.user_id === user.id) {
+    if (bookData && bookData.user_id === userId) {
       title = bookData.title; author = bookData.author || ""; extractedText = bookData.extracted_text;
     } else {
-      const { data: pb } = await supabaseClient.from("premium_books")
+      const { data: pb } = await sb.from("premium_books")
         .select("title, author, extracted_text").eq("id", book_id).maybeSingle();
       if (pb) { title = pb.title; author = pb.author || ""; extractedText = pb.extracted_text; }
     }
@@ -67,8 +97,9 @@ serve(async (req) => {
       extractedText = clientText;
     }
     if (!extractedText || extractedText.trim().length < 50) {
-      return new Response(JSON.stringify({ error: "Texto do livro não disponível. Abra o livro no leitor primeiro.", needsClientExtraction: true }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      await markFailed("Texto do livro não disponível.");
+      return new Response(JSON.stringify({ ok: false, reason: "no_text" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const MAX_CHARS = mode === "pages" ? 14000 : 70000;
@@ -78,6 +109,7 @@ serve(async (req) => {
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
+
 
     const ELEVEN_VOICE_MAP: Record<string, string> = {
       nova: "EXAVITQu4vr4xnSDxMaL",
@@ -277,14 +309,20 @@ IMPORTANTE: Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{
       });
     }
 
-    const { data: newQuota } = await supabaseClient.rpc("can_generate_story_video", { _user_id: user.id });
+    const result = { title, author, scenes: built, targetDurationSeconds: TARGET_TOTAL_SECONDS };
+    await sb.from("story_video_jobs").update({
+      status: "completed",
+      result,
+      processed_at: new Date().toISOString(),
+    }).eq("id", jobId);
 
-    return new Response(JSON.stringify({ title, author, scenes: built, quota: newQuota, targetDurationSeconds: TARGET_TOTAL_SECONDS }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ ok: true, job_id: jobId }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
-    console.error("generate-story-video error", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("generate-story-video worker error", msg);
+    await markFailed(msg).catch(() => {});
+    return new Response(JSON.stringify({ ok: false, error: msg, job_id: jobId }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
