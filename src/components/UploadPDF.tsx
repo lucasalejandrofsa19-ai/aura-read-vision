@@ -160,8 +160,12 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
                 .from("pdfs")
                 .createSignedUrl(fileName, 60 * 60);
 
-              await generateCover(bookData.id, signedData?.signedUrl ?? "", 1);
-              toast.success("Capa pronta ✨", { id: "cover-generation" });
+              const result = await generateCover(bookData.id, signedData?.signedUrl ?? "", 1);
+              if (result?.fallback) {
+                toast.warning("Não foi possível verificar a capa — usando fallback", { id: "cover-generation" });
+              } else {
+                toast.success("Capa pronta ✨", { id: "cover-generation" });
+              }
               queryClient.invalidateQueries({ queryKey: ["books", user.id] });
             } catch (error) {
               captureError(error, { context: "auto_generate_cover" });
