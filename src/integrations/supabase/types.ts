@@ -777,6 +777,45 @@ export type Database = {
         }
         Relationships: []
       }
+      story_video_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          error: string | null
+          id: string
+          params: Json
+          processed_at: string | null
+          result: Json | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          params: Json
+          processed_at?: string | null
+          result?: Json | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          params?: Json
+          processed_at?: string | null
+          result?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       story_videos: {
         Row: {
           book_id: string | null
@@ -1010,6 +1049,27 @@ export type Database = {
       can_generate_story_video: { Args: { _user_id: string }; Returns: Json }
       check_achievements: { Args: { _user_id: string }; Returns: undefined }
       check_book_limit: { Args: { user_id: string }; Returns: boolean }
+      claim_next_story_video_job: {
+        Args: never
+        Returns: {
+          attempts: number
+          created_at: string
+          error: string | null
+          id: string
+          params: Json
+          processed_at: string | null
+          result: Json | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "story_video_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       compute_level: { Args: { xp: number }; Returns: number }
       delete_email: {
         Args: { message_id: number; queue_name: string }
