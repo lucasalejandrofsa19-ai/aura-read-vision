@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Trash2, RefreshCw, Images, ImagePlus, FileImage } from "lucide-react";
+import { BookOpen, Trash2, RefreshCw, Images, ImagePlus, FileImage, Clapperboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getSignedStorageUrl } from "@/lib/storageUrl";
@@ -411,6 +411,15 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                     ) : (
                       <ImagePlus className="w-3.5 h-3.5" />
                     )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => { e.stopPropagation(); navigate(`/story-video/${book.id}`); }}
+                    className="w-7 h-7 rounded-lg bg-primary/80 hover:bg-primary border border-primary/40 text-primary-foreground backdrop-blur-md"
+                    title="Gerar vídeo IA"
+                  >
+                    <Clapperboard className="w-3.5 h-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
