@@ -66,7 +66,7 @@ export function useStoryVideoJob() {
       setError(data.error || "Falha na geração");
       stopPolling();
     }
-  }, [stopPolling]);
+  }, [stopPolling, queryClient]);
 
   const startPolling = useCallback((id: string) => {
     stopPolling();
