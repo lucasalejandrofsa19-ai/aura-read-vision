@@ -72,6 +72,7 @@ const Reader = () => {
   const [book, setBook] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string>("");
+  const [loadError, setLoadError] = useState<string>("");
   const [selectedText, setSelectedText] = useState("");
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [isFocusedMode, setIsFocusedMode] = useState(false);
@@ -170,8 +171,10 @@ const Reader = () => {
   const loadBook = async () => {
     if (!id) {
       console.error("[Reader] No book ID provided");
+      setLoadError("ID do livro ausente na URL.");
       return;
     }
+    setLoadError("");
 
     try {
       // Tenta primeiro nos livros do usuário
@@ -221,6 +224,7 @@ const Reader = () => {
       console.error("[Reader] Error loading book:", error);
       captureError(error, { context: "load_book", bookId: id });
       const msg = error?.message || "Erro desconhecido";
+      setLoadError(msg);
       toast.error(`Não foi possível abrir o PDF: ${msg}`, { duration: 8000 });
       // Não redirecionar — deixar o usuário ver o erro e voltar manualmente
     } finally {
@@ -880,8 +884,29 @@ const Reader = () => {
                   }
                 />
               ) : (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">Nenhum arquivo PDF disponível</p>
+                <div className="text-center py-12 px-6 space-y-4">
+                  <FileText className="w-12 h-12 mx-auto text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">
+                      {loading ? "Carregando PDF..." : "Não foi possível abrir o PDF"}
+                    </p>
+                    {!loading && loadError && (
+                      <p className="text-sm text-destructive mt-2 break-words">{loadError}</p>
+                    )}
+                    {!loading && !loadError && (
+                      <p className="text-sm text-muted-foreground mt-2">Nenhum arquivo PDF disponível para este livro.</p>
+                    )}
+                  </div>
+                  {!loading && (
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => { setLoading(true); loadBook(); }}>
+                        Tentar novamente
+                      </Button>
+                      <Button size="sm" onClick={() => navigate("/library")}>
+                        Voltar à biblioteca
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
