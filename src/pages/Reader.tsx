@@ -640,14 +640,16 @@ const Reader = () => {
               notes={notes}
             />
 
-            <NotesPanel
-              notes={notes}
-              currentPage={currentPage}
-              onAddNote={addNote}
-              onUpdateNote={updateNote}
-              onDeleteNote={deleteNote}
-              onNavigateToPage={handleNavigateToPage}
-            />
+            <div className="lg:hidden">
+              <NotesPanel
+                notes={notes}
+                currentPage={currentPage}
+                onAddNote={addNote}
+                onUpdateNote={updateNote}
+                onDeleteNote={deleteNote}
+                onNavigateToPage={handleNavigateToPage}
+              />
+            </div>
 
             <ToolHelpTooltip {...TOOL_COPY.highlight}>
               <Button
@@ -662,39 +664,43 @@ const Reader = () => {
             </ToolHelpTooltip>
             {penToolbar}
 
-            <Sheet>
-              <ToolHelpTooltip {...TOOL_COPY.highlightsList}>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="aura-soft transition-aura"
-                    aria-label="Lista de destaques">
-                    <List className="w-5 h-5" />
-                  </Button>
-                </SheetTrigger>
-              </ToolHelpTooltip>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Destaques</SheetTitle>
-                  <SheetDescription>
-                    {allHighlights.length} destaque{allHighlights.length !== 1 ? "s" : ""} neste livro
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="mt-6">
-                  <HighlightsList
-                    highlights={allHighlights}
-                    currentPage={currentPage}
-                    onDelete={(highlightId) => {
-                      deleteHighlight(highlightId);
-                    }}
-                    onNavigate={(pageNumber) => {
-                      handlePageChange(pageNumber);
-                    }}
-                  />
-                </div>
-              </SheetContent>
-            </Sheet>
+            <div className="lg:hidden">
+              <Sheet>
+                <ToolHelpTooltip {...TOOL_COPY.highlightsList}>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="aura-soft transition-aura"
+                      aria-label="Lista de destaques">
+                      <List className="w-5 h-5" />
+                    </Button>
+                  </SheetTrigger>
+                </ToolHelpTooltip>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Destaques</SheetTitle>
+                    <SheetDescription>
+                      {allHighlights.length} destaque{allHighlights.length !== 1 ? "s" : ""} neste livro
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="mt-6">
+                    <HighlightsList
+                      highlights={allHighlights}
+                      currentPage={currentPage}
+                      onDelete={(highlightId) => {
+                        deleteHighlight(highlightId);
+                      }}
+                      onNavigate={(pageNumber) => {
+                        handlePageChange(pageNumber);
+                      }}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+
 
             <DropdownMenu>
               <ToolHelpTooltip {...TOOL_COPY.bookmark}>
@@ -785,9 +791,9 @@ const Reader = () => {
         {...mainProps}
         className="max-w-screen-2xl mx-auto px-4 lg:px-8 xl:px-12 py-6 lg:py-10"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-6">
           {/* Left rail (desktop) */}
-          <aside className="hidden lg:block lg:col-span-2 xl:col-span-2 space-y-4 lg:sticky lg:top-32 lg:self-start">
+          <aside className="hidden lg:flex lg:col-span-3 xl:col-span-3 flex-col gap-4 lg:sticky lg:top-32 lg:self-start lg:max-h-[calc(100vh-9rem)] overflow-y-auto scrollbar-hide">
             <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-4 shadow-sm shadow-background/40">
               <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Progresso</p>
               <div className="text-3xl font-display font-bold tabular-nums">{currentPage}</div>
@@ -799,10 +805,25 @@ const Reader = () => {
                 />
               </div>
             </div>
+
+            <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-4 shadow-sm shadow-background/40">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Anotações</p>
+                <span className="text-xs font-display font-bold tabular-nums">{notes.length}</span>
+              </div>
+              <NotesPanel
+                notes={notes}
+                currentPage={currentPage}
+                onAddNote={addNote}
+                onUpdateNote={updateNote}
+                onDeleteNote={deleteNote}
+                onNavigateToPage={handleNavigateToPage}
+              />
+            </div>
           </aside>
 
           {/* Center: PDF */}
-          <div className="lg:col-span-8 xl:col-span-8 space-y-4">
+          <div className="lg:col-span-6 xl:col-span-6 space-y-4">
             <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" />
             <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl shadow-lg shadow-background/40 overflow-hidden">
               {pdfUrl ? (
@@ -852,17 +873,21 @@ const Reader = () => {
             </div>
           </div>
 
-          {/* Right rail (desktop) */}
-          <aside className="hidden lg:block lg:col-span-2 xl:col-span-2 space-y-4 lg:sticky lg:top-32 lg:self-start">
-            <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-4 shadow-sm shadow-background/40">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Destaques</p>
-              <div className="text-3xl font-display font-bold tabular-nums">{allHighlights.length}</div>
-              <p className="text-xs text-muted-foreground">neste livro</p>
-            </div>
-            <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-4 shadow-sm shadow-background/40">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Anotações</p>
-              <div className="text-3xl font-display font-bold tabular-nums">{notes.length}</div>
-              <p className="text-xs text-muted-foreground">salvas</p>
+          {/* Right rail (desktop) — HighlightsList inline */}
+          <aside className="hidden lg:flex lg:col-span-3 xl:col-span-3 flex-col gap-4 lg:sticky lg:top-32 lg:self-start lg:max-h-[calc(100vh-9rem)]">
+            <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-4 shadow-sm shadow-background/40 flex-1 flex flex-col min-h-0">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Destaques</p>
+                <span className="text-xs font-display font-bold tabular-nums">{allHighlights.length}</span>
+              </div>
+              <div className="flex-1 min-h-0 -mx-2">
+                <HighlightsList
+                  highlights={allHighlights}
+                  currentPage={currentPage}
+                  onDelete={(highlightId) => deleteHighlight(highlightId)}
+                  onNavigate={(pageNumber) => handlePageChange(pageNumber)}
+                />
+              </div>
             </div>
           </aside>
         </div>
