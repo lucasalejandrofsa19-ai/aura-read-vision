@@ -30,6 +30,7 @@ export type StartParams = {
 const POLL_INTERVAL_MS = 5000;
 
 export function useStoryVideoJob() {
+  const queryClient = useQueryClient();
   const [jobId, setJobId] = useState<string | null>(null);
   const [status, setStatus] = useState<JobStatus>("idle");
   const [error, setError] = useState<string | null>(null);
