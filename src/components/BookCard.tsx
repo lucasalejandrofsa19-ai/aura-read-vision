@@ -258,155 +258,131 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
         className="cursor-pointer group relative"
         onClick={() => navigate(`/reader/${book.id}`)}
       >
-      {/* Book standing on shelf */}
-      <div className="relative perspective-1000">
-        {/* Book spine and shadow */}
+      {/* Premium book card */}
+      <div className="relative">
         <motion.div
-          whileHover={{ rotateY: -8, z: 20 }}
-          transition={{ duration: 0.3 }}
-          className="relative preserve-3d"
-          style={{ transformStyle: "preserve-3d" }}
+          whileHover={{ y: -4 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="relative"
         >
-          {/* Shelf shadow */}
-          <div className="absolute -bottom-2 left-0 right-0 h-8 bg-gradient-to-t from-black/30 to-transparent blur-sm" />
-          
-          {/* Book spine (lado visível quando em pé) */}
-          <div className="absolute -left-3 top-0 bottom-0 w-12 rounded-l-lg shadow-2xl overflow-hidden"
-               style={{
-                 transform: "rotateY(90deg) translateZ(-24px)",
-                 transformStyle: "preserve-3d"
-               }}>
-            <div className={`w-full h-full ${book.cover_color || 'bg-gradient-to-b from-blue-500 to-blue-700'} p-2 flex flex-col items-center justify-center`}>
-              <span className="text-white font-bold text-xs writing-mode-vertical transform rotate-180 line-clamp-3 text-center">
-                {book.title}
-              </span>
-            </div>
-          </div>
+          {/* Glow on hover */}
+          <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/40 via-accent/20 to-transparent opacity-0 group-hover:opacity-100 blur-md transition-opacity duration-300 pointer-events-none" />
 
-          {/* Book cover (frente) */}
-          <div className="glass rounded-lg overflow-hidden shadow-2xl transition-all duration-300 group-hover:shadow-primary/50">
-            <div className={`relative h-80 ${book.cover_image_url ? 'bg-background' : `bg-gradient-to-br ${book.cover_color || 'from-blue-500 to-blue-700'}`} overflow-hidden`}>
-              {/* Cover Image */}
+          {/* Cover */}
+          <div className="relative rounded-2xl overflow-hidden border border-border/60 bg-card shadow-lg shadow-background/40 transition-shadow duration-300 group-hover:shadow-xl group-hover:shadow-primary/20">
+            <div className={`relative aspect-[2/3] ${book.cover_image_url ? 'bg-muted' : `bg-gradient-to-br ${book.cover_color || 'from-primary to-secondary'}`} overflow-hidden`}>
               {book.cover_image_url ? (
                 <LazyImage
-                  src={book.cover_image_url} 
+                  src={book.cover_image_url}
                   alt={book.title}
-                  className="absolute inset-0 w-full h-full object-contain"
+                  className="absolute inset-0 w-full h-full object-cover"
                   containerClassName="absolute inset-0"
                 />
               ) : (
                 <>
-                  <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] pointer-events-none" />
-                  
-                  {/* Generating cover indicator */}
+                  <div className="absolute inset-0 opacity-[0.08] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] pointer-events-none" />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center text-white/80 p-4">
-                      <div className="w-12 h-12 border-3 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-3" />
-                      <p className="text-sm font-medium">Gerando capa...</p>
+                    <div className="text-center text-primary-foreground/80 p-4">
+                      <div className="w-10 h-10 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mx-auto mb-2" />
+                      <p className="text-xs font-medium">Gerando capa…</p>
                     </div>
                   </div>
                 </>
               )}
-              
-              {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-              
-              {/* Title and author on cover */}
-              <div className="absolute inset-0 p-6 flex flex-col justify-between">
-                <div className="flex justify-between items-start">
-                  <BookOpen className="w-6 h-6 text-white/90 drop-shadow-lg" />
-                  
-                  {/* Action buttons */}
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowSelectPage(true);
-                      }}
-                      disabled={generatingCover}
-                      className="w-7 h-7 rounded-full bg-blue-500/30 hover:bg-blue-500/50 text-white backdrop-blur-sm"
-                      title="Escolher Página da Capa"
-                    >
-                      {generatingCover ? (
-                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <FileImage className="w-3.5 h-3.5" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        coverInputRef.current?.click();
-                      }}
-                      disabled={uploadingCover}
-                      className="w-7 h-7 rounded-full bg-green-500/30 hover:bg-green-500/50 text-white backdrop-blur-sm"
-                      title="Upload Capa Personalizada"
-                    >
-                      {uploadingCover ? (
-                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <ImagePlus className="w-3.5 h-3.5" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleOpenGallery}
-                      className="w-7 h-7 rounded-full bg-purple-500/30 hover:bg-purple-500/50 text-white backdrop-blur-sm"
-                      title="Galeria"
-                    >
-                      <Images className="w-3.5 h-3.5" />
-                    </Button>
-                    {isAdmin && isPremiumBook && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleReprocess}
-                        disabled={reprocessing}
-                        className="w-7 h-7 rounded-full bg-blue-500/30 hover:bg-blue-500/50 text-white backdrop-blur-sm"
-                        title="Reprocessar"
-                      >
-                        <RefreshCw className={`w-3.5 h-3.5 ${reprocessing ? 'animate-spin' : ''}`} />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleDelete}
-                      className="w-7 h-7 rounded-full bg-red-500/30 hover:bg-red-500/50 text-white backdrop-blur-sm"
-                      title="Deletar"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
+
+              {/* Bottom gradient for legibility */}
+              <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-background/95 via-background/40 to-transparent" />
+
+              {/* Top action bar */}
+              <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+                <div className="p-1.5 rounded-lg bg-background/40 backdrop-blur-md border border-border/40">
+                  <BookOpen className="w-4 h-4 text-foreground/90" />
                 </div>
-                
-                <div>
-                  <h3 className="text-white text-lg font-bold mb-1 line-clamp-2 drop-shadow-lg">
-                    {book.title}
-                  </h3>
-                  <p className="text-white/80 text-xs drop-shadow">{book.author || "Autor Desconhecido"}</p>
-                  
-                  {/* Progress badge */}
-                  <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm">
-                    <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                    <span className="text-white text-xs font-semibold">{book.progress}% lido</span>
-                  </div>
+                <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => { e.stopPropagation(); setShowSelectPage(true); }}
+                    disabled={generatingCover}
+                    className="w-7 h-7 rounded-lg bg-background/70 hover:bg-background border border-border/40 text-foreground backdrop-blur-md"
+                    title="Escolher página da capa"
+                  >
+                    {generatingCover ? (
+                      <div className="w-3.5 h-3.5 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <FileImage className="w-3.5 h-3.5" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => { e.stopPropagation(); coverInputRef.current?.click(); }}
+                    disabled={uploadingCover}
+                    className="w-7 h-7 rounded-lg bg-background/70 hover:bg-background border border-border/40 text-foreground backdrop-blur-md"
+                    title="Upload capa personalizada"
+                  >
+                    {uploadingCover ? (
+                      <div className="w-3.5 h-3.5 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <ImagePlus className="w-3.5 h-3.5" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleOpenGallery}
+                    className="w-7 h-7 rounded-lg bg-background/70 hover:bg-background border border-border/40 text-foreground backdrop-blur-md"
+                    title="Galeria"
+                  >
+                    <Images className="w-3.5 h-3.5" />
+                  </Button>
+                  {isAdmin && isPremiumBook && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleReprocess}
+                      disabled={reprocessing}
+                      className="w-7 h-7 rounded-lg bg-background/70 hover:bg-background border border-border/40 text-foreground backdrop-blur-md"
+                      title="Reprocessar"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${reprocessing ? 'animate-spin' : ''}`} />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleDelete}
+                    className="w-7 h-7 rounded-lg bg-destructive/80 hover:bg-destructive border border-destructive/40 text-destructive-foreground backdrop-blur-md"
+                    title="Deletar"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
               </div>
 
-              {/* Progress bar at bottom */}
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${book.progress}%` }}
-                  transition={{ delay: index * 0.05 + 0.2, duration: 0.6 }}
-                  className="h-full bg-gradient-to-r from-primary to-accent shadow-lg"
-                />
+              {/* Title + author + progress */}
+              <div className="absolute inset-x-0 bottom-0 p-4">
+                <h3 className="text-foreground text-base font-display font-semibold leading-tight line-clamp-2 mb-1 tracking-tight">
+                  {book.title}
+                </h3>
+                <p className="text-muted-foreground text-xs line-clamp-1 mb-3">
+                  {book.author || "Autor desconhecido"}
+                </p>
+
+                {/* Progress */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1 rounded-full bg-foreground/10 overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${book.progress ?? 0}%` }}
+                      transition={{ delay: index * 0.05 + 0.2, duration: 0.6 }}
+                      className="h-full bg-gradient-to-r from-primary to-accent"
+                    />
+                  </div>
+                  <span className="text-[10px] font-semibold text-muted-foreground tabular-nums">
+                    {book.progress ?? 0}%
+                  </span>
+                </div>
               </div>
             </div>
           </div>
