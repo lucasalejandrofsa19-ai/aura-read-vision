@@ -171,8 +171,10 @@ const Reader = () => {
   const loadBook = async () => {
     if (!id) {
       console.error("[Reader] No book ID provided");
+      setLoadError("ID do livro ausente na URL.");
       return;
     }
+    setLoadError("");
 
     try {
       // Tenta primeiro nos livros do usuário
