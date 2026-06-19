@@ -197,24 +197,29 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
       const result = await generateCover(book.id, book.file_url, pageNumber);
       if (result?.fallback) {
         const canRetry = fallbackRetriesRef.current < MAX_FALLBACK_RETRIES;
-        toast.warning(
-          canRetry
-            ? `Não foi possível verificar a capa — usando fallback (tentativa ${fallbackRetriesRef.current + 1}/${MAX_FALLBACK_RETRIES})`
-            : "Não foi possível verificar a capa após várias tentativas — usando fallback",
-          {
-            id: "generate-cover",
-            duration: 10000,
-            action: canRetry
-              ? {
-                  label: "Tentar novamente",
-                  onClick: () => {
-                    fallbackRetriesRef.current += 1;
-                    void handleSelectCoverPage(pageNumber, true);
-                  },
-                }
-              : undefined,
-          }
-        );
+        if (canRetry) {
+          toast.warning(
+            `Não foi possível verificar a capa — usando fallback (tentativa ${fallbackRetriesRef.current + 1}/${MAX_FALLBACK_RETRIES})`,
+            {
+              id: "generate-cover",
+              duration: 10000,
+              action: {
+                label: "Tentar novamente",
+                onClick: () => {
+                  fallbackRetriesRef.current += 1;
+                  void handleSelectCoverPage(pageNumber, true);
+                },
+              },
+            }
+          );
+        } else {
+          toast.info(
+            "Limite de tentativas atingido. Tente gerar a capa novamente mais tarde.",
+            { id: "generate-cover", duration: 10000 }
+          );
+          fallbackRetriesRef.current = 0;
+        }
+      }
       } else {
         fallbackRetriesRef.current = 0;
         toast.success("✨ Capa gerada com sucesso!", { id: "generate-cover" });
