@@ -55,6 +55,7 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
   const [loadingGallery, setLoadingGallery] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [showSelectPage, setShowSelectPage] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const { generateCover, generating: generatingCover } = useGenerateCover();
 
@@ -194,6 +195,7 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
 
     if (!isRetry) fallbackRetriesRef.current = 0;
 
+    setRetrying(true);
     toast.loading("Gerando capa...", { id: "generate-cover" });
 
     try {
@@ -221,21 +223,24 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
             { id: "generate-cover", duration: 10000 }
           );
           fallbackRetriesRef.current = 0;
-          markCoverFailed(book.id);
-          queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
+          await markCoverFailed(book.id);
+          await queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
         }
       } else {
         fallbackRetriesRef.current = 0;
-        clearCoverFailed(book.id);
+        await clearCoverFailed(book.id);
         toast.success("✨ Capa gerada com sucesso!", { id: "generate-cover" });
         setShowSelectPage(false);
+        await queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
       }
       onReprocess?.();
     } catch (error) {
       captureError(error, { context: "generate_cover_from_page" });
-      markCoverFailed(book.id);
-      queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
+      await markCoverFailed(book.id);
+      await queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
       toast.error("Erro ao gerar capa — usando placeholder.", { id: "generate-cover" });
+    } finally {
+      setRetrying(false);
     }
   };
 
@@ -336,7 +341,7 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                     <Button
                       size="sm"
                       variant="secondary"
-                      disabled={generatingCover}
+                      disabled={generatingCover || retrying}
                       onClick={(e) => {
                         e.stopPropagation();
                         void handleSelectCoverPage(1);
@@ -344,7 +349,7 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                       className="mt-3 h-7 px-3 text-[11px] rounded-full bg-background/80 hover:bg-background backdrop-blur-md border border-foreground/20"
                       title="Tentar gerar a capa novamente"
                     >
-                      {generatingCover ? (
+                      {generatingCover || retrying ? (
                         <>
                           <div className="w-3 h-3 mr-1.5 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
                           Gerando…
