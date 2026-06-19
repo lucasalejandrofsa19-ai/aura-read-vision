@@ -340,6 +340,32 @@ const LibraryInner = () => {
             </motion.div>
           ) : (
             <>
+              {/* Card destacado: PDFs Públicos */}
+              <motion.button
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}
+                aria-label={PUBLIC_PDFS_TOOLTIP}
+                aria-describedby={publicPdfsDescId}
+                className="w-full mb-6 group relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent p-5 text-left transition-all hover:border-primary/60 hover:shadow-lg hover:shadow-primary/20"
+              >
+                <span id={publicPdfsDescId} className="sr-only">{PUBLIC_PDFS_DESCRIPTION}</span>
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-primary">
+                    <FileText className="h-6 w-6" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-display font-semibold text-base flex items-center gap-2">
+                      {PUBLIC_PDFS_LABEL}
+                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                      Catálogo gratuito — acesso aberto a todos os usuários
+                    </p>
+                  </div>
+                </div>
+              </motion.button>
+
               <div className="flex items-end justify-between gap-3 mb-6">
                 <div>
                   <h2 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Meus Livros</h2>

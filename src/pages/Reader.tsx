@@ -212,13 +212,17 @@ const Reader = () => {
           .createSignedUrl((data as any).file_path, 60 * 60);
 
         if (signedError) throw signedError;
-        setPdfUrl(signedData?.signedUrl ?? "");
+        if (!signedData?.signedUrl) throw new Error("URL assinada vazia");
+        setPdfUrl(signedData.signedUrl);
+      } else {
+        throw new Error("Arquivo PDF não encontrado (file_path ausente no registro)");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("[Reader] Error loading book:", error);
-      captureError(error, { context: "load_book" });
-      toast.error("Erro ao carregar livro");
-      navigate("/library");
+      captureError(error, { context: "load_book", bookId: id });
+      const msg = error?.message || "Erro desconhecido";
+      toast.error(`Não foi possível abrir o PDF: ${msg}`, { duration: 8000 });
+      // Não redirecionar — deixar o usuário ver o erro e voltar manualmente
     } finally {
       setLoading(false);
     }
