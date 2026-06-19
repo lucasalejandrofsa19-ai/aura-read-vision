@@ -114,9 +114,16 @@ const AppContent = () => {
 
   return (
     <>
-      <Suspense fallback={<RouteFallback />}>
-        <AnimatedRoutes />
-      </Suspense>
+      <Sentry.ErrorBoundary
+        fallback={({ error, resetError }) => (
+          <AppErrorFallback error={error} resetError={resetError} />
+        )}
+        onError={(error) => captureError(error, { boundary: "AppContent" })}
+      >
+        <Suspense fallback={<RouteFallback />}>
+          <AnimatedRoutes />
+        </Suspense>
+      </Sentry.ErrorBoundary>
       <GlobalFooter />
       <StickyAdBanner />
       <CookieConsentBanner />
