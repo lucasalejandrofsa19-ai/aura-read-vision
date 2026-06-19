@@ -31,13 +31,16 @@ const USER_B = {
   password: process.env.TEST_USER_B_PASSWORD,
 };
 
+const TEST_BOOK_ID = process.env.TEST_BOOK_ID;
+
 const ready =
   !!SUPABASE_URL &&
   !!SUPABASE_KEY &&
   !!USER_A.email &&
   !!USER_A.password &&
   !!USER_B.email &&
-  !!USER_B.password;
+  !!USER_B.password &&
+  !!TEST_BOOK_ID;
 
 const d = ready ? describe : describe.skip;
 
