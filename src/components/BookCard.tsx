@@ -18,6 +18,8 @@ import { ptBR } from "date-fns/locale";
 import { LazyImage } from "@/components/LazyImage";
 import { SelectCoverPageDialog } from "@/components/SelectCoverPageDialog";
 import { useGenerateCover } from "@/hooks/useGenerateCover";
+import { isCoverFailed, markCoverFailed, clearCoverFailed } from "@/lib/coverFallback";
+import { BookMarked } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 
