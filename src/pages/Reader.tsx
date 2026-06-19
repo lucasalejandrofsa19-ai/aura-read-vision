@@ -224,6 +224,7 @@ const Reader = () => {
       console.error("[Reader] Error loading book:", error);
       captureError(error, { context: "load_book", bookId: id });
       const msg = error?.message || "Erro desconhecido";
+      setLoadError(msg);
       toast.error(`Não foi possível abrir o PDF: ${msg}`, { duration: 8000 });
       // Não redirecionar — deixar o usuário ver o erro e voltar manualmente
     } finally {
