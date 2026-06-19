@@ -13,7 +13,10 @@
     "validate:emails": "node scripts/validate-email-templates.mjs",
     "validate:emails:smoke": "node scripts/smoke-validate-emails.mjs",
     "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install chromium"
+    "test:e2e:install": "playwright install chromium",
+    "preflight:rls": "node scripts/preflight-rls.mjs",
+    "seed:rls": "npm run preflight:rls && node scripts/seed-rls-test-data.mjs",
+    "test:rls": "npm run preflight:rls && vitest run src/lib/highlightsRls.test.ts"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",
