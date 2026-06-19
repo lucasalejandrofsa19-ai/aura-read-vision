@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Download, Share2, Sparkles, Loader2, FileDown, Lock, Pencil, Check, X, RotateCcw, Link2 } from "lucide-react";
+import { ArrowLeft, Download, Share2, Sparkles, Loader2, FileDown, Lock, Pencil, Check, X, RotateCcw, Link2, Image as ImageIcon } from "lucide-react";
+import { exportHighlightsAsImage } from "@/lib/exportHighlightsImage";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -420,15 +421,37 @@ const Summary = () => {
               size="icon"
               onClick={handleExport}
               className="aura-soft transition-aura"
-             aria-label="Baixar">
+              aria-label="Exportar como PDF"
+              title="Exportar como PDF / Word / Markdown"
+            >
               <Download className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={highlights.length === 0}
+              onClick={async () => {
+                try {
+                  toast.loading("Gerando imagem dos destaques…", { id: "hl-image" });
+                  await exportHighlightsAsImage(bookTitle, highlights);
+                  toast.success("Imagem baixada ✨", { id: "hl-image" });
+                } catch (e: any) {
+                  toast.error(e?.message || "Erro ao gerar imagem", { id: "hl-image" });
+                }
+              }}
+              className="aura-soft transition-aura"
+              aria-label="Exportar como imagem"
+              title="Exportar destaques como imagem (PNG)"
+            >
+              <ImageIcon className="w-5 h-5" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={handleShare}
               className="aura-soft transition-aura"
-             aria-label="Compartilhar">
+              aria-label="Compartilhar"
+            >
               <Share2 className="w-5 h-5" />
             </Button>
           </div>
