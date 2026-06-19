@@ -35,11 +35,13 @@ const GlobalFooter = () => {
             rel="noopener noreferrer"
             title={PUBLIC_PDFS_TOOLTIP}
             aria-label={PUBLIC_PDFS_TOOLTIP}
+            aria-describedby={publicPdfsDescId}
             className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
           >
             <FileText className="h-3.5 w-3.5" />
             {PUBLIC_PDFS_LABEL}
             <ExternalLink className="h-3 w-3" aria-hidden="true" />
+            <span id={publicPdfsDescId} className="sr-only">{PUBLIC_PDFS_DESCRIPTION}</span>
           </a>
           <Link
             to="/trust"
