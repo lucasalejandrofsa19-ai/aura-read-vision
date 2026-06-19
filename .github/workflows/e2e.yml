@@ -14,12 +14,14 @@ on:
 
 jobs:
   e2e:
-    name: Playwright — pdf.js worker offline
+    name: Playwright — E2E suite
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     env:
       BASE_URL: ${{ github.event.inputs.base_url || 'https://aura-read.lovable.app' }}
+      E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
 
     steps:
       - name: Checkout
