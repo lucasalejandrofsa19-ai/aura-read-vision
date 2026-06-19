@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Shield, Tag, BookOpen, FileText, ExternalLink } from "lucide-react";
+import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP } from "@/lib/publicPdfs";
 
 const HIDDEN_PREFIXES = ["/reader", "/admin"];
 
