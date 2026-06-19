@@ -318,7 +318,7 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                   className="absolute inset-0 w-full h-full object-cover"
                   containerClassName="absolute inset-0"
                 />
-              ) : isCoverFailed(book.id) ? (
+              ) : (book.cover_status === "failed" || isCoverFailedLocal(book.id)) ? (
                 <>
                   {/* Fallback placeholder — geração da capa falhou/timeout */}
                   <div className={`absolute inset-0 bg-gradient-to-br ${book.cover_color || 'from-primary to-secondary'}`} />
