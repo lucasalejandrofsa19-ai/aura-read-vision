@@ -13,10 +13,21 @@ export const useGenerateCover = () => {
 
     try {
       if (!bookId) throw new Error("bookId inválido");
+      if (!fileUrl) throw new Error("URL do PDF inválida");
 
-      // Load PDF
+      // Timeout duro para impedir toast eterno se pdf.js travar
+      const withTimeout = <T,>(p: Promise<T>, ms: number, label: string) =>
+        new Promise<T>((resolve, reject) => {
+          const timer = setTimeout(() => reject(new Error(`Tempo esgotado: ${label} (${ms}ms)`)), ms);
+          p.then((v) => { clearTimeout(timer); resolve(v); })
+           .catch((e) => { clearTimeout(timer); reject(e); });
+        });
+
+      // Load PDF (cancelável + timeout 45s)
       const loadingTask = pdfjs.getDocument(fileUrl);
-      const pdf = await loadingTask.promise;
+      console.info("[generateCover] baixando PDF…", { fileUrl: fileUrl.slice(0, 80) });
+      const pdf = await withTimeout(loadingTask.promise, 45_000, "download/parse do PDF");
+      console.info("[generateCover] PDF carregado", { numPages: pdf.numPages });
 
       if (pageNumber > pdf.numPages) {
         throw new Error(`Página ${pageNumber} não existe. O PDF tem ${pdf.numPages} páginas`);
