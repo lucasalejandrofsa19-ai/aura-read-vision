@@ -23,6 +23,7 @@ import { BookMarked } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { StoryVideoQuotaBadge } from "@/components/StoryVideoQuotaBadge";
+import { useStoryVideoQuota } from "@/hooks/useStoryVideoQuota";
 
 interface Book {
   id: string;
@@ -50,6 +51,8 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { data: storyVideoQuota, isLoading: storyVideoQuotaLoading } = useStoryVideoQuota();
+  const storyVideoBlocked = !!storyVideoQuota && !storyVideoQuota.premium && !storyVideoQuota.allowed;
   const [reprocessing, setReprocessing] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
@@ -416,9 +419,17 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={(e) => { e.stopPropagation(); navigate(`/story-video/${book.id}`); }}
-                    className="w-7 h-7 rounded-lg bg-primary/80 hover:bg-primary border border-primary/40 text-primary-foreground backdrop-blur-md"
-                    title="Gerar vídeo IA"
+                    disabled={storyVideoQuotaLoading || storyVideoBlocked}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (storyVideoBlocked) {
+                        toast.error("Limite mensal de vídeos atingido. Faça upgrade para Premium.");
+                        return;
+                      }
+                      navigate(`/story-video/${book.id}`);
+                    }}
+                    className="w-7 h-7 rounded-lg bg-primary/80 hover:bg-primary border border-primary/40 text-primary-foreground backdrop-blur-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={storyVideoBlocked ? "Limite mensal atingido — upgrade para Premium" : "Gerar vídeo IA"}
                   >
                     <Clapperboard className="w-3.5 h-3.5" />
                   </Button>
