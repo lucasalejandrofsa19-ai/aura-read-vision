@@ -115,6 +115,11 @@ export const useHighlights = (bookId: string, pageNumber: number) => {
       return { data, text };
     },
     onSuccess: ({ data, text }) => {
+      sonnerToast.success(`Highlight salvo · ${data?.id ?? "—"}`, {
+        id: HIGHLIGHT_TOAST_ID,
+        description: "Persistido no banco com sucesso",
+        duration: 4000,
+      });
       queryClient.invalidateQueries({ queryKey: ["highlights", bookId, pageNumber] });
       queryClient.invalidateQueries({ queryKey: ["highlights", bookId, "all"] });
       awardActionXP("highlight").catch(() => {});
