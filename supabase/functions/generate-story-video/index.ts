@@ -73,6 +73,9 @@ serve(async (req) => {
   const tone = ((params.tone as string) || "neutro").toLowerCase();
   const scenesCount = Number(params.scenesCount) || 5;
   const variationSeed = params.variationSeed as number | null | undefined;
+  const scenesOverride = Array.isArray(params.scenesOverride)
+    ? (params.scenesOverride as Array<{ chapterTitle?: string; narration: string; imagePrompt?: string; highlightId?: string }>)
+    : null;
 
   const markFailed = async (msg: string) => {
     await sb.from("story_video_jobs").update({
