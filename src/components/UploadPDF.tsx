@@ -174,7 +174,10 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
 
           uploadedPath = fileName;
           setProgress(100);
-          toast.loading("Salvando na biblioteca…", { id: toastId, description: file.name });
+          toast.loading("Salvando na biblioteca… 💾", {
+            id: toastId,
+            description: `${file.name} • registrando metadados`,
+          });
 
           // Cor aleatória de capa
           const colors = [
