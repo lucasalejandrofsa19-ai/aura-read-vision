@@ -1083,6 +1083,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_cron_token: { Args: { _name: string }; Returns: string }
       has_premium_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
