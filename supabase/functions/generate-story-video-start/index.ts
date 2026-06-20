@@ -5,6 +5,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
+declare const EdgeRuntime: { waitUntil: (p: Promise<unknown>) => void };
+
+async function triggerWorker() {
+  try {
+    const url = Deno.env.get("SUPABASE_URL") ?? "";
+    const svc = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false }, db: { schema: "private" } as any });
+    const { data: tokenRow } = await svc.from("cron_tokens").select("token").eq("name", "story_video_worker").maybeSingle();
+    const secret = (tokenRow as { token?: string } | null)?.token;
+    if (!secret) { console.error("worker secret missing"); return; }
+    const r = await fetch(`${url}/functions/v1/generate-story-video`, {
+      method: "POST",
+      headers: { "x-internal-secret": secret, "Content-Type": "application/json" },
+      body: "{}",
+    });
+    console.log("worker trigger status", r.status);
+  } catch (e) { console.error("worker trigger ex", e); }
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
