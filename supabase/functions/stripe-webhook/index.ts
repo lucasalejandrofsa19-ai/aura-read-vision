@@ -89,7 +89,7 @@ serve(async (req) => {
           break;
         }
 
-        logStep("Customer found", { email: customer.email });
+        logStep("Customer found", { email_redacted: redactEmail(customer.email) });
 
         // 1.2 fix: lookup user via profiles (indexed) instead of auth.admin.listUsers()
         const { data: profile, error: userError } = await supabaseClient
@@ -101,7 +101,7 @@ serve(async (req) => {
 
         const user = profile ? { id: profile.id as string } : null;
         if (!user) {
-          logStep("No user found for email", { email: customer.email });
+          logStep("No user found for email", { email_redacted: redactEmail(customer.email) });
           break;
         }
 
@@ -168,7 +168,7 @@ serve(async (req) => {
 
         const user = profile ? { id: profile.id as string } : null;
         if (!user) {
-          logStep("No user found for email", { email: customer.email });
+          logStep("No user found for email", { email_redacted: redactEmail(customer.email) });
           break;
         }
 
