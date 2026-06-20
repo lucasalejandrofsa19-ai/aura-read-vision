@@ -35,7 +35,7 @@ export type StartParams = {
   variationSeed?: string | number;
 };
 
-const POLL_INTERVAL_MS = 5000;
+const POLL_INTERVAL_MS = 2500;
 
 export function useStoryVideoJob() {
   const queryClient = useQueryClient();
@@ -44,6 +44,7 @@ export function useStoryVideoJob() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<StoryVideoResult | null>(null);
   const [attempts, setAttempts] = useState(0);
+  const [progress, setProgress] = useState<JobProgress | null>(null);
   const timerRef = useRef<number | null>(null);
 
   const stopPolling = useCallback(() => {
@@ -56,7 +57,7 @@ export function useStoryVideoJob() {
   const fetchJob = useCallback(async (id: string) => {
     const { data, error: e } = await supabase
       .from("story_video_jobs")
-      .select("status, error, result, attempts")
+      .select("status, error, result, attempts, progress")
       .eq("id", id)
       .maybeSingle();
     if (e) {
@@ -66,6 +67,8 @@ export function useStoryVideoJob() {
     if (!data) return;
     setStatus(data.status as JobStatus);
     setAttempts(data.attempts ?? 0);
+    const p = data.progress as unknown as JobProgress | null;
+    if (p && typeof p.total === "number" && p.total > 0) setProgress(p);
     if (data.status === "completed" && data.result) {
       setResult(data.result as unknown as StoryVideoResult);
       queryClient.invalidateQueries({ queryKey: ["story-video-quota"] });
