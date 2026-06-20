@@ -121,9 +121,11 @@ export const ReaderPageSearch = ({
     (async () => {
       try {
         setIndexing(true);
+        setLastStatus("indexing");
         const task = pdfjs.getDocument(pdfUrl);
         const doc = await task.promise;
         const n = doc.numPages;
+        setProgress({ current: 0, total: n });
         const collected: string[] = new Array(n).fill("");
         for (let i = 1; i <= n; i++) {
           if (cancelled) return;
@@ -137,6 +139,7 @@ export const ReaderPageSearch = ({
           } catch {
             collected[i - 1] = "";
           }
+          if (!cancelled) setProgress({ current: i, total: n });
         }
         if (!cancelled) {
           setPages(collected);
@@ -148,10 +151,14 @@ export const ReaderPageSearch = ({
             version: currentVersion,
             indexedAt: Date.now(),
           });
+          setLastStatus("done");
         }
       } catch (err) {
         console.error("[ReaderPageSearch] index error", err);
-        if (!cancelled) toast.error("Não foi possível indexar o PDF para busca.");
+        if (!cancelled) {
+          setLastStatus("error");
+          toast.error("Não foi possível indexar o PDF para busca.");
+        }
       } finally {
         if (!cancelled) setIndexing(false);
       }
