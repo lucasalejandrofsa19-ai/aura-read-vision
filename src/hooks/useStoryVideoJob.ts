@@ -116,9 +116,10 @@ export function useStoryVideoJob() {
     setError(null);
     setResult(null);
     setAttempts(0);
+    setProgress(null);
   }, [stopPolling]);
 
   useEffect(() => () => stopPolling(), [stopPolling]);
 
-  return { jobId, status, error, result, attempts, start, reset };
+  return { jobId, status, error, result, attempts, progress, start, reset };
 }
