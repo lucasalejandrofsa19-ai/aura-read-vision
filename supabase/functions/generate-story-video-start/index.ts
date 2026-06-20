@@ -123,6 +123,8 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    EdgeRuntime.waitUntil(triggerWorker());
+
     return new Response(JSON.stringify({
       job_id: job.id,
       status: job.status,
