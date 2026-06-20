@@ -132,7 +132,7 @@ const AppContent = () => {
       </Sentry.ErrorBoundary>
       <GlobalFooter />
       
-      <CookieConsentBanner />
+      
     </>
   );
 };
