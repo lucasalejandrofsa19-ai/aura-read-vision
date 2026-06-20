@@ -7,6 +7,8 @@ project_id = "qvtfaidgpsapjctxehhq"
     verify_jwt = true
   [functions.auth-email-hook]
     verify_jwt = false
+  [functions.cancel-story-video-job]
+    verify_jwt = true
   [functions.auto-block-ip]
     verify_jwt = false
   [functions.check-ip-reputation]
