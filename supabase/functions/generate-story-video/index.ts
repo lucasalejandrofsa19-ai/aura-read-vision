@@ -70,6 +70,7 @@ serve(async (req) => {
   const mode = (params.mode as string) || "summary";
   const clientText = params.text as string | undefined;
   const voice = (params.voice as string) || "nova";
+  const tone = ((params.tone as string) || "neutro").toLowerCase();
   const scenesCount = Number(params.scenesCount) || 5;
   const variationSeed = params.variationSeed as number | null | undefined;
 
