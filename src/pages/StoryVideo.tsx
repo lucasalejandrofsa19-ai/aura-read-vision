@@ -339,9 +339,6 @@ export default function StoryVideo() {
               <Button variant="outline" onClick={handleCancel}>
                 Cancelar
               </Button>
-              <Button variant="secondary" onClick={handleRetry} disabled={!draft}>
-                <RotateCcw className="mr-2 h-4 w-4" /> Tentar novamente
-              </Button>
             </div>
           </Card>
         )}
