@@ -100,7 +100,8 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "LOVABLE_API_KEY não configurada" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    if ((!extractedText || extractedText.trim().length < 100) && typeof clientText === "string" && clientText.trim().length >= 50) {
+    // Prefer user-provided excerpt (e.g. selected chapter/section) when present.
+    if (typeof clientText === "string" && clientText.trim().length >= 50) {
       extractedText = clientText;
     }
     if (!extractedText || extractedText.trim().length < 50) {
