@@ -44,7 +44,7 @@ serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { book_id, mode = "summary", text, voice = "nova", scenesCount = 5, variationSeed } = body as Record<string, unknown>;
+    const { book_id, mode = "summary", text, voice = "nova", tone = "neutro", scenesCount = 5, variationSeed } = body as Record<string, unknown>;
     if (!book_id || typeof book_id !== "string") {
       return new Response(JSON.stringify({ error: "book_id é obrigatório" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -79,7 +79,7 @@ serve(async (req) => {
       .insert({
         user_id: user.id,
         status: "pending",
-        params: { book_id, mode, text, voice, scenesCount, variationSeed: variationSeed ?? null },
+        params: { book_id, mode, text, voice, tone, scenesCount, variationSeed: variationSeed ?? null },
       })
       .select("id, status, created_at")
       .single();

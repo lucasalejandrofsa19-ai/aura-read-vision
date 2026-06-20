@@ -70,6 +70,7 @@ serve(async (req) => {
   const mode = (params.mode as string) || "summary";
   const clientText = params.text as string | undefined;
   const voice = (params.voice as string) || "nova";
+  const tone = ((params.tone as string) || "neutro").toLowerCase();
   const scenesCount = Number(params.scenesCount) || 5;
   const variationSeed = params.variationSeed as number | null | undefined;
 
@@ -112,35 +113,53 @@ serve(async (req) => {
       fable: "TX3LPaxmHKxFdv7VOQHJ",
     };
 
+    // Mapeia tom -> ajustes prosódicos (ElevenLabs) e velocidade (OpenAI)
+    const TONE_TO_ELEVEN: Record<string, { stability: number; similarity_boost: number; style: number; use_speaker_boost: boolean }> = {
+      neutro:     { stability: 0.55, similarity_boost: 0.75, style: 0.20, use_speaker_boost: true },
+      alegre:     { stability: 0.35, similarity_boost: 0.75, style: 0.65, use_speaker_boost: true },
+      serio:      { stability: 0.80, similarity_boost: 0.80, style: 0.10, use_speaker_boost: true },
+      empolgado:  { stability: 0.25, similarity_boost: 0.70, style: 0.80, use_speaker_boost: true },
+      dramatico:  { stability: 0.30, similarity_boost: 0.75, style: 0.75, use_speaker_boost: true },
+      calmo:      { stability: 0.85, similarity_boost: 0.70, style: 0.15, use_speaker_boost: true },
+    };
+    const TONE_TO_OPENAI_SPEED: Record<string, number> = {
+      neutro: 1.0, alegre: 1.05, serio: 0.95, empolgado: 1.1, dramatico: 0.9, calmo: 0.9,
+    };
+    const toneCfg = TONE_TO_ELEVEN[tone] || TONE_TO_ELEVEN.neutro;
+    const preferEleven = tone !== "neutro" && !!ELEVENLABS_API_KEY;
+
+    async function ttsOpenAI(input: string, voice: string): Promise<string> {
+      const r = await fetch("https://api.openai.com/v1/audio/speech", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "tts-1", input, voice, response_format: "mp3", speed: TONE_TO_OPENAI_SPEED[tone] ?? 1.0 }),
+      });
+      if (!r.ok) { console.error("openai tts", r.status); return ""; }
+      const buf = await r.arrayBuffer();
+      return `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
+    }
+    async function ttsEleven(input: string, voice: string): Promise<string> {
+      const voiceId = ELEVEN_VOICE_MAP[voice] || ELEVEN_VOICE_MAP.nova;
+      const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
+        method: "POST",
+        headers: { "xi-api-key": ELEVENLABS_API_KEY!, "Content-Type": "application/json" },
+        body: JSON.stringify({ text: input, model_id: "eleven_multilingual_v2", voice_settings: toneCfg }),
+      });
+      if (!r.ok) { console.error("eleven tts", r.status); return ""; }
+      const buf = await r.arrayBuffer();
+      return `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
+    }
     async function genTTS(text: string, voice: string): Promise<string> {
       const input = text.slice(0, 2500);
-      if (OPENAI_API_KEY) {
-        try {
-          const r = await fetch("https://api.openai.com/v1/audio/speech", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ model: "tts-1", input, voice, response_format: "mp3" }),
-          });
-          if (r.ok) {
-            const buf = await r.arrayBuffer();
-            return `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
-          } else { console.error("openai tts", r.status); }
-        } catch (e) { console.error("openai tts ex", e); }
-      }
-      if (ELEVENLABS_API_KEY) {
-        try {
-          const voiceId = ELEVEN_VOICE_MAP[voice] || ELEVEN_VOICE_MAP.nova;
-          const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
-            method: "POST",
-            headers: { "xi-api-key": ELEVENLABS_API_KEY, "Content-Type": "application/json" },
-            body: JSON.stringify({ text: input, model_id: "eleven_multilingual_v2" }),
-          });
-          if (r.ok) {
-            const buf = await r.arrayBuffer();
-            return `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
-          } else { console.error("eleven tts", r.status); }
-        } catch (e) { console.error("eleven tts ex", e); }
-      }
+      try {
+        if (preferEleven) {
+          const a = await ttsEleven(input, voice); if (a) return a;
+          if (OPENAI_API_KEY) return await ttsOpenAI(input, voice);
+        } else {
+          if (OPENAI_API_KEY) { const a = await ttsOpenAI(input, voice); if (a) return a; }
+          if (ELEVENLABS_API_KEY) return await ttsEleven(input, voice);
+        }
+      } catch (e) { console.error("tts ex", e); }
       return "";
     }
 
