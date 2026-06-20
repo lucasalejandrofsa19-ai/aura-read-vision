@@ -345,7 +345,7 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
       toast.error("Digite um texto para narrar.");
       return;
     }
-    setRegenerating(true);
+    setRegenerating(audioOnly ? "audio" : "full");
     setPlaying(false);
     try {
       const draftScene = draft?.[idx];
