@@ -299,16 +299,27 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
       <Button
         size="lg"
         disabled={uploading}
-        className="rounded-full w-16 h-16 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-amber shadow-2xl"
+        className="relative rounded-full w-16 h-16 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-amber shadow-2xl overflow-hidden"
         onClick={() => {
           trackClick("pdf_upload_button");
           fileInputRef.current?.click();
         }}
       >
         {uploading ? (
-          <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          <div className="flex flex-col items-center justify-center">
+            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            {progress > 0 && (
+              <span className="text-[10px] font-semibold text-white mt-0.5">{progress}%</span>
+            )}
+          </div>
         ) : (
           <Upload className="w-6 h-6" />
+        )}
+        {uploading && progress > 0 && (
+          <div
+            className="absolute bottom-0 left-0 h-1 bg-white/80 transition-all"
+            style={{ width: `${progress}%` }}
+          />
         )}
       </Button>
     </>
