@@ -412,16 +412,32 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
               maxLength={1200}
               disabled={regenerating}
             />
-            <Button
-              onClick={handleRegenScene}
-              disabled={regenerating || editedText.trim() === scene.narration.trim()}
-              variant="secondary"
-              className="w-full"
-            >
-              {regenerating
-                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Regerando…</>
-                : <><Sparkles className="mr-2 h-4 w-4" /> Regerar áudio e imagem apenas desta cena</>}
-            </Button>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Button
+                onClick={handleRegenAudio}
+                disabled={regenerating || editedText.trim() === scene.narration.trim()}
+                variant="default"
+                className="w-full"
+                title="Mais rápido: regenera só a narração mantendo a imagem"
+              >
+                {regenerating
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processando…</>
+                  : <><Volume2 className="mr-2 h-4 w-4" /> Regenerar Áudio</>}
+              </Button>
+              <Button
+                onClick={handleRegenScene}
+                disabled={regenerating || editedText.trim() === scene.narration.trim()}
+                variant="secondary"
+                className="w-full"
+              >
+                {regenerating
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processando…</>
+                  : <><Sparkles className="mr-2 h-4 w-4" /> Áudio + Imagem</>}
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              "Regenerar Áudio" é mais rápido pois reutiliza a imagem atual.
+            </p>
           </div>
         </div>
       </Card>
