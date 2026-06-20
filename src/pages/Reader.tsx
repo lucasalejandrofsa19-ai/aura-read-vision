@@ -526,6 +526,7 @@ const Reader = () => {
             </div>
             <ReaderPageSearch
               pdfUrl={pdfUrl}
+              bookId={id || ""}
               totalPages={book.total_pages || 1}
               onNavigateToPage={handleNavigateToPage}
             />
