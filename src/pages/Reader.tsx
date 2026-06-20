@@ -914,6 +914,28 @@ const Reader = () => {
                     ) : null
                   }
                 />
+              ) : permissionDenied ? (
+                <div className="text-center py-12 px-6 space-y-4 max-w-md mx-auto">
+                  <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="w-7 h-7 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-lg">Este livro é exclusivo Premium</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {user?.id
+                        ? "Sua conta ainda não tem acesso premium. Faça upgrade para desbloquear este e centenas de outros livros."
+                        : "Faça login com uma conta premium para abrir este livro."}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                    <Button size="sm" onClick={() => navigate("/pricing")}>
+                      Ver planos premium
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => navigate("/library")}>
+                      Voltar à biblioteca
+                    </Button>
+                  </div>
+                </div>
               ) : (
                 <div className="text-center py-12 px-6 space-y-4">
                   <FileText className="w-12 h-12 mx-auto text-muted-foreground" />
