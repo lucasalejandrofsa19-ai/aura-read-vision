@@ -44,7 +44,7 @@ serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { book_id, mode = "summary", text, voice = "nova", scenesCount = 5, variationSeed } = body as Record<string, unknown>;
+    const { book_id, mode = "summary", text, voice = "nova", tone = "neutro", scenesCount = 5, variationSeed } = body as Record<string, unknown>;
     if (!book_id || typeof book_id !== "string") {
       return new Response(JSON.stringify({ error: "book_id é obrigatório" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
