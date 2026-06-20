@@ -50,6 +50,8 @@ export const ReaderPageSearch = ({
   const [activeIdx, setActiveIdx] = useState(0);
   const [diag, setDiag] = useState<PageIndexEntry | null>(null);
   const [reindexNonce, setReindexNonce] = useState(0);
+  const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+  const [lastStatus, setLastStatus] = useState<"idle" | "indexing" | "done" | "error">("idle");
   const indexedKeyRef = useRef<string>("");
 
   const currentVersion = bookVersion ?? "v0";
