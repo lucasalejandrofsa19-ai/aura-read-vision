@@ -425,8 +425,8 @@ const AdminPanel = () => {
                   <p className="text-sm font-medium">ℹ️ Informações sobre Roles:</p>
                   <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                     <li>• <strong>Admin:</strong> Acesso completo ao sistema e painel admin</li>
-                    <li>• <strong>Premium:</strong> Acesso a recursos premium (limite de 1000 livros)</li>
-                    <li>• <strong>Free:</strong> Conta gratuita (limite de 5 livros)</li>
+                    <li>• <strong>Premium:</strong> Acesso a recursos premium (upload ilimitado de livros)</li>
+                    <li>• <strong>Free:</strong> Conta gratuita (upload ilimitado de livros)</li>
                   </ul>
                 </div>
               </div>
