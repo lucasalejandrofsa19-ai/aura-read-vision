@@ -1,6 +1,6 @@
 import { Download, FileText, ArrowLeft, Plus, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SEO } from "@/components/SEO";
@@ -30,22 +30,30 @@ const PublicPdfs = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [importingId, setImportingId] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const handleAddToLibrary = async (pdf: PublicPdf) => {
     if (!user) {
       toast.error("Faça login para adicionar à sua biblioteca.");
       return;
     }
+    // Cancel any previous in-flight import to avoid stale state
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setImportingId(pdf.id);
     try {
-      // Sem limite de ebooks — qualquer usuário pode importar livremente.
-
-
-
       toast.loading("Baixando PDF…", { id: `import-${pdf.id}` });
-      const res = await fetch(pdf.url);
+      const res = await fetch(pdf.url, { signal: controller.signal });
       if (!res.ok) throw new Error(`Falha ao baixar (${res.status})`);
       const blob = await res.blob();
+      if (controller.signal.aborted) return;
 
       if (blob.size > 52428800) {
         toast.error("PDF maior que 50MB.", { id: `import-${pdf.id}` });
@@ -78,6 +86,7 @@ const PublicPdfs = () => {
         await supabase.storage.from("pdfs").remove([filePath]).catch(() => {});
         throw insertError;
       }
+      if (controller.signal.aborted) return;
 
       queryClient.invalidateQueries({ queryKey: ["books", user.id] });
       toast.success("Adicionado à sua biblioteca!", {
@@ -85,10 +94,15 @@ const PublicPdfs = () => {
         action: { label: "Abrir", onClick: () => navigate("/library") },
       });
     } catch (error: any) {
+      if (error?.name === "AbortError" || controller.signal.aborted) {
+        toast.dismiss(`import-${pdf.id}`);
+        return;
+      }
       captureError(error, { context: "public_pdf_import" });
       toast.error(error?.message || "Não foi possível adicionar.", { id: `import-${pdf.id}` });
     } finally {
-      setImportingId(null);
+      if (abortRef.current === controller) abortRef.current = null;
+      setImportingId((cur) => (cur === pdf.id ? null : cur));
     }
   };
 

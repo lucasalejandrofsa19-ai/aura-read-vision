@@ -12,6 +12,16 @@ const logStep = (step: string, details?: any) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
+// Redact PII (emails, names) before logging. Keep first char + domain for debugging only.
+export const redactEmail = (email?: string | null): string => {
+  if (!email || typeof email !== "string") return "<none>";
+  const at = email.indexOf("@");
+  if (at <= 0) return "***";
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  return `${local[0]}***@${domain}`;
+};
+
 // Map Stripe product IDs to roles
 const PRODUCT_ROLE_MAP: Record<string, string> = {
   "prod_TU5KLqyK3KGUSd": "premium", // Premium plan
@@ -79,7 +89,7 @@ serve(async (req) => {
           break;
         }
 
-        logStep("Customer found", { email: customer.email });
+        logStep("Customer found", { email_redacted: redactEmail(customer.email) });
 
         // 1.2 fix: lookup user via profiles (indexed) instead of auth.admin.listUsers()
         const { data: profile, error: userError } = await supabaseClient
@@ -91,7 +101,7 @@ serve(async (req) => {
 
         const user = profile ? { id: profile.id as string } : null;
         if (!user) {
-          logStep("No user found for email", { email: customer.email });
+          logStep("No user found for email", { email_redacted: redactEmail(customer.email) });
           break;
         }
 
@@ -158,7 +168,7 @@ serve(async (req) => {
 
         const user = profile ? { id: profile.id as string } : null;
         if (!user) {
-          logStep("No user found for email", { email: customer.email });
+          logStep("No user found for email", { email_redacted: redactEmail(customer.email) });
           break;
         }
 
