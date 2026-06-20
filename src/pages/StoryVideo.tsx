@@ -67,16 +67,44 @@ export default function StoryVideo() {
   const { status, error, result, attempts, progress, start } = useStoryVideoJob();
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
   const [started, setStarted] = useState(false);
+  const [draft, setDraft] = useState<DraftScene[] | null>(null);
+  const [loadingDraft, setLoadingDraft] = useState(false);
 
   useEffect(() => {
     try { sessionStorage.setItem(SS_KEY, JSON.stringify(prefs)); } catch { /* noop */ }
   }, [prefs]);
 
-  const handleStart = () => {
-    if (!bookId || started) return;
-    setStarted(true);
-    start({ book_id: bookId, mode: prefs.mode, voice: prefs.voice, tone: prefs.tone, scenesCount: 5 });
+  const handleGenerateDraft = async () => {
+    if (!bookId || loadingDraft) return;
+    setLoadingDraft(true);
+    try {
+      const r = await fetchStoryVideoScript({ book_id: bookId, mode: prefs.mode, scenesCount: 5 });
+      if (!r.scenes?.length) throw new Error("Roteiro vazio");
+      setDraft(r.scenes);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao gerar roteiro");
+    } finally {
+      setLoadingDraft(false);
+    }
   };
+
+  const handleStart = () => {
+    if (!bookId || started || !draft) return;
+    setStarted(true);
+    start({
+      book_id: bookId,
+      mode: prefs.mode,
+      voice: prefs.voice,
+      tone: prefs.tone,
+      scenesCount: draft.length,
+      scenesOverride: draft,
+    });
+  };
+
+  const updateDraftScene = (i: number, patch: Partial<DraftScene>) => {
+    setDraft(d => d ? d.map((s, idx) => idx === i ? { ...s, ...patch } : s) : d);
+  };
+
 
   return (
     <main className="min-h-screen bg-background text-foreground">
