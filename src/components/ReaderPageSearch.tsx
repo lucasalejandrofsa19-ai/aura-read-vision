@@ -344,6 +344,41 @@ export const ReaderPageSearch = ({
                 </Button>
               </div>
             </div>
+            {(() => {
+              const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
+              const statusLabel = indexing
+                ? `Indexando… ${progress.current}/${progress.total} (${pct}%)`
+                : lastStatus === "done"
+                ? `Concluído — ${progress.total || pages.length} páginas`
+                : lastStatus === "error"
+                ? "Erro ao indexar"
+                : pages.length > 0
+                ? `Pronto — ${pages.length} páginas em cache`
+                : "Aguardando…";
+              const statusColor = indexing
+                ? "text-primary"
+                : lastStatus === "error"
+                ? "text-destructive"
+                : lastStatus === "done"
+                ? "text-primary"
+                : "text-muted-foreground";
+              return (
+                <div className="mb-1.5">
+                  <div className={`flex items-center gap-1.5 text-[10px] font-mono ${statusColor}`}>
+                    {indexing && <Loader2 className="w-3 h-3 animate-spin" />}
+                    <span>{statusLabel}</span>
+                  </div>
+                  {indexing && (
+                    <div className="mt-1 h-1 w-full bg-muted rounded overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             <dl className="text-[11px] font-mono leading-snug grid grid-cols-[88px_1fr] gap-x-2">
               <dt className="text-muted-foreground">bookId</dt>
               <dd className="truncate" title={bookId}>{bookId || "—"}</dd>
