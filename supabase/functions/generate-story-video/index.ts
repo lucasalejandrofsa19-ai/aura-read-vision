@@ -81,6 +81,12 @@ serve(async (req) => {
     }).eq("id", jobId);
   };
 
+  const SECONDS_PER_STEP = 7;
+  const updateProgress = async (p: Record<string, unknown>) => {
+    try { await sb.from("story_video_jobs").update({ progress: p }).eq("id", jobId); }
+    catch (e) { console.error("progress update", e); }
+  };
+
   try {
     // Título/autor do livro (apenas para metadados do resultado)
     let title = ""; let author = "";
