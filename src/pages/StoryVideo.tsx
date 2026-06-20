@@ -673,6 +673,101 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
             >
               <Download className="mr-2 h-4 w-4" /> Exportar roteiro (JSON)
             </Button>
+            <Button
+              variant="default"
+              className="sm:col-span-2"
+              onClick={async () => {
+                const safeTitle = title.replace(/[^\w\- ]+/g, "").slice(0, 60) || "video";
+                const mp4Type = "video/mp4;codecs=avc1.42E01E,mp4a.40.2";
+                const webmType = "video/webm;codecs=vp9,opus";
+                const supportsMp4 = typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(mp4Type);
+                const supportsWebm = typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(webmType);
+                if (!supportsMp4 && !supportsWebm) { toast.error("Seu navegador não suporta gravação de vídeo."); return; }
+                const mimeType = supportsMp4 ? mp4Type : webmType;
+                const ext = supportsMp4 ? "mp4" : "webm";
+                const tId = toast.loading("Renderizando vídeo… isso pode levar alguns segundos.");
+                try {
+                  const W = 1280, H = 720;
+                  const canvas = document.createElement("canvas");
+                  canvas.width = W; canvas.height = H;
+                  const ctx = canvas.getContext("2d")!;
+                  const AC = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+                  const audioCtx = new AC();
+                  const dest = audioCtx.createMediaStreamDestination();
+                  const videoStream = canvas.captureStream(30);
+                  const stream = new MediaStream([
+                    ...videoStream.getVideoTracks(),
+                    ...dest.stream.getAudioTracks(),
+                  ]);
+                  const chunks: Blob[] = [];
+                  const rec = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2_500_000 });
+                  rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+                  const done = new Promise<void>((res) => { rec.onstop = () => res(); });
+                  rec.start(250);
+
+                  const loadImg = (src: string) => new Promise<HTMLImageElement>((res, rej) => {
+                    const img = new Image(); img.crossOrigin = "anonymous";
+                    img.onload = () => res(img); img.onerror = rej; img.src = src;
+                  });
+                  const drawCover = (img: HTMLImageElement) => {
+                    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+                    const r = Math.max(W / img.width, H / img.height);
+                    const w = img.width * r, h = img.height * r;
+                    ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+                    ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(0, H - 100, W, 100);
+                    ctx.fillStyle = "#fff"; ctx.font = "bold 28px system-ui, sans-serif";
+                    ctx.fillText(scenes[0]?.chapterTitle?.slice(0, 60) ?? title, 32, H - 40);
+                  };
+
+                  for (let i = 0; i < scenes.length; i++) {
+                    const s = scenes[i];
+                    const imgs = (s.segments ?? []).map(g => g.imageDataUrl).filter(Boolean) as string[];
+                    const loaded = await Promise.all(imgs.map(src => loadImg(src).catch(() => null)));
+                    const valid = loaded.filter(Boolean) as HTMLImageElement[];
+                    if (!s.audioDataUrl) {
+                      if (valid[0]) drawCover(valid[0]);
+                      await new Promise(r => setTimeout(r, 1500));
+                      continue;
+                    }
+                    const audioRes = await fetch(s.audioDataUrl);
+                    const arrayBuf = await audioRes.arrayBuffer();
+                    const audioBuf = await audioCtx.decodeAudioData(arrayBuf.slice(0));
+                    const src = audioCtx.createBufferSource();
+                    src.buffer = audioBuf;
+                    src.connect(dest);
+                    const dur = audioBuf.duration;
+                    const startT = performance.now();
+                    src.start();
+                    const perImg = valid.length > 0 ? (dur * 1000) / valid.length : dur * 1000;
+                    await new Promise<void>((resolve) => {
+                      const tick = () => {
+                        const elapsed = performance.now() - startT;
+                        const idx = valid.length > 0 ? Math.min(valid.length - 1, Math.floor(elapsed / perImg)) : -1;
+                        if (idx >= 0 && valid[idx]) drawCover(valid[idx]);
+                        if (elapsed >= dur * 1000) { resolve(); return; }
+                        requestAnimationFrame(tick);
+                      };
+                      tick();
+                    });
+                  }
+                  rec.stop();
+                  await done;
+                  try { audioCtx.close(); } catch { /* noop */ }
+                  const blob = new Blob(chunks, { type: mimeType });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.href = url; link.download = `${safeTitle}.${ext}`;
+                  document.body.appendChild(link); link.click(); link.remove();
+                  setTimeout(() => URL.revokeObjectURL(url), 2000);
+                  toast.success(`Vídeo .${ext} pronto!`, { id: tId });
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "Falha ao renderizar vídeo.", { id: tId });
+                }
+              }}
+              disabled={!!regenerating}
+            >
+              <Download className="mr-2 h-4 w-4" /> Baixar vídeo (MP4)
+            </Button>
           </div>
 
           <div className="space-y-2 rounded-lg border border-border bg-card/50 p-3">
