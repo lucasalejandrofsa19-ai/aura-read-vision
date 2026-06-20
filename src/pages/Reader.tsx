@@ -59,8 +59,6 @@ import {
 } from "@/components/ui/sheet";
 import { captureError } from "@/lib/sentry";
 import { SEO } from "@/components/SEO";
-import { AdSenseUnit } from "@/components/AdSenseUnit";
-import { ADSENSE_SLOTS } from "@/lib/adsense";
 import { PUBLIC_PDFS_LABEL, PUBLIC_PDFS_TOOLTIP, PUBLIC_PDFS_DESCRIPTION } from "@/lib/publicPdfs";
 
 const Reader = () => {
@@ -873,7 +871,7 @@ const Reader = () => {
 
           {/* Center: PDF */}
           <div className="lg:col-span-6 xl:col-span-6 space-y-4">
-            <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" />
+            
             <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl shadow-lg shadow-background/40 overflow-hidden">
               {pdfUrl ? (
                 <PDFViewer

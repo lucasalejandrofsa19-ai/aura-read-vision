@@ -24,9 +24,7 @@ import { LazyLoadWrapper } from "@/components/LazyLoadWrapper";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PremiumBadge } from "@/components/PremiumBadge";
 import { DailyGoalCard } from "@/components/gamification/DailyGoalCard";
-import { AdSenseUnit } from "@/components/AdSenseUnit";
 import { ReadingInsightsCard } from "@/components/ReadingInsightsCard";
-import { ADSENSE_SLOTS } from "@/lib/adsense";
 import { AuthDialog } from "@/components/AuthDialog";
 import { LogIn } from "lucide-react";
 import LibraryCTA from "@/components/LibraryCTA";
@@ -302,7 +300,7 @@ const LibraryInner = () => {
         <aside className="lg:col-span-4 xl:col-span-3 space-y-4 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto scrollbar-hide">
           <DailyGoalCard />
           <ReadingInsightsCard />
-          <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" />
+          
         </aside>
 
         {/* Conteúdo principal */}

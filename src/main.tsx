@@ -12,12 +12,9 @@ import "@fontsource/manrope/500.css";
 import "@fontsource/manrope/600.css";
 import "@fontsource/manrope/700.css";
 import { initSentry } from "./lib/sentry";
-import { initConsentDefaults } from "./lib/cookieConsent";
 // Initialize PDF.js worker globally before rendering
 import "./lib/pdfjsWorker";
 
-// Define consent default (denied) ANTES de qualquer script de anúncio.
-initConsentDefaults();
 initSentry();
 
 createRoot(document.getElementById("root")!).render(
