@@ -98,7 +98,24 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
     setUploading(true);
     setProgress(0);
     const toastId = `pdf-upload-${Date.now()}`;
-    toast.loading("Enviando PDF… 0%", { id: toastId, description: file.name });
+    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+    toast.loading("Preparando envio…", {
+      id: toastId,
+      description: `${file.name} • ${fileSizeMB} MB`,
+    });
+
+    const formatETA = (seconds: number): string => {
+      if (!isFinite(seconds) || seconds <= 0) return "calculando…";
+      if (seconds < 60) return `~${Math.ceil(seconds)}s restantes`;
+      const m = Math.floor(seconds / 60);
+      const s = Math.ceil(seconds % 60);
+      return `~${m}m ${s}s restantes`;
+    };
+    const formatSpeed = (bps: number): string => {
+      if (bps > 1024 * 1024) return `${(bps / (1024 * 1024)).toFixed(1)} MB/s`;
+      if (bps > 1024) return `${(bps / 1024).toFixed(0)} KB/s`;
+      return `${Math.round(bps)} B/s`;
+    };
 
     await trackAsyncOperation(
       "pdf_upload_complete_flow",
@@ -117,6 +134,7 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
           const uploadUrl = `${supabaseUrl}/storage/v1/object/pdfs/${fileName}`;
 
+          const startTime = Date.now();
           await new Promise<void>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open("POST", uploadUrl);
@@ -127,7 +145,16 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
               if (e.lengthComputable) {
                 const pct = Math.round((e.loaded / e.total) * 100);
                 setProgress(pct);
-                toast.loading(`Enviando PDF… ${pct}%`, { id: toastId, description: file.name });
+                const elapsed = (Date.now() - startTime) / 1000;
+                const bps = elapsed > 0 ? e.loaded / elapsed : 0;
+                const remaining = bps > 0 ? (e.total - e.loaded) / bps : Infinity;
+                const loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
+                const status =
+                  pct < 5 ? "Conectando…" : pct < 100 ? "Enviando" : "Finalizando envio";
+                toast.loading(`${status} • ${pct}%`, {
+                  id: toastId,
+                  description: `${loadedMB}/${fileSizeMB} MB • ${formatSpeed(bps)} • ${formatETA(remaining)}`,
+                });
               }
             };
             xhr.onload = () => {
@@ -147,7 +174,10 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
 
           uploadedPath = fileName;
           setProgress(100);
-          toast.loading("Salvando na biblioteca…", { id: toastId, description: file.name });
+          toast.loading("Salvando na biblioteca… 💾", {
+            id: toastId,
+            description: `${file.name} • registrando metadados`,
+          });
 
           // Cor aleatória de capa
           const colors = [
