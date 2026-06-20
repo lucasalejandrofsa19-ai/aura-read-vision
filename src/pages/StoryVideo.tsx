@@ -168,7 +168,7 @@ export default function StoryVideo() {
             <div className="flex items-start gap-2 text-destructive">
               <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
-                <p className="font-medium">{timedOut ? "Tempo limite excedido" : "Falha na geração do vídeo"}</p>
+                <p className="font-medium">{timedOut ? "Tempo limite excedido" : error?.startsWith("Vídeo concluído sem dados") ? "Vídeo concluído, mas sem dados de cenas" : "Falha na geração do vídeo"}</p>
                 <p className="mt-1 break-words text-muted-foreground">{error}</p>
               </div>
             </div>
