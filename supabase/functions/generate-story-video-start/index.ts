@@ -79,7 +79,7 @@ serve(async (req) => {
       .insert({
         user_id: user.id,
         status: "pending",
-        params: { book_id, mode, text, voice, scenesCount, variationSeed: variationSeed ?? null },
+        params: { book_id, mode, text, voice, tone, scenesCount, variationSeed: variationSeed ?? null },
       })
       .select("id, status, created_at")
       .single();
