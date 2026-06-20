@@ -122,23 +122,38 @@ const Reader = () => {
   const invalidateProfile = useInvalidateUserProfile();
   const { startSession, endSession, updateSession, isSessionActive } = useReadingSession(id || "");
 
-  useEffect(() => {
-    loadBook();
-  }, [id]);
+  // Refs para evitar closures stale nos effects abaixo (sync realtime e sessão).
+  const currentPageRef = useRef(currentPage);
+  const isSessionActiveRef = useRef(isSessionActive);
+  const sessionStartedForBookRef = useRef<string | null>(null);
+  useEffect(() => { currentPageRef.current = currentPage; }, [currentPage]);
+  useEffect(() => { isSessionActiveRef.current = isSessionActive; }, [isSessionActive]);
 
   useEffect(() => {
-    if (book && currentPage && !isSessionActive) {
-      startSession(currentPage);
-    }
-  }, [book]);
+    loadBook();
+    // loadBook depende de `id` e `user` (verifica premium). Re-carregar ao trocar
+    // de usuário (login/logout) garante que a checagem use a identidade atual.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, user?.id]);
+
+  // Inicia sessão de leitura uma única vez por livro carregado.
+  useEffect(() => {
+    if (!book?.id) return;
+    if (sessionStartedForBookRef.current === book.id) return;
+    if (isSessionActiveRef.current) return;
+    sessionStartedForBookRef.current = book.id;
+    startSession(currentPageRef.current || 1);
+  }, [book?.id, startSession]);
 
   useEffect(() => {
     return () => {
-      if (isSessionActive && currentPage) {
-        endSession(currentPage);
+      if (isSessionActiveRef.current && currentPageRef.current) {
+        endSession(currentPageRef.current);
       }
     };
-  }, [isSessionActive, currentPage]);
+    // Cleanup só no unmount real — sem deps dinâmicas para evitar end/start em loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -154,8 +169,8 @@ const Reader = () => {
           filter: `id=eq.${id}`,
         },
         (payload) => {
-          const newPage = payload.new.current_page;
-          if (newPage && newPage !== currentPage) {
+          const newPage = (payload.new as { current_page?: number })?.current_page;
+          if (newPage && newPage !== currentPageRef.current) {
             setCurrentPage(newPage);
             toast.success(`Posição sincronizada: página ${newPage}`);
           }
@@ -166,7 +181,8 @@ const Reader = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id, currentPage]);
+    // Apenas re-inscreve ao trocar de livro; comparação usa ref (sem stale closure).
+  }, [id]);
 
   const loadBook = async () => {
     if (!id) {
