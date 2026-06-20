@@ -270,15 +270,28 @@ export default function StoryVideo() {
   );
 }
 
-function ScenePlayer({ scenes, title }: { scenes: Scene[]; title: string }) {
+type ScenePlayerProps = {
+  scenes: Scene[];
+  title: string;
+  draft: DraftScene[] | null;
+  mode: "summary" | "highlights";
+  voice: string;
+  tone: NarrationTone;
+};
+
+function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }: ScenePlayerProps) {
+  const [scenes, setScenes] = useState<Scene[]>(initialScenes);
   const [idx, setIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [editedText, setEditedText] = useState("");
+  const [regenerating, setRegenerating] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const scene = scenes[idx];
   const segImages = useMemo(() => scene?.segments.map(s => s.imageDataUrl).filter(Boolean) ?? [], [scene]);
   const [segIdx, setSegIdx] = useState(0);
 
-  useEffect(() => { setSegIdx(0); }, [idx]);
+  useEffect(() => { setScenes(initialScenes); }, [initialScenes]);
+  useEffect(() => { setSegIdx(0); setEditedText(scene?.narration ?? ""); }, [idx, scene?.narration]);
 
   useEffect(() => {
     const a = audioRef.current;
@@ -298,7 +311,6 @@ function ScenePlayer({ scenes, title }: { scenes: Scene[]; title: string }) {
     else a.pause();
   }, [playing, idx]);
 
-  // image rotation within scene synced to audio duration
   useEffect(() => {
     if (!playing || segImages.length <= 1) return;
     const a = audioRef.current;
@@ -307,6 +319,40 @@ function ScenePlayer({ scenes, title }: { scenes: Scene[]; title: string }) {
     const t = window.setInterval(() => setSegIdx(i => (i + 1) % segImages.length), per);
     return () => window.clearInterval(t);
   }, [playing, segImages.length, idx]);
+
+  const handleRegenScene = async () => {
+    if (!scene || regenerating) return;
+    const narration = editedText.trim();
+    if (narration.length < 2) {
+      toast.error("Digite um texto para narrar.");
+      return;
+    }
+    setRegenerating(true);
+    setPlaying(false);
+    try {
+      const draftScene = draft?.[idx];
+      const { data, error } = await supabase.functions.invoke("regenerate-story-video-scene", {
+        body: {
+          mode,
+          voice,
+          tone,
+          narration,
+          chapterTitle: scene.chapterTitle,
+          imagePrompt: draftScene?.imagePrompt,
+          highlightId: draftScene?.highlightId,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
+      const next = data as Scene;
+      setScenes(curr => curr.map((s, i) => i === idx ? { ...s, ...next } : s));
+      toast.success("Cena regenerada.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao regenerar cena");
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   if (!scene) return null;
 
@@ -317,7 +363,7 @@ function ScenePlayer({ scenes, title }: { scenes: Scene[]; title: string }) {
           {segImages.length > 0 ? (
             segImages.map((src, i) => (
               <img
-                key={`${idx}-${i}`}
+                key={`${idx}-${i}-${src.slice(0, 32)}`}
                 src={src}
                 alt={scene.chapterTitle}
                 className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ease-in-out"
@@ -334,22 +380,41 @@ function ScenePlayer({ scenes, title }: { scenes: Scene[]; title: string }) {
         </div>
 
         <div className="space-y-3 p-4">
-          <p className="text-sm leading-relaxed text-muted-foreground">{scene.segments[segIdx]?.text ?? scene.narration}</p>
           <audio ref={audioRef} src={scene.audioDataUrl} preload="auto" />
+
           <div className="flex items-center justify-between gap-2">
             <Button variant="outline" size="icon" onClick={() => setIdx(i => Math.max(0, i - 1))} disabled={idx === 0}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button onClick={() => setPlaying(p => !p)} className="flex-1">
+            <Button onClick={() => setPlaying(p => !p)} className="flex-1" disabled={regenerating}>
               {playing ? <><Pause className="mr-2 h-4 w-4" /> Pausar</> : <><Play className="mr-2 h-4 w-4" /> Reproduzir</>}
             </Button>
             <Button variant="outline" size="icon" onClick={() => setIdx(i => Math.min(scenes.length - 1, i + 1))} disabled={idx === scenes.length - 1}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-center text-xs text-muted-foreground">
-            Cena {idx + 1} / {scenes.length}
-          </p>
+          <p className="text-center text-xs text-muted-foreground">Cena {idx + 1} / {scenes.length}</p>
+
+          <div className="space-y-2 rounded-lg border border-border bg-card/50 p-3">
+            <Label className="text-xs">Texto narrado desta cena</Label>
+            <Textarea
+              value={editedText}
+              onChange={(e) => setEditedText(e.target.value)}
+              rows={3}
+              maxLength={1200}
+              disabled={regenerating}
+            />
+            <Button
+              onClick={handleRegenScene}
+              disabled={regenerating || editedText.trim() === scene.narration.trim()}
+              variant="secondary"
+              className="w-full"
+            >
+              {regenerating
+                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Regerando…</>
+                : <><Sparkles className="mr-2 h-4 w-4" /> Regerar áudio e imagem apenas desta cena</>}
+            </Button>
+          </div>
         </div>
       </Card>
     </div>
