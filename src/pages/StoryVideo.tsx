@@ -56,13 +56,31 @@ export default function StoryVideo() {
         )}
 
         {!result && !error && (
-          <Card className="flex flex-col items-center justify-center gap-4 p-12 text-center">
+          <Card className="flex flex-col items-center gap-5 p-10 text-center">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
             <p className="text-muted-foreground">
               {status === "pending"
-                ? "Seu vídeo entrou na fila. Isso leva 1–3 minutos."
-                : "Gerando roteiro, imagens e narração…"}
+                ? "Seu vídeo entrou na fila. A geração inicia em instantes."
+                : "Montando seu vídeo parte por parte usando seus destaques."}
             </p>
+
+            {progress && progress.total > 0 && (
+              <div className="w-full max-w-md space-y-3 text-left">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">
+                    Cena {Math.min(progress.current, progress.total)} de {progress.total}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {progress.etaSeconds > 0 ? `~${progress.etaSeconds}s restantes` : "finalizando…"}
+                  </span>
+                </div>
+                <Progress value={(progress.current / progress.total) * 100} />
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{stageLabel[progress.stage] ?? progress.stage}</span>
+                  {progress.sceneTitle && <span className="truncate pl-2">{progress.sceneTitle}</span>}
+                </div>
+              </div>
+            )}
           </Card>
         )}
 
