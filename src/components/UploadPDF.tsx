@@ -76,26 +76,9 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
       return;
     }
 
-    // Limites por plano
-    const { count, error: countError } = await supabase
-      .from("books")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
+    // Sem limite de ebooks — uploads liberados para todos os planos.
 
-    if (countError) {
-      toast.error("Não conseguimos checar sua biblioteca agora. Tente em alguns segundos.");
-      return;
-    }
 
-    const maxBooks = isAdmin || hasPremiumAccess ? 1000 : 5;
-    if ((count || 0) >= maxBooks) {
-      toast.error(
-        hasPremiumAccess || isAdmin
-          ? `Você atingiu o limite de ${maxBooks} livros.`
-          : `Você chegou ao limite do plano gratuito (${maxBooks} livros). Libere uploads ilimitados no Premium.`
-      );
-      return;
-    }
 
     setUploading(true);
     setProgress(0);
