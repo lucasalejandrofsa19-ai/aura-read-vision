@@ -73,6 +73,9 @@ serve(async (req) => {
   const tone = ((params.tone as string) || "neutro").toLowerCase();
   const scenesCount = Number(params.scenesCount) || 5;
   const variationSeed = params.variationSeed as number | null | undefined;
+  const scenesOverride = Array.isArray(params.scenesOverride)
+    ? (params.scenesOverride as Array<{ chapterTitle?: string; narration: string; imagePrompt?: string; highlightId?: string }>)
+    : null;
 
   const markFailed = async (msg: string) => {
     await sb.from("story_video_jobs").update({
@@ -236,13 +239,26 @@ serve(async (req) => {
         return new Response(JSON.stringify({ ok: false, reason: "no_highlights_with_images" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      const selected = withImg.slice(0, maxScenes);
+      // If user provided an edited script, restrict/reorder to matching highlightIds
+      // and use their edited narration text. Otherwise fall back to raw highlight text.
+      let pipeline: Array<{ id: string; text: string; page_number: number; img: { storage_path: string; image_url: string } | null; title?: string }> = [];
+      if (scenesOverride && scenesOverride.length > 0) {
+        const byId = new Map(withImg.map(h => [h.id, h] as const));
+        for (const s of scenesOverride) {
+          if (!s.highlightId) continue;
+          const h = byId.get(s.highlightId);
+          if (!h) continue;
+          pipeline.push({ ...h, text: (s.narration || h.text).trim(), title: s.chapterTitle });
+        }
+      }
+      if (pipeline.length === 0) pipeline = withImg.slice(0, maxScenes).map(h => ({ ...h }));
+      const selected = pipeline.slice(0, maxScenes);
       const total = selected.length;
       await updateProgress({ current: 0, total, stage: "starting", etaSeconds: total * SECONDS_PER_STEP, sceneTitle: null });
       const built: any[] = [];
       for (let idx = 0; idx < selected.length; idx++) {
         const h = selected[idx];
-        const sceneTitle = `Destaque ${idx + 1} · pág. ${h.page_number}`;
+        const sceneTitle = h.title || `Destaque ${idx + 1} · pág. ${h.page_number}`;
         const remainingAfter = (total - idx - 1) * SECONDS_PER_STEP;
         await updateProgress({ current: idx + 1, total, stage: "image", sceneTitle, etaSeconds: remainingAfter + SECONDS_PER_STEP });
         const imageDataUrl = await loadHighlightImage(h.img!.storage_path);
@@ -260,66 +276,83 @@ serve(async (req) => {
     }
 
     // === Modo AI (default): analisa o livro e gera mini-histórias com imagens + narração ===
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
-    let extractedText: string | null = null;
-    const { data: bk2 } = await sb.from("books").select("extracted_text, user_id").eq("id", book_id).maybeSingle();
-    if (bk2 && bk2.user_id === userId) extractedText = bk2.extracted_text;
-    if (!extractedText) {
-      const { data: pb2 } = await sb.from("premium_books").select("extracted_text").eq("id", book_id).maybeSingle();
-      if (pb2) extractedText = pb2.extracted_text;
-    }
-    if ((!extractedText || extractedText.trim().length < 100) && typeof clientText === "string" && clientText.trim().length >= 50) {
-      extractedText = clientText;
-    }
-    if (!extractedText || extractedText.trim().length < 50) {
-      await markFailed("Texto do livro não disponível para análise.");
-      return new Response(JSON.stringify({ ok: false, reason: "no_text" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    const truncated = extractedText.length > 50000 ? extractedText.slice(0, 50000) : extractedText;
-    const n = Math.max(3, Math.min(maxScenes, Number(scenesCount) || 8));
-    const wordsPerScene = Math.max(10, Math.floor(190 / n));
-    const seed = variationSeed ?? Math.floor(Math.random() * 1e9);
+    let chapters: { chapterTitle: string; narration: string; imagePrompt: string }[];
+    let n: number;
 
-    await updateProgress({ current: 0, total: n, stage: "starting", etaSeconds: (n + 1) * SECONDS_PER_STEP, sceneTitle: "Analisando o livro" });
+    if (scenesOverride && scenesOverride.length > 0) {
+      // Usa o roteiro editado pelo usuário. Preserva narration e título;
+      // se faltar imagePrompt, sintetiza um a partir do título.
+      chapters = scenesOverride.slice(0, maxScenes).map((s, i) => ({
+        chapterTitle: (s.chapterTitle || `Cena ${i + 1}`).slice(0, 200),
+        narration: s.narration.trim(),
+        imagePrompt: (s.imagePrompt || `${s.chapterTitle || "book scene"}, cinematic illustration`).slice(0, 500),
+      })).filter(c => c.narration.length >= 2);
+      if (chapters.length === 0) throw new Error("Roteiro editado inválido");
+      n = chapters.length;
+      await updateProgress({ current: 0, total: n, stage: "starting", etaSeconds: (n + 1) * SECONDS_PER_STEP, sceneTitle: "Usando roteiro editado" });
+    } else {
+      if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
+      let extractedText: string | null = null;
+      const { data: bk2 } = await sb.from("books").select("extracted_text, user_id").eq("id", book_id).maybeSingle();
+      if (bk2 && bk2.user_id === userId) extractedText = bk2.extracted_text;
+      if (!extractedText) {
+        const { data: pb2 } = await sb.from("premium_books").select("extracted_text").eq("id", book_id).maybeSingle();
+        if (pb2) extractedText = pb2.extracted_text;
+      }
+      if ((!extractedText || extractedText.trim().length < 100) && typeof clientText === "string" && clientText.trim().length >= 50) {
+        extractedText = clientText;
+      }
+      if (!extractedText || extractedText.trim().length < 50) {
+        await markFailed("Texto do livro não disponível para análise.");
+        return new Response(JSON.stringify({ ok: false, reason: "no_text" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const truncated = extractedText.length > 50000 ? extractedText.slice(0, 50000) : extractedText;
+      n = Math.max(3, Math.min(maxScenes, Number(scenesCount) || 8));
+      const wordsPerScene = Math.max(10, Math.floor(190 / n));
+      const seed = variationSeed ?? Math.floor(Math.random() * 1e9);
 
-    const sysPrompt = `Você cria roteiros de vídeos verticais 9:16 narrados sobre livros, em PT-BR.
+      await updateProgress({ current: 0, total: n, stage: "starting", etaSeconds: (n + 1) * SECONDS_PER_STEP, sceneTitle: "Analisando o livro" });
+
+      const sysPrompt = `Você cria roteiros de vídeos verticais 9:16 narrados sobre livros, em PT-BR.
 Analise o livro e identifique trama, personagens, cenários e temas. Divida em EXATAMENTE ${n} mini-histórias coesas (início, desenvolvimento, clímax, desfecho).
 Para CADA mini-história produza:
 - "chapterTitle": 3-6 palavras
 - "narration": UMA frase fluida (${wordsPerScene}-${wordsPerScene + 4} palavras), envolvente, sem emojis/markdown
 - "imagePrompt": descrição visual em INGLÊS (máx 20 palavras), cinematográfica, vertical 9:16, paleta consistente, sem texto
 Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"chapterTitle":"...","narration":"...","imagePrompt":"..."}]}`;
-    const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nSeed: ${seed}\n\nConteúdo:\n${truncated}`;
+      const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nSeed: ${seed}\n\nConteúdo:\n${truncated}`;
 
-    const scriptRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userPrompt }],
-        response_format: { type: "json_object" },
-        max_tokens: 8000,
-        temperature: 0.9,
-      }),
-    });
-    if (!scriptRes.ok) {
-      const t = await scriptRes.text();
-      console.error("script error", scriptRes.status, t);
-      throw new Error(scriptRes.status === 402 ? "Créditos de IA esgotados." : "Falha ao gerar roteiro");
+      const scriptRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userPrompt }],
+          response_format: { type: "json_object" },
+          max_tokens: 8000,
+          temperature: 0.9,
+        }),
+      });
+      if (!scriptRes.ok) {
+        const t = await scriptRes.text();
+        console.error("script error", scriptRes.status, t);
+        throw new Error(scriptRes.status === 402 ? "Créditos de IA esgotados." : "Falha ao gerar roteiro");
+      }
+      const scriptData = await scriptRes.json();
+      const raw: string = scriptData.choices?.[0]?.message?.content ?? "";
+      let parsed: { chapters: { chapterTitle: string; narration: string; imagePrompt: string }[] };
+      try { parsed = JSON.parse(raw); }
+      catch {
+        const m = raw.match(/\{[\s\S]*\}/);
+        if (!m) throw new Error("Roteiro inválido retornado pela IA");
+        parsed = JSON.parse(m[0]);
+      }
+      chapters = (parsed.chapters || []).slice(0, n)
+        .filter(c => c.narration && c.imagePrompt);
+      if (chapters.length === 0) throw new Error("Nenhuma mini-história gerada");
     }
-    const scriptData = await scriptRes.json();
-    const raw: string = scriptData.choices?.[0]?.message?.content ?? "";
-    let parsed: { chapters: { chapterTitle: string; narration: string; imagePrompt: string }[] };
-    try { parsed = JSON.parse(raw); }
-    catch {
-      const m = raw.match(/\{[\s\S]*\}/);
-      if (!m) throw new Error("Roteiro inválido retornado pela IA");
-      parsed = JSON.parse(m[0]);
-    }
-    const chapters = (parsed.chapters || []).slice(0, n)
-      .filter(c => c.narration && c.imagePrompt);
-    if (chapters.length === 0) throw new Error("Nenhuma mini-história gerada");
+
 
     const total = chapters.length;
     const built: any[] = [];

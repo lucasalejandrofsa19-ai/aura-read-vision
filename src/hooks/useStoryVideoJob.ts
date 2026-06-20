@@ -28,6 +28,13 @@ export type JobProgress = {
 
 export type NarrationTone = "neutro" | "alegre" | "serio" | "empolgado" | "dramatico" | "calmo";
 
+export type DraftScene = {
+  chapterTitle: string;
+  narration: string;
+  imagePrompt?: string;
+  highlightId?: string;
+};
+
 export type StartParams = {
   book_id: string;
   mode?: "summary" | "chapter" | "custom" | "highlights";
@@ -36,6 +43,7 @@ export type StartParams = {
   tone?: NarrationTone;
   scenesCount?: number;
   variationSeed?: string | number;
+  scenesOverride?: DraftScene[];
 };
 
 const POLL_INTERVAL_MS = 2500;
@@ -126,3 +134,17 @@ export function useStoryVideoJob() {
 
   return { jobId, status, error, result, attempts, progress, start, reset };
 }
+
+export async function fetchStoryVideoScript(params: {
+  book_id: string;
+  mode: "summary" | "highlights";
+  scenesCount?: number;
+  text?: string;
+  variationSeed?: string | number;
+}): Promise<{ title: string; author: string; scenes: DraftScene[] }> {
+  const { data, error } = await supabase.functions.invoke("generate-story-video-script", { body: params });
+  if (error) throw new Error(error.message);
+  if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
+  return data as { title: string; author: string; scenes: DraftScene[] };
+}
+

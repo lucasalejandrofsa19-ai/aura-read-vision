@@ -44,11 +44,25 @@ serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { book_id, mode = "summary", text, voice = "nova", tone = "neutro", scenesCount = 5, variationSeed } = body as Record<string, unknown>;
+    const { book_id, mode = "summary", text, voice = "nova", tone = "neutro", scenesCount = 5, variationSeed, scenesOverride } = body as Record<string, unknown>;
     if (!book_id || typeof book_id !== "string") {
       return new Response(JSON.stringify({ error: "book_id é obrigatório" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    // Validate optional scenesOverride: max 14 scenes, each with narration text.
+    let safeOverride: Array<{ chapterTitle: string; narration: string; imagePrompt?: string; highlightId?: string }> | null = null;
+    if (Array.isArray(scenesOverride)) {
+      safeOverride = (scenesOverride as any[]).slice(0, 14)
+        .map((s) => ({
+          chapterTitle: String(s?.chapterTitle ?? "").slice(0, 200),
+          narration: String(s?.narration ?? "").slice(0, 1200),
+          imagePrompt: s?.imagePrompt ? String(s.imagePrompt).slice(0, 500) : undefined,
+          highlightId: s?.highlightId ? String(s.highlightId).slice(0, 64) : undefined,
+        }))
+        .filter((s) => s.narration.trim().length >= 2);
+      if (safeOverride.length === 0) safeOverride = null;
+    }
+
 
     // Quota check (uses existing SECURITY DEFINER RPC).
     const { data: quota } = await supabaseAdmin.rpc("can_generate_story_video", { _user_id: user.id });
@@ -79,7 +93,7 @@ serve(async (req) => {
       .insert({
         user_id: user.id,
         status: "pending",
-        params: { book_id, mode, text, voice, tone, scenesCount, variationSeed: variationSeed ?? null },
+        params: { book_id, mode, text, voice, tone, scenesCount, variationSeed: variationSeed ?? null, scenesOverride: safeOverride },
       })
       .select("id, status, created_at")
       .single();
