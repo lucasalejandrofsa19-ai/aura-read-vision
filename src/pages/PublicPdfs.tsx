@@ -30,22 +30,30 @@ const PublicPdfs = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [importingId, setImportingId] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const handleAddToLibrary = async (pdf: PublicPdf) => {
     if (!user) {
       toast.error("Faça login para adicionar à sua biblioteca.");
       return;
     }
+    // Cancel any previous in-flight import to avoid stale state
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setImportingId(pdf.id);
     try {
-      // Sem limite de ebooks — qualquer usuário pode importar livremente.
-
-
-
       toast.loading("Baixando PDF…", { id: `import-${pdf.id}` });
-      const res = await fetch(pdf.url);
+      const res = await fetch(pdf.url, { signal: controller.signal });
       if (!res.ok) throw new Error(`Falha ao baixar (${res.status})`);
       const blob = await res.blob();
+      if (controller.signal.aborted) return;
 
       if (blob.size > 52428800) {
         toast.error("PDF maior que 50MB.", { id: `import-${pdf.id}` });
