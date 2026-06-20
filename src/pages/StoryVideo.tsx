@@ -86,11 +86,12 @@ export default function StoryVideo() {
   const [loadingDraft, setLoadingDraft] = useState(false);
 
   const elapsedSeconds = useElapsedSeconds(createdAt, status === "pending" || status === "processing");
-  const lastUpdateLabel = useMemo(() => {
-    if (!updatedAt) return null;
-    const seconds = Math.max(0, Math.floor((Date.now() - new Date(updatedAt).getTime()) / 1000));
-    return seconds < 60 ? `atualizado há ${seconds}s` : `atualizado há ${Math.floor(seconds / 60)}min`;
-  }, [updatedAt, elapsedSeconds]);
+  const lastUpdateLabel = updatedAt
+    ? (() => {
+      const seconds = Math.max(0, Math.floor((Date.now() - new Date(updatedAt).getTime()) / 1000));
+      return seconds < 60 ? `atualizado há ${seconds}s` : `atualizado há ${Math.floor(seconds / 60)}min`;
+    })()
+    : null;
   const jobProgressValue = useMemo(() => {
     if (status === "completed") return 100;
     if (status === "pending") return 8;
