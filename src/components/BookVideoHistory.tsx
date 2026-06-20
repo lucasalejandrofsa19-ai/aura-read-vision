@@ -51,7 +51,7 @@ export function BookVideoHistory({ bookId, refreshKey }: Props) {
     setLoading(true);
     const { data, error } = await supabase
       .from("story_videos")
-      .select("id, status, created_at, file_path, file_size, scenes_count, mode, error_message")
+      .select("id, status, created_at, file_path, file_size, file_mime, scenes_count, mode, error_message")
       .eq("book_id", bookId)
       .order("created_at", { ascending: false })
       .limit(20);
