@@ -18,6 +18,14 @@ export type StoryVideoResult = {
 
 export type JobStatus = "idle" | "pending" | "processing" | "completed" | "failed";
 
+export type JobProgress = {
+  current: number;
+  total: number;
+  stage: "starting" | "image" | "narration" | "scene_done" | "finalizing" | "completed" | string;
+  sceneTitle: string | null;
+  etaSeconds: number;
+};
+
 export type StartParams = {
   book_id: string;
   mode?: "summary" | "chapter" | "custom";
