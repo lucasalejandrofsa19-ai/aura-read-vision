@@ -27,21 +27,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let mounted = true;
-    
+    let receivedAuthEvent = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
         if (!mounted) return;
-        
+        receivedAuthEvent = true;
         setSession(session);
         setUser(session?.user ?? null);
+        setLoading(false);
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
-      
-      setSession(session);
-      setUser(session?.user ?? null);
+      // If an auth event already arrived, it is authoritative — don't clobber
+      // with this potentially stale snapshot (fixes rapid login/logout race).
+      if (!receivedAuthEvent) {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
       setLoading(false);
     });
 
