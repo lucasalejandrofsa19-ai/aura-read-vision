@@ -288,6 +288,7 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
   const [regenerating, setRegenerating] = useState<false | "audio" | "full">(false);
   const [regenProgress, setRegenProgress] = useState(0);
   const [regenLabel, setRegenLabel] = useState("");
+  const [regenError, setRegenError] = useState<{ kind: "audio" | "full"; message: string } | null>(null);
 
   useEffect(() => {
     if (!regenerating) { setRegenProgress(0); return; }
