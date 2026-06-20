@@ -278,13 +278,19 @@ export default function StoryVideo() {
               </div>
             </div>
 
-            {prefs.mode === "excerpt" && (
+            {(prefs.mode === "excerpt" || prefs.mode === "summary") && (
               <div className="space-y-2">
-                <Label htmlFor="excerpt-text">Trecho do livro</Label>
+                <Label htmlFor="excerpt-text">
+                  Trecho do livro {prefs.mode === "summary" && <span className="text-[11px] text-muted-foreground">(opcional — colando aqui, o modo muda para "Trecho do livro")</span>}
+                </Label>
                 <Textarea
                   id="excerpt-text"
                   value={excerpt}
                   onChange={(e) => setExcerpt(e.target.value.slice(0, 50000))}
+                  onPaste={() => {
+                    // Defer to next tick so excerpt state already reflects pasted content
+                    setTimeout(() => setPrefs(p => p.mode === "highlights" ? p : { ...p, mode: "excerpt" }), 0);
+                  }}
                   placeholder="Cole aqui o capítulo ou seção do livro que deseja transformar em vídeo (mín. ~50 caracteres)…"
                   className="min-h-[140px]"
                 />
