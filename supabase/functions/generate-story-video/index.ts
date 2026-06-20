@@ -87,6 +87,61 @@ serve(async (req) => {
     return data?.status === "processing";
   };
 
+  // Persist the finished result so BookVideoHistory can list/download it.
+  const estimateSec = (txt: string) => Math.max(2, Math.round(((txt || "").split(/\s+/).filter(Boolean).length / 150) * 60));
+  const persistVideo = async (
+    result: { title: string; author: string; scenes: Array<{ chapterTitle: string; narration: string; segments?: Array<{ imageDataUrl?: string }>; audioDataUrl?: string }> },
+    runMode: string,
+  ) => {
+    try {
+      let cursor = 0;
+      const scenesMeta = result.scenes.map((s, i) => {
+        const duration = estimateSec(s.narration);
+        const startSec = cursor;
+        cursor += duration;
+        return {
+          index: i,
+          title: s.chapterTitle,
+          narration: s.narration,
+          wordCount: (s.narration || "").split(/\s+/).filter(Boolean).length,
+          startSec,
+          endSec: cursor,
+          durationSec: duration,
+          imageCount: (s.segments || []).filter(g => g.imageDataUrl).length,
+          hasAudio: !!s.audioDataUrl,
+        };
+      });
+      const payload = {
+        version: 1,
+        kind: "story-video-script",
+        title: result.title,
+        author: result.author,
+        mode: runMode,
+        voice, tone,
+        generatedAt: new Date().toISOString(),
+        totalDurationSec: cursor,
+        scenes: scenesMeta,
+      };
+      const body = new TextEncoder().encode(JSON.stringify(payload, null, 2));
+      const path = `${userId}/${jobId}.json`;
+      const up = await sb.storage.from("story-videos")
+        .upload(path, body, { contentType: "application/json", upsert: true });
+      if (up.error) { console.error("persist upload", up.error); return; }
+      await sb.from("story_videos").insert({
+        user_id: userId,
+        book_id,
+        book_title: result.title,
+        mode: runMode,
+        scenes_count: result.scenes.length,
+        file_path: path,
+        file_size: body.byteLength,
+        file_mime: "application/json",
+        status: "ok",
+      });
+    } catch (e) { console.error("persistVideo failed", e); }
+  };
+
+
   try {
     // Título/autor do livro (apenas para metadados do resultado)
     let title = ""; let author = "";
