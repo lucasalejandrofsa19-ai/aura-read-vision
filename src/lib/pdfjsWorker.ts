@@ -1,40 +1,25 @@
 /**
  * Centralized PDF.js worker configuration
- * This file should be imported once at app bootstrap (main.tsx)
- * to ensure consistent worker configuration across the entire app.
+ * Importado uma única vez no bootstrap (main.tsx).
  *
- * Uses Vite's `?url` import to bundle the worker locally instead of
- * fetching from a CDN. This is critical for:
- *  - Mobile reliability (Android Chrome often fails on cross-origin worker loads)
- *  - PWA / offline mode (worker must be available without network)
- *  - Avoiding version mismatches between react-pdf and the worker
+ * Usa o import `?worker` do Vite para instanciar o Worker como módulo já
+ * resolvido pelo bundler, expondo-o via `workerPort`. Isso evita a cadeia
+ * de fallback do pdf.js v4 que termina em
+ * `import('pdf.worker.mjs')` (especificador bare) — origem do erro
+ * "Failed to resolve module specifier 'pdf.worker.mjs'".
  */
 import { pdfjs } from 'react-pdf';
-// Vite serves this as a hashed asset URL, bundled with the app
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+// Vite cria um Worker module a partir desse arquivo
+import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker';
 
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-
-console.log('[PDF.js] Worker configured (bundled):', workerUrl);
-
-// Pré-aquece os workers de CDN (jsDelivr + unpkg) para fallback offline.
-// O Service Worker (workbox) intercepta e armazena em 'pdfjs-worker-cache'.
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-  const prewarm = () => {
-    const urls = [
-      `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
-      `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
-    ];
-    urls.forEach((u) =>
-      fetch(u, { mode: 'no-cors', cache: 'force-cache' }).catch((e) =>
-        console.warn('[PDF.js] Pré-aquecimento falhou para', u, e),
-      ),
-    );
-  };
-  // Aguarda o SW ficar pronto antes de pré-aquecer
-  navigator.serviceWorker.ready
-    .then(prewarm)
-    .catch(() => prewarm()); // tenta mesmo sem SW (ainda popula o HTTP cache)
+try {
+  // Preferencial: workerPort (mais robusto que workerSrc)
+  (pdfjs.GlobalWorkerOptions as any).workerPort = new PdfWorker();
+  console.log('[PDF.js] workerPort configurado via ?worker bundler');
+} catch (e) {
+  console.error('[PDF.js] Falha ao instanciar Worker bundled, caindo para CDN', e);
+  pdfjs.GlobalWorkerOptions.workerSrc =
+    `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 }
 
 export { pdfjs };
