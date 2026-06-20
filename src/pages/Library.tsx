@@ -300,7 +300,7 @@ const LibraryInner = () => {
         <aside className="lg:col-span-4 xl:col-span-3 space-y-4 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto scrollbar-hide">
           <DailyGoalCard />
           <ReadingInsightsCard />
-          <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" />
+          
         </aside>
 
         {/* Conteúdo principal */}
