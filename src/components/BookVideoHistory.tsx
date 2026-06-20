@@ -188,7 +188,9 @@ export function BookVideoHistory({ bookId, refreshKey }: Props) {
                   <p className="text-[11px] text-destructive break-words">{row.error_message}</p>
                 )}
                 {isOpen && (
-                  <video src={openUrl!} controls className="w-full rounded-md bg-black" preload="metadata" />
+                  (row.file_mime || "").includes("json") || (row.file_path || "").endsWith(".json")
+                    ? <iframe src={openUrl!} title="Roteiro" className="w-full h-72 rounded-md border border-border bg-background" />
+                    : <video src={openUrl!} controls className="w-full rounded-md bg-black" preload="metadata" />
                 )}
               </li>
             );
