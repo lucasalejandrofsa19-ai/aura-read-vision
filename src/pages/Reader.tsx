@@ -905,7 +905,30 @@ const Reader = () => {
                       </p>
                     )}
 
+                    {!loading && (
+                      <div className="mt-4 mx-auto max-w-xl rounded-lg border border-border/60 bg-muted/40 p-3 text-left text-xs font-mono space-y-1">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-sans">Diagnóstico</p>
+                        <div className="break-all"><span className="text-muted-foreground">book.id:</span> {id || "—"}</div>
+                        <div className="break-all"><span className="text-muted-foreground">bucket:</span> {(book as any)?.__bucket || "—"}</div>
+                        <div className="break-all"><span className="text-muted-foreground">file_path:</span> {(book as any)?.file_path || "—"}</div>
+                        <div className="break-all"><span className="text-muted-foreground">premium:</span> {String(!!(book as any)?.__isPremium)}</div>
+                        <div className="break-all"><span className="text-muted-foreground">error:</span> <span className="text-destructive">{loadError || "(nenhum)"}</span></div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-[11px] mt-1"
+                          onClick={() => {
+                            const payload = `book.id: ${id}\nbucket: ${(book as any)?.__bucket}\nfile_path: ${(book as any)?.file_path}\npremium: ${!!(book as any)?.__isPremium}\nerror: ${loadError}`;
+                            navigator.clipboard?.writeText(payload);
+                            toast.success("Diagnóstico copiado");
+                          }}
+                        >
+                          Copiar diagnóstico
+                        </Button>
+                      </div>
+                    )}
                   </div>
+
                   {!loading && (
                     <div className="flex flex-wrap items-center justify-center gap-2">
                       <Button variant="outline" size="sm" onClick={() => { setLoading(true); loadBook(); }}>
