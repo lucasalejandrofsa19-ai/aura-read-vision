@@ -1,25 +1,20 @@
 /**
- * Centralized PDF.js worker configuration
+ * Centralized PDF.js worker configuration.
  * Importado uma única vez no bootstrap (main.tsx).
  *
- * Usa o import `?worker` do Vite para instanciar o Worker como módulo já
- * resolvido pelo bundler, expondo-o via `workerPort`. Isso evita a cadeia
- * de fallback do pdf.js v4 que termina em
- * `import('pdf.worker.mjs')` (especificador bare) — origem do erro
- * "Failed to resolve module specifier 'pdf.worker.mjs'".
+ * Estratégia: usar `?url` do Vite para que o bundler emita o arquivo
+ * `pdf.worker.min.mjs` como asset estático servido pelo MESMO domínio.
+ * Isso evita:
+ *  - o fallback de bare specifier `pdf.worker.mjs` do pdf.js v4
+ *    ("Failed to resolve module specifier 'pdf.worker.mjs'")
+ *  - bloqueios de CDN externo
+ *  - problemas com `?worker` (o worker do pdf.js faz dynamic import interno
+ *    que quebra quando empacotado como module worker do Vite em produção).
  */
 import { pdfjs } from 'react-pdf';
-// Vite cria um Worker module a partir desse arquivo
-import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker';
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-try {
-  // Preferencial: workerPort (mais robusto que workerSrc)
-  (pdfjs.GlobalWorkerOptions as any).workerPort = new PdfWorker();
-  console.log('[PDF.js] workerPort configurado via ?worker bundler');
-} catch (e) {
-  console.error('[PDF.js] Falha ao instanciar Worker bundled, caindo para CDN', e);
-  pdfjs.GlobalWorkerOptions.workerSrc =
-    `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-}
+pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+console.log('[PDF.js] workerSrc configurado:', workerUrl);
 
 export { pdfjs };
