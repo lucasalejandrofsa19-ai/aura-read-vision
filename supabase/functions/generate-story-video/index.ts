@@ -135,7 +135,7 @@ serve(async (req) => {
       });
       if (!r.ok) { console.error("openai tts", r.status); return ""; }
       const buf = await r.arrayBuffer();
-      return `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
+      return `data:audio/mpeg;base64,${base64Encode(buf)}`;
     }
     async function ttsEleven(input: string, voice: string): Promise<string> {
       const voiceId = ELEVEN_VOICE_MAP[voice] || ELEVEN_VOICE_MAP.nova;
@@ -146,7 +146,7 @@ serve(async (req) => {
       });
       if (!r.ok) { console.error("eleven tts", r.status); return ""; }
       const buf = await r.arrayBuffer();
-      return `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
+      return `data:audio/mpeg;base64,${base64Encode(buf)}`;
     }
     async function genTTS(text: string, voice: string): Promise<string> {
       const input = text.slice(0, 2500);
@@ -169,7 +169,7 @@ serve(async (req) => {
         if (error || !data) { console.error("download img", storagePath, error?.message); return ""; }
         const buf = await data.arrayBuffer();
         const mime = data.type || "image/png";
-        return `data:${mime};base64,${base64Encode(new Uint8Array(buf))}`;
+        return `data:${mime};base64,${base64Encode(buf)}`;
       } catch (e) { console.error("loadHighlightImage ex", e); return ""; }
     }
 
