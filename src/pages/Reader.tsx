@@ -41,6 +41,7 @@ import { TOOL_COPY } from "@/lib/toolGuide";
 import { TourTargetsProvider, useTourTarget } from "@/contexts/TourTargetsContext";
 import { ReaderTour } from "@/components/ReaderTour";
 import { ReaderBookSearch } from "@/components/ReaderBookSearch";
+import { ReaderPageSearch } from "@/components/ReaderPageSearch";
 
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
@@ -523,6 +524,11 @@ const Reader = () => {
               <h1 className="font-display font-semibold tracking-tight truncate text-base lg:text-lg">{book.title}</h1>
               <p className="text-xs text-muted-foreground truncate">{book.author || "Autor desconhecido"}</p>
             </div>
+            <ReaderPageSearch
+              pdfUrl={pdfUrl}
+              totalPages={book.total_pages || 1}
+              onNavigateToPage={handleNavigateToPage}
+            />
             <ReaderBookSearch />
           </div>
 
