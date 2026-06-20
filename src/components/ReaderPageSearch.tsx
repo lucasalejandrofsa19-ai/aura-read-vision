@@ -15,6 +15,8 @@ import { getCachedPageIndex, setCachedPageIndex } from "@/lib/pageIndexCache";
 interface ReaderPageSearchProps {
   pdfUrl: string;
   bookId: string;
+  /** Versão do livro (ex.: book.updated_at). Quando muda, o cache é invalidado. */
+  bookVersion?: string | null;
   totalPages?: number;
   onNavigateToPage: (page: number) => void;
 }
