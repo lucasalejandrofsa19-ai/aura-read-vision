@@ -347,16 +347,13 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
       return;
     }
     setRegenerating(audioOnly ? "audio" : "full");
+    setRegenError(null);
     setPlaying(false);
     try {
       const draftScene = draft?.[idx];
       const { data, error } = await supabase.functions.invoke("regenerate-story-video-scene", {
         body: {
-          mode,
-          voice,
-          tone,
-          narration,
-          audioOnly,
+          mode, voice, tone, narration, audioOnly,
           chapterTitle: scene.chapterTitle,
           imagePrompt: draftScene?.imagePrompt,
           highlightId: draftScene?.highlightId,
@@ -365,6 +362,7 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
       if (error) throw new Error(error.message);
       if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
       const next = data as Scene & { audioOnly?: boolean };
+      if (audioOnly && !next.audioDataUrl) throw new Error("Áudio vazio retornado pelo servidor.");
       setScenes(curr => curr.map((s, i) => {
         if (i !== idx) return s;
         if (audioOnly) return { ...s, narration: next.narration, audioDataUrl: next.audioDataUrl };
@@ -372,7 +370,9 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
       }));
       toast.success(audioOnly ? "Áudio regenerado." : "Cena regenerada.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao regenerar");
+      const msg = e instanceof Error ? e.message : "Falha ao regenerar";
+      setRegenError({ kind: audioOnly ? "audio" : "full", message: msg });
+      toast.error(msg);
     } finally {
       setRegenerating(false);
     }
