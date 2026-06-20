@@ -57,6 +57,11 @@ export const ReaderPageSearch = ({
     fallbackUsed: false,
     lastError: null,
   });
+  type WorkerAttempt = { ts: number; src: string; status: "ok" | "error" | "switched"; error?: string };
+  const [workerHistory, setWorkerHistory] = useState<WorkerAttempt[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const pushAttempt = (a: WorkerAttempt) =>
+    setWorkerHistory((h) => [a, ...h].slice(0, 20));
   const workerFallbacksRef = useRef<string[]>([
     `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
     `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
