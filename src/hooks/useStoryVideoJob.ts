@@ -99,6 +99,7 @@ export function useStoryVideoJob() {
     if (!data) return;
     const job = data as JobRow;
     const ageMs = Date.now() - new Date(job.created_at).getTime();
+    console.debug("[storyVideoJob] poll", { id, status: job.status, attempts: job.attempts, hasResult: !!job.result, ageMs });
     setCreatedAt(job.created_at);
     setUpdatedAt(job.updated_at);
     if ((job.status === "pending" || job.status === "processing") && ageMs > VIDEO_TIMEOUT_MS) {
@@ -109,9 +110,13 @@ export function useStoryVideoJob() {
     setAttempts(job.attempts ?? 0);
     const p = job.progress as JobProgress | null;
     if (p && typeof p.total === "number" && p.total > 0) setProgress(p);
-    if (job.status === "completed" && job.result) {
-      setResult(job.result as StoryVideoResult);
-      queryClient.invalidateQueries({ queryKey: ["story-video-quota"] });
+    if (job.status === "completed") {
+      if (job.result) {
+        setResult(job.result as StoryVideoResult);
+        queryClient.invalidateQueries({ queryKey: ["story-video-quota"] });
+      } else {
+        setError("Vídeo concluído sem dados de resultado. Tente novamente.");
+      }
       stopPolling();
     } else if (job.status === "failed") {
       setError(job.error || "Falha na geração");
