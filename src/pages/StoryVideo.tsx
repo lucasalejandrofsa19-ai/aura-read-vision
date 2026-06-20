@@ -285,7 +285,24 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
   const [idx, setIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [editedText, setEditedText] = useState("");
-  const [regenerating, setRegenerating] = useState(false);
+  const [regenerating, setRegenerating] = useState<false | "audio" | "full">(false);
+  const [regenProgress, setRegenProgress] = useState(0);
+  const [regenLabel, setRegenLabel] = useState("");
+
+  useEffect(() => {
+    if (!regenerating) { setRegenProgress(0); return; }
+    setRegenProgress(8);
+    setRegenLabel(regenerating === "audio" ? "Gerando narração…" : "Gerando narração e imagem…");
+    const t = window.setInterval(() => {
+      setRegenProgress(p => {
+        const cap = regenerating === "audio" ? 92 : 90;
+        if (p >= cap) return p;
+        const step = regenerating === "audio" ? 4 : 2;
+        return Math.min(cap, p + step);
+      });
+    }, regenerating === "audio" ? 350 : 600);
+    return () => window.clearInterval(t);
+  }, [regenerating]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const scene = scenes[idx];
   const segImages = useMemo(() => scene?.segments.map(s => s.imageDataUrl).filter(Boolean) ?? [], [scene]);
