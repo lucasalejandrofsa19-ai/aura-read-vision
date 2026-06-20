@@ -57,6 +57,11 @@ export const ReaderPageSearch = ({
     fallbackUsed: false,
     lastError: null,
   });
+  type WorkerAttempt = { ts: number; src: string; status: "ok" | "error" | "switched"; error?: string };
+  const [workerHistory, setWorkerHistory] = useState<WorkerAttempt[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const pushAttempt = (a: WorkerAttempt) =>
+    setWorkerHistory((h) => [a, ...h].slice(0, 20));
   const workerFallbacksRef = useRef<string[]>([
     `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
     `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
@@ -162,15 +167,19 @@ export const ReaderPageSearch = ({
             indexedAt: Date.now(),
           });
           setLastStatus("done");
+          pushAttempt({ ts: Date.now(), src: pdfjs.GlobalWorkerOptions.workerSrc || "", status: "ok" });
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error("[ReaderPageSearch] index error", err);
+        const currentSrc = pdfjs.GlobalWorkerOptions.workerSrc || "";
+        pushAttempt({ ts: Date.now(), src: currentSrc, status: "error", error: msg });
         const isWorkerErr = /worker|fake worker|module specifier|pdf\.worker|importScripts/i.test(msg);
         if (isWorkerErr && workerFallbackIdxRef.current < workerFallbacksRef.current.length) {
           const nextSrc = workerFallbacksRef.current[workerFallbackIdxRef.current++];
           pdfjs.GlobalWorkerOptions.workerSrc = nextSrc;
           setWorkerInfo({ src: nextSrc, fallbackUsed: true, lastError: msg });
+          pushAttempt({ ts: Date.now(), src: nextSrc, status: "switched" });
           console.warn("[ReaderPageSearch] worker fallback ->", nextSrc);
           if (!cancelled) {
             toast.message("Worker local falhou. Tentando CDN…");
@@ -350,6 +359,7 @@ export const ReaderPageSearch = ({
                       pdfjs.GlobalWorkerOptions.workerSrc = newSrc;
                       workerFallbackIdxRef.current = 0;
                       setWorkerInfo({ src: newSrc, fallbackUsed: false, lastError: null });
+                      pushAttempt({ ts: Date.now(), src: newSrc, status: "switched" });
                       console.log("[ReaderPageSearch] workerSrc resetado:", newSrc);
                       // Reindexa imediatamente para validar o worker
                       setOpen(true);
@@ -467,6 +477,62 @@ export const ReaderPageSearch = ({
                 </>
               )}
             </dl>
+
+            <div className="mt-2 border-t border-border/40 pt-1.5">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setHistoryOpen((v) => !v)}
+                  className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground"
+                >
+                  {historyOpen ? "▼" : "▶"} Histórico do worker ({workerHistory.length})
+                </button>
+                {workerHistory.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setWorkerHistory([])}
+                    className="text-[10px] text-muted-foreground hover:text-destructive"
+                  >
+                    limpar
+                  </button>
+                )}
+              </div>
+              {historyOpen && (
+                <div className="mt-1 max-h-40 overflow-y-auto space-y-1">
+                  {workerHistory.length === 0 ? (
+                    <p className="text-[10px] text-muted-foreground italic">Sem tentativas ainda.</p>
+                  ) : (
+                    workerHistory.map((a, i) => {
+                      const color =
+                        a.status === "ok"
+                          ? "text-primary"
+                          : a.status === "error"
+                          ? "text-destructive"
+                          : "text-muted-foreground";
+                      const icon =
+                        a.status === "ok" ? "✓" : a.status === "error" ? "✗" : "↻";
+                      return (
+                        <div key={i} className="text-[10px] font-mono leading-tight">
+                          <div className={`flex items-center gap-1 ${color}`}>
+                            <span>{icon}</span>
+                            <span>{new Date(a.ts).toLocaleTimeString()}</span>
+                            <span className="uppercase">{a.status}</span>
+                          </div>
+                          <div className="truncate text-muted-foreground pl-3" title={a.src}>
+                            {a.src.split("/").slice(-2).join("/") || "—"}
+                          </div>
+                          {a.error && (
+                            <div className="text-destructive pl-3 break-words" title={a.error}>
+                              {a.error.slice(0, 100)}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </PopoverContent>
