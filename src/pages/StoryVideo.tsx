@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useStoryVideoJob, fetchStoryVideoScript, type Scene, type NarrationTone, type DraftScene } from "@/hooks/useStoryVideoJob";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Sparkles, Pencil, Volume2, Copy, XCircle, RotateCcw } from "lucide-react";
+import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Sparkles, Pencil, Volume2, Copy, XCircle, RotateCcw, Download, ExternalLink } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
