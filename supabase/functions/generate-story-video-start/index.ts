@@ -100,6 +100,8 @@ serve(async (req) => {
       .select("id, status, created_at")
       .eq("user_id", user.id)
       .in("status", ["pending", "processing"])
+      .order("created_at", { ascending: true })
+      .limit(1)
       .maybeSingle();
     if (existing) {
       const isExpired = Date.now() - new Date(existing.created_at as string).getTime() > VIDEO_TIMEOUT_MS;
