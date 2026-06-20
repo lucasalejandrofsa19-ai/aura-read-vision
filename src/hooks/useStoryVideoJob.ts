@@ -109,9 +109,13 @@ export function useStoryVideoJob() {
     setAttempts(job.attempts ?? 0);
     const p = job.progress as JobProgress | null;
     if (p && typeof p.total === "number" && p.total > 0) setProgress(p);
-    if (job.status === "completed" && job.result) {
-      setResult(job.result as StoryVideoResult);
-      queryClient.invalidateQueries({ queryKey: ["story-video-quota"] });
+    if (job.status === "completed") {
+      if (job.result) {
+        setResult(job.result as StoryVideoResult);
+        queryClient.invalidateQueries({ queryKey: ["story-video-quota"] });
+      } else {
+        setError("Vídeo concluído sem dados de resultado. Tente novamente.");
+      }
       stopPolling();
     } else if (job.status === "failed") {
       setError(job.error || "Falha na geração");
