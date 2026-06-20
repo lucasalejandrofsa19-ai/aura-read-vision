@@ -527,6 +527,7 @@ const Reader = () => {
             <ReaderPageSearch
               pdfUrl={pdfUrl}
               bookId={id || ""}
+              bookVersion={(book as any)?.updated_at ?? (book as any)?.created_at ?? null}
               totalPages={book.total_pages || 1}
               onNavigateToPage={handleNavigateToPage}
             />

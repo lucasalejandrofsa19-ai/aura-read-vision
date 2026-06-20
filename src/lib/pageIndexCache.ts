@@ -10,6 +10,8 @@ export interface PageIndexEntry {
   bookId: string;
   pages: string[];
   numPages: number;
+  /** Versão do conteúdo do livro (ex.: book.updated_at). Cache é descartado se mudar. */
+  version: string;
   indexedAt: number;
 }
 

@@ -15,6 +15,8 @@ import { getCachedPageIndex, setCachedPageIndex } from "@/lib/pageIndexCache";
 interface ReaderPageSearchProps {
   pdfUrl: string;
   bookId: string;
+  /** Versão do livro (ex.: book.updated_at). Quando muda, o cache é invalidado. */
+  bookVersion?: string | null;
   totalPages?: number;
   onNavigateToPage: (page: number) => void;
 }
@@ -32,6 +34,7 @@ interface PageMatch {
 export const ReaderPageSearch = ({
   pdfUrl,
   bookId,
+  bookVersion,
   totalPages,
   onNavigateToPage,
 }: ReaderPageSearchProps) => {
@@ -40,7 +43,10 @@ export const ReaderPageSearch = ({
   const [indexing, setIndexing] = useState(false);
   const [pages, setPages] = useState<string[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
-  const indexedBookRef = useRef<string>("");
+  const indexedKeyRef = useRef<string>("");
+
+  const currentVersion = bookVersion ?? "v0";
+  const currentKey = `${bookId}::${currentVersion}`;
 
   // Atalho Ctrl/Cmd+Shift+F para abrir
   useEffect(() => {
@@ -54,25 +60,31 @@ export const ReaderPageSearch = ({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Carrega cache assim que o bookId mudar (mesmo sem abrir o popover)
+  // Carrega cache se bookId/version baterem; caso contrário descarta (invalidação)
   useEffect(() => {
     if (!bookId) return;
     let cancelled = false;
     (async () => {
       const cached = await getCachedPageIndex(bookId);
-      if (cancelled || !cached) return;
-      setPages(cached.pages);
-      indexedBookRef.current = bookId;
+      if (cancelled) return;
+      if (cached && cached.version === currentVersion) {
+        setPages(cached.pages);
+        indexedKeyRef.current = currentKey;
+      } else {
+        // Versão diferente -> cache obsoleto, força reindexar
+        setPages([]);
+        indexedKeyRef.current = "";
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [bookId]);
+  }, [bookId, currentVersion, currentKey]);
 
-  // Indexa o PDF (uma vez por livro) ao abrir; persiste no IndexedDB
+  // Indexa o PDF ao abrir; persiste no IndexedDB com a versão atual
   useEffect(() => {
     if (!open || !pdfUrl || !bookId) return;
-    if (indexedBookRef.current === bookId && pages.length > 0) return;
+    if (indexedKeyRef.current === currentKey && pages.length > 0) return;
 
     let cancelled = false;
     (async () => {
@@ -97,11 +109,12 @@ export const ReaderPageSearch = ({
         }
         if (!cancelled) {
           setPages(collected);
-          indexedBookRef.current = bookId;
+          indexedKeyRef.current = currentKey;
           await setCachedPageIndex({
             bookId,
             pages: collected,
             numPages: n,
+            version: currentVersion,
             indexedAt: Date.now(),
           });
         }
@@ -116,7 +129,8 @@ export const ReaderPageSearch = ({
     return () => {
       cancelled = true;
     };
-  }, [open, pdfUrl, bookId, pages.length]);
+  }, [open, pdfUrl, bookId, currentKey, currentVersion, pages.length]);
+
 
   const matches = useMemo<PageMatch[]>(() => {
     const q = normalizeSearch(query).trim();
