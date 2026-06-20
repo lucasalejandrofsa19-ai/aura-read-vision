@@ -10,7 +10,11 @@ import {
 import { pdfjs } from "react-pdf";
 import { normalizeSearch } from "@/lib/searchNormalize";
 import { toast } from "sonner";
-import { getCachedPageIndex, setCachedPageIndex } from "@/lib/pageIndexCache";
+import {
+  getCachedPageIndex,
+  setCachedPageIndex,
+  type PageIndexEntry,
+} from "@/lib/pageIndexCache";
 
 interface ReaderPageSearchProps {
   pdfUrl: string;
@@ -43,10 +47,33 @@ export const ReaderPageSearch = ({
   const [indexing, setIndexing] = useState(false);
   const [pages, setPages] = useState<string[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [diag, setDiag] = useState<PageIndexEntry | null>(null);
   const indexedKeyRef = useRef<string>("");
 
   const currentVersion = bookVersion ?? "v0";
   const currentKey = `${bookId}::${currentVersion}`;
+
+  // Diagnóstico: habilitado via ?debug=1 ou localStorage["aurareader:debug"]="1"
+  const debugEnabled = (() => {
+    if (typeof window === "undefined") return false;
+    try {
+      if (new URLSearchParams(window.location.search).get("debug") === "1") return true;
+      return window.localStorage.getItem("aurareader:debug") === "1";
+    } catch {
+      return false;
+    }
+  })();
+
+  // Re-lê a entrada do IndexedDB para o painel de diagnóstico
+  const refreshDiag = async () => {
+    if (!bookId || !debugEnabled) return;
+    const c = await getCachedPageIndex(bookId);
+    setDiag(c);
+  };
+  useEffect(() => {
+    refreshDiag();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookId, currentVersion, indexing]);
 
   // Atalho Ctrl/Cmd+Shift+F para abrir
   useEffect(() => {
@@ -266,6 +293,34 @@ export const ReaderPageSearch = ({
             ))
           )}
         </div>
+
+        {debugEnabled && (
+          <div className="mt-2 border-t border-border/60 pt-2 px-1 space-y-0.5">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+              Diagnóstico (read-only)
+            </p>
+            <dl className="text-[11px] font-mono leading-snug grid grid-cols-[88px_1fr] gap-x-2">
+              <dt className="text-muted-foreground">bookId</dt>
+              <dd className="truncate" title={bookId}>{bookId || "—"}</dd>
+              <dt className="text-muted-foreground">version (livro)</dt>
+              <dd className="truncate" title={currentVersion}>{currentVersion}</dd>
+              <dt className="text-muted-foreground">cache.version</dt>
+              <dd className="truncate" title={diag?.version ?? ""}>
+                {diag?.version ?? "—"}
+                {diag && diag.version !== currentVersion && (
+                  <span className="ml-1 text-destructive">(obsoleto)</span>
+                )}
+                {diag && diag.version === currentVersion && (
+                  <span className="ml-1 text-primary">(válido)</span>
+                )}
+              </dd>
+              <dt className="text-muted-foreground">cache.indexedAt</dt>
+              <dd>{diag?.indexedAt ? new Date(diag.indexedAt).toLocaleString() : "—"}</dd>
+              <dt className="text-muted-foreground">cache.numPages</dt>
+              <dd>{diag?.numPages ?? "—"}</dd>
+            </dl>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
