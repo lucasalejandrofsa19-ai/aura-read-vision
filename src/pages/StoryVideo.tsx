@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useStoryVideoJob, type Scene } from "@/hooks/useStoryVideoJob";
+import { useStoryVideoJob, type Scene, type NarrationTone } from "@/hooks/useStoryVideoJob";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
-
+import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Sparkles } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 const statusLabel: Record<string, string> = {
   idle: "Pronto",
@@ -17,23 +18,62 @@ const statusLabel: Record<string, string> = {
 
 const stageLabel: Record<string, string> = {
   starting: "Preparando…",
-  image: "Carregando imagem do destaque",
+  image: "Gerando imagem",
   narration: "Gerando narração",
   scene_done: "Cena pronta",
   finalizing: "Finalizando vídeo",
   completed: "Concluído",
 };
 
+type VoiceOption = { id: string; label: string; gender: "Feminina" | "Masculina"; vibe: string };
+const VOICE_OPTIONS: VoiceOption[] = [
+  { id: "nova",    label: "Nova",    gender: "Feminina",  vibe: "Moderna, expressiva" },
+  { id: "shimmer", label: "Shimmer", gender: "Feminina",  vibe: "Suave, clara" },
+  { id: "alloy",   label: "Alloy",   gender: "Feminina",  vibe: "Neutra, versátil" },
+  { id: "fable",   label: "Fable",   gender: "Masculina", vibe: "Narrador clássico" },
+  { id: "onyx",    label: "Onyx",    gender: "Masculina", vibe: "Grave, dramático" },
+  { id: "echo",    label: "Echo",    gender: "Masculina", vibe: "Calmo, sério" },
+];
+
+const TONE_OPTIONS: { id: NarrationTone; label: string }[] = [
+  { id: "neutro", label: "Neutro" },
+  { id: "alegre", label: "Alegre" },
+  { id: "serio", label: "Sério" },
+  { id: "empolgado", label: "Empolgado" },
+  { id: "dramatico", label: "Dramático" },
+  { id: "calmo", label: "Calmo" },
+];
+
+const MODE_OPTIONS: { id: "summary" | "highlights"; label: string; desc: string }[] = [
+  { id: "summary", label: "IA (mini-histórias)", desc: "Analisa o livro e gera cenas com imagens" },
+  { id: "highlights", label: "Seus destaques", desc: "Usa destaques e imagens que você já criou" },
+];
+
+const SS_KEY = "aurareader:storyVideoPrefs";
+type Prefs = { voice: string; tone: NarrationTone; mode: "summary" | "highlights" };
+const loadPrefs = (): Prefs => {
+  try {
+    const raw = sessionStorage.getItem(SS_KEY);
+    if (raw) return { voice: "nova", tone: "neutro", mode: "summary", ...JSON.parse(raw) };
+  } catch { /* noop */ }
+  return { voice: "nova", tone: "neutro", mode: "summary" };
+};
+
 export default function StoryVideo() {
   const { bookId = "" } = useParams();
   const { status, error, result, attempts, progress, start } = useStoryVideoJob();
-  const startedRef = useRef(false);
+  const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
+  const [started, setStarted] = useState(false);
 
   useEffect(() => {
-    if (!bookId || startedRef.current) return;
-    startedRef.current = true;
-    start({ book_id: bookId, mode: "summary", scenesCount: 5 });
-  }, [bookId, start]);
+    try { sessionStorage.setItem(SS_KEY, JSON.stringify(prefs)); } catch { /* noop */ }
+  }, [prefs]);
+
+  const handleStart = () => {
+    if (!bookId || started) return;
+    setStarted(true);
+    start({ book_id: bookId, mode: prefs.mode, voice: prefs.voice, tone: prefs.tone, scenesCount: 5 });
+  };
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -50,18 +90,79 @@ export default function StoryVideo() {
         <h1 className="mb-6 text-3xl font-bold">Vídeo narrado por IA</h1>
 
         {error && (
-          <Card className="border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+          <Card className="mb-4 border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
             {error}
           </Card>
         )}
 
-        {!result && !error && (
+        {!started && !result && (
+          <Card className="space-y-5 p-6">
+            <div>
+              <h2 className="text-lg font-semibold">Configurar narração</h2>
+              <p className="text-sm text-muted-foreground">Escolha modo, voz e tom antes de gerar o vídeo.</p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Modo</Label>
+                <Select value={prefs.mode} onValueChange={(v) => setPrefs(p => ({ ...p, mode: v as Prefs["mode"] }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {MODE_OPTIONS.map(o => (
+                      <SelectItem key={o.id} value={o.id}>
+                        <div className="flex flex-col">
+                          <span>{o.label}</span>
+                          <span className="text-xs text-muted-foreground">{o.desc}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Voz</Label>
+                <Select value={prefs.voice} onValueChange={(v) => setPrefs(p => ({ ...p, voice: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {VOICE_OPTIONS.map(v => (
+                      <SelectItem key={v.id} value={v.id}>
+                        <div className="flex flex-col">
+                          <span>{v.label} · {v.gender}</span>
+                          <span className="text-xs text-muted-foreground">{v.vibe}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Tom da narração</Label>
+                <Select value={prefs.tone} onValueChange={(v) => setPrefs(p => ({ ...p, tone: v as NarrationTone }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TONE_OPTIONS.map(t => (
+                      <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button onClick={handleStart} disabled={!bookId} className="w-full md:w-auto">
+              <Sparkles className="mr-2 h-4 w-4" /> Gerar vídeo
+            </Button>
+          </Card>
+        )}
+
+        {started && !result && !error && (
           <Card className="flex flex-col items-center gap-5 p-10 text-center">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
             <p className="text-muted-foreground">
               {status === "pending"
                 ? "Seu vídeo entrou na fila. A geração inicia em instantes."
-                : "Montando seu vídeo parte por parte usando seus destaques."}
+                : "Montando seu vídeo parte por parte."}
             </p>
 
             {progress && progress.total > 0 && (
