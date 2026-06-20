@@ -900,8 +900,11 @@ const Reader = () => {
                       <p className="text-sm text-destructive mt-2 break-words">{loadError}</p>
                     )}
                     {!loading && !loadError && (
-                      <p className="text-sm text-muted-foreground mt-2">Nenhum arquivo PDF disponível para este livro.</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        O PDF ainda não foi carregado. Tente novamente; se o problema persistir, o arquivo pode ter sido removido do armazenamento.
+                      </p>
                     )}
+
                   </div>
                   {!loading && (
                     <div className="flex flex-wrap items-center justify-center gap-2">
