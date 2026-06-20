@@ -29,6 +29,8 @@ project_id = "qvtfaidgpsapjctxehhq"
     verify_jwt = true
   [functions.generate-story-video-start]
     verify_jwt = true
+  [functions.regenerate-story-video-scene]
+    verify_jwt = true
   [functions.openai-tts]
     verify_jwt = true
   [functions.process-email-queue]
