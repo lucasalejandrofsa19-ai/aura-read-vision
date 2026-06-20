@@ -239,13 +239,26 @@ serve(async (req) => {
         return new Response(JSON.stringify({ ok: false, reason: "no_highlights_with_images" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      const selected = withImg.slice(0, maxScenes);
+      // If user provided an edited script, restrict/reorder to matching highlightIds
+      // and use their edited narration text. Otherwise fall back to raw highlight text.
+      let pipeline: Array<{ id: string; text: string; page_number: number; img: { storage_path: string; image_url: string } | null; title?: string }> = [];
+      if (scenesOverride && scenesOverride.length > 0) {
+        const byId = new Map(withImg.map(h => [h.id, h] as const));
+        for (const s of scenesOverride) {
+          if (!s.highlightId) continue;
+          const h = byId.get(s.highlightId);
+          if (!h) continue;
+          pipeline.push({ ...h, text: (s.narration || h.text).trim(), title: s.chapterTitle });
+        }
+      }
+      if (pipeline.length === 0) pipeline = withImg.slice(0, maxScenes).map(h => ({ ...h }));
+      const selected = pipeline.slice(0, maxScenes);
       const total = selected.length;
       await updateProgress({ current: 0, total, stage: "starting", etaSeconds: total * SECONDS_PER_STEP, sceneTitle: null });
       const built: any[] = [];
       for (let idx = 0; idx < selected.length; idx++) {
         const h = selected[idx];
-        const sceneTitle = `Destaque ${idx + 1} · pág. ${h.page_number}`;
+        const sceneTitle = h.title || `Destaque ${idx + 1} · pág. ${h.page_number}`;
         const remainingAfter = (total - idx - 1) * SECONDS_PER_STEP;
         await updateProgress({ current: idx + 1, total, stage: "image", sceneTitle, etaSeconds: remainingAfter + SECONDS_PER_STEP });
         const imageDataUrl = await loadHighlightImage(h.img!.storage_path);
