@@ -38,20 +38,9 @@ const PublicPdfs = () => {
     }
     setImportingId(pdf.id);
     try {
-      // Check quota
-      const { count } = await supabase
-        .from("books")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id);
-      const maxBooks = isAdmin || hasPremiumAccess ? 1000 : 5;
-      if ((count || 0) >= maxBooks) {
-        toast.error(
-          hasPremiumAccess || isAdmin
-            ? `Limite de ${maxBooks} livros atingido.`
-            : `Limite gratuito (${maxBooks} livros). Faça upgrade para Premium.`
-        );
-        return;
-      }
+      // Sem limite de ebooks — qualquer usuário pode importar livremente.
+
+
 
       toast.loading("Baixando PDF…", { id: `import-${pdf.id}` });
       const res = await fetch(pdf.url);
