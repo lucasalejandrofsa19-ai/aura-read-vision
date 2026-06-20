@@ -31,6 +31,7 @@ interface PageMatch {
  */
 export const ReaderPageSearch = ({
   pdfUrl,
+  bookId,
   totalPages,
   onNavigateToPage,
 }: ReaderPageSearchProps) => {
@@ -39,7 +40,7 @@ export const ReaderPageSearch = ({
   const [indexing, setIndexing] = useState(false);
   const [pages, setPages] = useState<string[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
-  const indexedUrlRef = useRef<string>("");
+  const indexedBookRef = useRef<string>("");
 
   // Atalho Ctrl/Cmd+Shift+F para abrir
   useEffect(() => {
@@ -53,10 +54,25 @@ export const ReaderPageSearch = ({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Indexa o PDF (uma vez por URL) ao abrir o popover
+  // Carrega cache assim que o bookId mudar (mesmo sem abrir o popover)
   useEffect(() => {
-    if (!open || !pdfUrl) return;
-    if (indexedUrlRef.current === pdfUrl && pages.length > 0) return;
+    if (!bookId) return;
+    let cancelled = false;
+    (async () => {
+      const cached = await getCachedPageIndex(bookId);
+      if (cancelled || !cached) return;
+      setPages(cached.pages);
+      indexedBookRef.current = bookId;
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bookId]);
+
+  // Indexa o PDF (uma vez por livro) ao abrir; persiste no IndexedDB
+  useEffect(() => {
+    if (!open || !pdfUrl || !bookId) return;
+    if (indexedBookRef.current === bookId && pages.length > 0) return;
 
     let cancelled = false;
     (async () => {
@@ -81,7 +97,13 @@ export const ReaderPageSearch = ({
         }
         if (!cancelled) {
           setPages(collected);
-          indexedUrlRef.current = pdfUrl;
+          indexedBookRef.current = bookId;
+          await setCachedPageIndex({
+            bookId,
+            pages: collected,
+            numPages: n,
+            indexedAt: Date.now(),
+          });
         }
       } catch (err) {
         console.error("[ReaderPageSearch] index error", err);
@@ -94,7 +116,7 @@ export const ReaderPageSearch = ({
     return () => {
       cancelled = true;
     };
-  }, [open, pdfUrl, pages.length]);
+  }, [open, pdfUrl, bookId, pages.length]);
 
   const matches = useMemo<PageMatch[]>(() => {
     const q = normalizeSearch(query).trim();
