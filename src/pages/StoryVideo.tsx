@@ -370,8 +370,18 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
       }));
       toast.success(audioOnly ? "Áudio regenerado." : "Cena regenerada.");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Falha ao regenerar";
-      setRegenError({ kind: audioOnly ? "audio" : "full", message: msg });
+      const err = e as { message?: string; status?: number; code?: string | number; name?: string } | Error;
+      const msg = (err as Error)?.message || "Falha ao regenerar";
+      const code = (err as { status?: number; code?: string | number })?.status ?? (err as { code?: string | number })?.code;
+      setRegenError({
+        kind: audioOnly ? "audio" : "full",
+        message: msg,
+        code,
+        timestamp: new Date().toISOString(),
+        sceneIndex: idx + 1,
+        sceneTitle: scene.chapterTitle,
+        voice, tone, mode,
+      });
       toast.error(msg);
     } finally {
       setRegenerating(false);
