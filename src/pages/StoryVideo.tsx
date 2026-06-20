@@ -5,12 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 
+import { Progress } from "@/components/ui/progress";
+
 const statusLabel: Record<string, string> = {
   idle: "Pronto",
   pending: "Na fila…",
   processing: "Gerando cenas (roteiro + imagens + narração)…",
   completed: "Pronto!",
   failed: "Falhou",
+};
+
+const stageLabel: Record<string, string> = {
+  starting: "Preparando…",
+  image: "Carregando imagem do destaque",
+  narration: "Gerando narração",
+  scene_done: "Cena pronta",
+  finalizing: "Finalizando vídeo",
+  completed: "Concluído",
 };
 
 export default function StoryVideo() {
