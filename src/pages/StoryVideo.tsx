@@ -288,6 +288,7 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
   const [regenerating, setRegenerating] = useState<false | "audio" | "full">(false);
   const [regenProgress, setRegenProgress] = useState(0);
   const [regenLabel, setRegenLabel] = useState("");
+  const [regenError, setRegenError] = useState<{ kind: "audio" | "full"; message: string } | null>(null);
 
   useEffect(() => {
     if (!regenerating) { setRegenProgress(0); return; }
@@ -346,16 +347,13 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
       return;
     }
     setRegenerating(audioOnly ? "audio" : "full");
+    setRegenError(null);
     setPlaying(false);
     try {
       const draftScene = draft?.[idx];
       const { data, error } = await supabase.functions.invoke("regenerate-story-video-scene", {
         body: {
-          mode,
-          voice,
-          tone,
-          narration,
-          audioOnly,
+          mode, voice, tone, narration, audioOnly,
           chapterTitle: scene.chapterTitle,
           imagePrompt: draftScene?.imagePrompt,
           highlightId: draftScene?.highlightId,
@@ -364,6 +362,7 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
       if (error) throw new Error(error.message);
       if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
       const next = data as Scene & { audioOnly?: boolean };
+      if (audioOnly && !next.audioDataUrl) throw new Error("Áudio vazio retornado pelo servidor.");
       setScenes(curr => curr.map((s, i) => {
         if (i !== idx) return s;
         if (audioOnly) return { ...s, narration: next.narration, audioDataUrl: next.audioDataUrl };
@@ -371,7 +370,9 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
       }));
       toast.success(audioOnly ? "Áudio regenerado." : "Cena regenerada.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao regenerar");
+      const msg = e instanceof Error ? e.message : "Falha ao regenerar";
+      setRegenError({ kind: audioOnly ? "audio" : "full", message: msg });
+      toast.error(msg);
     } finally {
       setRegenerating(false);
     }
@@ -452,6 +453,20 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
                   : <><Sparkles className="mr-2 h-4 w-4" /> Áudio + Imagem</>}
               </Button>
             </div>
+            {regenError && !regenerating && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm" role="alert">
+                <p className="font-medium text-destructive">
+                  {regenError.kind === "audio" ? "Falha ao regenerar o áudio" : "Falha ao regenerar a cena"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground break-words">{regenError.message}</p>
+                <div className="mt-2 flex gap-2">
+                  <Button size="sm" variant="default" onClick={() => runRegen(regenError.kind === "audio")}>
+                    <Sparkles className="mr-2 h-3 w-3" /> Tentar novamente
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setRegenError(null)}>Dispensar</Button>
+                </div>
+              </div>
+            )}
             {regenerating && (
               <div className="space-y-1 pt-1" role="status" aria-live="polite">
                 <Progress value={regenProgress} className="h-2" />
