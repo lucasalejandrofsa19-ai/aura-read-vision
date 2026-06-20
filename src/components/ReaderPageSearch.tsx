@@ -10,9 +10,11 @@ import {
 import { pdfjs } from "react-pdf";
 import { normalizeSearch } from "@/lib/searchNormalize";
 import { toast } from "sonner";
+import { getCachedPageIndex, setCachedPageIndex } from "@/lib/pageIndexCache";
 
 interface ReaderPageSearchProps {
   pdfUrl: string;
+  bookId: string;
   totalPages?: number;
   onNavigateToPage: (page: number) => void;
 }
