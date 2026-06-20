@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import {
   getCachedPageIndex,
   setCachedPageIndex,
+  clearCachedPageIndex,
   type PageIndexEntry,
 } from "@/lib/pageIndexCache";
 
@@ -296,9 +297,26 @@ export const ReaderPageSearch = ({
 
         {debugEnabled && (
           <div className="mt-2 border-t border-border/60 pt-2 px-1 space-y-0.5">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-              Diagnóstico (read-only)
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                Diagnóstico (read-only)
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-[10px]"
+                disabled={!bookId || indexing}
+                onClick={async () => {
+                  await clearCachedPageIndex(bookId);
+                  indexedKeyRef.current = "";
+                  setPages([]);
+                  await refreshDiag();
+                  toast.success("Cache limpo para este livro.");
+                }}
+              >
+                Limpar cache
+              </Button>
+            </div>
             <dl className="text-[11px] font-mono leading-snug grid grid-cols-[88px_1fr] gap-x-2">
               <dt className="text-muted-foreground">bookId</dt>
               <dd className="truncate" title={bookId}>{bookId || "—"}</dd>
