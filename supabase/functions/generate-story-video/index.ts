@@ -27,25 +27,17 @@ serve(async (req) => {
   // Worker auth: validates `x-internal-secret` against a server-stored token
   // in `private.cron_tokens`. Only pg_cron (and admins with DB access) know it.
   const providedSecret = req.headers.get("x-internal-secret") || "";
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { auth: { persistSession: false }, db: { schema: "private" } as any }
-  );
-  // Use a separate client for non-private queries (default public schema).
+  // Use a single service-role client (public schema). Read the worker token via
+  // public.get_cron_token RPC so we don't need PostgREST to expose `private`.
   const sb = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     { auth: { persistSession: false } }
   );
 
-  const { data: tokenRow } = await supabaseClient
-    .from("cron_tokens")
-    .select("token")
-    .eq("name", "story_video_worker")
-    .maybeSingle();
-
-  if (!tokenRow?.token || providedSecret !== tokenRow.token) {
+  const { data: expectedToken, error: tokenErr } = await sb.rpc("get_cron_token", { _name: "story_video_worker" });
+  if (tokenErr || !expectedToken || providedSecret !== String(expectedToken)) {
+    console.error("worker auth failed", { tokenErr, hasToken: !!expectedToken });
     return new Response(JSON.stringify({ error: "Unauthorized" }),
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }

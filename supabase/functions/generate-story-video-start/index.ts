@@ -11,16 +11,16 @@ async function triggerWorker() {
   try {
     const url = Deno.env.get("SUPABASE_URL") ?? "";
     const svc = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false }, db: { schema: "private" } as any });
-    const { data: tokenRow } = await svc.from("cron_tokens").select("token").eq("name", "story_video_worker").maybeSingle();
-    const secret = (tokenRow as { token?: string } | null)?.token;
-    if (!secret) { console.error("worker secret missing"); return; }
+      { auth: { persistSession: false } });
+    const { data: secret, error: tokenErr } = await svc.rpc("get_cron_token", { _name: "story_video_worker" });
+    if (tokenErr || !secret) { console.error("worker secret missing", tokenErr); return; }
     const r = await fetch(`${url}/functions/v1/generate-story-video`, {
       method: "POST",
-      headers: { "x-internal-secret": secret, "Content-Type": "application/json" },
+      headers: { "x-internal-secret": String(secret), "Content-Type": "application/json" },
       body: "{}",
     });
-    console.log("worker trigger status", r.status);
+    const body = await r.text().catch(() => "");
+    console.log("worker trigger status", r.status, body.slice(0, 200));
   } catch (e) { console.error("worker trigger ex", e); }
 }
 
