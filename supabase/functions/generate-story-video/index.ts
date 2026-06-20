@@ -186,25 +186,38 @@ serve(async (req) => {
     const maxScenes = Math.max(3, Math.min(14, Math.floor(TARGET_TOTAL_SECONDS / SECONDS_PER_SCENE)));
     const selected = withImg.slice(0, maxScenes);
 
+    const total = selected.length;
+    await updateProgress({ current: 0, total, stage: "starting", etaSeconds: total * SECONDS_PER_STEP, sceneTitle: null });
+
     // Processa um destaque por vez (parte por parte) — baixa imagem + gera TTS.
     const built: any[] = [];
     for (let idx = 0; idx < selected.length; idx++) {
       const h = selected[idx];
+      const sceneTitle = `Destaque ${idx + 1} · pág. ${h.page_number}`;
+      const remainingAfter = (total - idx - 1) * SECONDS_PER_STEP;
+
+      await updateProgress({ current: idx + 1, total, stage: "image", sceneTitle, etaSeconds: remainingAfter + SECONDS_PER_STEP });
       const imageDataUrl = await loadHighlightImage(h.img!.storage_path);
+
+      await updateProgress({ current: idx + 1, total, stage: "narration", sceneTitle, etaSeconds: remainingAfter + Math.ceil(SECONDS_PER_STEP / 2) });
       const audioDataUrl = await genTTS(h.text, voice);
+
       built.push({
-        chapterTitle: `Destaque ${idx + 1} · pág. ${h.page_number}`,
+        chapterTitle: sceneTitle,
         narration: h.text,
         segments: [{ text: h.text, imageDataUrl }],
         audioDataUrl,
       });
+      await updateProgress({ current: idx + 1, total, stage: "scene_done", sceneTitle, etaSeconds: remainingAfter });
     }
 
+    await updateProgress({ current: total, total, stage: "finalizing", sceneTitle: null, etaSeconds: 0 });
     const result = { title, author, scenes: built, targetDurationSeconds: TARGET_TOTAL_SECONDS };
     await sb.from("story_video_jobs").update({
       status: "completed",
       result,
       processed_at: new Date().toISOString(),
+      progress: { current: total, total, stage: "completed", sceneTitle: null, etaSeconds: 0 },
     }).eq("id", jobId);
 
     return new Response(JSON.stringify({ ok: true, job_id: jobId }),
