@@ -49,6 +49,7 @@ export const ReaderPageSearch = ({
   const [pages, setPages] = useState<string[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [diag, setDiag] = useState<PageIndexEntry | null>(null);
+  const [reindexNonce, setReindexNonce] = useState(0);
   const indexedKeyRef = useRef<string>("");
 
   const currentVersion = bookVersion ?? "v0";
