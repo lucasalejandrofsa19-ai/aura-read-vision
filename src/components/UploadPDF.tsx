@@ -95,6 +95,9 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
     }
 
     setUploading(true);
+    setProgress(0);
+    const toastId = `pdf-upload-${Date.now()}`;
+    toast.loading("Enviando PDF… 0%", { id: toastId, description: file.name });
 
     await trackAsyncOperation(
       "pdf_upload_complete_flow",
@@ -105,15 +108,45 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
           const safeName = sanitizeFileName(file.name);
           const fileName = `${user.id}/${Date.now()}-${safeName}`;
 
-          const { error: uploadError } = await supabase.storage
-            .from("pdfs")
-            .upload(fileName, file, {
-              contentType: "application/pdf",
-              upsert: false,
-            });
+          // Upload com progresso real via XHR
+          const { data: sessionData } = await supabase.auth.getSession();
+          const accessToken = sessionData.session?.access_token;
+          if (!accessToken) throw new Error("Sessão expirada. Faça login novamente.");
 
-          if (uploadError) throw uploadError;
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+          const uploadUrl = `${supabaseUrl}/storage/v1/object/pdfs/${fileName}`;
+
+          await new Promise<void>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", uploadUrl);
+            xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
+            xhr.setRequestHeader("Content-Type", "application/pdf");
+            xhr.setRequestHeader("x-upsert", "false");
+            xhr.upload.onprogress = (e) => {
+              if (e.lengthComputable) {
+                const pct = Math.round((e.loaded / e.total) * 100);
+                setProgress(pct);
+                toast.loading(`Enviando PDF… ${pct}%`, { id: toastId, description: file.name });
+              }
+            };
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) resolve();
+              else {
+                let msg = `Falha no upload (HTTP ${xhr.status})`;
+                try {
+                  const body = JSON.parse(xhr.responseText);
+                  if (body?.message) msg = body.message;
+                } catch {}
+                reject(new Error(msg));
+              }
+            };
+            xhr.onerror = () => reject(new Error("Conexão perdida durante o upload."));
+            xhr.send(file);
+          });
+
           uploadedPath = fileName;
+          setProgress(100);
+          toast.loading("Salvando na biblioteca…", { id: toastId, description: file.name });
 
           // Cor aleatória de capa
           const colors = [
@@ -147,7 +180,10 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
             throw insertError;
           }
 
-          toast.success("Pronto. Seu PDF está na biblioteca.");
+          toast.success("Pronto! Seu PDF está na biblioteca.", {
+            id: toastId,
+            description: file.name,
+          });
 
 
           // Invalidar query imediatamente para mostrar o card com loading
