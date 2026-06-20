@@ -92,7 +92,8 @@ export function BookVideoHistory({ bookId, refreshKey }: Props) {
       const objUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = objUrl;
-      a.download = `video-${row.id.slice(0, 8)}.mp4`;
+      const isJson = (row.file_mime || "").includes("json") || row.file_path.endsWith(".json");
+      a.download = `video-${row.id.slice(0, 8)}.${isJson ? "json" : "mp4"}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
