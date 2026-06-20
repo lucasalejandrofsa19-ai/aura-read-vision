@@ -155,59 +155,164 @@ serve(async (req) => {
       } catch (e) { console.error("loadHighlightImage ex", e); return ""; }
     }
 
-    // Busca destaques do usuário neste livro que possuem imagem gerada
-    const { data: hls, error: hlErr } = await sb
-      .from("highlights")
-      .select("id, text, page_number, created_at, highlight_images(storage_path, image_url)")
-      .eq("user_id", userId)
-      .eq("book_id", book_id)
-      .order("page_number", { ascending: true });
-    if (hlErr) throw new Error("Falha ao buscar destaques: " + hlErr.message);
-
-    type HL = { id: string; text: string; page_number: number; img: { storage_path: string; image_url: string } | null };
-    const withImg: HL[] = (hls || [])
-      .map((h: any) => ({
-        id: h.id,
-        text: (h.text || "").trim(),
-        page_number: h.page_number,
-        img: Array.isArray(h.highlight_images) && h.highlight_images.length > 0 ? h.highlight_images[0] : null,
-      }))
-      .filter(h => h.text.length >= 4 && h.img);
-
-    if (withImg.length === 0) {
-      await markFailed("Nenhum destaque com imagem encontrado. Crie destaques no livro e gere imagens para eles antes de gerar o vídeo.");
-      return new Response(JSON.stringify({ ok: false, reason: "no_highlights_with_images" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Geração de imagem via Lovable AI (Gemini image) com fallback OpenAI
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    async function genImage(prompt: string): Promise<string> {
+      const full = `${prompt}. Vertical 9:16 portrait, cinematic painterly book illustration, consistent art style, no text, no letters, no UI`;
+      if (LOVABLE_API_KEY) {
+        try {
+          const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash-image",
+              messages: [{ role: "user", content: full }],
+              modalities: ["image", "text"],
+            }),
+          });
+          if (r.ok) {
+            const j = await r.json();
+            const url = j?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+            if (url) return url;
+          } else { console.error("gemini image", r.status); }
+        } catch (e) { console.error("gemini image ex", e); }
+      }
+      if (OPENAI_API_KEY && LOVABLE_API_KEY) {
+        try {
+          const r = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ model: "openai/gpt-image-2", prompt: full, size: "1024x1536", quality: "low", n: 1 }),
+          });
+          if (r.ok) {
+            const j = await r.json();
+            const b64 = j?.data?.[0]?.b64_json;
+            if (b64) return `data:image/png;base64,${b64}`;
+          }
+        } catch (e) { console.error("openai image ex", e); }
+      }
+      return "";
     }
 
-    // Vídeo final: 1min03s. ~5s por destaque -> ~12 destaques.
     const TARGET_TOTAL_SECONDS = 63;
     const SECONDS_PER_SCENE = 5;
     const maxScenes = Math.max(3, Math.min(14, Math.floor(TARGET_TOTAL_SECONDS / SECONDS_PER_SCENE)));
-    const selected = withImg.slice(0, maxScenes);
 
-    const total = selected.length;
-    await updateProgress({ current: 0, total, stage: "starting", etaSeconds: total * SECONDS_PER_STEP, sceneTitle: null });
+    // === Modo HIGHLIGHTS: usa destaques+imagens do usuário ===
+    if (mode === "highlights") {
+      const { data: hls, error: hlErr } = await sb
+        .from("highlights")
+        .select("id, text, page_number, created_at, highlight_images(storage_path, image_url)")
+        .eq("user_id", userId)
+        .eq("book_id", book_id)
+        .order("page_number", { ascending: true });
+      if (hlErr) throw new Error("Falha ao buscar destaques: " + hlErr.message);
+      type HL = { id: string; text: string; page_number: number; img: { storage_path: string; image_url: string } | null };
+      const withImg: HL[] = (hls || [])
+        .map((h: any) => ({ id: h.id, text: (h.text || "").trim(), page_number: h.page_number,
+          img: Array.isArray(h.highlight_images) && h.highlight_images.length > 0 ? h.highlight_images[0] : null }))
+        .filter(h => h.text.length >= 4 && h.img);
+      if (withImg.length === 0) {
+        await markFailed("Nenhum destaque com imagem encontrado. Crie destaques e gere imagens antes de gerar o vídeo.");
+        return new Response(JSON.stringify({ ok: false, reason: "no_highlights_with_images" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const selected = withImg.slice(0, maxScenes);
+      const total = selected.length;
+      await updateProgress({ current: 0, total, stage: "starting", etaSeconds: total * SECONDS_PER_STEP, sceneTitle: null });
+      const built: any[] = [];
+      for (let idx = 0; idx < selected.length; idx++) {
+        const h = selected[idx];
+        const sceneTitle = `Destaque ${idx + 1} · pág. ${h.page_number}`;
+        const remainingAfter = (total - idx - 1) * SECONDS_PER_STEP;
+        await updateProgress({ current: idx + 1, total, stage: "image", sceneTitle, etaSeconds: remainingAfter + SECONDS_PER_STEP });
+        const imageDataUrl = await loadHighlightImage(h.img!.storage_path);
+        await updateProgress({ current: idx + 1, total, stage: "narration", sceneTitle, etaSeconds: remainingAfter + Math.ceil(SECONDS_PER_STEP / 2) });
+        const audioDataUrl = await genTTS(h.text, voice);
+        built.push({ chapterTitle: sceneTitle, narration: h.text, segments: [{ text: h.text, imageDataUrl }], audioDataUrl });
+        await updateProgress({ current: idx + 1, total, stage: "scene_done", sceneTitle, etaSeconds: remainingAfter });
+      }
+      await updateProgress({ current: total, total, stage: "finalizing", sceneTitle: null, etaSeconds: 0 });
+      const result = { title, author, scenes: built, targetDurationSeconds: TARGET_TOTAL_SECONDS };
+      await sb.from("story_video_jobs").update({ status: "completed", result, processed_at: new Date().toISOString(),
+        progress: { current: total, total, stage: "completed", sceneTitle: null, etaSeconds: 0 } }).eq("id", jobId);
+      return new Response(JSON.stringify({ ok: true, job_id: jobId }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
-    // Processa um destaque por vez (parte por parte) — baixa imagem + gera TTS.
+    // === Modo AI (default): analisa o livro e gera mini-histórias com imagens + narração ===
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
+    let extractedText: string | null = null;
+    const { data: bk2 } = await sb.from("books").select("extracted_text, user_id").eq("id", book_id).maybeSingle();
+    if (bk2 && bk2.user_id === userId) extractedText = bk2.extracted_text;
+    if (!extractedText) {
+      const { data: pb2 } = await sb.from("premium_books").select("extracted_text").eq("id", book_id).maybeSingle();
+      if (pb2) extractedText = pb2.extracted_text;
+    }
+    if ((!extractedText || extractedText.trim().length < 100) && typeof clientText === "string" && clientText.trim().length >= 50) {
+      extractedText = clientText;
+    }
+    if (!extractedText || extractedText.trim().length < 50) {
+      await markFailed("Texto do livro não disponível para análise.");
+      return new Response(JSON.stringify({ ok: false, reason: "no_text" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const truncated = extractedText.length > 50000 ? extractedText.slice(0, 50000) : extractedText;
+    const n = Math.max(3, Math.min(maxScenes, Number(scenesCount) || 8));
+    const wordsPerScene = Math.max(10, Math.floor(190 / n));
+    const seed = variationSeed ?? Math.floor(Math.random() * 1e9);
+
+    await updateProgress({ current: 0, total: n, stage: "starting", etaSeconds: (n + 1) * SECONDS_PER_STEP, sceneTitle: "Analisando o livro" });
+
+    const sysPrompt = `Você cria roteiros de vídeos verticais 9:16 narrados sobre livros, em PT-BR.
+Analise o livro e identifique trama, personagens, cenários e temas. Divida em EXATAMENTE ${n} mini-histórias coesas (início, desenvolvimento, clímax, desfecho).
+Para CADA mini-história produza:
+- "chapterTitle": 3-6 palavras
+- "narration": UMA frase fluida (${wordsPerScene}-${wordsPerScene + 4} palavras), envolvente, sem emojis/markdown
+- "imagePrompt": descrição visual em INGLÊS (máx 20 palavras), cinematográfica, vertical 9:16, paleta consistente, sem texto
+Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"chapterTitle":"...","narration":"...","imagePrompt":"..."}]}`;
+    const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nSeed: ${seed}\n\nConteúdo:\n${truncated}`;
+
+    const scriptRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userPrompt }],
+        response_format: { type: "json_object" },
+        max_tokens: 8000,
+        temperature: 0.9,
+      }),
+    });
+    if (!scriptRes.ok) {
+      const t = await scriptRes.text();
+      console.error("script error", scriptRes.status, t);
+      throw new Error(scriptRes.status === 402 ? "Créditos de IA esgotados." : "Falha ao gerar roteiro");
+    }
+    const scriptData = await scriptRes.json();
+    const raw: string = scriptData.choices?.[0]?.message?.content ?? "";
+    let parsed: { chapters: { chapterTitle: string; narration: string; imagePrompt: string }[] };
+    try { parsed = JSON.parse(raw); }
+    catch {
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error("Roteiro inválido retornado pela IA");
+      parsed = JSON.parse(m[0]);
+    }
+    const chapters = (parsed.chapters || []).slice(0, n)
+      .filter(c => c.narration && c.imagePrompt);
+    if (chapters.length === 0) throw new Error("Nenhuma mini-história gerada");
+
+    const total = chapters.length;
     const built: any[] = [];
-    for (let idx = 0; idx < selected.length; idx++) {
-      const h = selected[idx];
-      const sceneTitle = `Destaque ${idx + 1} · pág. ${h.page_number}`;
+    for (let idx = 0; idx < chapters.length; idx++) {
+      const c = chapters[idx];
+      const sceneTitle = c.chapterTitle || `Cena ${idx + 1}`;
       const remainingAfter = (total - idx - 1) * SECONDS_PER_STEP;
-
       await updateProgress({ current: idx + 1, total, stage: "image", sceneTitle, etaSeconds: remainingAfter + SECONDS_PER_STEP });
-      const imageDataUrl = await loadHighlightImage(h.img!.storage_path);
-
+      const imageDataUrl = await genImage(c.imagePrompt);
       await updateProgress({ current: idx + 1, total, stage: "narration", sceneTitle, etaSeconds: remainingAfter + Math.ceil(SECONDS_PER_STEP / 2) });
-      const audioDataUrl = await genTTS(h.text, voice);
-
-      built.push({
-        chapterTitle: sceneTitle,
-        narration: h.text,
-        segments: [{ text: h.text, imageDataUrl }],
-        audioDataUrl,
-      });
+      const audioDataUrl = await genTTS(c.narration, voice);
+      built.push({ chapterTitle: sceneTitle, narration: c.narration, segments: [{ text: c.narration, imageDataUrl }], audioDataUrl });
       await updateProgress({ current: idx + 1, total, stage: "scene_done", sceneTitle, etaSeconds: remainingAfter });
     }
 
