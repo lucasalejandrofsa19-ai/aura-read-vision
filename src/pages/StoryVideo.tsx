@@ -678,13 +678,9 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
               className="sm:col-span-2"
               onClick={async () => {
                 const safeTitle = title.replace(/[^\w\- ]+/g, "").slice(0, 60) || "video";
-                const mp4Type = "video/mp4;codecs=avc1.42E01E,mp4a.40.2";
-                const webmType = "video/webm;codecs=vp9,opus";
-                const supportsMp4 = typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(mp4Type);
-                const supportsWebm = typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(webmType);
-                if (!supportsMp4 && !supportsWebm) { toast.error("Seu navegador não suporta gravação de vídeo."); return; }
-                const mimeType = supportsMp4 ? mp4Type : webmType;
-                const ext = supportsMp4 ? "mp4" : "webm";
+                const choice = pickVideoMimeType();
+                if (!choice) { toast.error("Seu navegador não suporta gravação de vídeo."); return; }
+                const { mimeType, ext } = choice;
                 const tId = toast.loading("Renderizando vídeo… isso pode levar alguns segundos.");
                 try {
                   const W = 1280, H = 720;
