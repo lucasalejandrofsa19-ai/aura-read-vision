@@ -49,13 +49,14 @@ const TONE_OPTIONS: { id: NarrationTone; label: string }[] = [
   { id: "calmo", label: "Calmo" },
 ];
 
-const MODE_OPTIONS: { id: "summary" | "highlights"; label: string; desc: string }[] = [
-  { id: "summary", label: "IA (mini-histórias)", desc: "Analisa o livro e gera cenas com imagens" },
+const MODE_OPTIONS: { id: "summary" | "highlights" | "excerpt"; label: string; desc: string }[] = [
+  { id: "summary", label: "IA (mini-histórias)", desc: "Analisa o livro inteiro e gera cenas com imagens" },
   { id: "highlights", label: "Seus destaques", desc: "Usa destaques e imagens que você já criou" },
+  { id: "excerpt", label: "Trecho do livro", desc: "Cole um capítulo ou seção para virar vídeo" },
 ];
 
 const SS_KEY = "aurareader:storyVideoPrefs";
-type Prefs = { voice: string; tone: NarrationTone; mode: "summary" | "highlights" };
+type Prefs = { voice: string; tone: NarrationTone; mode: "summary" | "highlights" | "excerpt" };
 const loadPrefs = (): Prefs => {
   try {
     const raw = sessionStorage.getItem(SS_KEY);
