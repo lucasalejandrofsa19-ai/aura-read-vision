@@ -8,6 +8,7 @@
  * Os arquivos ficam disponíveis para QUALQUER usuário (autenticado ou não) baixar.
  */
 import bibliaTNM from "@/assets/public-pdfs/biblia-traducao-novo-mundo.pdf.asset.json";
+import bibliaSBTB from "@/assets/public-pdfs/biblia-sagrada-sbtb.pdf.asset.json";
 
 export interface PublicPdf {
   id: string;
