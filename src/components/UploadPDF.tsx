@@ -152,6 +152,7 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
           const startTime = Date.now();
           await new Promise<void>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
+            uploadXhrRef.current = xhr;
             xhr.open("POST", uploadUrl);
             xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
             xhr.setRequestHeader("Content-Type", "application/pdf");
@@ -169,6 +170,7 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
                 toast.loading(`${status} • ${pct}%`, {
                   id: toastId,
                   description: `${loadedMB}/${fileSizeMB} MB • ${formatSpeed(bps)} • ${formatETA(remaining)}`,
+                  ...toastActions,
                 });
               }
             };
@@ -184,6 +186,7 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
               }
             };
             xhr.onerror = () => reject(new Error("Conexão perdida durante o upload."));
+            xhr.onabort = () => reject(new Error("__UPLOAD_CANCELLED__"));
             xhr.send(file);
           });
 
