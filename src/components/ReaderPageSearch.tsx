@@ -167,15 +167,19 @@ export const ReaderPageSearch = ({
             indexedAt: Date.now(),
           });
           setLastStatus("done");
+          pushAttempt({ ts: Date.now(), src: pdfjs.GlobalWorkerOptions.workerSrc || "", status: "ok" });
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error("[ReaderPageSearch] index error", err);
+        const currentSrc = pdfjs.GlobalWorkerOptions.workerSrc || "";
+        pushAttempt({ ts: Date.now(), src: currentSrc, status: "error", error: msg });
         const isWorkerErr = /worker|fake worker|module specifier|pdf\.worker|importScripts/i.test(msg);
         if (isWorkerErr && workerFallbackIdxRef.current < workerFallbacksRef.current.length) {
           const nextSrc = workerFallbacksRef.current[workerFallbackIdxRef.current++];
           pdfjs.GlobalWorkerOptions.workerSrc = nextSrc;
           setWorkerInfo({ src: nextSrc, fallbackUsed: true, lastError: msg });
+          pushAttempt({ ts: Date.now(), src: nextSrc, status: "switched" });
           console.warn("[ReaderPageSearch] worker fallback ->", nextSrc);
           if (!cancelled) {
             toast.message("Worker local falhou. Tentando CDN…");
