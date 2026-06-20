@@ -545,6 +545,55 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
           </div>
           <p className="text-center text-xs text-muted-foreground">Cena {idx + 1} / {scenes.length}</p>
 
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                try {
+                  const safeTitle = title.replace(/[^\w\- ]+/g, "").slice(0, 60) || "video";
+                  const payload = scenes.map(s => ({
+                    title: s.chapterTitle,
+                    narration: s.narration,
+                    audio: s.audioDataUrl ?? "",
+                    images: (s.segments ?? []).map(g => g.imageDataUrl).filter(Boolean),
+                  }));
+                  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><title>${safeTitle}</title><meta name="viewport" content="width=device-width,initial-scale=1"/><style>body{margin:0;background:#000;color:#fff;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh}main{width:100%;max-width:960px;padding:16px}img{width:100%;border-radius:12px;aspect-ratio:16/9;object-fit:cover;background:#111}h2{font-size:18px;margin:12px 0 6px}p{opacity:.85;line-height:1.5}button{background:#fff;color:#000;border:0;padding:10px 16px;border-radius:8px;font-weight:600;cursor:pointer;margin:8px 6px}nav{display:flex;justify-content:center;gap:8px;margin-top:8px}</style></head><body><main><img id="img" alt=""/><h2 id="t"></h2><p id="n"></p><nav><button id="prev">‹ Anterior</button><button id="play">▶ Reproduzir</button><button id="next">Próxima ›</button></nav><audio id="a" preload="auto"></audio></main><script>const D=${JSON.stringify(payload)};let i=0;const a=document.getElementById('a'),img=document.getElementById('img'),t=document.getElementById('t'),n=document.getElementById('n'),pl=document.getElementById('play');function load(){const s=D[i];t.textContent=s.title;n.textContent=s.narration;img.src=s.images[0]||'';a.src=s.audio||''}function play(){a.play().then(()=>pl.textContent='⏸ Pausar').catch(()=>{})}function pause(){a.pause();pl.textContent='▶ Reproduzir'}pl.onclick=()=>a.paused?play():pause();document.getElementById('prev').onclick=()=>{if(i>0){i--;load();play()}};document.getElementById('next').onclick=()=>{if(i<D.length-1){i++;load();play()}};a.onended=()=>{if(i<D.length-1){i++;load();play()}else pause()};load();<\/script></body></html>`;
+                  const blob = new Blob([html], { type: "text/html" });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.download = `${safeTitle}.html`;
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                  setTimeout(() => URL.revokeObjectURL(url), 2000);
+                  toast.success("Player HTML baixado. Abra para reproduzir o vídeo completo.");
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "Falha ao exportar.");
+                }
+              }}
+              disabled={!!regenerating}
+            >
+              <Download className="mr-2 h-4 w-4" /> Exportar (HTML)
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const audio = scene.audioDataUrl;
+                if (!audio) { toast.error("Áudio indisponível para esta cena."); return; }
+                const link = document.createElement("a");
+                link.href = audio;
+                link.download = `cena-${idx + 1}.mp3`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+              }}
+              disabled={!scene.audioDataUrl}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" /> Baixar áudio da cena
+            </Button>
+          </div>
+
           <div className="space-y-2 rounded-lg border border-border bg-card/50 p-3">
             <Label className="text-xs">Texto narrado desta cena</Label>
             <Textarea
