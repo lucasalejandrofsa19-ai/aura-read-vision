@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Enforce subscription book limits on insert" ON public.books;
