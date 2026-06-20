@@ -18,16 +18,12 @@ interface PDFTextItem {
   fontName?: string;
 }
 import "react-pdf/dist/Page/TextLayer.css";
-// Garante o workerPort também aqui (defensivo) — alguns chunks podem carregar
-// react-pdf antes do bootstrap de src/lib/pdfjsWorker.ts ser executado.
-import PdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?worker";
-if (!(pdfjs.GlobalWorkerOptions as any).workerPort && !pdfjs.GlobalWorkerOptions.workerSrc) {
-  try {
-    (pdfjs.GlobalWorkerOptions as any).workerPort = new PdfWorker();
-    console.info("[PDFViewer] workerPort configurado defensivamente");
-  } catch (e) {
-    console.error("[PDFViewer] Falha ao instanciar Worker bundled", e);
-  }
+// Defensivo: alguns chunks podem carregar react-pdf antes do bootstrap de
+// src/lib/pdfjsWorker.ts. Usamos `?url` (asset estático do mesmo domínio)
+// para evitar o fallback de bare specifier 'pdf.worker.mjs' do pdf.js v4.
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 }
 
 
