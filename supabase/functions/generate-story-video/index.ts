@@ -82,34 +82,20 @@ serve(async (req) => {
   };
 
   try {
-    // Fetch book
-    let title = ""; let author = ""; let extractedText: string | null = null;
+    // Título/autor do livro (apenas para metadados do resultado)
+    let title = ""; let author = "";
     const { data: bookData } = await sb.from("books")
-      .select("title, author, extracted_text, user_id").eq("id", book_id).maybeSingle();
+      .select("title, author, user_id").eq("id", book_id).maybeSingle();
     if (bookData && bookData.user_id === userId) {
-      title = bookData.title; author = bookData.author || ""; extractedText = bookData.extracted_text;
+      title = bookData.title; author = bookData.author || "";
     } else {
       const { data: pb } = await sb.from("premium_books")
-        .select("title, author, extracted_text").eq("id", book_id).maybeSingle();
-      if (pb) { title = pb.title; author = pb.author || ""; extractedText = pb.extracted_text; }
-    }
-    if ((!extractedText || extractedText.trim().length < 100) && typeof clientText === "string" && clientText.trim().length >= 50) {
-      extractedText = clientText;
-    }
-    if (!extractedText || extractedText.trim().length < 50) {
-      await markFailed("Texto do livro não disponível.");
-      return new Response(JSON.stringify({ ok: false, reason: "no_text" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        .select("title, author").eq("id", book_id).maybeSingle();
+      if (pb) { title = pb.title; author = pb.author || ""; }
     }
 
-    const MAX_CHARS = mode === "pages" ? 14000 : 70000;
-    const truncated = extractedText.length > MAX_CHARS ? extractedText.slice(0, MAX_CHARS) : extractedText;
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
-
 
     const ELEVEN_VOICE_MAP: Record<string, string> = {
       nova: "EXAVITQu4vr4xnSDxMaL",
@@ -119,48 +105,6 @@ serve(async (req) => {
       echo: "iP95p4xoKVk53GoZ742B",
       fable: "TX3LPaxmHKxFdv7VOQHJ",
     };
-
-    // Helper: gera imagem PORTRAIT 9:16 via Gemini -> OpenAI fallback
-    async function genImage(prompt: string, idx: number, pi: number): Promise<string> {
-      const fullPrompt = `${prompt}. Vertical 9:16 portrait composition, full-bleed cinematic frame, painterly book illustration, consistent art style, no text, no words, no letters, no captions, no UI`;
-      try {
-        const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash-image",
-            messages: [{ role: "user", content: fullPrompt }],
-            modalities: ["image", "text"],
-          }),
-        });
-        if (r.ok) {
-          const j = await r.json();
-          const imgs = j?.choices?.[0]?.message?.images;
-          const url = imgs?.[0]?.image_url?.url;
-          if (url) return url;
-        } else {
-          console.error("gemini image", idx, pi, r.status);
-        }
-      } catch (e) { console.error("gemini image ex", idx, pi, e); }
-
-      if (OPENAI_API_KEY) {
-        try {
-          const r = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ model: "openai/gpt-image-2", prompt: fullPrompt, size: "1024x1536", quality: "low", n: 1 }),
-          });
-          if (r.ok) {
-            const j = await r.json();
-            const b64 = j?.data?.[0]?.b64_json;
-            if (b64) return `data:image/png;base64,${b64}`;
-          } else {
-            console.error("openai image fallback", idx, pi, r.status);
-          }
-        } catch (e) { console.error("openai image ex", idx, pi, e); }
-      }
-      return "";
-    }
 
     async function genTTS(text: string, voice: string): Promise<string> {
       const input = text.slice(0, 2500);
@@ -194,117 +138,58 @@ serve(async (req) => {
       return "";
     }
 
-    const n = Math.max(3, Math.min(5, Number(scenesCount) || 4));
-    // O vídeo FINAL deve ter cerca de 1min30 no total, não 1min30 por capítulo.
-    // Poucos segmentos mantêm a narração curta, reduzem créditos e evitam limite de memória.
-    const TARGET_TOTAL_SECONDS = 90;
-    const SEGMENTS_PER_SCENE = n <= 3 ? 4 : 3;
-    const TARGET_WORDS_TOTAL = 190;
-    const TARGET_WORDS_PER_SEGMENT = Math.max(7, Math.floor(TARGET_WORDS_TOTAL / (n * SEGMENTS_PER_SCENE)));
-    const seed = variationSeed ?? Math.floor(Math.random() * 1e9);
-
-    const systemPrompt = `Você cria roteiros de vídeos verticais (9:16, Reels/TikTok) narrados sobre livros em português brasileiro, ESTRUTURADOS POR CAPÍTULOS.
-Divida a obra em EXATAMENTE ${n} capítulos sequenciais (início, desenvolvimento, clímax, desfecho).
-O vídeo FINAL inteiro terá aproximadamente ${TARGET_TOTAL_SECONDS} segundos. NÃO crie 90 segundos por capítulo.
-Para CADA capítulo, produza:
-- "chapterTitle": título curto (3-6 palavras).
-- "segments": EXATAMENTE ${SEGMENTS_PER_SCENE} segmentos. Cada um:
-  - "text": UMA FRASE PT-BR curta (${TARGET_WORDS_PER_SEGMENT}-${TARGET_WORDS_PER_SEGMENT + 3} palavras), cinematográfica, fluida, sem emojis/markdown.
-  - "imagePrompt": descrição visual EM INGLÊS (máx 20 palavras), cinematográfica, vertical 9:16, paleta consistente, sem texto.
-O roteiro completo deve ter cerca de ${TARGET_WORDS_TOTAL} palavras no total, para a narração caber em 1 minuto e meio.
-Use ângulos visuais variados (close, wide, detail, action) para imagens distintas.
-
-IMPORTANTE: Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{"chapterTitle":"...","segments":[{"text":"...","imagePrompt":"..."}]}]}`;
-
-    const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nModo: ${mode === "pages" ? "trecho selecionado" : "obra completa"}\nSeed de variação: ${seed} (use para variar tom, foco narrativo e estilo visual a cada geração).\n\nConteúdo:\n${truncated}`;
-
-    const scriptRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-        max_tokens: 16000,
-        temperature: 0.9,
-      }),
-    });
-    if (!scriptRes.ok) {
-      const t = await scriptRes.text();
-      console.error("script error", scriptRes.status, t);
-      if (scriptRes.status === 429) return new Response(JSON.stringify({ error: "Limite de requisições. Tente novamente em instantes." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      if (scriptRes.status === 402) return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      throw new Error("Falha ao gerar roteiro");
-    }
-    const scriptData = await scriptRes.json();
-    const rawContent: string = scriptData.choices?.[0]?.message?.content ?? "";
-    let parsed: { chapters: ChapterScene[] };
-    const tryParse = (s: string) => JSON.parse(s);
-    const extractJson = (s: string) => {
-      const fenced = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
-      const candidate = fenced ? fenced[1] : s;
-      const start = candidate.indexOf("{");
-      const end = candidate.lastIndexOf("}");
-      return start >= 0 && end > start ? candidate.slice(start, end + 1) : candidate;
-    };
-    try {
-      parsed = tryParse(rawContent);
-    } catch {
+    // Carrega imagem do storage (bucket privado) -> data URL
+    async function loadHighlightImage(storagePath: string): Promise<string> {
       try {
-        parsed = tryParse(extractJson(rawContent));
-      } catch {
-        try {
-          const { jsonrepair } = await import("https://esm.sh/jsonrepair@3.8.0");
-          parsed = tryParse(jsonrepair(extractJson(rawContent)));
-        } catch {
-          // Salvage: truncar até o último segmento completo
-          try {
-            const txt = rawContent;
-            // pega só capítulos/segmentos completos via regex
-            const segRe = /\{\s*"text"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"imagePrompt"\s*:\s*"((?:[^"\\]|\\.)*)"\s*\}/g;
-            const chapRe = /"chapterTitle"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
-            const titles: string[] = [];
-            let m: RegExpExecArray | null;
-            while ((m = chapRe.exec(txt)) !== null) titles.push(m[1]);
-            const allSegs: { text: string; imagePrompt: string }[] = [];
-            while ((m = segRe.exec(txt)) !== null) allSegs.push({ text: m[1], imagePrompt: m[2] });
-            if (titles.length === 0 || allSegs.length === 0) throw new Error("no salvage");
-            const perChap = Math.max(1, Math.floor(allSegs.length / titles.length));
-            const chaptersSalvaged = titles.map((t, i) => ({
-              chapterTitle: t,
-              segments: allSegs.slice(i * perChap, (i + 1) * perChap),
-            })).filter(c => c.segments.length > 0);
-            if (chaptersSalvaged.length === 0) throw new Error("no salvage");
-            parsed = { chapters: chaptersSalvaged };
-          } catch (e) {
-            console.error("json parse error after repair", e, rawContent.slice(0, 500));
-            throw new Error("Roteiro inválido retornado pela IA");
-          }
-        }
-      }
+        const { data, error } = await sb.storage.from("highlight-images").download(storagePath);
+        if (error || !data) { console.error("download img", storagePath, error?.message); return ""; }
+        const buf = await data.arrayBuffer();
+        const mime = data.type || "image/png";
+        return `data:${mime};base64,${base64Encode(new Uint8Array(buf))}`;
+      } catch (e) { console.error("loadHighlightImage ex", e); return ""; }
     }
-    const chapters = (parsed.chapters || []).slice(0, n).filter(c =>
-      Array.isArray(c.segments) && c.segments.length > 0 && c.segments.every(s => s.text && s.imagePrompt)
-    );
-    if (chapters.length === 0) throw new Error("Nenhum capítulo gerado");
 
-    // Processa capítulos SEQUENCIALMENTE para evitar pico de memória (WORKER_RESOURCE_LIMIT)
+    // Busca destaques do usuário neste livro que possuem imagem gerada
+    const { data: hls, error: hlErr } = await sb
+      .from("highlights")
+      .select("id, text, page_number, created_at, highlight_images(storage_path, image_url)")
+      .eq("user_id", userId)
+      .eq("book_id", book_id)
+      .order("page_number", { ascending: true });
+    if (hlErr) throw new Error("Falha ao buscar destaques: " + hlErr.message);
+
+    type HL = { id: string; text: string; page_number: number; img: { storage_path: string; image_url: string } | null };
+    const withImg: HL[] = (hls || [])
+      .map((h: any) => ({
+        id: h.id,
+        text: (h.text || "").trim(),
+        page_number: h.page_number,
+        img: Array.isArray(h.highlight_images) && h.highlight_images.length > 0 ? h.highlight_images[0] : null,
+      }))
+      .filter(h => h.text.length >= 4 && h.img);
+
+    if (withImg.length === 0) {
+      await markFailed("Nenhum destaque com imagem encontrado. Crie destaques no livro e gere imagens para eles antes de gerar o vídeo.");
+      return new Response(JSON.stringify({ ok: false, reason: "no_highlights_with_images" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Vídeo final: 1min03s. ~5s por destaque -> ~12 destaques.
+    const TARGET_TOTAL_SECONDS = 63;
+    const SECONDS_PER_SCENE = 5;
+    const maxScenes = Math.max(3, Math.min(14, Math.floor(TARGET_TOTAL_SECONDS / SECONDS_PER_SCENE)));
+    const selected = withImg.slice(0, maxScenes);
+
+    // Processa um destaque por vez (parte por parte) — baixa imagem + gera TTS.
     const built: any[] = [];
-    for (let idx = 0; idx < chapters.length; idx++) {
-      const ch = chapters[idx];
-      const segs = ch.segments.slice(0, SEGMENTS_PER_SCENE);
-      // imagens do capítulo em paralelo (só um capítulo por vez na memória)
-      const imgs = await Promise.all(segs.map((s, pi) => genImage(s.imagePrompt, idx, pi)));
-      const fullNarration = segs.map(s => s.text.trim()).join(" ");
-      const audioDataUrl = await genTTS(fullNarration, voice);
-      const segments = segs.map((s, pi) => ({ text: s.text, imageDataUrl: imgs[pi] || "" }));
+    for (let idx = 0; idx < selected.length; idx++) {
+      const h = selected[idx];
+      const imageDataUrl = await loadHighlightImage(h.img!.storage_path);
+      const audioDataUrl = await genTTS(h.text, voice);
       built.push({
-        chapterTitle: ch.chapterTitle || `Capítulo ${idx + 1}`,
-        narration: fullNarration,
-        segments,
+        chapterTitle: `Destaque ${idx + 1} · pág. ${h.page_number}`,
+        narration: h.text,
+        segments: [{ text: h.text, imageDataUrl }],
         audioDataUrl,
       });
     }
@@ -318,6 +203,7 @@ IMPORTANTE: Responda APENAS JSON válido COMPLETO (não trunque): {"chapters":[{
 
     return new Response(JSON.stringify({ ok: true, job_id: jobId }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("generate-story-video worker error", msg);
