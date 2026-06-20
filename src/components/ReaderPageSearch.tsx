@@ -52,6 +52,16 @@ export const ReaderPageSearch = ({
   const [reindexNonce, setReindexNonce] = useState(0);
   const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
   const [lastStatus, setLastStatus] = useState<"idle" | "indexing" | "done" | "error">("idle");
+  const [workerInfo, setWorkerInfo] = useState<{ src: string; fallbackUsed: boolean; lastError: string | null }>({
+    src: pdfjs.GlobalWorkerOptions.workerSrc || "",
+    fallbackUsed: false,
+    lastError: null,
+  });
+  const workerFallbacksRef = useRef<string[]>([
+    `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
+    `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
+  ]);
+  const workerFallbackIdxRef = useRef(0);
   const indexedKeyRef = useRef<string>("");
 
   const currentVersion = bookVersion ?? "v0";
@@ -154,8 +164,22 @@ export const ReaderPageSearch = ({
           setLastStatus("done");
         }
       } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
         console.error("[ReaderPageSearch] index error", err);
-        if (!cancelled) {
+        const isWorkerErr = /worker|fake worker|module specifier|pdf\.worker|importScripts/i.test(msg);
+        if (isWorkerErr && workerFallbackIdxRef.current < workerFallbacksRef.current.length) {
+          const nextSrc = workerFallbacksRef.current[workerFallbackIdxRef.current++];
+          pdfjs.GlobalWorkerOptions.workerSrc = nextSrc;
+          setWorkerInfo({ src: nextSrc, fallbackUsed: true, lastError: msg });
+          console.warn("[ReaderPageSearch] worker fallback ->", nextSrc);
+          if (!cancelled) {
+            toast.message("Worker local falhou. Tentando CDN…");
+            indexedKeyRef.current = "";
+            setPages([]);
+            setReindexNonce((n) => n + 1);
+          }
+        } else if (!cancelled) {
+          setWorkerInfo((w) => ({ ...w, lastError: msg }));
           setLastStatus("error");
           toast.error("Não foi possível indexar o PDF para busca.");
         }
@@ -324,6 +348,8 @@ export const ReaderPageSearch = ({
                         import.meta.url,
                       ).toString() + `?t=${Date.now()}`;
                       pdfjs.GlobalWorkerOptions.workerSrc = newSrc;
+                      workerFallbackIdxRef.current = 0;
+                      setWorkerInfo({ src: newSrc, fallbackUsed: false, lastError: null });
                       console.log("[ReaderPageSearch] workerSrc resetado:", newSrc);
                       // Reindexa imediatamente para validar o worker
                       setOpen(true);
@@ -425,6 +451,21 @@ export const ReaderPageSearch = ({
               <dd>{diag?.indexedAt ? new Date(diag.indexedAt).toLocaleString() : "—"}</dd>
               <dt className="text-muted-foreground">cache.numPages</dt>
               <dd>{diag?.numPages ?? "—"}</dd>
+              <dt className="text-muted-foreground">worker.src</dt>
+              <dd className="truncate" title={workerInfo.src}>
+                {workerInfo.src ? workerInfo.src.split("/").slice(-2).join("/") : "—"}
+                {workerInfo.fallbackUsed && (
+                  <span className="ml-1 text-destructive">(fallback CDN)</span>
+                )}
+              </dd>
+              {workerInfo.lastError && (
+                <>
+                  <dt className="text-muted-foreground">worker.error</dt>
+                  <dd className="text-destructive break-words" title={workerInfo.lastError}>
+                    {workerInfo.lastError.slice(0, 120)}
+                  </dd>
+                </>
+              )}
             </dl>
           </div>
         )}
