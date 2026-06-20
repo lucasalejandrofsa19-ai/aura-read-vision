@@ -100,6 +100,7 @@ serve(async (req) => {
       .in("status", ["pending", "processing"])
       .maybeSingle();
     if (existing) {
+      EdgeRuntime.waitUntil(triggerWorker());
       return new Response(JSON.stringify({
         job_id: existing.id,
         status: existing.status,
