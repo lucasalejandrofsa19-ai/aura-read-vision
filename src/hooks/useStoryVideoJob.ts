@@ -154,12 +154,16 @@ export function useStoryVideoJob() {
     return id;
   }, [startPolling]);
 
-  const cancel = useCallback(() => {
+  const cancel = useCallback(async () => {
+    const id = jobId;
+    if (id) {
+      await supabase.functions.invoke("cancel-story-video-job", { body: { job_id: id } }).catch(() => null);
+    }
     stopPolling();
     setStatus("idle");
     setError(null);
     setTimedOut(false);
-  }, [stopPolling]);
+  }, [jobId, stopPolling]);
 
   const reset = useCallback(() => {
     stopPolling();
