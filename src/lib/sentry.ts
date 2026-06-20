@@ -9,16 +9,28 @@ import { useEffect } from "react";
 
 export const initSentry = () => {
   const dsn = import.meta.env.VITE_SENTRY_DSN;
-  
+
   if (!dsn) {
     console.warn("Sentry DSN not configured. Error monitoring disabled.");
     return;
   }
 
+  // Valida formato esperado: https://<key>@<host>/<project>
+  const isValidDsn = typeof dsn === "string" && /^https?:\/\/[^@]+@[^/]+\/\d+/.test(dsn);
+  if (!isValidDsn) {
+    console.error(
+      "[Sentry] VITE_SENTRY_DSN está em formato inválido — Sentry desabilitado. " +
+        "Confira em Settings > Cloud > Secrets se o valor é mesmo uma DSN do Sentry " +
+        "(deve começar com https:// e conter @sentry.io/<id>)."
+    );
+    return;
+  }
+
   const isProduction = import.meta.env.MODE === 'production';
-  
+
   Sentry.init({
     dsn,
+
     integrations: [
       Sentry.reactRouterV6BrowserTracingIntegration({
         useEffect,
