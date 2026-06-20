@@ -86,6 +86,7 @@ const PublicPdfs = () => {
         await supabase.storage.from("pdfs").remove([filePath]).catch(() => {});
         throw insertError;
       }
+      if (controller.signal.aborted) return;
 
       queryClient.invalidateQueries({ queryKey: ["books", user.id] });
       toast.success("Adicionado à sua biblioteca!", {
@@ -93,10 +94,15 @@ const PublicPdfs = () => {
         action: { label: "Abrir", onClick: () => navigate("/library") },
       });
     } catch (error: any) {
+      if (error?.name === "AbortError" || controller.signal.aborted) {
+        toast.dismiss(`import-${pdf.id}`);
+        return;
+      }
       captureError(error, { context: "public_pdf_import" });
       toast.error(error?.message || "Não foi possível adicionar.", { id: `import-${pdf.id}` });
     } finally {
-      setImportingId(null);
+      if (abortRef.current === controller) abortRef.current = null;
+      setImportingId((cur) => (cur === pdf.id ? null : cur));
     }
   };
 
