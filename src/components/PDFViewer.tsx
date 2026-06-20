@@ -18,12 +18,16 @@ interface PDFTextItem {
   fontName?: string;
 }
 import "react-pdf/dist/Page/TextLayer.css";
-// Garante o workerSrc também aqui (defensivo) — alguns chunks podem carregar
+// Garante o workerPort também aqui (defensivo) — alguns chunks podem carregar
 // react-pdf antes do bootstrap de src/lib/pdfjsWorker.ts ser executado.
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
-  console.info("[PDFViewer] workerSrc configurado defensivamente:", pdfWorkerUrl);
+import PdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?worker";
+if (!(pdfjs.GlobalWorkerOptions as any).workerPort && !pdfjs.GlobalWorkerOptions.workerSrc) {
+  try {
+    (pdfjs.GlobalWorkerOptions as any).workerPort = new PdfWorker();
+    console.info("[PDFViewer] workerPort configurado defensivamente");
+  } catch (e) {
+    console.error("[PDFViewer] Falha ao instanciar Worker bundled", e);
+  }
 }
 
 
