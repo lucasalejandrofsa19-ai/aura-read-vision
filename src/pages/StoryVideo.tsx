@@ -264,7 +264,7 @@ export default function StoryVideo() {
           </Card>
         )}
 
-        {result && <ScenePlayer scenes={result.scenes} title={result.title} />}
+        {result && <ScenePlayer scenes={result.scenes} title={result.title} draft={draft} mode={prefs.mode} voice={prefs.voice} tone={prefs.tone} />}
       </div>
     </main>
   );
