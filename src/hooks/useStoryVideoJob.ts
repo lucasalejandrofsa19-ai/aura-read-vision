@@ -99,6 +99,7 @@ export function useStoryVideoJob() {
     if (!data) return;
     const job = data as JobRow;
     const ageMs = Date.now() - new Date(job.created_at).getTime();
+    console.debug("[storyVideoJob] poll", { id, status: job.status, attempts: job.attempts, hasResult: !!job.result, ageMs });
     setCreatedAt(job.created_at);
     setUpdatedAt(job.updated_at);
     if ((job.status === "pending" || job.status === "processing") && ageMs > VIDEO_TIMEOUT_MS) {
