@@ -255,6 +255,20 @@ export default function StoryVideo() {
               </div>
             </div>
 
+            {prefs.mode === "excerpt" && (
+              <div className="space-y-2">
+                <Label htmlFor="excerpt-text">Trecho do livro</Label>
+                <Textarea
+                  id="excerpt-text"
+                  value={excerpt}
+                  onChange={(e) => setExcerpt(e.target.value.slice(0, 50000))}
+                  placeholder="Cole aqui o capítulo ou seção do livro que deseja transformar em vídeo (mín. ~50 caracteres)…"
+                  className="min-h-[140px]"
+                />
+                <p className="text-[11px] text-muted-foreground">{excerpt.trim().length} caracteres · até 50.000</p>
+              </div>
+            )}
+
             <Button onClick={handleGenerateDraft} disabled={!bookId || loadingDraft} className="w-full md:w-auto">
               {loadingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Pencil className="mr-2 h-4 w-4" />}
               {loadingDraft ? "Gerando roteiro…" : "Gerar roteiro para edição"}
