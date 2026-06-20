@@ -12,6 +12,16 @@ const logStep = (step: string, details?: any) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
+// Redact PII (emails, names) before logging. Keep first char + domain for debugging only.
+export const redactEmail = (email?: string | null): string => {
+  if (!email || typeof email !== "string") return "<none>";
+  const at = email.indexOf("@");
+  if (at <= 0) return "***";
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  return `${local[0]}***@${domain}`;
+};
+
 // Map Stripe product IDs to roles
 const PRODUCT_ROLE_MAP: Record<string, string> = {
   "prod_TU5KLqyK3KGUSd": "premium", // Premium plan
