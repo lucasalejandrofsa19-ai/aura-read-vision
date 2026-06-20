@@ -293,13 +293,28 @@ export default function StoryVideo() {
 
 
         {started && !result && !error && (
-          <Card className="flex flex-col items-center gap-5 p-10 text-center">
+          <Card className="flex flex-col items-center gap-5 p-10 text-center" role="status" aria-live="polite">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-muted-foreground">
-              {status === "pending"
-                ? "Seu vídeo entrou na fila. A geração inicia em instantes."
-                : "Montando seu vídeo parte por parte."}
-            </p>
+            <div className="space-y-1">
+              <p className="font-medium">{statusLabel[status] ?? status}</p>
+              <p className="text-sm text-muted-foreground">
+                {status === "pending"
+                  ? "Seu vídeo entrou na fila. A geração inicia em instantes."
+                  : "Montando seu vídeo parte por parte."}
+              </p>
+            </div>
+
+            <div className="w-full max-w-md space-y-2 text-left">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{Math.round(jobProgressValue)}%</span>
+                <span>{Math.floor(elapsedSeconds / 60)}min {elapsedSeconds % 60}s</span>
+              </div>
+              <Progress value={jobProgressValue} />
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>Status: {status}</span>
+                {lastUpdateLabel && <span>{lastUpdateLabel}</span>}
+              </div>
+            </div>
 
             {progress && progress.total > 0 && (
               <div className="w-full max-w-md space-y-3 text-left">
@@ -318,6 +333,15 @@ export default function StoryVideo() {
                 </div>
               </div>
             )}
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button variant="outline" onClick={handleCancel}>
+                Cancelar
+              </Button>
+              <Button variant="secondary" onClick={handleRetry} disabled={!draft}>
+                <RotateCcw className="mr-2 h-4 w-4" /> Tentar novamente
+              </Button>
+            </div>
           </Card>
         )}
 
