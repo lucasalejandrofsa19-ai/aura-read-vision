@@ -9,8 +9,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Highlight } from "@/hooks/useHighlights";
 import { ExportDialog } from "@/components/ExportDialog";
-import { AdSenseUnit } from "@/components/AdSenseUnit";
-import { ADSENSE_SLOTS } from "@/lib/adsense";
 import { HighlightImageDialog } from "@/components/HighlightImageDialog";
 import { DeepenTopicDialog } from "@/components/DeepenTopicDialog";
 import { Compass } from "lucide-react";
