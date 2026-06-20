@@ -348,6 +348,8 @@ export const ReaderPageSearch = ({
                         import.meta.url,
                       ).toString() + `?t=${Date.now()}`;
                       pdfjs.GlobalWorkerOptions.workerSrc = newSrc;
+                      workerFallbackIdxRef.current = 0;
+                      setWorkerInfo({ src: newSrc, fallbackUsed: false, lastError: null });
                       console.log("[ReaderPageSearch] workerSrc resetado:", newSrc);
                       // Reindexa imediatamente para validar o worker
                       setOpen(true);
