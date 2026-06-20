@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useStoryVideoJob, fetchStoryVideoScript, type Scene, type NarrationTone, type DraftScene } from "@/hooks/useStoryVideoJob";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Sparkles, Pencil, Volume2, Copy } from "lucide-react";
+import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Sparkles, Pencil, Volume2, Copy, XCircle, RotateCcw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -63,13 +63,43 @@ const loadPrefs = (): Prefs => {
   return { voice: "nova", tone: "neutro", mode: "summary" };
 };
 
+function useElapsedSeconds(startedAt: string | null, active: boolean) {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!startedAt || !active) return;
+    const tick = () => setSeconds(Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000)));
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [active, startedAt]);
+
+  return seconds;
+}
+
 export default function StoryVideo() {
   const { bookId = "" } = useParams();
-  const { status, error, result, attempts, progress, start } = useStoryVideoJob();
+  const { status, error, result, attempts, progress, createdAt, updatedAt, timedOut, start, cancel, reset } = useStoryVideoJob();
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
   const [started, setStarted] = useState(false);
   const [draft, setDraft] = useState<DraftScene[] | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
+
+  const elapsedSeconds = useElapsedSeconds(createdAt, status === "pending" || status === "processing");
+  const lastUpdateLabel = updatedAt
+    ? (() => {
+      const seconds = Math.max(0, Math.floor((Date.now() - new Date(updatedAt).getTime()) / 1000));
+      return seconds < 60 ? `atualizado há ${seconds}s` : `atualizado há ${Math.floor(seconds / 60)}min`;
+    })()
+    : null;
+  const jobProgressValue = useMemo(() => {
+    if (status === "completed") return 100;
+    if (status === "pending") return 8;
+    if (!progress?.total) return status === "processing" ? 16 : 0;
+    const sceneRatio = Math.max(0, Math.min(1, progress.current / progress.total));
+    const stageBonus = progress.stage === "image" ? 0.15 : progress.stage === "narration" ? 0.55 : progress.stage === "scene_done" ? 0.85 : 0;
+    return Math.min(96, Math.max(12, ((Math.max(0, progress.current - 1) + stageBonus) / progress.total) * 100));
+  }, [progress, status]);
 
   useEffect(() => {
     try { sessionStorage.setItem(SS_KEY, JSON.stringify(prefs)); } catch { /* noop */ }
@@ -89,8 +119,8 @@ export default function StoryVideo() {
     }
   };
 
-  const handleStart = () => {
-    if (!bookId || started || !draft) return;
+  const handleStart = (force = false) => {
+    if (!bookId || (!force && started) || !draft) return;
     setStarted(true);
     start({
       book_id: bookId,
@@ -100,6 +130,17 @@ export default function StoryVideo() {
       scenesCount: draft.length,
       scenesOverride: draft,
     });
+  };
+
+  const handleCancel = () => {
+    cancel();
+    setStarted(false);
+    toast.info("Acompanhamento cancelado. Você pode tentar novamente.");
+  };
+
+  const handleRetry = () => {
+    reset();
+    handleStart(true);
   };
 
   const updateDraftScene = (i: number, patch: Partial<DraftScene>) => {
@@ -122,8 +163,24 @@ export default function StoryVideo() {
         <h1 className="mb-6 text-3xl font-bold">Vídeo narrado por IA</h1>
 
         {error && (
-          <Card className="mb-4 border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-            {error}
+          <Card className="mb-4 space-y-3 border-destructive/40 bg-destructive/10 p-4 text-sm" role="alert" aria-live="assertive">
+            <div className="flex items-start gap-2 text-destructive">
+              <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <p className="font-medium">{timedOut ? "Tempo limite excedido" : "Falha na geração do vídeo"}</p>
+                <p className="mt-1 break-words text-muted-foreground">{error}</p>
+              </div>
+            </div>
+            {started && !result && (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button size="sm" variant="default" onClick={handleRetry} disabled={!draft}>
+                  <RotateCcw className="mr-2 h-3 w-3" /> Tentar novamente
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleCancel}>
+                  Cancelar
+                </Button>
+              </div>
+            )}
           </Card>
         )}
 
@@ -224,7 +281,7 @@ export default function StoryVideo() {
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button onClick={handleStart} disabled={!bookId || draft.some(s => !s.narration.trim())} className="flex-1">
+              <Button onClick={() => handleStart()} disabled={!bookId || draft.some(s => !s.narration.trim())} className="flex-1">
                 <Sparkles className="mr-2 h-4 w-4" /> Gerar vídeo com minhas narrações
               </Button>
               <Button variant="outline" onClick={handleGenerateDraft} disabled={loadingDraft}>
@@ -237,13 +294,28 @@ export default function StoryVideo() {
 
 
         {started && !result && !error && (
-          <Card className="flex flex-col items-center gap-5 p-10 text-center">
+          <Card className="flex flex-col items-center gap-5 p-10 text-center" role="status" aria-live="polite">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-muted-foreground">
-              {status === "pending"
-                ? "Seu vídeo entrou na fila. A geração inicia em instantes."
-                : "Montando seu vídeo parte por parte."}
-            </p>
+            <div className="space-y-1">
+              <p className="font-medium">{statusLabel[status] ?? status}</p>
+              <p className="text-sm text-muted-foreground">
+                {status === "pending"
+                  ? "Seu vídeo entrou na fila. A geração inicia em instantes."
+                  : "Montando seu vídeo parte por parte."}
+              </p>
+            </div>
+
+            <div className="w-full max-w-md space-y-2 text-left">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{Math.round(jobProgressValue)}%</span>
+                <span>{Math.floor(elapsedSeconds / 60)}min {elapsedSeconds % 60}s</span>
+              </div>
+              <Progress value={jobProgressValue} />
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>Status: {status}</span>
+                {lastUpdateLabel && <span>{lastUpdateLabel}</span>}
+              </div>
+            </div>
 
             {progress && progress.total > 0 && (
               <div className="w-full max-w-md space-y-3 text-left">
@@ -262,6 +334,12 @@ export default function StoryVideo() {
                 </div>
               </div>
             )}
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button variant="outline" onClick={handleCancel}>
+                Cancelar
+              </Button>
+            </div>
           </Card>
         )}
 

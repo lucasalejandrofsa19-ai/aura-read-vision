@@ -82,6 +82,10 @@ serve(async (req) => {
     try { await sb.from("story_video_jobs").update({ progress: p }).eq("id", jobId); }
     catch (e) { console.error("progress update", e); }
   };
+  const shouldContinue = async (): Promise<boolean> => {
+    const { data } = await sb.from("story_video_jobs").select("status").eq("id", jobId).maybeSingle();
+    return data?.status === "processing";
+  };
 
   try {
     // Título/autor do livro (apenas para metadados do resultado)
@@ -131,7 +135,7 @@ serve(async (req) => {
       });
       if (!r.ok) { console.error("openai tts", r.status); return ""; }
       const buf = await r.arrayBuffer();
-      return `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
+      return `data:audio/mpeg;base64,${base64Encode(buf)}`;
     }
     async function ttsEleven(input: string, voice: string): Promise<string> {
       const voiceId = ELEVEN_VOICE_MAP[voice] || ELEVEN_VOICE_MAP.nova;
@@ -142,7 +146,7 @@ serve(async (req) => {
       });
       if (!r.ok) { console.error("eleven tts", r.status); return ""; }
       const buf = await r.arrayBuffer();
-      return `data:audio/mpeg;base64,${base64Encode(new Uint8Array(buf))}`;
+      return `data:audio/mpeg;base64,${base64Encode(buf)}`;
     }
     async function genTTS(text: string, voice: string): Promise<string> {
       const input = text.slice(0, 2500);
@@ -165,7 +169,7 @@ serve(async (req) => {
         if (error || !data) { console.error("download img", storagePath, error?.message); return ""; }
         const buf = await data.arrayBuffer();
         const mime = data.type || "image/png";
-        return `data:${mime};base64,${base64Encode(new Uint8Array(buf))}`;
+        return `data:${mime};base64,${base64Encode(buf)}`;
       } catch (e) { console.error("loadHighlightImage ex", e); return ""; }
     }
 
@@ -249,6 +253,8 @@ serve(async (req) => {
       await updateProgress({ current: 0, total, stage: "starting", etaSeconds: total * SECONDS_PER_STEP, sceneTitle: null });
       const built: any[] = [];
       for (let idx = 0; idx < selected.length; idx++) {
+        if (!(await shouldContinue())) return new Response(JSON.stringify({ ok: false, cancelled: true, job_id: jobId }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const h = selected[idx];
         const sceneTitle = h.title || `Destaque ${idx + 1} · pág. ${h.page_number}`;
         const remainingAfter = (total - idx - 1) * SECONDS_PER_STEP;
@@ -260,6 +266,8 @@ serve(async (req) => {
         await updateProgress({ current: idx + 1, total, stage: "scene_done", sceneTitle, etaSeconds: remainingAfter });
       }
       await updateProgress({ current: total, total, stage: "finalizing", sceneTitle: null, etaSeconds: 0 });
+      if (!(await shouldContinue())) return new Response(JSON.stringify({ ok: false, cancelled: true, job_id: jobId }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       const result = { title, author, scenes: built, targetDurationSeconds: TARGET_TOTAL_SECONDS };
       await sb.from("story_video_jobs").update({ status: "completed", result, processed_at: new Date().toISOString(),
         progress: { current: total, total, stage: "completed", sceneTitle: null, etaSeconds: 0 } }).eq("id", jobId);
@@ -349,6 +357,8 @@ Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"
     const total = chapters.length;
     const built: any[] = [];
     for (let idx = 0; idx < chapters.length; idx++) {
+      if (!(await shouldContinue())) return new Response(JSON.stringify({ ok: false, cancelled: true, job_id: jobId }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       const c = chapters[idx];
       const sceneTitle = c.chapterTitle || `Cena ${idx + 1}`;
       const remainingAfter = (total - idx - 1) * SECONDS_PER_STEP;
@@ -361,6 +371,8 @@ Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"
     }
 
     await updateProgress({ current: total, total, stage: "finalizing", sceneTitle: null, etaSeconds: 0 });
+    if (!(await shouldContinue())) return new Response(JSON.stringify({ ok: false, cancelled: true, job_id: jobId }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const result = { title, author, scenes: built, targetDurationSeconds: TARGET_TOTAL_SECONDS };
     await sb.from("story_video_jobs").update({
       status: "completed",

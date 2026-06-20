@@ -24,6 +24,8 @@ async function triggerWorker() {
   } catch (e) { console.error("worker trigger ex", e); }
 }
 
+const VIDEO_TIMEOUT_MS = 10 * 60 * 1000;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -95,17 +97,32 @@ serve(async (req) => {
     // Refuse if user already has a pending/processing job — avoids accidental queue spam.
     const { data: existing } = await supabaseAdmin
       .from("story_video_jobs")
-      .select("id, status")
+      .select("id, status, created_at")
       .eq("user_id", user.id)
       .in("status", ["pending", "processing"])
+      .order("created_at", { ascending: true })
+      .limit(1)
       .maybeSingle();
     if (existing) {
+      const isExpired = Date.now() - new Date(existing.created_at as string).getTime() > VIDEO_TIMEOUT_MS;
+      if (isExpired) {
+        await supabaseAdmin
+          .from("story_video_jobs")
+          .update({
+            status: "failed",
+            error: "Tempo limite excedido. Um novo job pode ser iniciado.",
+            processed_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id);
+      } else {
       EdgeRuntime.waitUntil(triggerWorker());
       return new Response(JSON.stringify({
         job_id: existing.id,
         status: existing.status,
+        created_at: existing.created_at,
         message: "Já existe um vídeo sendo gerado para você.",
       }), { status: 202, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     const { data: job, error: insertErr } = await supabaseAdmin

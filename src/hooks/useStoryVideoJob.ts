@@ -47,6 +47,17 @@ export type StartParams = {
 };
 
 const POLL_INTERVAL_MS = 2500;
+const VIDEO_TIMEOUT_MS = 10 * 60 * 1000;
+
+type JobRow = {
+  status: string;
+  error: string | null;
+  result: unknown;
+  attempts: number | null;
+  progress: unknown;
+  created_at: string;
+  updated_at: string;
+};
 
 export function useStoryVideoJob() {
   const queryClient = useQueryClient();
@@ -56,6 +67,9 @@ export function useStoryVideoJob() {
   const [result, setResult] = useState<StoryVideoResult | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [progress, setProgress] = useState<JobProgress | null>(null);
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
   const timerRef = useRef<number | null>(null);
 
   const stopPolling = useCallback(() => {
@@ -65,10 +79,17 @@ export function useStoryVideoJob() {
     }
   }, []);
 
+  const markTimedOut = useCallback((message = "A geração excedeu o tempo limite. Cancele ou tente novamente.") => {
+    setTimedOut(true);
+    setStatus("failed");
+    setError(message);
+    stopPolling();
+  }, [stopPolling]);
+
   const fetchJob = useCallback(async (id: string) => {
     const { data, error: e } = await supabase
       .from("story_video_jobs")
-      .select("status, error, result, attempts, progress")
+      .select("status, error, result, attempts, progress, created_at, updated_at")
       .eq("id", id)
       .maybeSingle();
     if (e) {
@@ -76,19 +97,27 @@ export function useStoryVideoJob() {
       return;
     }
     if (!data) return;
-    setStatus(data.status as JobStatus);
-    setAttempts(data.attempts ?? 0);
-    const p = data.progress as unknown as JobProgress | null;
+    const job = data as JobRow;
+    const ageMs = Date.now() - new Date(job.created_at).getTime();
+    setCreatedAt(job.created_at);
+    setUpdatedAt(job.updated_at);
+    if ((job.status === "pending" || job.status === "processing") && ageMs > VIDEO_TIMEOUT_MS) {
+      markTimedOut();
+      return;
+    }
+    setStatus(job.status as JobStatus);
+    setAttempts(job.attempts ?? 0);
+    const p = job.progress as JobProgress | null;
     if (p && typeof p.total === "number" && p.total > 0) setProgress(p);
-    if (data.status === "completed" && data.result) {
-      setResult(data.result as unknown as StoryVideoResult);
+    if (job.status === "completed" && job.result) {
+      setResult(job.result as StoryVideoResult);
       queryClient.invalidateQueries({ queryKey: ["story-video-quota"] });
       stopPolling();
-    } else if (data.status === "failed") {
-      setError(data.error || "Falha na geração");
+    } else if (job.status === "failed") {
+      setError(job.error || "Falha na geração");
       stopPolling();
     }
-  }, [stopPolling, queryClient]);
+  }, [markTimedOut, stopPolling, queryClient]);
 
   const startPolling = useCallback((id: string) => {
     stopPolling();
@@ -99,6 +128,10 @@ export function useStoryVideoJob() {
   const start = useCallback(async (params: StartParams) => {
     setError(null);
     setResult(null);
+    setProgress(null);
+    setCreatedAt(null);
+    setUpdatedAt(null);
+    setTimedOut(false);
     setStatus("pending");
     const { data, error: invokeErr } = await supabase.functions.invoke(
       "generate-story-video-start",
@@ -116,9 +149,21 @@ export function useStoryVideoJob() {
       return null;
     }
     setJobId(id);
+    setCreatedAt((data as { created_at?: string })?.created_at ?? null);
     startPolling(id);
     return id;
   }, [startPolling]);
+
+  const cancel = useCallback(async () => {
+    const id = jobId;
+    if (id) {
+      await supabase.functions.invoke("cancel-story-video-job", { body: { job_id: id } }).catch(() => null);
+    }
+    stopPolling();
+    setStatus("idle");
+    setError(null);
+    setTimedOut(false);
+  }, [jobId, stopPolling]);
 
   const reset = useCallback(() => {
     stopPolling();
@@ -128,11 +173,14 @@ export function useStoryVideoJob() {
     setResult(null);
     setAttempts(0);
     setProgress(null);
+    setCreatedAt(null);
+    setUpdatedAt(null);
+    setTimedOut(false);
   }, [stopPolling]);
 
   useEffect(() => () => stopPolling(), [stopPolling]);
 
-  return { jobId, status, error, result, attempts, progress, start, reset };
+  return { jobId, status, error, result, attempts, progress, createdAt, updatedAt, timedOut, start, cancel, reset };
 }
 
 export async function fetchStoryVideoScript(params: {
