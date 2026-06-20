@@ -59,6 +59,7 @@ serve(async (req) => {
     const imagePromptIn = body.imagePrompt ? String(body.imagePrompt).slice(0, 500) : "";
     const highlightId = body.highlightId ? String(body.highlightId).slice(0, 64) : "";
     const mode = (body.mode as string) || "summary";
+    const audioOnly = body.audioOnly === true;
 
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
@@ -152,14 +153,16 @@ serve(async (req) => {
       return "";
     }
 
-    // Mode highlights: reaproveita imagem do destaque do usuário; senão gera por IA.
-    const imagePromise = mode === "highlights" && highlightId
-      ? loadHighlightImage().then(img => img || genImage(imagePromptIn || chapterTitle || narration.slice(0, 80)))
-      : genImage(imagePromptIn || chapterTitle || narration.slice(0, 80));
+    // audioOnly: pula geração de imagem (mais rápido, para regenerar só narração)
+    const imagePromise: Promise<string> = audioOnly
+      ? Promise.resolve("")
+      : (mode === "highlights" && highlightId
+          ? loadHighlightImage().then(img => img || genImage(imagePromptIn || chapterTitle || narration.slice(0, 80)))
+          : genImage(imagePromptIn || chapterTitle || narration.slice(0, 80)));
 
     const [audioDataUrl, imageDataUrl] = await Promise.all([genTTS(), imagePromise]);
-    if (!audioDataUrl && !imageDataUrl) {
-      return new Response(JSON.stringify({ error: "Falha ao regenerar áudio e imagem" }),
+    if (!audioDataUrl && (audioOnly || !imageDataUrl)) {
+      return new Response(JSON.stringify({ error: audioOnly ? "Falha ao regenerar áudio" : "Falha ao regenerar áudio e imagem" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -167,7 +170,8 @@ serve(async (req) => {
       chapterTitle: chapterTitle || `Cena`,
       narration,
       audioDataUrl,
-      segments: [{ text: narration, imageDataUrl }],
+      audioOnly,
+      segments: audioOnly ? [] : [{ text: narration, imageDataUrl }],
     }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("regenerate-story-video-scene error", error);

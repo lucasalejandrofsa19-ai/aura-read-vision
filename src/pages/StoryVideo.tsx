@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useStoryVideoJob, fetchStoryVideoScript, type Scene, type NarrationTone, type DraftScene } from "@/hooks/useStoryVideoJob";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Sparkles, Pencil } from "lucide-react";
+import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Sparkles, Pencil, Volume2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -321,7 +321,7 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
     return () => window.clearInterval(t);
   }, [playing, segImages.length, idx]);
 
-  const handleRegenScene = async () => {
+  const runRegen = async (audioOnly: boolean) => {
     if (!scene || regenerating) return;
     const narration = editedText.trim();
     if (narration.length < 2) {
@@ -338,6 +338,7 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
           voice,
           tone,
           narration,
+          audioOnly,
           chapterTitle: scene.chapterTitle,
           imagePrompt: draftScene?.imagePrompt,
           highlightId: draftScene?.highlightId,
@@ -345,15 +346,21 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
       });
       if (error) throw new Error(error.message);
       if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
-      const next = data as Scene;
-      setScenes(curr => curr.map((s, i) => i === idx ? { ...s, ...next } : s));
-      toast.success("Cena regenerada.");
+      const next = data as Scene & { audioOnly?: boolean };
+      setScenes(curr => curr.map((s, i) => {
+        if (i !== idx) return s;
+        if (audioOnly) return { ...s, narration: next.narration, audioDataUrl: next.audioDataUrl };
+        return { ...s, ...next };
+      }));
+      toast.success(audioOnly ? "Áudio regenerado." : "Cena regenerada.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao regenerar cena");
+      toast.error(e instanceof Error ? e.message : "Falha ao regenerar");
     } finally {
       setRegenerating(false);
     }
   };
+  const handleRegenScene = () => runRegen(false);
+  const handleRegenAudio = () => runRegen(true);
 
   if (!scene) return null;
 
@@ -405,16 +412,32 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
               maxLength={1200}
               disabled={regenerating}
             />
-            <Button
-              onClick={handleRegenScene}
-              disabled={regenerating || editedText.trim() === scene.narration.trim()}
-              variant="secondary"
-              className="w-full"
-            >
-              {regenerating
-                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Regerando…</>
-                : <><Sparkles className="mr-2 h-4 w-4" /> Regerar áudio e imagem apenas desta cena</>}
-            </Button>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Button
+                onClick={handleRegenAudio}
+                disabled={regenerating || editedText.trim() === scene.narration.trim()}
+                variant="default"
+                className="w-full"
+                title="Mais rápido: regenera só a narração mantendo a imagem"
+              >
+                {regenerating
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processando…</>
+                  : <><Volume2 className="mr-2 h-4 w-4" /> Regenerar Áudio</>}
+              </Button>
+              <Button
+                onClick={handleRegenScene}
+                disabled={regenerating || editedText.trim() === scene.narration.trim()}
+                variant="secondary"
+                className="w-full"
+              >
+                {regenerating
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processando…</>
+                  : <><Sparkles className="mr-2 h-4 w-4" /> Áudio + Imagem</>}
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              "Regenerar Áudio" é mais rápido pois reutiliza a imagem atual.
+            </p>
           </div>
         </div>
       </Card>
