@@ -597,6 +597,9 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
           </div>
         </div>
       </Card>
-    </div>
+
+      {bookId && <BookVideoHistory bookId={bookId} refreshKey={status === "completed" ? 1 : 0} />}
+      </div>
+    </main>
   );
 }
