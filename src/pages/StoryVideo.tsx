@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useStoryVideoJob, fetchStoryVideoScript, type Scene, type NarrationTone, type DraftScene } from "@/hooks/useStoryVideoJob";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Sparkles, Pencil, Volume2 } from "lucide-react";
+import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Sparkles, Pencil, Volume2, Copy } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -288,7 +288,7 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
   const [regenerating, setRegenerating] = useState<false | "audio" | "full">(false);
   const [regenProgress, setRegenProgress] = useState(0);
   const [regenLabel, setRegenLabel] = useState("");
-  const [regenError, setRegenError] = useState<{ kind: "audio" | "full"; message: string } | null>(null);
+  const [regenError, setRegenError] = useState<{ kind: "audio" | "full"; message: string; code?: string | number; timestamp: string; sceneIndex: number; sceneTitle: string; voice: string; tone: string; mode: string } | null>(null);
 
   useEffect(() => {
     if (!regenerating) { setRegenProgress(0); return; }
@@ -370,8 +370,18 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
       }));
       toast.success(audioOnly ? "Áudio regenerado." : "Cena regenerada.");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Falha ao regenerar";
-      setRegenError({ kind: audioOnly ? "audio" : "full", message: msg });
+      const err = e as { message?: string; status?: number; code?: string | number; name?: string } | Error;
+      const msg = (err as Error)?.message || "Falha ao regenerar";
+      const code = (err as { status?: number; code?: string | number })?.status ?? (err as { code?: string | number })?.code;
+      setRegenError({
+        kind: audioOnly ? "audio" : "full",
+        message: msg,
+        code,
+        timestamp: new Date().toISOString(),
+        sceneIndex: idx + 1,
+        sceneTitle: scene.chapterTitle,
+        voice, tone, mode,
+      });
       toast.error(msg);
     } finally {
       setRegenerating(false);
@@ -453,20 +463,47 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
                   : <><Sparkles className="mr-2 h-4 w-4" /> Áudio + Imagem</>}
               </Button>
             </div>
-            {regenError && !regenerating && (
-              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm" role="alert">
-                <p className="font-medium text-destructive">
-                  {regenError.kind === "audio" ? "Falha ao regenerar o áudio" : "Falha ao regenerar a cena"}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground break-words">{regenError.message}</p>
-                <div className="mt-2 flex gap-2">
-                  <Button size="sm" variant="default" onClick={() => runRegen(regenError.kind === "audio")}>
-                    <Sparkles className="mr-2 h-3 w-3" /> Tentar novamente
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setRegenError(null)}>Dispensar</Button>
+            {regenError && !regenerating && (() => {
+              const report = [
+                `[StoryVideo] ${regenError.kind === "audio" ? "Audio-only regeneration failure" : "Scene regeneration failure"}`,
+                `Timestamp: ${regenError.timestamp}`,
+                `Scene: #${regenError.sceneIndex} — ${regenError.sceneTitle}`,
+                `Mode: ${regenError.mode} | Voice: ${regenError.voice} | Tone: ${regenError.tone}`,
+                regenError.code !== undefined ? `Code: ${regenError.code}` : null,
+                `Message: ${regenError.message}`,
+                `URL: ${typeof window !== "undefined" ? window.location.href : ""}`,
+                `UA: ${typeof navigator !== "undefined" ? navigator.userAgent : ""}`,
+              ].filter(Boolean).join("\n");
+              const copy = async () => {
+                try {
+                  await navigator.clipboard.writeText(report);
+                  toast.success("Erro copiado!");
+                } catch {
+                  toast.error("Não foi possível copiar. Selecione manualmente.");
+                }
+              };
+              return (
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm" role="alert" aria-live="assertive">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium text-destructive">
+                      {regenError.kind === "audio" ? "Falha ao regenerar o áudio" : "Falha ao regenerar a cena"}
+                      {regenError.code !== undefined && <span className="ml-1 text-xs opacity-70">(código {regenError.code})</span>}
+                    </p>
+                    <Button size="sm" variant="ghost" className="h-7 px-2" onClick={copy} title="Copiar detalhes do erro">
+                      <Copy className="mr-1 h-3 w-3" /> Copiar
+                    </Button>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground break-words">{regenError.message}</p>
+                  <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded bg-background/60 p-2 text-[10px] text-muted-foreground border border-border">{report}</pre>
+                  <div className="mt-2 flex gap-2">
+                    <Button size="sm" variant="default" onClick={() => runRegen(regenError.kind === "audio")}>
+                      <Sparkles className="mr-2 h-3 w-3" /> Tentar novamente
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setRegenError(null)}>Dispensar</Button>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
             {regenerating && (
               <div className="space-y-1 pt-1" role="status" aria-live="polite">
                 <Progress value={regenProgress} className="h-2" />
