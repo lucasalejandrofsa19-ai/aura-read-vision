@@ -59,6 +59,7 @@ serve(async (req) => {
     const imagePromptIn = body.imagePrompt ? String(body.imagePrompt).slice(0, 500) : "";
     const highlightId = body.highlightId ? String(body.highlightId).slice(0, 64) : "";
     const mode = (body.mode as string) || "summary";
+    const audioOnly = body.audioOnly === true;
 
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
