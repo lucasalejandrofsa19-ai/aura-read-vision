@@ -212,21 +212,23 @@ const Reader = () => {
         setCurrentPage((data as any).current_page);
       }
 
-      if ((data as any).file_path) {
+      const filePath = (data as any)?.file_path;
+      if (filePath && typeof filePath === "string" && filePath.trim().length > 0) {
         const { data: signedData, error: signedError } = await supabase.storage
           .from(bucket)
-          .createSignedUrl((data as any).file_path, 60 * 60);
+          .createSignedUrl(filePath, 60 * 60);
 
         if (signedError) throw signedError;
-        if (!signedData?.signedUrl) throw new Error("URL assinada vazia");
+        if (!signedData?.signedUrl) throw new Error("URL assinada vazia retornada pelo storage");
         setPdfUrl(signedData.signedUrl);
       } else {
-        throw new Error("Arquivo PDF não encontrado (file_path ausente no registro)");
+        console.error("[Reader] file_path ausente/vazio:", { id, bucket, isPremium, data });
+        throw new Error(`Arquivo PDF não encontrado para este livro (bucket: ${bucket}). O registro existe mas não possui caminho de arquivo válido.`);
       }
     } catch (error: any) {
       console.error("[Reader] Error loading book:", error);
       captureError(error, { context: "load_book", bookId: id });
-      const msg = error?.message || "Erro desconhecido";
+      const msg = error?.message || error?.error_description || "Erro desconhecido ao carregar PDF";
       setLoadError(msg);
       toast.error(`Não foi possível abrir o PDF: ${msg}`, { duration: 8000 });
       // Não redirecionar — deixar o usuário ver o erro e voltar manualmente
@@ -234,6 +236,7 @@ const Reader = () => {
       setLoading(false);
     }
   };
+
 
   const renewSignedUrl = useCallback(async (): Promise<string | null> => {
     const filePath = (book as any)?.file_path;
