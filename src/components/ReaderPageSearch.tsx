@@ -50,6 +50,8 @@ export const ReaderPageSearch = ({
   const [activeIdx, setActiveIdx] = useState(0);
   const [diag, setDiag] = useState<PageIndexEntry | null>(null);
   const [reindexNonce, setReindexNonce] = useState(0);
+  const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+  const [lastStatus, setLastStatus] = useState<"idle" | "indexing" | "done" | "error">("idle");
   const indexedKeyRef = useRef<string>("");
 
   const currentVersion = bookVersion ?? "v0";
@@ -119,9 +121,11 @@ export const ReaderPageSearch = ({
     (async () => {
       try {
         setIndexing(true);
+        setLastStatus("indexing");
         const task = pdfjs.getDocument(pdfUrl);
         const doc = await task.promise;
         const n = doc.numPages;
+        setProgress({ current: 0, total: n });
         const collected: string[] = new Array(n).fill("");
         for (let i = 1; i <= n; i++) {
           if (cancelled) return;
@@ -135,6 +139,7 @@ export const ReaderPageSearch = ({
           } catch {
             collected[i - 1] = "";
           }
+          if (!cancelled) setProgress({ current: i, total: n });
         }
         if (!cancelled) {
           setPages(collected);
@@ -146,10 +151,14 @@ export const ReaderPageSearch = ({
             version: currentVersion,
             indexedAt: Date.now(),
           });
+          setLastStatus("done");
         }
       } catch (err) {
         console.error("[ReaderPageSearch] index error", err);
-        if (!cancelled) toast.error("Não foi possível indexar o PDF para busca.");
+        if (!cancelled) {
+          setLastStatus("error");
+          toast.error("Não foi possível indexar o PDF para busca.");
+        }
       } finally {
         if (!cancelled) setIndexing(false);
       }
@@ -335,6 +344,41 @@ export const ReaderPageSearch = ({
                 </Button>
               </div>
             </div>
+            {(() => {
+              const pct = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
+              const statusLabel = indexing
+                ? `Indexando… ${progress.current}/${progress.total} (${pct}%)`
+                : lastStatus === "done"
+                ? `Concluído — ${progress.total || pages.length} páginas`
+                : lastStatus === "error"
+                ? "Erro ao indexar"
+                : pages.length > 0
+                ? `Pronto — ${pages.length} páginas em cache`
+                : "Aguardando…";
+              const statusColor = indexing
+                ? "text-primary"
+                : lastStatus === "error"
+                ? "text-destructive"
+                : lastStatus === "done"
+                ? "text-primary"
+                : "text-muted-foreground";
+              return (
+                <div className="mb-1.5">
+                  <div className={`flex items-center gap-1.5 text-[10px] font-mono ${statusColor}`}>
+                    {indexing && <Loader2 className="w-3 h-3 animate-spin" />}
+                    <span>{statusLabel}</span>
+                  </div>
+                  {indexing && (
+                    <div className="mt-1 h-1 w-full bg-muted rounded overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             <dl className="text-[11px] font-mono leading-snug grid grid-cols-[88px_1fr] gap-x-2">
               <dt className="text-muted-foreground">bookId</dt>
               <dd className="truncate" title={bookId}>{bookId || "—"}</dd>
