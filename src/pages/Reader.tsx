@@ -41,6 +41,7 @@ import { TOOL_COPY } from "@/lib/toolGuide";
 import { TourTargetsProvider, useTourTarget } from "@/contexts/TourTargetsContext";
 import { ReaderTour } from "@/components/ReaderTour";
 import { ReaderBookSearch } from "@/components/ReaderBookSearch";
+import { ReaderPageSearch } from "@/components/ReaderPageSearch";
 
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { useNotes } from "@/hooks/useNotes";
