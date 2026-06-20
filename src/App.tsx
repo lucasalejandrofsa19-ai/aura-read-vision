@@ -131,7 +131,7 @@ const AppContent = () => {
         </Suspense>
       </Sentry.ErrorBoundary>
       <GlobalFooter />
-      <StickyAdBanner />
+      
       <CookieConsentBanner />
     </>
   );
