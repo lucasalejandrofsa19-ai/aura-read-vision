@@ -164,8 +164,22 @@ export const ReaderPageSearch = ({
           setLastStatus("done");
         }
       } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
         console.error("[ReaderPageSearch] index error", err);
-        if (!cancelled) {
+        const isWorkerErr = /worker|fake worker|module specifier|pdf\.worker|importScripts/i.test(msg);
+        if (isWorkerErr && workerFallbackIdxRef.current < workerFallbacksRef.current.length) {
+          const nextSrc = workerFallbacksRef.current[workerFallbackIdxRef.current++];
+          pdfjs.GlobalWorkerOptions.workerSrc = nextSrc;
+          setWorkerInfo({ src: nextSrc, fallbackUsed: true, lastError: msg });
+          console.warn("[ReaderPageSearch] worker fallback ->", nextSrc);
+          if (!cancelled) {
+            toast.message("Worker local falhou. Tentando CDN…");
+            indexedKeyRef.current = "";
+            setPages([]);
+            setReindexNonce((n) => n + 1);
+          }
+        } else if (!cancelled) {
+          setWorkerInfo((w) => ({ ...w, lastError: msg }));
           setLastStatus("error");
           toast.error("Não foi possível indexar o PDF para busca.");
         }
