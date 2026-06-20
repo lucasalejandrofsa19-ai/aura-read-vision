@@ -58,10 +58,32 @@ export const ReaderPageSearch = ({
     lastError: null,
   });
   type WorkerAttempt = { ts: number; src: string; status: "ok" | "error" | "switched"; error?: string };
-  const [workerHistory, setWorkerHistory] = useState<WorkerAttempt[]>([]);
+  const WORKER_HISTORY_KEY = "aurareader:workerHistory";
+  const [workerHistory, setWorkerHistory] = useState<WorkerAttempt[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(WORKER_HISTORY_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as WorkerAttempt[]).slice(0, 50) : [];
+    } catch {
+      return [];
+    }
+  });
   const [historyOpen, setHistoryOpen] = useState(false);
+  const persistHistory = (next: WorkerAttempt[]) => {
+    try {
+      window.localStorage.setItem(WORKER_HISTORY_KEY, JSON.stringify(next));
+    } catch {
+      /* quota/privacy: ignora */
+    }
+  };
   const pushAttempt = (a: WorkerAttempt) =>
-    setWorkerHistory((h) => [a, ...h].slice(0, 20));
+    setWorkerHistory((h) => {
+      const next = [a, ...h].slice(0, 50);
+      persistHistory(next);
+      return next;
+    });
   const workerFallbacksRef = useRef<string[]>([
     `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
     `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
