@@ -52,6 +52,16 @@ export const ReaderPageSearch = ({
   const [reindexNonce, setReindexNonce] = useState(0);
   const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
   const [lastStatus, setLastStatus] = useState<"idle" | "indexing" | "done" | "error">("idle");
+  const [workerInfo, setWorkerInfo] = useState<{ src: string; fallbackUsed: boolean; lastError: string | null }>({
+    src: pdfjs.GlobalWorkerOptions.workerSrc || "",
+    fallbackUsed: false,
+    lastError: null,
+  });
+  const workerFallbacksRef = useRef<string[]>([
+    `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
+    `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
+  ]);
+  const workerFallbackIdxRef = useRef(0);
   const indexedKeyRef = useRef<string>("");
 
   const currentVersion = bookVersion ?? "v0";
