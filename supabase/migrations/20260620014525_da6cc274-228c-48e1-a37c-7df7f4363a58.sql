@@ -1,0 +1,1 @@
+ALTER TABLE public.premium_books ALTER COLUMN is_free SET DEFAULT true;
