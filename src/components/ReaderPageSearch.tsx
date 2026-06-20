@@ -47,10 +47,33 @@ export const ReaderPageSearch = ({
   const [indexing, setIndexing] = useState(false);
   const [pages, setPages] = useState<string[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [diag, setDiag] = useState<PageIndexEntry | null>(null);
   const indexedKeyRef = useRef<string>("");
 
   const currentVersion = bookVersion ?? "v0";
   const currentKey = `${bookId}::${currentVersion}`;
+
+  // Diagnóstico: habilitado via ?debug=1 ou localStorage["aurareader:debug"]="1"
+  const debugEnabled = (() => {
+    if (typeof window === "undefined") return false;
+    try {
+      if (new URLSearchParams(window.location.search).get("debug") === "1") return true;
+      return window.localStorage.getItem("aurareader:debug") === "1";
+    } catch {
+      return false;
+    }
+  })();
+
+  // Re-lê a entrada do IndexedDB para o painel de diagnóstico
+  const refreshDiag = async () => {
+    if (!bookId || !debugEnabled) return;
+    const c = await getCachedPageIndex(bookId);
+    setDiag(c);
+  };
+  useEffect(() => {
+    refreshDiag();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookId, currentVersion, indexing]);
 
   // Atalho Ctrl/Cmd+Shift+F para abrir
   useEffect(() => {
