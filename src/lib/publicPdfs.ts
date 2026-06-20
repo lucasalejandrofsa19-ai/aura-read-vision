@@ -35,6 +35,15 @@ export const PUBLIC_PDFS: PublicPdf[] = [
     sizeBytes: bibliaTNM.size,
     filename: bibliaTNM.original_filename,
   },
+  {
+    id: "biblia-sagrada-sbtb",
+    title: "Bíblia Sagrada — SBTB",
+    author: "Sociedade Bíblica Trinitariana do Brasil",
+    description: "Edição completa da Bíblia Sagrada (SBTB) disponível gratuitamente.",
+    url: bibliaSBTB.url,
+    sizeBytes: bibliaSBTB.size,
+    filename: bibliaSBTB.original_filename,
+  },
 ];
 
 export const formatBytes = (bytes: number): string => {
