@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useStoryVideoJob, fetchStoryVideoScript, type Scene, type NarrationTone, type DraftScene } from "@/hooks/useStoryVideoJob";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Sparkles, Pencil, Volume2, Copy } from "lucide-react";
+import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Sparkles, Pencil, Volume2, Copy, XCircle, RotateCcw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -65,11 +65,18 @@ const loadPrefs = (): Prefs => {
 
 export default function StoryVideo() {
   const { bookId = "" } = useParams();
-  const { status, error, result, attempts, progress, start } = useStoryVideoJob();
+  const { status, error, result, attempts, progress, createdAt, updatedAt, timedOut, start, cancel, reset } = useStoryVideoJob();
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
   const [started, setStarted] = useState(false);
   const [draft, setDraft] = useState<DraftScene[] | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
+
+  const elapsedSeconds = useElapsedSeconds(createdAt, status === "pending" || status === "processing");
+  const lastUpdateLabel = useMemo(() => {
+    if (!updatedAt) return null;
+    const seconds = Math.max(0, Math.floor((Date.now() - new Date(updatedAt).getTime()) / 1000));
+    return seconds < 60 ? `atualizado há ${seconds}s` : `atualizado há ${Math.floor(seconds / 60)}min`;
+  }, [updatedAt, elapsedSeconds]);
 
   useEffect(() => {
     try { sessionStorage.setItem(SS_KEY, JSON.stringify(prefs)); } catch { /* noop */ }
@@ -100,6 +107,18 @@ export default function StoryVideo() {
       scenesCount: draft.length,
       scenesOverride: draft,
     });
+  };
+
+  const handleCancel = () => {
+    cancel();
+    setStarted(false);
+    toast.info("Acompanhamento cancelado. Você pode tentar novamente.");
+  };
+
+  const handleRetry = () => {
+    reset();
+    setStarted(false);
+    window.setTimeout(() => handleStart(), 0);
   };
 
   const updateDraftScene = (i: number, patch: Partial<DraftScene>) => {
