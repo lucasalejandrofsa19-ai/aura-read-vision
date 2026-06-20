@@ -326,6 +326,7 @@ serve(async (req) => {
       const result = { title, author, scenes: built, targetDurationSeconds: TARGET_TOTAL_SECONDS };
       await sb.from("story_video_jobs").update({ status: "completed", result, processed_at: new Date().toISOString(),
         progress: { current: total, total, stage: "completed", sceneTitle: null, etaSeconds: 0 } }).eq("id", jobId);
+      await persistVideo(result, "highlights");
       return new Response(JSON.stringify({ ok: true, job_id: jobId }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
