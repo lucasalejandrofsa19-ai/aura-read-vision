@@ -87,6 +87,29 @@ export default function StoryVideo() {
   const [draft, setDraft] = useState<DraftScene[] | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
   const [excerpt, setExcerpt] = useState("");
+  const [hasExtractedText, setHasExtractedText] = useState<boolean | null>(null);
+
+  // Auto-switch to "Trecho do livro" when the book has no extracted_text.
+  useEffect(() => {
+    if (!bookId) return;
+    let cancelled = false;
+    (async () => {
+      const { data: b } = await supabase.from("books").select("extracted_text").eq("id", bookId).maybeSingle();
+      let text: string | null = b?.extracted_text ?? null;
+      if (!b) {
+        const { data: pb } = await supabase.from("premium_books").select("extracted_text").eq("id", bookId).maybeSingle();
+        text = pb?.extracted_text ?? null;
+      }
+      if (cancelled) return;
+      const ok = !!(text && text.trim().length >= 50);
+      setHasExtractedText(ok);
+      if (!ok) {
+        setPrefs(p => p.mode === "highlights" ? p : { ...p, mode: "excerpt" });
+        toast.info("Este livro não tem texto extraído. Modo alterado para 'Trecho do livro' — cole um capítulo abaixo.");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [bookId]);
 
   const elapsedSeconds = useElapsedSeconds(createdAt, status === "pending" || status === "processing");
   const lastUpdateLabel = updatedAt
