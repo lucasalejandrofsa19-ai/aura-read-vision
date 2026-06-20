@@ -99,11 +99,24 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
 
     setUploading(true);
     setProgress(0);
+    cancelledRef.current = false;
     const toastId = `pdf-upload-${Date.now()}`;
     const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+
+    const cancelUpload = () => {
+      cancelledRef.current = true;
+      uploadXhrRef.current?.abort();
+      toast.info("Upload cancelado", { id: toastId, description: file.name });
+    };
+
+    const toastActions = {
+      action: { label: "Cancelar", onClick: cancelUpload },
+    } as const;
+
     toast.loading("Preparando envio…", {
       id: toastId,
       description: `${file.name} • ${fileSizeMB} MB`,
+      ...toastActions,
     });
 
     const formatETA = (seconds: number): string => {
