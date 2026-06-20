@@ -34,6 +34,7 @@ interface UploadPDFProps {
 
 const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplete } = {}, ref) => {
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fallbackRetriesRef = useRef(0);
   const MAX_FALLBACK_RETRIES = 2;
@@ -95,6 +96,9 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
     }
 
     setUploading(true);
+    setProgress(0);
+    const toastId = `pdf-upload-${Date.now()}`;
+    toast.loading("Enviando PDF… 0%", { id: toastId, description: file.name });
 
     await trackAsyncOperation(
       "pdf_upload_complete_flow",
@@ -105,15 +109,45 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
           const safeName = sanitizeFileName(file.name);
           const fileName = `${user.id}/${Date.now()}-${safeName}`;
 
-          const { error: uploadError } = await supabase.storage
-            .from("pdfs")
-            .upload(fileName, file, {
-              contentType: "application/pdf",
-              upsert: false,
-            });
+          // Upload com progresso real via XHR
+          const { data: sessionData } = await supabase.auth.getSession();
+          const accessToken = sessionData.session?.access_token;
+          if (!accessToken) throw new Error("Sessão expirada. Faça login novamente.");
 
-          if (uploadError) throw uploadError;
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+          const uploadUrl = `${supabaseUrl}/storage/v1/object/pdfs/${fileName}`;
+
+          await new Promise<void>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", uploadUrl);
+            xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
+            xhr.setRequestHeader("Content-Type", "application/pdf");
+            xhr.setRequestHeader("x-upsert", "false");
+            xhr.upload.onprogress = (e) => {
+              if (e.lengthComputable) {
+                const pct = Math.round((e.loaded / e.total) * 100);
+                setProgress(pct);
+                toast.loading(`Enviando PDF… ${pct}%`, { id: toastId, description: file.name });
+              }
+            };
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) resolve();
+              else {
+                let msg = `Falha no upload (HTTP ${xhr.status})`;
+                try {
+                  const body = JSON.parse(xhr.responseText);
+                  if (body?.message) msg = body.message;
+                } catch {}
+                reject(new Error(msg));
+              }
+            };
+            xhr.onerror = () => reject(new Error("Conexão perdida durante o upload."));
+            xhr.send(file);
+          });
+
           uploadedPath = fileName;
+          setProgress(100);
+          toast.loading("Salvando na biblioteca…", { id: toastId, description: file.name });
 
           // Cor aleatória de capa
           const colors = [
@@ -147,7 +181,10 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
             throw insertError;
           }
 
-          toast.success("Pronto. Seu PDF está na biblioteca.");
+          toast.success("Pronto! Seu PDF está na biblioteca.", {
+            id: toastId,
+            description: file.name,
+          });
 
 
           // Invalidar query imediatamente para mostrar o card com loading
@@ -237,9 +274,10 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
         } catch (error: any) {
           captureError(error, { context: "pdf_upload" });
           const msg = error?.message || "Não conseguimos enviar seu PDF. Tente novamente.";
-          toast.error(msg);
+          toast.error("Falha no upload", { id: toastId, description: msg });
         } finally {
           setUploading(false);
+          setProgress(0);
         }
       },
       {
@@ -261,16 +299,27 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
       <Button
         size="lg"
         disabled={uploading}
-        className="rounded-full w-16 h-16 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-amber shadow-2xl"
+        className="relative rounded-full w-16 h-16 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity aura-amber shadow-2xl overflow-hidden"
         onClick={() => {
           trackClick("pdf_upload_button");
           fileInputRef.current?.click();
         }}
       >
         {uploading ? (
-          <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          <div className="flex flex-col items-center justify-center">
+            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            {progress > 0 && (
+              <span className="text-[10px] font-semibold text-white mt-0.5">{progress}%</span>
+            )}
+          </div>
         ) : (
           <Upload className="w-6 h-6" />
+        )}
+        {uploading && progress > 0 && (
+          <div
+            className="absolute bottom-0 left-0 h-1 bg-white/80 transition-all"
+            style={{ width: `${progress}%` }}
+          />
         )}
       </Button>
     </>
