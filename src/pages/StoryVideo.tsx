@@ -359,7 +359,7 @@ export default function StoryVideo() {
           </Card>
         )}
 
-        {result && <ScenePlayer scenes={result.scenes} title={result.title} draft={draft} mode={prefs.mode} voice={prefs.voice} tone={prefs.tone} />}
+        {result && <ScenePlayer scenes={result.scenes} title={result.title} draft={draft} mode={prefs.mode === "excerpt" ? "summary" : prefs.mode} voice={prefs.voice} tone={prefs.tone} />}
 
         {bookId && (
           <div className="mt-6">
