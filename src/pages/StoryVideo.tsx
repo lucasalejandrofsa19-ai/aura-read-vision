@@ -110,9 +110,19 @@ export default function StoryVideo() {
 
   const handleGenerateDraft = async () => {
     if (!bookId || loadingDraft) return;
+    if (prefs.mode === "excerpt" && excerpt.trim().length < 50) {
+      toast.error("Cole pelo menos ~50 caracteres do trecho para gerar o vídeo.");
+      return;
+    }
     setLoadingDraft(true);
     try {
-      const r = await fetchStoryVideoScript({ book_id: bookId, mode: prefs.mode, scenesCount: 5 });
+      const wireMode = prefs.mode === "excerpt" ? "summary" : prefs.mode;
+      const r = await fetchStoryVideoScript({
+        book_id: bookId,
+        mode: wireMode,
+        scenesCount: 5,
+        text: prefs.mode === "excerpt" ? excerpt.trim() : undefined,
+      });
       if (!r.scenes?.length) throw new Error("Roteiro vazio");
       setDraft(r.scenes);
     } catch (e) {
@@ -125,15 +135,18 @@ export default function StoryVideo() {
   const handleStart = (force = false) => {
     if (!bookId || (!force && started) || !draft) return;
     setStarted(true);
+    const wireMode = prefs.mode === "excerpt" ? "custom" : prefs.mode;
     start({
       book_id: bookId,
-      mode: prefs.mode,
+      mode: wireMode,
+      text: prefs.mode === "excerpt" ? excerpt.trim() : undefined,
       voice: prefs.voice,
       tone: prefs.tone,
       scenesCount: draft.length,
       scenesOverride: draft,
     });
   };
+
 
   const handleCancel = () => {
     cancel();
