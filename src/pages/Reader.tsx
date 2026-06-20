@@ -871,7 +871,7 @@ const Reader = () => {
 
           {/* Center: PDF */}
           <div className="lg:col-span-6 xl:col-span-6 space-y-4">
-            <AdSenseUnit slot={ADSENSE_SLOTS.libraryTop} format="auto" />
+            
             <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl shadow-lg shadow-background/40 overflow-hidden">
               {pdfUrl ? (
                 <PDFViewer
