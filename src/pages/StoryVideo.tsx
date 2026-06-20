@@ -321,7 +321,7 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
     return () => window.clearInterval(t);
   }, [playing, segImages.length, idx]);
 
-  const handleRegenScene = async () => {
+  const runRegen = async (audioOnly: boolean) => {
     if (!scene || regenerating) return;
     const narration = editedText.trim();
     if (narration.length < 2) {
@@ -338,6 +338,7 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
           voice,
           tone,
           narration,
+          audioOnly,
           chapterTitle: scene.chapterTitle,
           imagePrompt: draftScene?.imagePrompt,
           highlightId: draftScene?.highlightId,
@@ -345,15 +346,21 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
       });
       if (error) throw new Error(error.message);
       if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
-      const next = data as Scene;
-      setScenes(curr => curr.map((s, i) => i === idx ? { ...s, ...next } : s));
-      toast.success("Cena regenerada.");
+      const next = data as Scene & { audioOnly?: boolean };
+      setScenes(curr => curr.map((s, i) => {
+        if (i !== idx) return s;
+        if (audioOnly) return { ...s, narration: next.narration, audioDataUrl: next.audioDataUrl };
+        return { ...s, ...next };
+      }));
+      toast.success(audioOnly ? "Áudio regenerado." : "Cena regenerada.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao regenerar cena");
+      toast.error(e instanceof Error ? e.message : "Falha ao regenerar");
     } finally {
       setRegenerating(false);
     }
   };
+  const handleRegenScene = () => runRegen(false);
+  const handleRegenAudio = () => runRegen(true);
 
   if (!scene) return null;
 
