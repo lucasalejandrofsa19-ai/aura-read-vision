@@ -316,6 +316,33 @@ export const ReaderPageSearch = ({
                   variant="ghost"
                   size="sm"
                   className="h-6 px-2 text-[10px]"
+                  onClick={() => {
+                    try {
+                      // Força nova instância do worker no próximo getDocument
+                      const newSrc = new URL(
+                        "pdfjs-dist/build/pdf.worker.min.mjs",
+                        import.meta.url,
+                      ).toString() + `?t=${Date.now()}`;
+                      pdfjs.GlobalWorkerOptions.workerSrc = newSrc;
+                      console.log("[ReaderPageSearch] workerSrc resetado:", newSrc);
+                      // Reindexa imediatamente para validar o worker
+                      setOpen(true);
+                      indexedKeyRef.current = "";
+                      setPages([]);
+                      setReindexNonce((n) => n + 1);
+                      toast.success("Worker do PDF.js reinicializado.");
+                    } catch (err) {
+                      console.error("[ReaderPageSearch] retry worker failed", err);
+                      toast.error("Falha ao reinicializar o worker.");
+                    }
+                  }}
+                >
+                  Retry PDF worker
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[10px]"
                   disabled={!bookId || indexing || !pdfUrl}
                   onClick={() => {
                     setOpen(true);
