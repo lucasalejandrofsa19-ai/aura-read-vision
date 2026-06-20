@@ -63,6 +63,20 @@ const loadPrefs = (): Prefs => {
   return { voice: "nova", tone: "neutro", mode: "summary" };
 };
 
+function useElapsedSeconds(startedAt: string | null, active: boolean) {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!startedAt || !active) return;
+    const tick = () => setSeconds(Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000)));
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [active, startedAt]);
+
+  return seconds;
+}
+
 export default function StoryVideo() {
   const { bookId = "" } = useParams();
   const { status, error, result, attempts, progress, createdAt, updatedAt, timedOut, start, cancel, reset } = useStoryVideoJob();
@@ -96,8 +110,8 @@ export default function StoryVideo() {
     }
   };
 
-  const handleStart = () => {
-    if (!bookId || started || !draft) return;
+  const handleStart = (force = false) => {
+    if (!bookId || (!force && started) || !draft) return;
     setStarted(true);
     start({
       book_id: bookId,
@@ -117,8 +131,7 @@ export default function StoryVideo() {
 
   const handleRetry = () => {
     reset();
-    setStarted(false);
-    window.setTimeout(() => handleStart(), 0);
+    handleStart(true);
   };
 
   const updateDraftScene = (i: number, patch: Partial<DraftScene>) => {
