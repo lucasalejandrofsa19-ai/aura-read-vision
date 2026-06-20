@@ -86,6 +86,7 @@ export default function StoryVideo() {
   const [started, setStarted] = useState(false);
   const [draft, setDraft] = useState<DraftScene[] | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
+  const [excerpt, setExcerpt] = useState("");
 
   const elapsedSeconds = useElapsedSeconds(createdAt, status === "pending" || status === "processing");
   const lastUpdateLabel = updatedAt
