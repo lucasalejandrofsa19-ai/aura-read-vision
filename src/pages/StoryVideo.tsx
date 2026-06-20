@@ -159,7 +159,7 @@ export default function StoryVideo() {
         text: prefs.mode === "excerpt" ? excerpt.trim() : undefined,
       });
       if (!r.scenes?.length) throw new Error("Roteiro vazio");
-      setDraft(r.scenes);
+      setDraft(r.scenes.map(s => ({ ...s, _uid: (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : `s-${Math.random().toString(36).slice(2)}-${Date.now()}` })));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao gerar roteiro");
     } finally {
@@ -329,7 +329,7 @@ export default function StoryVideo() {
 
             <div className="space-y-4">
               {draft.map((s, i) => (
-                <div key={i} className="space-y-2 rounded-lg border border-border bg-card/50 p-4">
+                <div key={s._uid} className="space-y-2 rounded-lg border border-border bg-card/50 p-4">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-medium text-muted-foreground">Cena {i + 1}</span>
                     <span className="text-xs text-muted-foreground">{s.narration.trim().split(/\s+/).filter(Boolean).length} palavras</span>
