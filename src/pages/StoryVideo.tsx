@@ -131,6 +131,14 @@ export default function StoryVideo() {
     try { sessionStorage.setItem(SS_KEY, JSON.stringify(prefs)); } catch { /* noop */ }
   }, [prefs]);
 
+  // Watcher: when a chapter is pasted/typed into the excerpt field (>=50 chars),
+  // auto-switch the mode to "Trecho do livro" so the generation uses that content.
+  useEffect(() => {
+    if (excerpt.trim().length >= 50) {
+      setPrefs(p => (p.mode === "excerpt" || p.mode === "highlights") ? p : { ...p, mode: "excerpt" });
+    }
+  }, [excerpt]);
+
   const handleGenerateDraft = async () => {
     if (!bookId || loadingDraft) return;
     if (prefs.mode === "excerpt" && excerpt.trim().length < 50) {
