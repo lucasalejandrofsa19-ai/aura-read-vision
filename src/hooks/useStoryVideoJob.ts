@@ -26,11 +26,14 @@ export type JobProgress = {
   etaSeconds: number;
 };
 
+export type NarrationTone = "neutro" | "alegre" | "serio" | "empolgado" | "dramatico" | "calmo";
+
 export type StartParams = {
   book_id: string;
-  mode?: "summary" | "chapter" | "custom";
+  mode?: "summary" | "chapter" | "custom" | "highlights";
   text?: string;
   voice?: string;
+  tone?: NarrationTone;
   scenesCount?: number;
   variationSeed?: string | number;
 };
