@@ -12,6 +12,7 @@ type Row = {
   created_at: string;
   file_path: string | null;
   file_size: number | null;
+  file_mime: string | null;
   scenes_count: number | null;
   mode: string | null;
   error_message: string | null;
