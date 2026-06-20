@@ -320,12 +320,22 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
             fileInputRef.current.value = "";
           }
         } catch (error: any) {
-          captureError(error, { context: "pdf_upload" });
-          const msg = error?.message || "Não conseguimos enviar seu PDF. Tente novamente.";
-          toast.error("Falha no upload", { id: toastId, description: msg });
+          if (cancelledRef.current || error?.message === "__UPLOAD_CANCELLED__") {
+            // Cancelado pelo usuário — limpar storage se já enviado
+            if (uploadedPath) {
+              await supabase.storage.from("pdfs").remove([uploadedPath]).catch(() => {});
+            }
+            // toast.info já exibido em cancelUpload()
+          } else {
+            captureError(error, { context: "pdf_upload" });
+            const msg = error?.message || "Não conseguimos enviar seu PDF. Tente novamente.";
+            toast.error("Falha no upload", { id: toastId, description: msg });
+          }
         } finally {
+          uploadXhrRef.current = null;
           setUploading(false);
           setProgress(0);
+          if (fileInputRef.current) fileInputRef.current.value = "";
         }
       },
       {
