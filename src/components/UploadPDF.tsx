@@ -36,6 +36,8 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadXhrRef = useRef<XMLHttpRequest | null>(null);
+  const cancelledRef = useRef(false);
   const fallbackRetriesRef = useRef(0);
   const MAX_FALLBACK_RETRIES = 2;
   const { user } = useAuth();
@@ -97,11 +99,24 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
 
     setUploading(true);
     setProgress(0);
+    cancelledRef.current = false;
     const toastId = `pdf-upload-${Date.now()}`;
     const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+
+    const cancelUpload = () => {
+      cancelledRef.current = true;
+      uploadXhrRef.current?.abort();
+      toast.info("Upload cancelado", { id: toastId, description: file.name });
+    };
+
+    const toastActions = {
+      action: { label: "Cancelar", onClick: cancelUpload },
+    } as const;
+
     toast.loading("Preparando envio…", {
       id: toastId,
       description: `${file.name} • ${fileSizeMB} MB`,
+      ...toastActions,
     });
 
     const formatETA = (seconds: number): string => {
@@ -137,6 +152,7 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
           const startTime = Date.now();
           await new Promise<void>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
+            uploadXhrRef.current = xhr;
             xhr.open("POST", uploadUrl);
             xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
             xhr.setRequestHeader("Content-Type", "application/pdf");
@@ -154,6 +170,7 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
                 toast.loading(`${status} • ${pct}%`, {
                   id: toastId,
                   description: `${loadedMB}/${fileSizeMB} MB • ${formatSpeed(bps)} • ${formatETA(remaining)}`,
+                  ...toastActions,
                 });
               }
             };
@@ -169,6 +186,7 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
               }
             };
             xhr.onerror = () => reject(new Error("Conexão perdida durante o upload."));
+            xhr.onabort = () => reject(new Error("__UPLOAD_CANCELLED__"));
             xhr.send(file);
           });
 
@@ -302,12 +320,22 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
             fileInputRef.current.value = "";
           }
         } catch (error: any) {
-          captureError(error, { context: "pdf_upload" });
-          const msg = error?.message || "Não conseguimos enviar seu PDF. Tente novamente.";
-          toast.error("Falha no upload", { id: toastId, description: msg });
+          if (cancelledRef.current || error?.message === "__UPLOAD_CANCELLED__") {
+            // Cancelado pelo usuário — limpar storage se já enviado
+            if (uploadedPath) {
+              await supabase.storage.from("pdfs").remove([uploadedPath]).catch(() => {});
+            }
+            // toast.info já exibido em cancelUpload()
+          } else {
+            captureError(error, { context: "pdf_upload" });
+            const msg = error?.message || "Não conseguimos enviar seu PDF. Tente novamente.";
+            toast.error("Falha no upload", { id: toastId, description: msg });
+          }
         } finally {
+          uploadXhrRef.current = null;
           setUploading(false);
           setProgress(0);
+          if (fileInputRef.current) fileInputRef.current.value = "";
         }
       },
       {
