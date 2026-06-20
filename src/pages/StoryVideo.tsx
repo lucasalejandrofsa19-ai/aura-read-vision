@@ -85,7 +85,10 @@ export default function StoryVideo() {
   const { status, error, result, attempts, progress, createdAt, updatedAt, timedOut, start, cancel, reset } = useStoryVideoJob();
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
   const [started, setStarted] = useState(false);
-  const [draft, setDraft] = useState<DraftScene[] | null>(null);
+  // Each draft scene gets a stable UID so React keys don't depend on array index.
+  // Using index keys caused edited narration text to jump to the wrong scene
+  // when scenes were reordered or refetched.
+  const [draft, setDraft] = useState<(DraftScene & { _uid: string })[] | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
   const [excerpt, setExcerpt] = useState("");
   const [hasExtractedText, setHasExtractedText] = useState<boolean | null>(null);

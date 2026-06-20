@@ -339,7 +339,8 @@ export const useAudiobook = ({
     }
   }, [enhanceNarration]);
 
-  // Verify premium access
+  // Verify premium access — uses getUser() (server-validated) instead of
+  // getSession() (reads localStorage and can be spoofed) to gate paid TTS.
   const verifyPremiumAccess = useCallback(async (): Promise<boolean> => {
     try {
       if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
@@ -351,9 +352,9 @@ export const useAudiobook = ({
         return false;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
 
-      if (!session) {
+      if (userError || !authUser) {
         toast({
           title: "Faça login",
           description: "Entre na sua conta para usar o audiobook.",
@@ -363,7 +364,7 @@ export const useAudiobook = ({
       }
 
       const { data: hasAccess, error: accessError } = await supabase.rpc('has_premium_access', {
-        _user_id: session.user.id,
+        _user_id: authUser.id,
       });
 
       if (accessError || !hasAccess) {

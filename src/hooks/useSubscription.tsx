@@ -66,10 +66,11 @@ export const useSubscription = () => {
     try {
       setChecking(true);
       
-      // Verify session is still valid before making the call
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
+      // Verify identity server-side (getUser revalidates the token with Auth;
+      // getSession only reads localStorage and can be stale/forged).
+      const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !authUser) {
         console.warn("Session invalid or expired, skipping subscription check");
         setStatus({
           subscribed: false,
