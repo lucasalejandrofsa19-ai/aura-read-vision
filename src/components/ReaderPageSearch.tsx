@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import {
   getCachedPageIndex,
   setCachedPageIndex,
+  clearCachedPageIndex,
   type PageIndexEntry,
 } from "@/lib/pageIndexCache";
 
