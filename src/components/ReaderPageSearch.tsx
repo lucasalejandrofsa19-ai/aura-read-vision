@@ -293,6 +293,34 @@ export const ReaderPageSearch = ({
             ))
           )}
         </div>
+
+        {debugEnabled && (
+          <div className="mt-2 border-t border-border/60 pt-2 px-1 space-y-0.5">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+              Diagnóstico (read-only)
+            </p>
+            <dl className="text-[11px] font-mono leading-snug grid grid-cols-[88px_1fr] gap-x-2">
+              <dt className="text-muted-foreground">bookId</dt>
+              <dd className="truncate" title={bookId}>{bookId || "—"}</dd>
+              <dt className="text-muted-foreground">version (livro)</dt>
+              <dd className="truncate" title={currentVersion}>{currentVersion}</dd>
+              <dt className="text-muted-foreground">cache.version</dt>
+              <dd className="truncate" title={diag?.version ?? ""}>
+                {diag?.version ?? "—"}
+                {diag && diag.version !== currentVersion && (
+                  <span className="ml-1 text-destructive">(obsoleto)</span>
+                )}
+                {diag && diag.version === currentVersion && (
+                  <span className="ml-1 text-primary">(válido)</span>
+                )}
+              </dd>
+              <dt className="text-muted-foreground">cache.indexedAt</dt>
+              <dd>{diag?.indexedAt ? new Date(diag.indexedAt).toLocaleString() : "—"}</dd>
+              <dt className="text-muted-foreground">cache.numPages</dt>
+              <dd>{diag?.numPages ?? "—"}</dd>
+            </dl>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
