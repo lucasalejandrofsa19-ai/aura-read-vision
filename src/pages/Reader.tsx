@@ -73,6 +73,7 @@ const Reader = () => {
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [loadError, setLoadError] = useState<string>("");
+  const [permissionDenied, setPermissionDenied] = useState(false);
   const [selectedText, setSelectedText] = useState("");
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [isFocusedMode, setIsFocusedMode] = useState(false);
@@ -176,6 +177,7 @@ const Reader = () => {
       return;
     }
     setLoadError("");
+    setPermissionDenied(false);
     setPdfUrl("");
 
 
@@ -189,6 +191,7 @@ const Reader = () => {
 
       let isPremium = false;
       let bucket = "pdfs";
+      let isFree = false;
 
       // Se não achou, tenta nos premium (inclui livros gratuitos como a Bíblia)
       if (!data) {
@@ -202,11 +205,29 @@ const Reader = () => {
         data = premiumData as any;
         isPremium = true;
         bucket = "premium-pdfs";
+        isFree = !!(premiumData as any).is_free;
       } else if (error) {
         throw error;
       }
 
       setBook({ ...(data as any), __isPremium: isPremium, __bucket: bucket });
+
+      // Pré-verificação de permissão para livros premium pagos
+      if (isPremium && !isFree) {
+        if (!user?.id) {
+          setPermissionDenied(true);
+          setLoading(false);
+          return;
+        }
+        const { data: hasAccess } = await supabase.rpc("has_premium_access", {
+          _user_id: user.id,
+        });
+        if (!hasAccess) {
+          setPermissionDenied(true);
+          setLoading(false);
+          return;
+        }
+      }
 
       if ((data as any).current_page) {
         setCurrentPage((data as any).current_page);
@@ -229,9 +250,13 @@ const Reader = () => {
       console.error("[Reader] Error loading book:", error);
       captureError(error, { context: "load_book", bookId: id });
       const msg = error?.message || error?.error_description || "Erro desconhecido ao carregar PDF";
-      setLoadError(msg);
-      toast.error(`Não foi possível abrir o PDF: ${msg}`, { duration: 8000 });
-      // Não redirecionar — deixar o usuário ver o erro e voltar manualmente
+      const isPermissionError = /permission denied|not authorized|403|row-level security/i.test(msg);
+      if (isPermissionError) {
+        setPermissionDenied(true);
+      } else {
+        setLoadError(msg);
+        toast.error(`Não foi possível abrir o PDF: ${msg}`, { duration: 8000 });
+      }
     } finally {
       setLoading(false);
     }
@@ -889,6 +914,28 @@ const Reader = () => {
                     ) : null
                   }
                 />
+              ) : permissionDenied ? (
+                <div className="text-center py-12 px-6 space-y-4 max-w-md mx-auto">
+                  <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="w-7 h-7 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-lg">Este livro é exclusivo Premium</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {user?.id
+                        ? "Sua conta ainda não tem acesso premium. Faça upgrade para desbloquear este e centenas de outros livros."
+                        : "Faça login com uma conta premium para abrir este livro."}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                    <Button size="sm" onClick={() => navigate("/pricing")}>
+                      Ver planos premium
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => navigate("/library")}>
+                      Voltar à biblioteca
+                    </Button>
+                  </div>
+                </div>
               ) : (
                 <div className="text-center py-12 px-6 space-y-4">
                   <FileText className="w-12 h-12 mx-auto text-muted-foreground" />
