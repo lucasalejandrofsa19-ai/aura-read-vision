@@ -451,6 +451,21 @@ export const ReaderPageSearch = ({
               <dd>{diag?.indexedAt ? new Date(diag.indexedAt).toLocaleString() : "—"}</dd>
               <dt className="text-muted-foreground">cache.numPages</dt>
               <dd>{diag?.numPages ?? "—"}</dd>
+              <dt className="text-muted-foreground">worker.src</dt>
+              <dd className="truncate" title={workerInfo.src}>
+                {workerInfo.src ? workerInfo.src.split("/").slice(-2).join("/") : "—"}
+                {workerInfo.fallbackUsed && (
+                  <span className="ml-1 text-destructive">(fallback CDN)</span>
+                )}
+              </dd>
+              {workerInfo.lastError && (
+                <>
+                  <dt className="text-muted-foreground">worker.error</dt>
+                  <dd className="text-destructive break-words" title={workerInfo.lastError}>
+                    {workerInfo.lastError.slice(0, 120)}
+                  </dd>
+                </>
+              )}
             </dl>
           </div>
         )}
