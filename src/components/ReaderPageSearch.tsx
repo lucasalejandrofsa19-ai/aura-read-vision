@@ -477,6 +477,62 @@ export const ReaderPageSearch = ({
                 </>
               )}
             </dl>
+
+            <div className="mt-2 border-t border-border/40 pt-1.5">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setHistoryOpen((v) => !v)}
+                  className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground"
+                >
+                  {historyOpen ? "▼" : "▶"} Histórico do worker ({workerHistory.length})
+                </button>
+                {workerHistory.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setWorkerHistory([])}
+                    className="text-[10px] text-muted-foreground hover:text-destructive"
+                  >
+                    limpar
+                  </button>
+                )}
+              </div>
+              {historyOpen && (
+                <div className="mt-1 max-h-40 overflow-y-auto space-y-1">
+                  {workerHistory.length === 0 ? (
+                    <p className="text-[10px] text-muted-foreground italic">Sem tentativas ainda.</p>
+                  ) : (
+                    workerHistory.map((a, i) => {
+                      const color =
+                        a.status === "ok"
+                          ? "text-primary"
+                          : a.status === "error"
+                          ? "text-destructive"
+                          : "text-muted-foreground";
+                      const icon =
+                        a.status === "ok" ? "✓" : a.status === "error" ? "✗" : "↻";
+                      return (
+                        <div key={i} className="text-[10px] font-mono leading-tight">
+                          <div className={`flex items-center gap-1 ${color}`}>
+                            <span>{icon}</span>
+                            <span>{new Date(a.ts).toLocaleTimeString()}</span>
+                            <span className="uppercase">{a.status}</span>
+                          </div>
+                          <div className="truncate text-muted-foreground pl-3" title={a.src}>
+                            {a.src.split("/").slice(-2).join("/") || "—"}
+                          </div>
+                          {a.error && (
+                            <div className="text-destructive pl-3 break-words" title={a.error}>
+                              {a.error.slice(0, 100)}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </PopoverContent>
