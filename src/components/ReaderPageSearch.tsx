@@ -302,21 +302,38 @@ export const ReaderPageSearch = ({
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
                 Diagnóstico (read-only)
               </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-[10px]"
-                disabled={!bookId || indexing}
-                onClick={async () => {
-                  await clearCachedPageIndex(bookId);
-                  indexedKeyRef.current = "";
-                  setPages([]);
-                  await refreshDiag();
-                  toast.success("Cache limpo para este livro.");
-                }}
-              >
-                Limpar cache
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[10px]"
+                  disabled={!bookId || indexing || !pdfUrl}
+                  onClick={() => {
+                    setOpen(true);
+                    indexedKeyRef.current = "";
+                    setPages([]);
+                    setReindexNonce((n) => n + 1);
+                    toast.info("Reindexando…");
+                  }}
+                >
+                  Reindexar agora
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[10px]"
+                  disabled={!bookId || indexing}
+                  onClick={async () => {
+                    await clearCachedPageIndex(bookId);
+                    indexedKeyRef.current = "";
+                    setPages([]);
+                    await refreshDiag();
+                    toast.success("Cache limpo para este livro.");
+                  }}
+                >
+                  Limpar cache
+                </Button>
+              </div>
             </div>
             <dl className="text-[11px] font-mono leading-snug grid grid-cols-[88px_1fr] gap-x-2">
               <dt className="text-muted-foreground">bookId</dt>
