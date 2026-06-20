@@ -158,7 +158,7 @@ export const ReaderPageSearch = ({
     return () => {
       cancelled = true;
     };
-  }, [open, pdfUrl, bookId, currentKey, currentVersion, pages.length]);
+  }, [open, pdfUrl, bookId, currentKey, currentVersion, pages.length, reindexNonce]);
 
 
   const matches = useMemo<PageMatch[]>(() => {
