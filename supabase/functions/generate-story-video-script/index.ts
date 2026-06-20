@@ -105,8 +105,12 @@ serve(async (req) => {
       extractedText = clientText;
     }
     if (!extractedText || extractedText.trim().length < 50) {
-      return new Response(JSON.stringify({ error: "Texto do livro não disponível para análise." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (!title) {
+        return new Response(JSON.stringify({ error: "Texto do livro não disponível para análise. Use o modo 'Trecho do livro' e cole um capítulo, ou reenvie o livro para extrair o texto." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      // Fallback: no extracted text and no excerpt — let the IA improvise from title/author.
+      extractedText = `Sem texto extraído. Crie mini-histórias originais e coerentes inspiradas no livro "${title}"${author ? ` de ${author}` : ""}, baseando-se em temas e atmosfera comumente associados a esta obra.`;
     }
     const truncated = extractedText.length > 50000 ? extractedText.slice(0, 50000) : extractedText;
     const n = scenesCount;
