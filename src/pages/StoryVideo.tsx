@@ -345,6 +345,12 @@ export default function StoryVideo() {
         )}
 
         {result && <ScenePlayer scenes={result.scenes} title={result.title} draft={draft} mode={prefs.mode} voice={prefs.voice} tone={prefs.tone} />}
+
+        {bookId && (
+          <div className="mt-6">
+            <BookVideoHistory bookId={bookId} refreshKey={status === "completed" ? 1 : 0} />
+          </div>
+        )}
       </div>
     </main>
   );
