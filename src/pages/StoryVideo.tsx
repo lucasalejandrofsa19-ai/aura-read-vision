@@ -26,7 +26,7 @@ const stageLabel: Record<string, string> = {
 
 export default function StoryVideo() {
   const { bookId = "" } = useParams();
-  const { status, error, result, attempts, start } = useStoryVideoJob();
+  const { status, error, result, attempts, progress, start } = useStoryVideoJob();
   const startedRef = useRef(false);
 
   useEffect(() => {
