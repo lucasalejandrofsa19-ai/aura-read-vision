@@ -785,6 +785,7 @@ export type Database = {
           id: string
           params: Json
           processed_at: string | null
+          progress: Json
           result: Json | null
           status: string
           updated_at: string
@@ -797,6 +798,7 @@ export type Database = {
           id?: string
           params: Json
           processed_at?: string | null
+          progress?: Json
           result?: Json | null
           status?: string
           updated_at?: string
@@ -809,6 +811,7 @@ export type Database = {
           id?: string
           params?: Json
           processed_at?: string | null
+          progress?: Json
           result?: Json | null
           status?: string
           updated_at?: string
@@ -1058,6 +1061,7 @@ export type Database = {
           id: string
           params: Json
           processed_at: string | null
+          progress: Json
           result: Json | null
           status: string
           updated_at: string

@@ -1,0 +1,1 @@
+ALTER TABLE public.story_video_jobs ADD COLUMN IF NOT EXISTS progress jsonb NOT NULL DEFAULT '{}'::jsonb;

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 
+import { Progress } from "@/components/ui/progress";
+
 const statusLabel: Record<string, string> = {
   idle: "Pronto",
   pending: "Na fila…",
@@ -13,9 +15,18 @@ const statusLabel: Record<string, string> = {
   failed: "Falhou",
 };
 
+const stageLabel: Record<string, string> = {
+  starting: "Preparando…",
+  image: "Carregando imagem do destaque",
+  narration: "Gerando narração",
+  scene_done: "Cena pronta",
+  finalizing: "Finalizando vídeo",
+  completed: "Concluído",
+};
+
 export default function StoryVideo() {
   const { bookId = "" } = useParams();
-  const { status, error, result, attempts, start } = useStoryVideoJob();
+  const { status, error, result, attempts, progress, start } = useStoryVideoJob();
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -45,13 +56,31 @@ export default function StoryVideo() {
         )}
 
         {!result && !error && (
-          <Card className="flex flex-col items-center justify-center gap-4 p-12 text-center">
+          <Card className="flex flex-col items-center gap-5 p-10 text-center">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
             <p className="text-muted-foreground">
               {status === "pending"
-                ? "Seu vídeo entrou na fila. Isso leva 1–3 minutos."
-                : "Gerando roteiro, imagens e narração…"}
+                ? "Seu vídeo entrou na fila. A geração inicia em instantes."
+                : "Montando seu vídeo parte por parte usando seus destaques."}
             </p>
+
+            {progress && progress.total > 0 && (
+              <div className="w-full max-w-md space-y-3 text-left">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">
+                    Cena {Math.min(progress.current, progress.total)} de {progress.total}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {progress.etaSeconds > 0 ? `~${progress.etaSeconds}s restantes` : "finalizando…"}
+                  </span>
+                </div>
+                <Progress value={(progress.current / progress.total) * 100} />
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{stageLabel[progress.stage] ?? progress.stage}</span>
+                  {progress.sceneTitle && <span className="truncate pl-2">{progress.sceneTitle}</span>}
+                </div>
+              </div>
+            )}
           </Card>
         )}
 
