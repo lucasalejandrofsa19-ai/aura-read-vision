@@ -133,9 +133,17 @@ function ScenePlayer({ scenes, title }: { scenes: Scene[]; title: string }) {
   return (
     <div className="space-y-4">
       <Card className="overflow-hidden">
-        <div className="relative aspect-video w-full bg-muted">
-          {segImages[segIdx] ? (
-            <img src={segImages[segIdx]} alt={scene.chapterTitle} className="h-full w-full object-cover" />
+        <div className="relative aspect-video w-full overflow-hidden bg-muted">
+          {segImages.length > 0 ? (
+            segImages.map((src, i) => (
+              <img
+                key={`${idx}-${i}`}
+                src={src}
+                alt={scene.chapterTitle}
+                className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ease-in-out"
+                style={{ opacity: i === segIdx ? 1 : 0 }}
+              />
+            ))
           ) : (
             <div className="flex h-full w-full items-center justify-center text-muted-foreground">Sem imagem</div>
           )}
