@@ -8,6 +8,7 @@
  * Os arquivos ficam disponíveis para QUALQUER usuário (autenticado ou não) baixar.
  */
 import bibliaTNM from "@/assets/public-pdfs/biblia-traducao-novo-mundo.pdf.asset.json";
+import bibliaSBTB from "@/assets/public-pdfs/biblia-sagrada-sbtb.pdf.asset.json";
 
 export interface PublicPdf {
   id: string;
@@ -33,6 +34,15 @@ export const PUBLIC_PDFS: PublicPdf[] = [
     url: bibliaTNM.url,
     sizeBytes: bibliaTNM.size,
     filename: bibliaTNM.original_filename,
+  },
+  {
+    id: "biblia-sagrada-sbtb",
+    title: "Bíblia Sagrada — SBTB",
+    author: "Sociedade Bíblica Trinitariana do Brasil",
+    description: "Edição completa da Bíblia Sagrada (SBTB) disponível gratuitamente.",
+    url: bibliaSBTB.url,
+    sizeBytes: bibliaSBTB.size,
+    filename: bibliaSBTB.original_filename,
   },
 ];
 
