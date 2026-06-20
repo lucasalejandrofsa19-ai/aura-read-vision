@@ -285,7 +285,24 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
   const [idx, setIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [editedText, setEditedText] = useState("");
-  const [regenerating, setRegenerating] = useState(false);
+  const [regenerating, setRegenerating] = useState<false | "audio" | "full">(false);
+  const [regenProgress, setRegenProgress] = useState(0);
+  const [regenLabel, setRegenLabel] = useState("");
+
+  useEffect(() => {
+    if (!regenerating) { setRegenProgress(0); return; }
+    setRegenProgress(8);
+    setRegenLabel(regenerating === "audio" ? "Gerando narração…" : "Gerando narração e imagem…");
+    const t = window.setInterval(() => {
+      setRegenProgress(p => {
+        const cap = regenerating === "audio" ? 92 : 90;
+        if (p >= cap) return p;
+        const step = regenerating === "audio" ? 4 : 2;
+        return Math.min(cap, p + step);
+      });
+    }, regenerating === "audio" ? 350 : 600);
+    return () => window.clearInterval(t);
+  }, [regenerating]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const scene = scenes[idx];
   const segImages = useMemo(() => scene?.segments.map(s => s.imageDataUrl).filter(Boolean) ?? [], [scene]);
@@ -328,7 +345,7 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
       toast.error("Digite um texto para narrar.");
       return;
     }
-    setRegenerating(true);
+    setRegenerating(audioOnly ? "audio" : "full");
     setPlaying(false);
     try {
       const draftScene = draft?.[idx];
@@ -394,7 +411,7 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
             <Button variant="outline" size="icon" onClick={() => setIdx(i => Math.max(0, i - 1))} disabled={idx === 0}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button onClick={() => setPlaying(p => !p)} className="flex-1" disabled={regenerating}>
+            <Button onClick={() => setPlaying(p => !p)} className="flex-1" disabled={!!regenerating}>
               {playing ? <><Pause className="mr-2 h-4 w-4" /> Pausar</> : <><Play className="mr-2 h-4 w-4" /> Reproduzir</>}
             </Button>
             <Button variant="outline" size="icon" onClick={() => setIdx(i => Math.min(scenes.length - 1, i + 1))} disabled={idx === scenes.length - 1}>
@@ -410,31 +427,39 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
               onChange={(e) => setEditedText(e.target.value)}
               rows={3}
               maxLength={1200}
-              disabled={regenerating}
+              disabled={!!regenerating}
             />
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Button
                 onClick={handleRegenAudio}
-                disabled={regenerating || editedText.trim() === scene.narration.trim()}
+                disabled={!!regenerating || editedText.trim() === scene.narration.trim()}
                 variant="default"
                 className="w-full"
                 title="Mais rápido: regenera só a narração mantendo a imagem"
               >
-                {regenerating
-                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processando…</>
+                {regenerating === "audio"
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {regenProgress}%</>
                   : <><Volume2 className="mr-2 h-4 w-4" /> Regenerar Áudio</>}
               </Button>
               <Button
                 onClick={handleRegenScene}
-                disabled={regenerating || editedText.trim() === scene.narration.trim()}
+                disabled={!!regenerating || editedText.trim() === scene.narration.trim()}
                 variant="secondary"
                 className="w-full"
               >
-                {regenerating
-                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processando…</>
+                {regenerating === "full"
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {regenProgress}%</>
                   : <><Sparkles className="mr-2 h-4 w-4" /> Áudio + Imagem</>}
               </Button>
             </div>
+            {regenerating && (
+              <div className="space-y-1 pt-1" role="status" aria-live="polite">
+                <Progress value={regenProgress} className="h-2" />
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" /> {regenLabel} ({regenProgress}%)
+                </p>
+              </div>
+            )}
             <p className="text-[10px] text-muted-foreground">
               "Regenerar Áudio" é mais rápido pois reutiliza a imagem atual.
             </p>
