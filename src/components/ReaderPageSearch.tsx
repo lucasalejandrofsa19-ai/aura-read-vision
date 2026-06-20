@@ -512,7 +512,7 @@ export const ReaderPageSearch = ({
                 {workerHistory.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => setWorkerHistory([])}
+                    onClick={() => { setWorkerHistory([]); persistHistory([]); }}
                     className="text-[10px] text-muted-foreground hover:text-destructive"
                   >
                     limpar
