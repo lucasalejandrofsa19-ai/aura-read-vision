@@ -274,9 +274,10 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
         } catch (error: any) {
           captureError(error, { context: "pdf_upload" });
           const msg = error?.message || "Não conseguimos enviar seu PDF. Tente novamente.";
-          toast.error(msg);
+          toast.error("Falha no upload", { id: toastId, description: msg });
         } finally {
           setUploading(false);
+          setProgress(0);
         }
       },
       {
