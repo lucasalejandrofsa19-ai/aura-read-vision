@@ -49,13 +49,14 @@ const TONE_OPTIONS: { id: NarrationTone; label: string }[] = [
   { id: "calmo", label: "Calmo" },
 ];
 
-const MODE_OPTIONS: { id: "summary" | "highlights"; label: string; desc: string }[] = [
-  { id: "summary", label: "IA (mini-histórias)", desc: "Analisa o livro e gera cenas com imagens" },
+const MODE_OPTIONS: { id: "summary" | "highlights" | "excerpt"; label: string; desc: string }[] = [
+  { id: "summary", label: "IA (mini-histórias)", desc: "Analisa o livro inteiro e gera cenas com imagens" },
   { id: "highlights", label: "Seus destaques", desc: "Usa destaques e imagens que você já criou" },
+  { id: "excerpt", label: "Trecho do livro", desc: "Cole um capítulo ou seção para virar vídeo" },
 ];
 
 const SS_KEY = "aurareader:storyVideoPrefs";
-type Prefs = { voice: string; tone: NarrationTone; mode: "summary" | "highlights" };
+type Prefs = { voice: string; tone: NarrationTone; mode: "summary" | "highlights" | "excerpt" };
 const loadPrefs = (): Prefs => {
   try {
     const raw = sessionStorage.getItem(SS_KEY);
@@ -85,6 +86,7 @@ export default function StoryVideo() {
   const [started, setStarted] = useState(false);
   const [draft, setDraft] = useState<DraftScene[] | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
+  const [excerpt, setExcerpt] = useState("");
 
   const elapsedSeconds = useElapsedSeconds(createdAt, status === "pending" || status === "processing");
   const lastUpdateLabel = updatedAt
@@ -108,9 +110,19 @@ export default function StoryVideo() {
 
   const handleGenerateDraft = async () => {
     if (!bookId || loadingDraft) return;
+    if (prefs.mode === "excerpt" && excerpt.trim().length < 50) {
+      toast.error("Cole pelo menos ~50 caracteres do trecho para gerar o vídeo.");
+      return;
+    }
     setLoadingDraft(true);
     try {
-      const r = await fetchStoryVideoScript({ book_id: bookId, mode: prefs.mode, scenesCount: 5 });
+      const wireMode = prefs.mode === "excerpt" ? "summary" : prefs.mode;
+      const r = await fetchStoryVideoScript({
+        book_id: bookId,
+        mode: wireMode,
+        scenesCount: 5,
+        text: prefs.mode === "excerpt" ? excerpt.trim() : undefined,
+      });
       if (!r.scenes?.length) throw new Error("Roteiro vazio");
       setDraft(r.scenes);
     } catch (e) {
@@ -123,15 +135,18 @@ export default function StoryVideo() {
   const handleStart = (force = false) => {
     if (!bookId || (!force && started) || !draft) return;
     setStarted(true);
+    const wireMode = prefs.mode === "excerpt" ? "custom" : prefs.mode;
     start({
       book_id: bookId,
-      mode: prefs.mode,
+      mode: wireMode,
+      text: prefs.mode === "excerpt" ? excerpt.trim() : undefined,
       voice: prefs.voice,
       tone: prefs.tone,
       scenesCount: draft.length,
       scenesOverride: draft,
     });
   };
+
 
   const handleCancel = () => {
     cancel();
@@ -240,6 +255,20 @@ export default function StoryVideo() {
               </div>
             </div>
 
+            {prefs.mode === "excerpt" && (
+              <div className="space-y-2">
+                <Label htmlFor="excerpt-text">Trecho do livro</Label>
+                <Textarea
+                  id="excerpt-text"
+                  value={excerpt}
+                  onChange={(e) => setExcerpt(e.target.value.slice(0, 50000))}
+                  placeholder="Cole aqui o capítulo ou seção do livro que deseja transformar em vídeo (mín. ~50 caracteres)…"
+                  className="min-h-[140px]"
+                />
+                <p className="text-[11px] text-muted-foreground">{excerpt.trim().length} caracteres · até 50.000</p>
+              </div>
+            )}
+
             <Button onClick={handleGenerateDraft} disabled={!bookId || loadingDraft} className="w-full md:w-auto">
               {loadingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Pencil className="mr-2 h-4 w-4" />}
               {loadingDraft ? "Gerando roteiro…" : "Gerar roteiro para edição"}
@@ -344,7 +373,7 @@ export default function StoryVideo() {
           </Card>
         )}
 
-        {result && <ScenePlayer scenes={result.scenes} title={result.title} draft={draft} mode={prefs.mode} voice={prefs.voice} tone={prefs.tone} />}
+        {result && <ScenePlayer scenes={result.scenes} title={result.title} draft={draft} mode={prefs.mode === "excerpt" ? "summary" : prefs.mode} voice={prefs.voice} tone={prefs.tone} />}
 
         {bookId && (
           <div className="mt-6">
