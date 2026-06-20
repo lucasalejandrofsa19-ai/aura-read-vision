@@ -28,6 +28,13 @@ export type JobProgress = {
 
 export type NarrationTone = "neutro" | "alegre" | "serio" | "empolgado" | "dramatico" | "calmo";
 
+export type DraftScene = {
+  chapterTitle: string;
+  narration: string;
+  imagePrompt?: string;
+  highlightId?: string;
+};
+
 export type StartParams = {
   book_id: string;
   mode?: "summary" | "chapter" | "custom" | "highlights";
@@ -36,6 +43,7 @@ export type StartParams = {
   tone?: NarrationTone;
   scenesCount?: number;
   variationSeed?: string | number;
+  scenesOverride?: DraftScene[];
 };
 
 const POLL_INTERVAL_MS = 2500;
