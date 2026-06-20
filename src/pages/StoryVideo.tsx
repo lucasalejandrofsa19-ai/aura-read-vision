@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { BookVideoHistory } from "@/components/BookVideoHistory";
 
 const statusLabel: Record<string, string> = {
   idle: "Pronto",
@@ -344,6 +345,12 @@ export default function StoryVideo() {
         )}
 
         {result && <ScenePlayer scenes={result.scenes} title={result.title} draft={draft} mode={prefs.mode} voice={prefs.voice} tone={prefs.tone} />}
+
+        {bookId && (
+          <div className="mt-6">
+            <BookVideoHistory bookId={bookId} refreshKey={status === "completed" ? 1 : 0} />
+          </div>
+        )}
       </div>
     </main>
   );
