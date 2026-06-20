@@ -126,11 +126,11 @@ export default function StoryVideo() {
           </Card>
         )}
 
-        {!started && !result && (
+        {!started && !result && !draft && (
           <Card className="space-y-5 p-6">
             <div>
               <h2 className="text-lg font-semibold">Configurar narração</h2>
-              <p className="text-sm text-muted-foreground">Escolha modo, voz e tom antes de gerar o vídeo.</p>
+              <p className="text-sm text-muted-foreground">Escolha modo, voz e tom. Você poderá revisar e editar as narrações antes de gerar o vídeo.</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -181,11 +181,59 @@ export default function StoryVideo() {
               </div>
             </div>
 
-            <Button onClick={handleStart} disabled={!bookId} className="w-full md:w-auto">
-              <Sparkles className="mr-2 h-4 w-4" /> Gerar vídeo
+            <Button onClick={handleGenerateDraft} disabled={!bookId || loadingDraft} className="w-full md:w-auto">
+              {loadingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Pencil className="mr-2 h-4 w-4" />}
+              {loadingDraft ? "Gerando roteiro…" : "Gerar roteiro para edição"}
             </Button>
           </Card>
         )}
+
+        {!started && !result && draft && (
+          <Card className="space-y-4 p-6">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">Revisar narrações</h2>
+                <p className="text-sm text-muted-foreground">Edite o texto de cada cena antes de gerar o vídeo final.</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setDraft(null)}>Voltar</Button>
+            </div>
+
+            <div className="space-y-4">
+              {draft.map((s, i) => (
+                <div key={i} className="space-y-2 rounded-lg border border-border bg-card/50 p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-muted-foreground">Cena {i + 1}</span>
+                    <span className="text-xs text-muted-foreground">{s.narration.trim().split(/\s+/).filter(Boolean).length} palavras</span>
+                  </div>
+                  <Input
+                    value={s.chapterTitle}
+                    onChange={(e) => updateDraftScene(i, { chapterTitle: e.target.value })}
+                    placeholder="Título da cena"
+                    maxLength={200}
+                  />
+                  <Textarea
+                    value={s.narration}
+                    onChange={(e) => updateDraftScene(i, { narration: e.target.value })}
+                    placeholder="Texto que será narrado nesta cena"
+                    rows={3}
+                    maxLength={1200}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button onClick={handleStart} disabled={!bookId || draft.some(s => !s.narration.trim())} className="flex-1">
+                <Sparkles className="mr-2 h-4 w-4" /> Gerar vídeo com minhas narrações
+              </Button>
+              <Button variant="outline" onClick={handleGenerateDraft} disabled={loadingDraft}>
+                {loadingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Refazer roteiro
+              </Button>
+            </div>
+          </Card>
+        )}
+
 
         {started && !result && !error && (
           <Card className="flex flex-col items-center gap-5 p-10 text-center">
