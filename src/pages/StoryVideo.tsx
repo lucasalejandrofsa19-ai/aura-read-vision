@@ -592,6 +592,50 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
             >
               <ExternalLink className="mr-2 h-4 w-4" /> Baixar áudio da cena
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                try {
+                  const safeTitle = title.replace(/[^\w\- ]+/g, "").slice(0, 60) || "video";
+                  let cursor = 0;
+                  const scenesMeta = scenes.map((s, i) => {
+                    const words = (s.narration || "").split(/\s+/).filter(Boolean);
+                    const duration = Math.max(2, Math.round((words.length / 150) * 60));
+                    const start = cursor; cursor += duration;
+                    return {
+                      index: i,
+                      title: s.chapterTitle,
+                      narration: s.narration,
+                      wordCount: words.length,
+                      startSec: start,
+                      endSec: cursor,
+                      durationSec: duration,
+                      imageCount: (s.segments ?? []).filter(g => g.imageDataUrl).length,
+                      hasAudio: !!s.audioDataUrl,
+                    };
+                  });
+                  const payload = {
+                    version: 1, kind: "story-video-script",
+                    title, mode, voice, tone,
+                    generatedAt: new Date().toISOString(),
+                    totalDurationSec: cursor,
+                    scenes: scenesMeta,
+                  };
+                  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.href = url; link.download = `${safeTitle}-roteiro.json`;
+                  document.body.appendChild(link); link.click(); link.remove();
+                  setTimeout(() => URL.revokeObjectURL(url), 2000);
+                  toast.success("Roteiro JSON exportado.");
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "Falha ao exportar JSON.");
+                }
+              }}
+              disabled={!!regenerating}
+            >
+              <Download className="mr-2 h-4 w-4" /> Exportar roteiro (JSON)
+            </Button>
           </div>
 
           <div className="space-y-2 rounded-lg border border-border bg-card/50 p-3">

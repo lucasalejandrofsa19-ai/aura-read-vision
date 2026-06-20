@@ -12,6 +12,7 @@ type Row = {
   created_at: string;
   file_path: string | null;
   file_size: number | null;
+  file_mime: string | null;
   scenes_count: number | null;
   mode: string | null;
   error_message: string | null;
@@ -50,7 +51,7 @@ export function BookVideoHistory({ bookId, refreshKey }: Props) {
     setLoading(true);
     const { data, error } = await supabase
       .from("story_videos")
-      .select("id, status, created_at, file_path, file_size, scenes_count, mode, error_message")
+      .select("id, status, created_at, file_path, file_size, file_mime, scenes_count, mode, error_message")
       .eq("book_id", bookId)
       .order("created_at", { ascending: false })
       .limit(20);
@@ -91,7 +92,8 @@ export function BookVideoHistory({ bookId, refreshKey }: Props) {
       const objUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = objUrl;
-      a.download = `video-${row.id.slice(0, 8)}.mp4`;
+      const isJson = (row.file_mime || "").includes("json") || row.file_path.endsWith(".json");
+      a.download = `video-${row.id.slice(0, 8)}.${isJson ? "json" : "mp4"}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -186,7 +188,9 @@ export function BookVideoHistory({ bookId, refreshKey }: Props) {
                   <p className="text-[11px] text-destructive break-words">{row.error_message}</p>
                 )}
                 {isOpen && (
-                  <video src={openUrl!} controls className="w-full rounded-md bg-black" preload="metadata" />
+                  (row.file_mime || "").includes("json") || (row.file_path || "").endsWith(".json")
+                    ? <iframe src={openUrl!} title="Roteiro" className="w-full h-72 rounded-md border border-border bg-background" />
+                    : <video src={openUrl!} controls className="w-full rounded-md bg-black" preload="metadata" />
                 )}
               </li>
             );
