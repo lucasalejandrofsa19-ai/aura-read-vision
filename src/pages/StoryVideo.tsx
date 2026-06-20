@@ -453,6 +453,20 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
                   : <><Sparkles className="mr-2 h-4 w-4" /> Áudio + Imagem</>}
               </Button>
             </div>
+            {regenError && !regenerating && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm" role="alert">
+                <p className="font-medium text-destructive">
+                  {regenError.kind === "audio" ? "Falha ao regenerar o áudio" : "Falha ao regenerar a cena"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground break-words">{regenError.message}</p>
+                <div className="mt-2 flex gap-2">
+                  <Button size="sm" variant="default" onClick={() => runRegen(regenError.kind === "audio")}>
+                    <Sparkles className="mr-2 h-3 w-3" /> Tentar novamente
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setRegenError(null)}>Dispensar</Button>
+                </div>
+              </div>
+            )}
             {regenerating && (
               <div className="space-y-1 pt-1" role="status" aria-live="polite">
                 <Progress value={regenProgress} className="h-2" />
