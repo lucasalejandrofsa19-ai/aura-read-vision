@@ -289,8 +289,7 @@ export const PDFViewer = ({
     try {
       const failedKey = `pdfviewer:failed:${fileKey}`;
       if (sessionStorage.getItem(failedKey) === "1") {
-        console.info("[PDFViewer] PDF marcado como problemático em sessão anterior — modo compatibilidade.");
-        autoCompatLockedRef.current = true;
+        lockAutoCompat("Arquivo marcado como problemático em sessão anterior");
         setCompatibilityMode(true);
         return;
       }
@@ -306,10 +305,7 @@ export const PDFViewer = ({
         const res = await fetch(fileUrl, { method: "HEAD", signal: ctrl.signal });
         const len = Number(res.headers.get("content-length") || "0");
         if (len > 0 && len > LARGE_PDF_THRESHOLD_BYTES) {
-          console.info(
-            `[PDFViewer] PDF grande detectado (${(len / 1024 / 1024).toFixed(1)} MB > 25 MB) — modo compatibilidade.`,
-          );
-          autoCompatLockedRef.current = true;
+          lockAutoCompat(`PDF grande (${(len / 1024 / 1024).toFixed(1)} MB > 25 MB)`);
           setCompatibilityMode(true);
         }
       } catch {
