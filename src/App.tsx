@@ -13,6 +13,7 @@ import { usePWAInstallPrompt } from "@/hooks/usePWAInstallPrompt";
 import { useAdMobBanner } from "@/hooks/useAdMobBanner";
 import { UpdateNotification } from "@/components/UpdateNotification";
 import { AppHealthMonitor } from "@/components/AppHealthMonitor";
+import { OpenInBrowserGate } from "@/components/OpenInBrowserGate";
 
 
 import GlobalFooter from "@/components/GlobalFooter";
@@ -119,7 +120,7 @@ const AppContent = () => {
   useAdMobBanner();
 
   return (
-    <>
+    <OpenInBrowserGate>
       <Sentry.ErrorBoundary
         fallback={({ error, resetError }) => (
           <AppErrorFallback error={error} resetError={resetError} />
@@ -131,9 +132,7 @@ const AppContent = () => {
         </Suspense>
       </Sentry.ErrorBoundary>
       <GlobalFooter />
-      
-      
-    </>
+    </OpenInBrowserGate>
   );
 };
 
