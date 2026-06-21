@@ -139,6 +139,8 @@ export const PDFViewer = ({
   penThickness = 20,
   spokenText = '',
   onRenewUrl,
+  preferredReaderMode,
+  onReaderModeChange,
 }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
