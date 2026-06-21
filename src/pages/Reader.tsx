@@ -566,7 +566,19 @@ const Reader = () => {
             <ReaderBookSearch />
           </div>
 
-          <div className="flex md:hidden items-center gap-2 ml-14 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:flex-shrink-0 py-1">
+          <div className="flex md:hidden items-center gap-3 ml-14 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:flex-shrink-0 py-2 [&_button]:h-14 [&_button]:w-14 [&_button_*_svg]:h-7 [&_button_*_svg]:w-7">
+            <ToolHelpTooltip {...TOOL_COPY.aiSummary}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/summary/" + id)}
+                className="aura-soft transition-aura relative md:hidden shrink-0"
+                aria-label="Resumir tudo com IA">
+                <Sparkles className="w-6 h-6 text-primary" />
+                <span className="absolute -top-1.5 -right-1.5 text-xs font-bold bg-primary text-primary-foreground rounded-full px-2 py-0.5 leading-none">IA</span>
+              </Button>
+            </ToolHelpTooltip>
+
             <NotesPanel
               notes={notes}
               currentPage={currentPage}
@@ -587,9 +599,9 @@ const Reader = () => {
                 variant={isDrawingMode ? "default" : "ghost"}
                 size="icon"
                 onClick={() => setIsDrawingMode(!isDrawingMode)}
-                className="aura-soft transition-aura"
+                className="aura-soft transition-aura shrink-0"
                 aria-label="Marcador de texto">
-                <Highlighter className="w-5 h-5" style={{ color: isDrawingMode ? highlightColor : undefined }} />
+                <Highlighter className="w-6 h-6" style={{ color: isDrawingMode ? highlightColor : undefined }} />
               </Button>
             </ToolHelpTooltip>
             {penToolbar}
@@ -600,9 +612,9 @@ const Reader = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="aura-soft transition-aura"
+                    className="aura-soft transition-aura shrink-0"
                     aria-label="Lista de destaques">
-                    <List className="w-5 h-5" />
+                    <List className="w-6 h-6" />
                   </Button>
                 </SheetTrigger>
               </ToolHelpTooltip>
@@ -634,9 +646,9 @@ const Reader = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`transition-aura ${bookmarkedPage ? "text-accent aura-amber" : "aura-soft"}`}
+                    className={`transition-aura shrink-0 ${bookmarkedPage ? "text-accent aura-amber" : "aura-soft"}`}
                     aria-label="Página marcada">
-                    {bookmarkedPage ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+                    {bookmarkedPage ? <BookmarkCheck className="w-6 h-6" /> : <Bookmark className="w-6 h-6" />}
                   </Button>
                 </DropdownMenuTrigger>
               </ToolHelpTooltip>
@@ -657,10 +669,10 @@ const Reader = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="aura-soft transition-aura"
+                  className="aura-soft transition-aura shrink-0"
                   title="Mais opções"
                  aria-label="Mais opções">
-                  <MoreVertical className="w-5 h-5" />
+                  <MoreVertical className="w-6 h-6" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="glass w-56">
@@ -703,20 +715,7 @@ const Reader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <ToolHelpTooltip {...TOOL_COPY.aiSummary}>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/summary/" + id)}
-                className="aura-soft transition-aura relative md:hidden"
-                aria-label="Resumir tudo com IA">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <span className="absolute -top-1 -right-1 text-[8px] font-bold bg-primary text-primary-foreground rounded-full px-1 leading-tight">IA</span>
-              </Button>
-            </ToolHelpTooltip>
-
             <ThemeSelector />
-
 
             <AudiobookPlayer
               bookId={id || ""}
