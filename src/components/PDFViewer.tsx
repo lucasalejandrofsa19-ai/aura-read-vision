@@ -18,10 +18,10 @@ interface PDFTextItem {
   fontName?: string;
 }
 import "react-pdf/dist/Page/TextLayer.css";
-// Defensivo: alguns chunks podem carregar react-pdf antes do bootstrap de
-// src/lib/pdfjsWorker.ts. Usamos CDN como fonte primária (já cacheada pelo
-// Service Worker) para evitar o fallback de bare specifier 'pdf.worker.mjs'
-// do pdf.js v4 e problemas de MIME-type em produção.
+// Bootstrap centralizado: garante worker LOCAL e expõe ensurePdfWorkerReady()
+// dedicado a mobile/PWA (aguarda Service Worker + pré-fetch + fallback CDN).
+import { ensurePdfWorkerReady } from "@/lib/pdfjsWorker";
+
 if (!pdfjs.GlobalWorkerOptions.workerSrc || pdfjs.GlobalWorkerOptions.workerSrc === "pdf.worker.mjs") {
   pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
 }
@@ -257,6 +257,17 @@ export const PDFViewer = ({
     onReaderModeChange?.('full');
   }, [fileUrl, onReaderModeChange, pdfDebug]);
 
+
+  // Mobile/PWA: aguarda worker estar pronto + cacheado antes de tentar render.
+  // Atualiza o workerSrc visível para o painel de debug.
+  useEffect(() => {
+    ensurePdfWorkerReady()
+      .then((src) => {
+        setCurrentWorkerSrc(src);
+        pdfDebug("info", `Worker pronto: ${src}`);
+      })
+      .catch((err) => pdfDebug("warn", `ensurePdfWorkerReady falhou: ${String(err)}`));
+  }, [pdfDebug]);
 
   // Reseta tentativas APENAS quando o arquivo muda.
   useEffect(() => {

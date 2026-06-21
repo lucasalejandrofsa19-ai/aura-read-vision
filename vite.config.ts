@@ -51,13 +51,31 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // IMPORTANTE: inclui .mjs para precachear o worker LOCAL do PDF.js
+        // (public/pdfjs/pdf.worker.min.mjs). Sem isso, o PWA falha ao abrir
+        // PDFs em mobile/offline porque o worker não fica disponível.
+        globPatterns: ['**/*.{js,mjs,css,html,ico,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB for PDFs
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
         sourcemap: false,
+        // Não interceptar navegação para o worker local (evita fallback HTML)
+        navigateFallbackDenylist: [/^\/pdfjs\//, /^\/~oauth/],
         runtimeCaching: [
+          // pdf.js worker LOCAL (/pdfjs/*.mjs) — CacheFirst dedicado para mobile/PWA
+          {
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith('/pdfjs/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'pdfjs-worker-local-cache',
+              expiration: {
+                maxEntries: 4,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+              },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           // pdf.js worker (CDN fallback) — CacheFirst para sobreviver offline
           {
             urlPattern: /^https:\/\/(cdn\.jsdelivr\.net|unpkg\.com)\/.*pdfjs-dist.*pdf\.worker.*\.mjs.*/i,
