@@ -566,7 +566,7 @@ const Reader = () => {
             <ReaderBookSearch />
           </div>
 
-          <div className="flex md:hidden items-center gap-3 ml-14 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:flex-shrink-0 py-2 [&_button]:h-12 [&_button]:w-12 [&_button_*_svg]:h-6 [&_button_*_svg]:w-6">
+          <div className="flex md:hidden items-center gap-3 ml-14 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:flex-shrink-0 py-2 [&_button]:h-14 [&_button]:w-14 [&_button_*_svg]:h-7 [&_button_*_svg]:w-7">
             <ToolHelpTooltip {...TOOL_COPY.aiSummary}>
               <Button
                 variant="ghost"
