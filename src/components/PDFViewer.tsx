@@ -301,6 +301,25 @@ export const PDFViewer = ({
   useEffect(() => {
     if (typeof fileUrl !== "string" || !fileUrl) return;
 
+    // 0) Detecta in-app browser (Instagram, Facebook, TikTok, Line, etc.).
+    // Esses webviews bloqueiam ou limitam Web Workers, módulos .mjs e
+    // Service Workers — o leitor full quebra. Vai direto pro modo nativo.
+    try {
+      const ua = navigator.userAgent || "";
+      const isInAppBrowser =
+        /Instagram|FBAN|FBAV|FB_IAB|FBIOS|Line\/|MicroMessenger|TikTok|Twitter|Snapchat|WhatsApp/i.test(
+          ua,
+        );
+      if (isInAppBrowser) {
+        lockAutoCompat("Navegador integrado de app (Instagram/Facebook/etc.) detectado");
+        setCompatibilityMode(true);
+        onReaderModeChange?.('native');
+        return;
+      }
+    } catch {
+      /* ignora */
+    }
+
     // 1) Falha prévia conhecida nesta sessão? abre direto em compat (travado).
     try {
       const failedKey = `pdfviewer:failed:${fileKey}`;
@@ -312,6 +331,7 @@ export const PDFViewer = ({
     } catch {
       /* sessionStorage indisponível: ignora */
     }
+
 
     // 2) HEAD para detectar arquivos grandes. Falhas (CORS/HEAD bloqueado)
     // são silenciosamente ignoradas — o leitor normal tenta carregar.
