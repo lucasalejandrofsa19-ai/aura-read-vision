@@ -652,6 +652,7 @@ export type Database = {
           id: string
           note_sound_enabled: boolean | null
           page_turn_sound_enabled: boolean | null
+          pdf_reader_mode: string
           stripe_customer_id: string | null
           subscription_status: string | null
           subscription_tier: string | null
@@ -677,6 +678,7 @@ export type Database = {
           id: string
           note_sound_enabled?: boolean | null
           page_turn_sound_enabled?: boolean | null
+          pdf_reader_mode?: string
           stripe_customer_id?: string | null
           subscription_status?: string | null
           subscription_tier?: string | null
@@ -702,6 +704,7 @@ export type Database = {
           id?: string
           note_sound_enabled?: boolean | null
           page_turn_sound_enabled?: boolean | null
+          pdf_reader_mode?: string
           stripe_customer_id?: string | null
           subscription_status?: string | null
           subscription_tier?: string | null
