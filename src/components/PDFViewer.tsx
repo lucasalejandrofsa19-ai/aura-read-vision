@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, RefreshCw, ArrowLeft, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, RefreshCw, ArrowLeft, AlertTriangle, BookOpen, Monitor } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PDFSearchBar } from "@/components/PDFSearchBar";
 import { usePDFPrefetch } from "@/hooks/usePDFPrefetch";
@@ -169,10 +169,8 @@ export const PDFViewer = ({
     return true;
   }, []);
 
-  const enableCompatibilityMode = useCallback(() => {
-    console.warn(
-      "[PDFViewer] Todos os workers do PDF.js falharam — alternando para modo de compatibilidade (visualizador nativo do navegador).",
-    );
+  const enterCompatibilityMode = useCallback(() => {
+    console.info("[PDFViewer] Usuário solicitou modo de compatibilidade (iframe nativo).");
     setCompatibilityMode(true);
     setLoadError(null);
   }, []);
@@ -575,9 +573,9 @@ export const PDFViewer = ({
     return (
       <div ref={containerRef} className="flex flex-col items-center gap-3 w-full">
         <div className="w-full max-w-3xl rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs sm:text-sm text-amber-900 dark:text-amber-200 flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <Monitor className="w-4 h-4 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="font-semibold">Modo de compatibilidade ativo</p>
+            <p className="font-semibold">Leitor nativo (modo de compatibilidade)</p>
             <p className="opacity-90 mt-0.5">
               O motor avançado de PDF não pôde ser carregado (rede ou bloqueio
               de CDN). Exibindo no leitor nativo do navegador. Recursos como
@@ -591,8 +589,8 @@ export const PDFViewer = ({
             onClick={exitCompatibilityMode}
             className="shrink-0 gap-1"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Tentar leitor completo
+            <BookOpen className="w-3.5 h-3.5" />
+            Leitor completo
           </Button>
         </div>
         <iframe
@@ -617,6 +615,24 @@ export const PDFViewer = ({
 
   return (
     <div ref={containerRef} className="flex flex-col items-center gap-4 w-full">
+
+      {/* Mode indicator + manual switch */}
+      <div className="w-full max-w-3xl rounded-md border border-primary/20 bg-primary/5 p-2.5 text-xs sm:text-sm text-foreground flex items-center gap-2">
+        <BookOpen className="w-4 h-4 shrink-0 text-primary" />
+        <span className="font-medium">Leitor completo</span>
+        <span className="text-muted-foreground hidden sm:inline">— marca-texto, busca e zoom disponíveis</span>
+        <div className="flex-1" />
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={enterCompatibilityMode}
+          className="shrink-0 gap-1 h-7 px-2 text-xs"
+          title="Alternar para o leitor nativo do navegador (útil se o PDF travar)"
+        >
+          <Monitor className="w-3.5 h-3.5" />
+          Usar leitor nativo
+        </Button>
+      </div>
 
       {/* Controls with horizontal scroll on mobile */}
       <div className="w-full overflow-x-auto pb-2">
@@ -739,7 +755,7 @@ export const PDFViewer = ({
                 return; // não exibe erro nem reporta a Sentry — nova tentativa em curso
               }
               // Esgotou CDNs: ativa modo de compatibilidade (visualizador nativo)
-              enableCompatibilityMode();
+              enterCompatibilityMode();
               return;
             }
 
