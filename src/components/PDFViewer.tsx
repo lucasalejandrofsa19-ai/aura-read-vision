@@ -202,10 +202,12 @@ export const PDFViewer = ({
     setRetryCount(0);
     setRetryDelay(0);
     setLoadError(null);
-    setCompatibilityMode(false);
+    // Respeita preferência persistida do usuário ao trocar de arquivo
+    const shouldUseNative = preferredReaderMode === 'native';
+    setCompatibilityMode(shouldUseNative);
     workerFallbackIndexRef.current = 0;
     workerFallbackTriedRef.current = false;
-  }, [fileUrl]);
+  }, [fileUrl, preferredReaderMode]);
 
   // Detecção preventiva: se o PDF é grande (>25MB) ou já falhou antes nesta
   // sessão, abre direto no modo de compatibilidade para evitar loops de
