@@ -147,6 +147,7 @@ export const PDFViewer = ({
   const [retryCount, setRetryCount] = useState(0);
   const [retryDelay, setRetryDelay] = useState(0); // segundos restantes
   const [loadError, setLoadError] = useState<Error | null>(null);
+  const [compatibilityMode, setCompatibilityMode] = useState(false);
   const workerFallbackTriedRef = useRef(false);
   const MAX_RETRIES = 4;
 
@@ -168,12 +169,32 @@ export const PDFViewer = ({
     return true;
   }, []);
 
+  const enableCompatibilityMode = useCallback(() => {
+    console.warn(
+      "[PDFViewer] Todos os workers do PDF.js falharam — alternando para modo de compatibilidade (visualizador nativo do navegador).",
+    );
+    setCompatibilityMode(true);
+    setLoadError(null);
+  }, []);
+
+  const exitCompatibilityMode = useCallback(() => {
+    workerFallbackIndexRef.current = 0;
+    workerFallbackTriedRef.current = false;
+    setCompatibilityMode(false);
+    setLoadError(null);
+    setLoadAttempt((n) => n + 1);
+  }, []);
+
   // Reseta tentativas quando o arquivo muda
   useEffect(() => {
     setRetryCount(0);
     setRetryDelay(0);
     setLoadError(null);
+    setCompatibilityMode(false);
+    workerFallbackIndexRef.current = 0;
+    workerFallbackTriedRef.current = false;
   }, [fileUrl]);
+
 
 
   const handleRetry = useCallback(async () => {
