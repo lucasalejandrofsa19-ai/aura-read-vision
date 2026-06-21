@@ -169,10 +169,8 @@ export const PDFViewer = ({
     return true;
   }, []);
 
-  const enableCompatibilityMode = useCallback(() => {
-    console.warn(
-      "[PDFViewer] Todos os workers do PDF.js falharam — alternando para modo de compatibilidade (visualizador nativo do navegador).",
-    );
+  const enterCompatibilityMode = useCallback(() => {
+    console.info("[PDFViewer] Usuário solicitou modo de compatibilidade (iframe nativo).");
     setCompatibilityMode(true);
     setLoadError(null);
   }, []);
