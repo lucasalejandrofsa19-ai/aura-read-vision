@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS pdf_reader_mode TEXT NOT NULL DEFAULT 'full' CHECK (pdf_reader_mode IN ('full', 'native'));

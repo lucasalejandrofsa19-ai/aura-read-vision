@@ -50,6 +50,10 @@ interface PDFViewerProps {
   spokenText?: string;
   /** Renova a URL assinada quando expirar. Retorna a nova URL ou null. */
   onRenewUrl?: () => Promise<string | null>;
+  /** Preferência persistida do usuário: 'full' = leitor completo, 'native' = iframe nativo */
+  preferredReaderMode?: 'full' | 'native';
+  /** Callback chamado quando o usuário alterna manualmente o modo de leitor */
+  onReaderModeChange?: (mode: 'full' | 'native') => void;
 }
 
 type LikelyCause = {
@@ -135,6 +139,8 @@ export const PDFViewer = ({
   penThickness = 20,
   spokenText = '',
   onRenewUrl,
+  preferredReaderMode,
+  onReaderModeChange,
 }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
@@ -173,7 +179,8 @@ export const PDFViewer = ({
     console.info("[PDFViewer] Usuário solicitou modo de compatibilidade (iframe nativo).");
     setCompatibilityMode(true);
     setLoadError(null);
-  }, []);
+    onReaderModeChange?.('native');
+  }, [onReaderModeChange]);
 
   const exitCompatibilityMode = useCallback(() => {
     workerFallbackIndexRef.current = 0;
@@ -188,7 +195,8 @@ export const PDFViewer = ({
     } catch {
       /* ignora */
     }
-  }, [fileUrl]);
+    onReaderModeChange?.('full');
+  }, [fileUrl, onReaderModeChange]);
 
 
   // Reseta tentativas quando o arquivo muda
@@ -196,10 +204,12 @@ export const PDFViewer = ({
     setRetryCount(0);
     setRetryDelay(0);
     setLoadError(null);
-    setCompatibilityMode(false);
+    // Respeita preferência persistida do usuário ao trocar de arquivo
+    const shouldUseNative = preferredReaderMode === 'native';
+    setCompatibilityMode(shouldUseNative);
     workerFallbackIndexRef.current = 0;
     workerFallbackTriedRef.current = false;
-  }, [fileUrl]);
+  }, [fileUrl, preferredReaderMode]);
 
   // Detecção preventiva: se o PDF é grande (>25MB) ou já falhou antes nesta
   // sessão, abre direto no modo de compatibilidade para evitar loops de
@@ -755,7 +765,8 @@ export const PDFViewer = ({
                 return; // não exibe erro nem reporta a Sentry — nova tentativa em curso
               }
               // Esgotou CDNs: ativa modo de compatibilidade (visualizador nativo)
-              enterCompatibilityMode();
+              setCompatibilityMode(true);
+              setLoadError(null);
               return;
             }
 
