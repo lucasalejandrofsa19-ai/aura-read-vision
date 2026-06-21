@@ -616,6 +616,24 @@ export const PDFViewer = ({
   return (
     <div ref={containerRef} className="flex flex-col items-center gap-4 w-full">
 
+      {/* Mode indicator + manual switch */}
+      <div className="w-full max-w-3xl rounded-md border border-primary/20 bg-primary/5 p-2.5 text-xs sm:text-sm text-foreground flex items-center gap-2">
+        <BookOpen className="w-4 h-4 shrink-0 text-primary" />
+        <span className="font-medium">Leitor completo</span>
+        <span className="text-muted-foreground hidden sm:inline">— marca-texto, busca e zoom disponíveis</span>
+        <div className="flex-1" />
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={enterCompatibilityMode}
+          className="shrink-0 gap-1 h-7 px-2 text-xs"
+          title="Alternar para o leitor nativo do navegador (útil se o PDF travar)"
+        >
+          <Monitor className="w-3.5 h-3.5" />
+          Usar leitor nativo
+        </Button>
+      </div>
+
       {/* Controls with horizontal scroll on mobile */}
       <div className="w-full overflow-x-auto pb-2">
         <div className="glass sticky top-20 z-40 rounded-lg p-3 flex items-center gap-2 min-w-max mx-auto w-fit">
