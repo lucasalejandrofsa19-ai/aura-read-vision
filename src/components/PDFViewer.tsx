@@ -301,11 +301,29 @@ export const PDFViewer = ({
   useEffect(() => {
     if (typeof fileUrl !== "string" || !fileUrl) return;
 
+    // -2) Preferência persistida: se o usuário já forçou nativo antes
+    // (via localStorage), mantém o modo nativo sem precisar do parâmetro.
+    try {
+      if (localStorage.getItem('pdfviewer:forceNative') === '1') {
+        lockAutoCompat("Modo nativo persistido do localStorage");
+        setCompatibilityMode(true);
+        onReaderModeChange?.('native');
+        return;
+      }
+    } catch {
+      /* ignora */
+    }
+
     // -1) Parâmetro manual ?forceNative=1 na URL força modo nativo
-    // para testes e depuração.
+    // para testes e depuração, e salva a preferência para futuras sessões.
     try {
       const params = new URLSearchParams(window.location.search);
       if (params.get("forceNative") === "1") {
+        try {
+          localStorage.setItem('pdfviewer:forceNative', '1');
+        } catch {
+          /* storage cheio ou indisponível: ignora */
+        }
         lockAutoCompat("Modo nativo forçado manualmente via URL (?forceNative=1)");
         setCompatibilityMode(true);
         onReaderModeChange?.('native');
