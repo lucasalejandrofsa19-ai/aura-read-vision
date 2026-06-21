@@ -7,7 +7,17 @@ import { useUserData } from '@/hooks/useUserData';
 
 import { pdfjs } from 'react-pdf';
 
-// Worker is configured globally in src/lib/pdfjsWorker.ts
+// Worker is configured globally in src/lib/pdfjsWorker.ts.
+// Defensive guard: garante worker LOCAL caso este hook seja avaliado
+// antes do bootstrap (evita o fallback "fake worker" que tenta baixar
+// de cdn.jsdelivr.net e falha em mobile/redes restritas).
+if (
+  !pdfjs.GlobalWorkerOptions.workerSrc ||
+  pdfjs.GlobalWorkerOptions.workerSrc === 'pdf.worker.mjs' ||
+  /jsdelivr|unpkg/.test(pdfjs.GlobalWorkerOptions.workerSrc)
+) {
+  pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
+}
 
 const CHUNK_SIZE = 500; // smaller chunks for more natural pauses
 
