@@ -301,6 +301,20 @@ export const PDFViewer = ({
   useEffect(() => {
     if (typeof fileUrl !== "string" || !fileUrl) return;
 
+    // -1) Parâmetro manual ?forceNative=1 na URL força modo nativo
+    // para testes e depuração.
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("forceNative") === "1") {
+        lockAutoCompat("Modo nativo forçado manualmente via URL (?forceNative=1)");
+        setCompatibilityMode(true);
+        onReaderModeChange?.('native');
+        return;
+      }
+    } catch {
+      /* ignora */
+    }
+
     // 0) Detecta in-app browser (Instagram, Facebook, TikTok, Line, etc.).
     // Esses webviews bloqueiam ou limitam Web Workers, módulos .mjs e
     // Service Workers — o leitor full quebra. Vai direto pro modo nativo.
