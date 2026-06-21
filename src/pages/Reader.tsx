@@ -908,6 +908,20 @@ const Reader = () => {
                   onTextSelect={handleTextSelect}
                   externalScale={scale}
                   onScaleChange={setScale}
+                  preferredReaderMode={profile?.pdf_reader_mode === 'native' ? 'native' : 'full'}
+                  onReaderModeChange={async (mode) => {
+                    if (!user) return;
+                    try {
+                      const { error } = await supabase
+                        .from('profiles')
+                        .update({ pdf_reader_mode: mode })
+                        .eq('id', user.id);
+                      if (error) throw error;
+                      await invalidateProfile();
+                    } catch (e) {
+                      console.error('[Reader] Falha ao salvar preferência de leitor:', e);
+                    }
+                  }}
                   highlights={highlights.map(h => ({
                     x: h.position_data.x,
                     y: h.position_data.y,
