@@ -195,6 +195,60 @@ export const PDFViewer = ({
     workerFallbackTriedRef.current = false;
   }, [fileUrl]);
 
+  // Detecção preventiva: se o PDF é grande (>25MB) ou já falhou antes nesta
+  // sessão, abre direto no modo de compatibilidade para evitar loops de
+  // tentativas e travamento em dispositivos com pouca memória (mobile).
+  const LARGE_PDF_THRESHOLD_BYTES = 25 * 1024 * 1024; // 25 MB
+  const fileKey = typeof fileUrl === "string" ? fileUrl.split("?")[0] : "";
+
+  useEffect(() => {
+    if (typeof fileUrl !== "string" || !fileUrl) return;
+
+    // 1) Falha prévia conhecida nesta sessão? abre direto em compat.
+    try {
+      const failedKey = `pdfviewer:failed:${fileKey}`;
+      if (sessionStorage.getItem(failedKey) === "1") {
+        console.info("[PDFViewer] PDF marcado como problemático em sessão anterior — modo compatibilidade.");
+        setCompatibilityMode(true);
+        return;
+      }
+    } catch {
+      /* sessionStorage indisponível: ignora */
+    }
+
+    // 2) HEAD para detectar arquivos grandes. Falhas (CORS/HEAD bloqueado)
+    // são silenciosamente ignoradas — o leitor normal tenta carregar.
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch(fileUrl, { method: "HEAD", signal: ctrl.signal });
+        const len = Number(res.headers.get("content-length") || "0");
+        if (len > 0 && len > LARGE_PDF_THRESHOLD_BYTES) {
+          console.info(
+            `[PDFViewer] PDF grande detectado (${(len / 1024 / 1024).toFixed(1)} MB > 25 MB) — modo compatibilidade.`,
+          );
+          setCompatibilityMode(true);
+        }
+      } catch {
+        /* HEAD bloqueado/sem CORS: ignora, deixa o leitor padrão tentar */
+      }
+    })();
+
+    return () => ctrl.abort();
+  }, [fileUrl, fileKey]);
+
+  // Marca o arquivo como problemático quando o modo compat é ativado por falha,
+  // para evitar nova tentativa de leitor completo na próxima abertura.
+  useEffect(() => {
+    if (!compatibilityMode || !fileKey) return;
+    try {
+      sessionStorage.setItem(`pdfviewer:failed:${fileKey}`, "1");
+    } catch {
+      /* ignora */
+    }
+  }, [compatibilityMode, fileKey]);
+
+
 
 
   const handleRetry = useCallback(async () => {
