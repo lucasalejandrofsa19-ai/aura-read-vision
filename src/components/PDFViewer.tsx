@@ -23,8 +23,7 @@ import "react-pdf/dist/Page/TextLayer.css";
 // Service Worker) para evitar o fallback de bare specifier 'pdf.worker.mjs'
 // do pdf.js v4 e problemas de MIME-type em produção.
 if (!pdfjs.GlobalWorkerOptions.workerSrc || pdfjs.GlobalWorkerOptions.workerSrc === "pdf.worker.mjs") {
-  pdfjs.GlobalWorkerOptions.workerSrc =
-    `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+  pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
 }
 
 
@@ -158,7 +157,9 @@ export const PDFViewer = ({
   const MAX_RETRIES = 4;
 
   // Lista ordenada de workerSrc para tentar em sequência ao detectar falha de worker
+  // Local first (mesmo origin, sem dependência de CDN), depois CDNs como fallback
   const workerFallbacks = [
+    "/pdfjs/pdf.worker.min.mjs",
     `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
     `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
   ];
