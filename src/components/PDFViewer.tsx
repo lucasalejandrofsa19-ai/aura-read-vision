@@ -163,6 +163,10 @@ export const PDFViewer = ({
       : "(unset)",
   );
   const workerFallbackTriedRef = useRef(false);
+  // Auto-retry silencioso especificamente para falhas de worker em mobile/PWA
+  // (ex.: SW ainda ativando, worker .mjs ainda sendo cacheado, rede instável).
+  const workerAutoRetryRef = useRef(0);
+  const WORKER_AUTO_RETRY_MAX = 3;
   const MAX_RETRIES = 4;
 
   // ───────────────────────── Debug visual / telemetria ─────────────────────────
@@ -280,6 +284,7 @@ export const PDFViewer = ({
     setLockReason(null);
     workerFallbackIndexRef.current = 0;
     workerFallbackTriedRef.current = false;
+    workerAutoRetryRef.current = 0;
     pdfDebug(
       "info",
       `Novo arquivo carregado. Modo inicial = ${shouldUseNative ? "nativo (preferência)" : "completo"}.`,
@@ -892,16 +897,38 @@ export const PDFViewer = ({
 
             // Fallback automático para falhas de worker antes de exibir erro
             if (cause.title === "Worker do PDF.js não carregou") {
+              // 1) Auto-retry silencioso (mobile/PWA): o worker pode ainda estar
+              // sendo cacheado pelo Service Worker ou inicializando.
+              if (workerAutoRetryRef.current < WORKER_AUTO_RETRY_MAX) {
+                const attempt = ++workerAutoRetryRef.current;
+                const delayMs = Math.min(500 * 2 ** (attempt - 1), 4000); // 500ms,1s,2s
+                pdfDebug(
+                  "warn",
+                  `Worker não pronto — auto-retry ${attempt}/${WORKER_AUTO_RETRY_MAX} em ${delayMs}ms`,
+                );
+                setLoadError(null);
+                ensurePdfWorkerReady()
+                  .then((src) => {
+                    setCurrentWorkerSrc(src);
+                    setTimeout(() => setLoadAttempt((n) => n + 1), delayMs);
+                  })
+                  .catch(() => {
+                    setTimeout(() => setLoadAttempt((n) => n + 1), delayMs);
+                  });
+                return;
+              }
+              // 2) Esgotou auto-retries: alterna entre LOCAL e CDNs
               if (tryWorkerFallback()) {
                 console.info("[PDFViewer] Aplicando fallback de worker automaticamente.");
-                return; // não exibe erro nem reporta a Sentry — nova tentativa em curso
+                return;
               }
-              // Esgotou CDNs: ativa modo de compatibilidade (visualizador nativo)
+              // 3) Esgotou tudo: modo de compatibilidade (visualizador nativo)
               lockAutoCompat("Todos os workers do PDF.js falharam (local + CDNs)");
               setCompatibilityMode(true);
               setLoadError(null);
               return;
             }
+
 
 
             setLoadError(error);
