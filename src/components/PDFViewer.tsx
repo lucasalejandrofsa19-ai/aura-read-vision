@@ -50,6 +50,10 @@ interface PDFViewerProps {
   spokenText?: string;
   /** Renova a URL assinada quando expirar. Retorna a nova URL ou null. */
   onRenewUrl?: () => Promise<string | null>;
+  /** Preferência persistida do usuário: 'full' = leitor completo, 'native' = iframe nativo */
+  preferredReaderMode?: 'full' | 'native';
+  /** Callback chamado quando o usuário alterna manualmente o modo de leitor */
+  onReaderModeChange?: (mode: 'full' | 'native') => void;
 }
 
 type LikelyCause = {
