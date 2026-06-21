@@ -147,6 +147,7 @@ export const PDFViewer = ({
   const [retryCount, setRetryCount] = useState(0);
   const [retryDelay, setRetryDelay] = useState(0); // segundos restantes
   const [loadError, setLoadError] = useState<Error | null>(null);
+  const [compatibilityMode, setCompatibilityMode] = useState(false);
   const workerFallbackTriedRef = useRef(false);
   const MAX_RETRIES = 4;
 
@@ -168,12 +169,32 @@ export const PDFViewer = ({
     return true;
   }, []);
 
+  const enableCompatibilityMode = useCallback(() => {
+    console.warn(
+      "[PDFViewer] Todos os workers do PDF.js falharam — alternando para modo de compatibilidade (visualizador nativo do navegador).",
+    );
+    setCompatibilityMode(true);
+    setLoadError(null);
+  }, []);
+
+  const exitCompatibilityMode = useCallback(() => {
+    workerFallbackIndexRef.current = 0;
+    workerFallbackTriedRef.current = false;
+    setCompatibilityMode(false);
+    setLoadError(null);
+    setLoadAttempt((n) => n + 1);
+  }, []);
+
   // Reseta tentativas quando o arquivo muda
   useEffect(() => {
     setRetryCount(0);
     setRetryDelay(0);
     setLoadError(null);
+    setCompatibilityMode(false);
+    workerFallbackIndexRef.current = 0;
+    workerFallbackTriedRef.current = false;
   }, [fileUrl]);
+
 
 
   const handleRetry = useCallback(async () => {
@@ -485,8 +506,56 @@ export const PDFViewer = ({
     return () => window.removeEventListener('resize', handleResize);
   }, [autoFit, fitToWidth]);
 
+  // Modo de compatibilidade: visualizador nativo do navegador via <iframe>
+  // (sem destaque/marca-texto/zoom customizado, mas garante leitura mesmo se
+  // todos os workers do PDF.js estiverem bloqueados — ex.: rede corporativa).
+  if (compatibilityMode && typeof fileUrl === "string") {
+    return (
+      <div ref={containerRef} className="flex flex-col items-center gap-3 w-full">
+        <div className="w-full max-w-3xl rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs sm:text-sm text-amber-900 dark:text-amber-200 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold">Modo de compatibilidade ativo</p>
+            <p className="opacity-90 mt-0.5">
+              O motor avançado de PDF não pôde ser carregado (rede ou bloqueio
+              de CDN). Exibindo no leitor nativo do navegador. Recursos como
+              marca-texto, busca interna e zoom customizado ficam temporariamente
+              indisponíveis.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={exitCompatibilityMode}
+            className="shrink-0 gap-1"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Tentar leitor completo
+          </Button>
+        </div>
+        <iframe
+          src={fileUrl}
+          title="Visualizador PDF (modo de compatibilidade)"
+          className="w-full h-[80vh] border border-border rounded-lg bg-muted/20"
+        />
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <a href={fileUrl} target="_blank" rel="noopener noreferrer">
+              Abrir em nova aba
+            </a>
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/library")} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Voltar à biblioteca
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef} className="flex flex-col items-center gap-4 w-full">
+
       {/* Controls with horizontal scroll on mobile */}
       <div className="w-full overflow-x-auto pb-2">
         <div className="glass sticky top-20 z-40 rounded-lg p-3 flex items-center gap-2 min-w-max mx-auto w-fit">
@@ -607,7 +676,11 @@ export const PDFViewer = ({
                 console.info("[PDFViewer] Aplicando fallback de worker automaticamente.");
                 return; // não exibe erro nem reporta a Sentry — nova tentativa em curso
               }
+              // Esgotou CDNs: ativa modo de compatibilidade (visualizador nativo)
+              enableCompatibilityMode();
+              return;
             }
+
 
             setLoadError(error);
             try {
