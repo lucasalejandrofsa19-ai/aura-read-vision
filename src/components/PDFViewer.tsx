@@ -156,8 +156,49 @@ export const PDFViewer = ({
   // Quando o compat foi ativado por falha (worker/HEAD/sessão prévia), trava o
   // estado para não ser revertido por refetch de perfil/preferência.
   const autoCompatLockedRef = useRef(false);
+  const [lockReason, setLockReason] = useState<string | null>(null);
+  const [currentWorkerSrc, setCurrentWorkerSrc] = useState<string>(
+    typeof pdfjs.GlobalWorkerOptions.workerSrc === "string"
+      ? pdfjs.GlobalWorkerOptions.workerSrc
+      : "(unset)",
+  );
   const workerFallbackTriedRef = useRef(false);
   const MAX_RETRIES = 4;
+
+  // ───────────────────────── Debug visual / telemetria ─────────────────────────
+  // Ativa quando: ?pdfdebug=1 na URL ou localStorage.PDF_DEBUG === '1'.
+  const debugEnabled = (() => {
+    if (typeof window === "undefined") return false;
+    try {
+      if (new URLSearchParams(window.location.search).get("pdfdebug") === "1") return true;
+      if (window.localStorage?.getItem("PDF_DEBUG") === "1") return true;
+    } catch {
+      /* ignora */
+    }
+    return false;
+  })();
+  type DebugEvent = { ts: string; level: "info" | "warn" | "error"; msg: string };
+  const [debugEvents, setDebugEvents] = useState<DebugEvent[]>([]);
+  const pdfDebug = useCallback(
+    (level: "info" | "warn" | "error", msg: string, extra?: unknown) => {
+      const line = `[PDFViewer] ${msg}`;
+      // Console sempre — útil mesmo sem o overlay visual
+      // eslint-disable-next-line no-console
+      (level === "error" ? console.error : level === "warn" ? console.warn : console.info)(
+        line,
+        extra ?? "",
+      );
+      if (!debugEnabled) return;
+      setDebugEvents((prev) => {
+        const next = [
+          ...prev,
+          { ts: new Date().toLocaleTimeString(), level, msg },
+        ];
+        return next.slice(-30); // mantém últimos 30
+      });
+    },
+    [debugEnabled],
+  );
 
   // Lista ordenada de workerSrc para tentar em sequência ao detectar falha de worker
   // Local first (mesmo origin, sem dependência de CDN), depois CDNs como fallback
@@ -171,31 +212,42 @@ export const PDFViewer = ({
   const tryWorkerFallback = useCallback((): boolean => {
     if (workerFallbackIndexRef.current >= workerFallbacks.length) return false;
     const nextSrc = workerFallbacks[workerFallbackIndexRef.current++];
-    console.warn("[PDFViewer] Tentando workerSrc alternativo:", nextSrc);
+    pdfDebug("warn", `Trocando worker → ${nextSrc} (fallback #${workerFallbackIndexRef.current})`);
     pdfjs.GlobalWorkerOptions.workerSrc = nextSrc;
+    setCurrentWorkerSrc(nextSrc);
     workerFallbackTriedRef.current = true;
     setLoadError(null);
     setLoadAttempt((n) => n + 1);
     return true;
-  }, []);
+  }, [pdfDebug]);
+
+  const lockAutoCompat = useCallback(
+    (reason: string) => {
+      autoCompatLockedRef.current = true;
+      setLockReason(reason);
+      pdfDebug("warn", `Auto-fallback TRAVADO: ${reason}`);
+    },
+    [pdfDebug],
+  );
 
   const enterCompatibilityMode = useCallback(() => {
-    console.info("[PDFViewer] Usuário solicitou modo de compatibilidade (iframe nativo).");
-    // Escolha manual — NÃO trava como auto-fallback e NÃO marca arquivo como falho.
+    pdfDebug("info", "Usuário escolheu modo nativo (iframe).");
     autoCompatLockedRef.current = false;
+    setLockReason(null);
     setCompatibilityMode(true);
     setLoadError(null);
     onReaderModeChange?.('native');
-  }, [onReaderModeChange]);
+  }, [onReaderModeChange, pdfDebug]);
 
   const exitCompatibilityMode = useCallback(() => {
+    pdfDebug("info", "Usuário voltou ao leitor completo.");
     workerFallbackIndexRef.current = 0;
     workerFallbackTriedRef.current = false;
     autoCompatLockedRef.current = false;
+    setLockReason(null);
     setCompatibilityMode(false);
     setLoadError(null);
     setLoadAttempt((n) => n + 1);
-    // Limpa marca de "problemático" — usuário pediu explicitamente retry.
     try {
       const key = typeof fileUrl === "string" ? fileUrl.split("?")[0] : "";
       if (key) sessionStorage.removeItem(`pdfviewer:failed:${key}`);
@@ -203,12 +255,10 @@ export const PDFViewer = ({
       /* ignora */
     }
     onReaderModeChange?.('full');
-  }, [fileUrl, onReaderModeChange]);
+  }, [fileUrl, onReaderModeChange, pdfDebug]);
 
 
-  // Reseta tentativas APENAS quando o arquivo muda. Mudanças isoladas de
-  // `preferredReaderMode` (ex.: refetch do perfil) não devem reavaliar o modo,
-  // pois isso pode reverter um auto-fallback e gerar loop de recarga.
+  // Reseta tentativas APENAS quando o arquivo muda.
   useEffect(() => {
     setRetryCount(0);
     setRetryDelay(0);
@@ -216,8 +266,13 @@ export const PDFViewer = ({
     const shouldUseNative = preferredReaderMode === 'native';
     setCompatibilityMode(shouldUseNative);
     autoCompatLockedRef.current = false;
+    setLockReason(null);
     workerFallbackIndexRef.current = 0;
     workerFallbackTriedRef.current = false;
+    pdfDebug(
+      "info",
+      `Novo arquivo carregado. Modo inicial = ${shouldUseNative ? "nativo (preferência)" : "completo"}.`,
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileUrl]);
 
