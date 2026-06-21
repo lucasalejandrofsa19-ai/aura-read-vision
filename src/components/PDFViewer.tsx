@@ -179,7 +179,8 @@ export const PDFViewer = ({
     console.info("[PDFViewer] Usuário solicitou modo de compatibilidade (iframe nativo).");
     setCompatibilityMode(true);
     setLoadError(null);
-  }, []);
+    onReaderModeChange?.('native');
+  }, [onReaderModeChange]);
 
   const exitCompatibilityMode = useCallback(() => {
     workerFallbackIndexRef.current = 0;
@@ -194,7 +195,8 @@ export const PDFViewer = ({
     } catch {
       /* ignora */
     }
-  }, [fileUrl]);
+    onReaderModeChange?.('full');
+  }, [fileUrl, onReaderModeChange]);
 
 
   // Reseta tentativas quando o arquivo muda
