@@ -1,22 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 /**
- * Testes do pré-aquecimento do worker pdf.js.
+ * Testes da configuração e prewarm do worker pdf.js (v5 LOCAL-first).
  *
- * Limitação: jsdom não executa Service Workers reais. Não há como testar
- * fim-a-fim "ficar offline e ainda servir o worker" sem Playwright + browser
- * real com SW habilitado. Aqui validamos a parte que controlamos no app:
- *  1) Após `navigator.serviceWorker.ready`, fazemos `fetch` nos CDNs do worker.
- *  2) Os fetches usam `cache: 'force-cache'` e `mode: 'no-cors'`
- *     (necessário para o Workbox interceptar e popular o cache 'pdfjs-worker-cache').
- *  3) Erros de fetch não derrubam o app.
+ * Estratégia:
+ *  - workerSrc é setado IMEDIATAMENTE para o worker LOCAL (/pdfjs/...).
+ *  - Em mobile/PWA, ensurePdfWorkerReady() faz pré-fetch do LOCAL para
+ *    forçar o Workbox a popular o cache 'pdfjs-worker-local-cache'.
+ *  - Se o LOCAL falhar, há fallback para CDNs.
  */
 
 const mockFetch = vi.fn((..._args: unknown[]) =>
   Promise.resolve(new Response("", { status: 200 })),
 );
 
-// Mock react-pdf antes do import dinâmico
 vi.mock("react-pdf", () => ({
   pdfjs: {
     version: "4.8.69",
@@ -24,7 +21,7 @@ vi.mock("react-pdf", () => ({
   },
 }));
 
-describe("pdfjsWorker prewarm", () => {
+describe("pdfjsWorker (LOCAL-first)", () => {
   beforeEach(() => {
     vi.resetModules();
     mockFetch.mockClear();
@@ -33,35 +30,37 @@ describe("pdfjsWorker prewarm", () => {
       configurable: true,
       value: { ready: Promise.resolve({} as ServiceWorkerRegistration) },
     });
+    // Força mobile UA para acionar prewarm automático
+    Object.defineProperty(navigator, "userAgent", {
+      configurable: true,
+      value: "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) Mobile/15E148",
+    });
   });
 
-  it("configura workerSrc via CDN e pré-aquece os CDNs após o SW ficar pronto", async () => {
+  it("configura workerSrc para o caminho LOCAL imediatamente no boot", async () => {
     const mod = await import("@/lib/pdfjsWorker");
-    expect(mod.pdfjs.GlobalWorkerOptions.workerSrc).toBe(
-      "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.worker.min.mjs",
-    );
+    expect(mod.pdfjs.GlobalWorkerOptions.workerSrc).toBe("/pdfjs/pdf.worker.min.mjs");
+  });
 
-    // aguarda microtasks do `navigator.serviceWorker.ready.then(prewarm)`
-    await new Promise((r) => setTimeout(r, 0));
+  it("ensurePdfWorkerReady tenta o LOCAL primeiro e o resolve quando OK", async () => {
+    const mod = await import("@/lib/pdfjsWorker");
+    const used = await mod.ensurePdfWorkerReady();
+    expect(used).toBe("/pdfjs/pdf.worker.min.mjs");
 
     const urls = mockFetch.mock.calls.map((c) => c[0]);
-    expect(urls).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining("cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69"),
-        expect.stringContaining("unpkg.com/pdfjs-dist@4.8.69"),
-      ]),
-    );
-
-    const opts = mockFetch.mock.calls[0][1] as RequestInit;
-    expect(opts.cache).toBe("force-cache");
-    expect(opts.mode).toBe("no-cors");
+    expect(urls[0]).toBe("/pdfjs/pdf.worker.min.mjs");
   });
 
-  it("não lança quando o fetch falha", async () => {
+  it("faz fallback para CDN se o LOCAL falhar", async () => {
     mockFetch.mockImplementationOnce(() => Promise.reject(new Error("offline")));
-    await expect(import("@/lib/pdfjsWorker")).resolves.toBeDefined();
-    await new Promise((r) => setTimeout(r, 0));
-    // se chegou aqui sem unhandled rejection, passa
-    expect(true).toBe(true);
+    const mod = await import("@/lib/pdfjsWorker");
+    const used = await mod.ensurePdfWorkerReady();
+    expect(used).toContain("cdn.jsdelivr.net");
+  });
+
+  it("não lança quando todos os fetches falham", async () => {
+    mockFetch.mockImplementation(() => Promise.reject(new Error("offline")));
+    const mod = await import("@/lib/pdfjsWorker");
+    await expect(mod.ensurePdfWorkerReady()).resolves.toBe("/pdfjs/pdf.worker.min.mjs");
   });
 });
