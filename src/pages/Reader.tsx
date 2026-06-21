@@ -566,7 +566,7 @@ const Reader = () => {
             <ReaderBookSearch />
           </div>
 
-          <div className="flex md:hidden items-center gap-2 ml-14 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex md:hidden items-center gap-2 ml-14 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:flex-shrink-0">
             <NotesPanel
               notes={notes}
               currentPage={currentPage}
