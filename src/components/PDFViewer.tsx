@@ -163,6 +163,10 @@ export const PDFViewer = ({
       : "(unset)",
   );
   const workerFallbackTriedRef = useRef(false);
+  // Auto-retry silencioso especificamente para falhas de worker em mobile/PWA
+  // (ex.: SW ainda ativando, worker .mjs ainda sendo cacheado, rede instável).
+  const workerAutoRetryRef = useRef(0);
+  const WORKER_AUTO_RETRY_MAX = 3;
   const MAX_RETRIES = 4;
 
   // ───────────────────────── Debug visual / telemetria ─────────────────────────
