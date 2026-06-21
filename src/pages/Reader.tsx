@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useId, useRef } from "react";
 import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
+import { useUserData } from "@/hooks/useUserData";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMobileOptimization } from "@/hooks/useMobileOptimization";
