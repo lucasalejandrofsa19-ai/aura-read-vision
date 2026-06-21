@@ -19,13 +19,12 @@ interface PDFTextItem {
 }
 import "react-pdf/dist/Page/TextLayer.css";
 // Defensivo: alguns chunks podem carregar react-pdf antes do bootstrap de
-// src/lib/pdfjsWorker.ts. Usamos `new URL(..., import.meta.url)` para evitar
-// o fallback de bare specifier 'pdf.worker.mjs' do pdf.js v4.
-if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    "pdfjs-dist/build/pdf.worker.min.mjs",
-    import.meta.url,
-  ).toString();
+// src/lib/pdfjsWorker.ts. Usamos CDN como fonte primária (já cacheada pelo
+// Service Worker) para evitar o fallback de bare specifier 'pdf.worker.mjs'
+// do pdf.js v4 e problemas de MIME-type em produção.
+if (!pdfjs.GlobalWorkerOptions.workerSrc || pdfjs.GlobalWorkerOptions.workerSrc === "pdf.worker.mjs") {
+  pdfjs.GlobalWorkerOptions.workerSrc =
+    `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 }
 
 
