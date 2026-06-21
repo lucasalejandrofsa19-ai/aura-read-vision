@@ -374,10 +374,9 @@ export const ReaderPageSearch = ({
                   onClick={() => {
                     try {
                       // Força nova instância do worker no próximo getDocument
-                      const newSrc = new URL(
-                        "pdfjs-dist/build/pdf.worker.min.mjs",
-                        import.meta.url,
-                      ).toString() + `?t=${Date.now()}`;
+                      const newSrc =
+                        `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs` +
+                        `?t=${Date.now()}`;
                       pdfjs.GlobalWorkerOptions.workerSrc = newSrc;
                       workerFallbackIdxRef.current = 0;
                       setWorkerInfo({ src: newSrc, fallbackUsed: false, lastError: null });
