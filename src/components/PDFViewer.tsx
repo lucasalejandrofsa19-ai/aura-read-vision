@@ -573,9 +573,9 @@ export const PDFViewer = ({
     return (
       <div ref={containerRef} className="flex flex-col items-center gap-3 w-full">
         <div className="w-full max-w-3xl rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs sm:text-sm text-amber-900 dark:text-amber-200 flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <Monitor className="w-4 h-4 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="font-semibold">Modo de compatibilidade ativo</p>
+            <p className="font-semibold">Leitor nativo (modo de compatibilidade)</p>
             <p className="opacity-90 mt-0.5">
               O motor avançado de PDF não pôde ser carregado (rede ou bloqueio
               de CDN). Exibindo no leitor nativo do navegador. Recursos como
@@ -589,8 +589,8 @@ export const PDFViewer = ({
             onClick={exitCompatibilityMode}
             className="shrink-0 gap-1"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Tentar leitor completo
+            <BookOpen className="w-3.5 h-3.5" />
+            Leitor completo
           </Button>
         </div>
         <iframe
