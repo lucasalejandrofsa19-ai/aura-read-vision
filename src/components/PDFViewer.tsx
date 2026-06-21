@@ -230,11 +230,12 @@ export const PDFViewer = ({
   useEffect(() => {
     if (typeof fileUrl !== "string" || !fileUrl) return;
 
-    // 1) Falha prévia conhecida nesta sessão? abre direto em compat.
+    // 1) Falha prévia conhecida nesta sessão? abre direto em compat (travado).
     try {
       const failedKey = `pdfviewer:failed:${fileKey}`;
       if (sessionStorage.getItem(failedKey) === "1") {
         console.info("[PDFViewer] PDF marcado como problemático em sessão anterior — modo compatibilidade.");
+        autoCompatLockedRef.current = true;
         setCompatibilityMode(true);
         return;
       }
@@ -253,6 +254,7 @@ export const PDFViewer = ({
           console.info(
             `[PDFViewer] PDF grande detectado (${(len / 1024 / 1024).toFixed(1)} MB > 25 MB) — modo compatibilidade.`,
           );
+          autoCompatLockedRef.current = true;
           setCompatibilityMode(true);
         }
       } catch {
@@ -263,10 +265,11 @@ export const PDFViewer = ({
     return () => ctrl.abort();
   }, [fileUrl, fileKey]);
 
-  // Marca o arquivo como problemático quando o modo compat é ativado por falha,
-  // para evitar nova tentativa de leitor completo na próxima abertura.
+  // Marca o arquivo como problemático APENAS quando o compat foi ativado
+  // automaticamente por falha (não quando o usuário escolheu nativo manualmente).
   useEffect(() => {
     if (!compatibilityMode || !fileKey) return;
+    if (!autoCompatLockedRef.current) return;
     try {
       sessionStorage.setItem(`pdfviewer:failed:${fileKey}`, "1");
     } catch {
