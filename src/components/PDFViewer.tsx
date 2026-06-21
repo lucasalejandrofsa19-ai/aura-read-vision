@@ -157,7 +157,9 @@ export const PDFViewer = ({
   const MAX_RETRIES = 4;
 
   // Lista ordenada de workerSrc para tentar em sequência ao detectar falha de worker
+  // Local first (mesmo origin, sem dependência de CDN), depois CDNs como fallback
   const workerFallbacks = [
+    "/pdfjs/pdf.worker.min.mjs",
     `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
     `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`,
   ];
