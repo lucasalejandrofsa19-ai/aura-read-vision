@@ -183,7 +183,15 @@ export const PDFViewer = ({
     setCompatibilityMode(false);
     setLoadError(null);
     setLoadAttempt((n) => n + 1);
-  }, []);
+    // Limpa marca de "problemático" — usuário pediu explicitamente retry.
+    try {
+      const key = typeof fileUrl === "string" ? fileUrl.split("?")[0] : "";
+      if (key) sessionStorage.removeItem(`pdfviewer:failed:${key}`);
+    } catch {
+      /* ignora */
+    }
+  }, [fileUrl]);
+
 
   // Reseta tentativas quando o arquivo muda
   useEffect(() => {
