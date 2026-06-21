@@ -628,7 +628,11 @@ export const PDFViewer = ({
                 console.info("[PDFViewer] Aplicando fallback de worker automaticamente.");
                 return; // não exibe erro nem reporta a Sentry — nova tentativa em curso
               }
+              // Esgotou CDNs: ativa modo de compatibilidade (visualizador nativo)
+              enableCompatibilityMode();
+              return;
             }
+
 
             setLoadError(error);
             try {
