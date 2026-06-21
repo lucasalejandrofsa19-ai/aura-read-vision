@@ -258,6 +258,17 @@ export const PDFViewer = ({
   }, [fileUrl, onReaderModeChange, pdfDebug]);
 
 
+  // Mobile/PWA: aguarda worker estar pronto + cacheado antes de tentar render.
+  // Atualiza o workerSrc visível para o painel de debug.
+  useEffect(() => {
+    ensurePdfWorkerReady()
+      .then((src) => {
+        setCurrentWorkerSrc(src);
+        pdfDebug("info", `Worker pronto: ${src}`);
+      })
+      .catch((err) => pdfDebug("warn", `ensurePdfWorkerReady falhou: ${String(err)}`));
+  }, [pdfDebug]);
+
   // Reseta tentativas APENAS quando o arquivo muda.
   useEffect(() => {
     setRetryCount(0);
