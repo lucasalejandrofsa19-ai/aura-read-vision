@@ -24,11 +24,6 @@ vi.mock("react-pdf", () => ({
   },
 }));
 
-// Mock do `?url` do Vite
-vi.mock("pdfjs-dist/build/pdf.worker.min.mjs?url", () => ({
-  default: "/assets/pdf.worker.min.mjs",
-}));
-
 describe("pdfjsWorker prewarm", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -40,10 +35,10 @@ describe("pdfjsWorker prewarm", () => {
     });
   });
 
-  it("configura workerSrc bundled e pré-aquece os CDNs após o SW ficar pronto", async () => {
+  it("configura workerSrc via CDN e pré-aquece os CDNs após o SW ficar pronto", async () => {
     const mod = await import("@/lib/pdfjsWorker");
     expect(mod.pdfjs.GlobalWorkerOptions.workerSrc).toBe(
-      "/assets/pdf.worker.min.mjs",
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.worker.min.mjs",
     );
 
     // aguarda microtasks do `navigator.serviceWorker.ready.then(prewarm)`
