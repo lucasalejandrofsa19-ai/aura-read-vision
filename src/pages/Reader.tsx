@@ -121,6 +121,7 @@ const Reader = () => {
   const { enterFullscreen } = useFullscreen();
   const { user } = useAuth();
   const invalidateProfile = useInvalidateUserProfile();
+  const { profile } = useUserData();
   const { startSession, endSession, updateSession, isSessionActive } = useReadingSession(id || "");
 
   // Refs para evitar closures stale nos effects abaixo (sync realtime e sessão).
