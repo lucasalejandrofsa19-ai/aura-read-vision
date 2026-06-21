@@ -2,29 +2,28 @@
  * Centralized PDF.js worker configuration.
  * Importado uma única vez no bootstrap (main.tsx).
  *
- * Estratégia v2: usar `new URL(..., import.meta.url)` em vez de `?url`.
- * O `?url` produz um asset que, em produção, é servido com Content-Type
- * `application/javascript`. O pdf.js v4 cria o Worker com `{ type: 'module' }`
- * e em alguns navegadores a checagem de MIME para module workers exige
- * `text/javascript` exato; quando falha, o pdf.js cai no "fake worker" que
- * tenta `import('pdf.worker.mjs')` (bare specifier) e quebra com:
- *   "Failed to resolve module specifier 'pdf.worker.mjs'".
+ * Estratégia v3 (CDN-first):
+ *   Tentativas anteriores com `?url` e `new URL(..., import.meta.url)` falharam
+ *   em produção:
+ *   - `?url` servia o asset com Content-Type errado e o pdf.js v4 rejeitava
+ *     o module worker.
+ *   - `new URL("pdfjs-dist/...", import.meta.url)` NÃO é transformado pelo
+ *     Vite (só funciona com caminhos relativos `./` ou `../`), então em
+ *     produção a URL resolvia para um caminho inexistente e o pdf.js caía
+ *     no "fake worker" tentando `import('pdf.worker.mjs')` (bare specifier)
+ *     e quebrando com "Failed to resolve module specifier 'pdf.worker.mjs'".
  *
- * `new URL(specifier, import.meta.url)` é entendido pelo Vite, gera o asset
- * com hash do MESMO arquivo, e devolve uma URL absoluta confiável que o
- * navegador trata como worker module sem o glitch acima.
- *
- * Fallback CDN é gerenciado pelo PDFViewer caso o worker bundled falhe.
+ * Solução: usar a CDN diretamente como fonte primária. A mesma URL é
+ * pré-cacheada pelo Service Worker (Workbox `pdfjs-worker-cache`), então
+ * funciona offline e em qualquer dispositivo (mobile inclusive).
+ * Fallbacks adicionais são gerenciados pelo PDFViewer.
  */
 import { pdfjs } from 'react-pdf';
 
-const workerUrl = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+const CDN_WORKER_URL = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-console.log('[PDF.js] workerSrc configurado:', workerUrl);
+pdfjs.GlobalWorkerOptions.workerSrc = CDN_WORKER_URL;
+console.log('[PDF.js] workerSrc configurado (CDN):', CDN_WORKER_URL);
 
 // Pré-aquece os CDNs (Workbox os captura no cache 'pdfjs-worker-cache')
 // para servir como fallback offline.
