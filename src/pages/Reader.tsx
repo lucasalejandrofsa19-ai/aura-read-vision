@@ -199,6 +199,10 @@ const Reader = () => {
 
 
     try {
+      // Verifica sessão antes de consultar — RLS exige usuário autenticado
+      const { data: sessionData } = await supabase.auth.getSession();
+      const isAuthed = !!sessionData?.session?.user;
+
       // Tenta primeiro nos livros do usuário
       let { data, error } = await supabase
         .from("books")
@@ -218,7 +222,17 @@ const Reader = () => {
           .eq("id", id)
           .maybeSingle();
         if (premiumError) throw premiumError;
-        if (!premiumData) throw error ?? new Error("Livro não encontrado");
+        if (!premiumData) {
+          if (!isAuthed) {
+            // Provável causa: sessão expirada. RLS bloqueia leitura anônima.
+            setLoadError("Sua sessão expirou. Faça login novamente para abrir o livro.");
+            setLoading(false);
+            toast.error("Sessão expirada — redirecionando para o login");
+            setTimeout(() => navigate("/auth", { replace: true }), 1200);
+            return;
+          }
+          throw error ?? new Error("Livro não encontrado");
+        }
         data = premiumData as any;
         isPremium = true;
         bucket = "premium-pdfs";
