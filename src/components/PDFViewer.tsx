@@ -640,21 +640,76 @@ export const PDFViewer = ({
     return () => window.removeEventListener('resize', handleResize);
   }, [autoFit, fitToWidth]);
 
+  // Overlay visual de debug (ativado por ?pdfdebug=1 ou localStorage.PDF_DEBUG='1').
+  const DebugOverlay = () => {
+    if (!debugEnabled) return null;
+    const shortWorker = currentWorkerSrc.startsWith("/")
+      ? `local: ${currentWorkerSrc}`
+      : currentWorkerSrc.includes("jsdelivr")
+        ? "cdn: jsdelivr"
+        : currentWorkerSrc.includes("unpkg")
+          ? "cdn: unpkg"
+          : currentWorkerSrc;
+    return (
+      <div className="fixed bottom-2 right-2 z-[9999] max-w-[92vw] sm:max-w-sm rounded-md border border-border bg-background/95 backdrop-blur shadow-lg p-2 text-[10px] leading-tight font-mono">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <span className="font-bold text-primary">PDF DEBUG</span>
+          <button
+            onClick={() => {
+              try { window.localStorage?.removeItem("PDF_DEBUG"); } catch { /* noop */ }
+              setDebugEvents([]);
+              window.location.search = window.location.search.replace(/[?&]pdfdebug=1/, "");
+            }}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            ×
+          </button>
+        </div>
+        <div>modo: <b>{compatibilityMode ? "nativo (iframe)" : "completo (PDF.js)"}</b></div>
+        <div>worker: <b>{shortWorker}</b></div>
+        <div>fallback #: <b>{workerFallbackIndexRef.current}/{workerFallbacks.length}</b></div>
+        <div>
+          auto-lock: <b className={autoCompatLockedRef.current ? "text-amber-500" : "text-muted-foreground"}>
+            {autoCompatLockedRef.current ? `🔒 ${lockReason ?? "ativo"}` : "livre"}
+          </b>
+        </div>
+        <div>retries: <b>{retryCount}/{MAX_RETRIES}</b></div>
+        <details className="mt-1">
+          <summary className="cursor-pointer text-muted-foreground">eventos ({debugEvents.length})</summary>
+          <div className="max-h-40 overflow-auto mt-1 space-y-0.5">
+            {debugEvents.slice().reverse().map((e, i) => (
+              <div
+                key={i}
+                className={
+                  e.level === "error" ? "text-destructive"
+                  : e.level === "warn" ? "text-amber-500"
+                  : "text-foreground"
+                }
+              >
+                <span className="text-muted-foreground">{e.ts}</span> {e.msg}
+              </div>
+            ))}
+          </div>
+        </details>
+      </div>
+    );
+  };
+
   // Modo de compatibilidade: visualizador nativo do navegador via <iframe>
-  // (sem destaque/marca-texto/zoom customizado, mas garante leitura mesmo se
-  // todos os workers do PDF.js estiverem bloqueados — ex.: rede corporativa).
   if (compatibilityMode && typeof fileUrl === "string") {
     return (
       <div ref={containerRef} className="flex flex-col items-center gap-3 w-full">
+        <DebugOverlay />
         <div className="w-full max-w-3xl rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs sm:text-sm text-amber-900 dark:text-amber-200 flex items-start gap-2">
           <Monitor className="w-4 h-4 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="font-semibold">Leitor nativo (modo de compatibilidade)</p>
+            <p className="font-semibold">
+              Leitor nativo {autoCompatLockedRef.current ? "(auto-fallback)" : "(escolha do usuário)"}
+            </p>
             <p className="opacity-90 mt-0.5">
-              O motor avançado de PDF não pôde ser carregado (rede ou bloqueio
-              de CDN). Exibindo no leitor nativo do navegador. Recursos como
-              marca-texto, busca interna e zoom customizado ficam temporariamente
-              indisponíveis.
+              {autoCompatLockedRef.current
+                ? `Motivo: ${lockReason ?? "falha no leitor completo"}. Marca-texto, busca interna e zoom customizado ficam temporariamente indisponíveis.`
+                : "Exibindo no leitor nativo do navegador conforme sua preferência."}
             </p>
           </div>
           <Button
@@ -689,6 +744,8 @@ export const PDFViewer = ({
 
   return (
     <div ref={containerRef} className="flex flex-col items-center gap-4 w-full">
+      <DebugOverlay />
+
 
       {/* Mode indicator + manual switch */}
       <div className="w-full max-w-3xl rounded-md border border-primary/20 bg-primary/5 p-2.5 text-xs sm:text-sm text-foreground flex items-center gap-2">
