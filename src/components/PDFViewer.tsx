@@ -153,6 +153,9 @@ export const PDFViewer = ({
   const [retryDelay, setRetryDelay] = useState(0); // segundos restantes
   const [loadError, setLoadError] = useState<Error | null>(null);
   const [compatibilityMode, setCompatibilityMode] = useState(false);
+  // Quando o compat foi ativado por falha (worker/HEAD/sessão prévia), trava o
+  // estado para não ser revertido por refetch de perfil/preferência.
+  const autoCompatLockedRef = useRef(false);
   const workerFallbackTriedRef = useRef(false);
   const MAX_RETRIES = 4;
 
@@ -178,6 +181,8 @@ export const PDFViewer = ({
 
   const enterCompatibilityMode = useCallback(() => {
     console.info("[PDFViewer] Usuário solicitou modo de compatibilidade (iframe nativo).");
+    // Escolha manual — NÃO trava como auto-fallback e NÃO marca arquivo como falho.
+    autoCompatLockedRef.current = false;
     setCompatibilityMode(true);
     setLoadError(null);
     onReaderModeChange?.('native');
@@ -186,6 +191,7 @@ export const PDFViewer = ({
   const exitCompatibilityMode = useCallback(() => {
     workerFallbackIndexRef.current = 0;
     workerFallbackTriedRef.current = false;
+    autoCompatLockedRef.current = false;
     setCompatibilityMode(false);
     setLoadError(null);
     setLoadAttempt((n) => n + 1);
@@ -200,17 +206,20 @@ export const PDFViewer = ({
   }, [fileUrl, onReaderModeChange]);
 
 
-  // Reseta tentativas quando o arquivo muda
+  // Reseta tentativas APENAS quando o arquivo muda. Mudanças isoladas de
+  // `preferredReaderMode` (ex.: refetch do perfil) não devem reavaliar o modo,
+  // pois isso pode reverter um auto-fallback e gerar loop de recarga.
   useEffect(() => {
     setRetryCount(0);
     setRetryDelay(0);
     setLoadError(null);
-    // Respeita preferência persistida do usuário ao trocar de arquivo
     const shouldUseNative = preferredReaderMode === 'native';
     setCompatibilityMode(shouldUseNative);
+    autoCompatLockedRef.current = false;
     workerFallbackIndexRef.current = 0;
     workerFallbackTriedRef.current = false;
-  }, [fileUrl, preferredReaderMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileUrl]);
 
   // Detecção preventiva: se o PDF é grande (>25MB) ou já falhou antes nesta
   // sessão, abre direto no modo de compatibilidade para evitar loops de
