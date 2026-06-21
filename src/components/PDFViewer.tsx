@@ -350,7 +350,7 @@ export const PDFViewer = ({
     })();
 
     return () => ctrl.abort();
-  }, [fileUrl, fileKey]);
+  }, [fileUrl, fileKey, lockAutoCompat, onReaderModeChange]);
 
   // Marca o arquivo como problemático APENAS quando o compat foi ativado
   // automaticamente por falha (não quando o usuário escolheu nativo manualmente).
