@@ -778,6 +778,7 @@ export const PDFViewer = ({
                 return; // não exibe erro nem reporta a Sentry — nova tentativa em curso
               }
               // Esgotou CDNs: ativa modo de compatibilidade (visualizador nativo)
+              autoCompatLockedRef.current = true;
               setCompatibilityMode(true);
               setLoadError(null);
               return;
