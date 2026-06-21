@@ -284,6 +284,7 @@ export const PDFViewer = ({
     setLockReason(null);
     workerFallbackIndexRef.current = 0;
     workerFallbackTriedRef.current = false;
+    workerAutoRetryRef.current = 0;
     pdfDebug(
       "info",
       `Novo arquivo carregado. Modo inicial = ${shouldUseNative ? "nativo (preferência)" : "completo"}.`,
