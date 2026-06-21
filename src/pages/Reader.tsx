@@ -575,7 +575,7 @@ const Reader = () => {
                 className="aura-soft transition-aura relative md:hidden shrink-0"
                 aria-label="Resumir tudo com IA">
                 <Sparkles className="w-6 h-6 text-primary" />
-                <span className="absolute -top-1 -right-1 text-[10px] font-bold bg-primary text-primary-foreground rounded-full px-1.5 leading-tight">IA</span>
+                <span className="absolute -top-1.5 -right-1.5 text-xs font-bold bg-primary text-primary-foreground rounded-full px-2 py-0.5 leading-none">IA</span>
               </Button>
             </ToolHelpTooltip>
 
