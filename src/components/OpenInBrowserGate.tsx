@@ -119,9 +119,69 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
     setBlocked(false);
   };
 
-  const browserState = getInAppBrowserState();
+  const fallbackUrl = browserState.isAndroid
+    ? browserState.chromeIntentUrl
+    : browserState.isIOS
+      ? browserState.chromeIOSUrl
+      : browserState.currentUrl;
 
-  if (!blocked) return <>{children}</>;
+  const DebugPanel = () => (
+    <div className="mt-5 text-left rounded-md border border-dashed border-border bg-muted/50 p-4 text-xs font-mono">
+      <div className="flex items-center gap-2 mb-3 text-muted-foreground">
+        <Bug className="w-4 h-4" />
+        <span className="font-semibold uppercase tracking-wide">Debug</span>
+      </div>
+      <ul className="space-y-1.5 text-foreground/80 break-all">
+        <li>
+          <span className="text-muted-foreground">Detectado por:</span>{" "}
+          <strong className="text-primary">{browserState.detectedBy}</strong>
+        </li>
+        <li>
+          <span className="text-muted-foreground">Bloqueado:</span>{" "}
+          {blocked ? "sim" : "não"}
+        </li>
+        <li>
+          <span className="text-muted-foreground">Plataforma:</span>{" "}
+          {browserState.isAndroid ? "Android" : browserState.isIOS ? "iOS" : "outro"}
+        </li>
+        <li>
+          <span className="text-muted-foreground">WebView genérico:</span>{" "}
+          {browserState.isWebView ? "sim" : "não"}
+        </li>
+        <li>
+          <span className="text-muted-foreground">URL atual:</span>{" "}
+          {browserState.currentUrl}
+        </li>
+        <li>
+          <span className="text-muted-foreground">Link de fallback:</span>{" "}
+          <span className="text-primary">{fallbackUrl}</span>
+        </li>
+        <li>
+          <span className="text-muted-foreground">User-Agent:</span>{" "}
+          {browserState.userAgent}
+        </li>
+      </ul>
+    </div>
+  );
+
+  if (!blocked && !showDebug) return <>{children}</>;
+
+  if (!blocked && showDebug) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-md mx-auto rounded-lg border border-border/60 bg-card p-6 shadow-xl">
+          <h1 className="text-lg font-bold mb-2">Debug do navegador</h1>
+          <p className="text-sm text-muted-foreground mb-4">
+            Modo de depuração ativado via <code className="text-primary">?debug=1</code>.
+          </p>
+          <DebugPanel />
+          <Button onClick={stayInApp} variant="outline" className="w-full mt-5">
+            Continuar para o app
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
@@ -188,6 +248,8 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
         >
           Continuar mesmo assim
         </button>
+
+        {showDebug && <DebugPanel />}
       </div>
     </div>
   );
