@@ -11,8 +11,6 @@ import { Button } from "@/components/ui/button";
  *
  * Aceita ?stayInApp=1 para desativar (caso o usuário queira ficar no webview).
  */
-const IN_APP_REGEX =
-  /Instagram|FBAN|FBAV|FB_IAB|FBIOS|Line\/|MicroMessenger|TikTok|Twitter|Snapchat|WhatsApp|Pinterest/i;
 
 interface InAppBrowserState {
   isInAppBrowser: boolean;
