@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ExternalLink, Copy, Check } from "lucide-react";
+import { ExternalLink, Copy, Check, Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /**
