@@ -79,6 +79,12 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
   const initialState = useMemo(getInAppBrowserState, []);
   const [blocked, setBlocked] = useState(initialState.isInAppBrowser);
   const [copied, setCopied] = useState(false);
+  const showDebug = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("debug") === "1";
+  }, []);
+
+  const browserState = getInAppBrowserState();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
