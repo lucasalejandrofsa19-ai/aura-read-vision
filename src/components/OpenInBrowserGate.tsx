@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -14,42 +14,61 @@ import { Button } from "@/components/ui/button";
 const IN_APP_REGEX =
   /Instagram|FBAN|FBAV|FB_IAB|FBIOS|Line\/|MicroMessenger|TikTok|Twitter|Snapchat|WhatsApp|Pinterest/i;
 
+interface InAppBrowserState {
+  isInAppBrowser: boolean;
+  isIOS: boolean;
+  isAndroid: boolean;
+  currentUrl: string;
+  chromeIntentUrl: string;
+  chromeIOSUrl: string;
+}
+
+const getInAppBrowserState = (): InAppBrowserState => {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return {
+      isInAppBrowser: false,
+      isIOS: false,
+      isAndroid: false,
+      currentUrl: "",
+      chromeIntentUrl: "",
+      chromeIOSUrl: "",
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const ua = navigator.userAgent || "";
+  const currentUrl = window.location.href;
+  const urlWithoutScheme = currentUrl.replace(/^https?:\/\//, "");
+
+  return {
+    isInAppBrowser: params.get("stayInApp") !== "1" && IN_APP_REGEX.test(ua),
+    isIOS: /iPhone|iPad|iPod/i.test(ua),
+    isAndroid: /Android/i.test(ua),
+    currentUrl,
+    chromeIntentUrl: `intent://${urlWithoutScheme}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(currentUrl)};end`,
+    chromeIOSUrl: `googlechrome://${urlWithoutScheme}`,
+  };
+};
+
 export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) => {
-  const [blocked, setBlocked] = useState(false);
+  const initialState = useMemo(getInAppBrowserState, []);
+  const [blocked, setBlocked] = useState(initialState.isInAppBrowser);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("stayInApp") === "1") return;
-      if (localStorage.getItem("openInBrowser:dismissed") === "1") return;
-
-      const ua = navigator.userAgent || "";
-      if (!IN_APP_REGEX.test(ua)) return;
-
-      const ios = /iPhone|iPad|iPod/i.test(ua);
-      const android = /Android/i.test(ua);
-      const url = window.location.href;
-
-      if (android) {
-        // Intent URL — abre direto no Chrome no Android
-        const cleanUrl = url.replace(/^https?:\/\//, "");
-        const intent = `intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(url)};end`;
-        window.location.href = intent;
-        // se não funcionar, mostra fallback após 1.5s
-        setTimeout(() => setBlocked(true), 1500);
-        return;
-      }
-
-      if (ios) {
-        // No iOS, googlechrome:// só funciona se Chrome estiver instalado.
-        // Mostra fallback com instrução manual (mais confiável).
-        setBlocked(true);
-        return;
-      }
+      const state = getInAppBrowserState();
+      if (!state.isInAppBrowser) return;
 
       setBlocked(true);
+
+      if (state.isAndroid) {
+        // Tenta automaticamente, mas mantém a tela bloqueada porque o Instagram
+        // frequentemente exige um toque do usuário para permitir intents.
+        window.location.replace(state.chromeIntentUrl);
+        return;
+      }
     } catch {
       /* ignora */
     }
@@ -66,27 +85,16 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
   };
 
   const stayInApp = () => {
-    try {
-      localStorage.setItem("openInBrowser:dismissed", "1");
-    } catch {
-      /* ignora */
-    }
     setBlocked(false);
   };
 
-  const openChromeIOS = () => {
-    const url = window.location.href.replace(/^https?:\/\//, "");
-    window.location.href = `googlechrome://${url}`;
-  };
+  const browserState = getInAppBrowserState();
 
   if (!blocked) return <>{children}</>;
 
-  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
-  const ios = /iPhone|iPad|iPod/i.test(ua);
-
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-      <div className="max-w-md w-full rounded-2xl border border-border/60 bg-card p-6 shadow-xl text-center">
+      <div className="max-w-md w-full rounded-lg border border-border/60 bg-card p-6 shadow-xl text-center">
         <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
           <ExternalLink className="w-7 h-7 text-primary" />
         </div>
@@ -96,11 +104,30 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
           navegador interno do Instagram bloqueia recursos necessários.
         </p>
 
-        {ios ? (
+        {browserState.isAndroid ? (
           <div className="space-y-3">
-            <Button onClick={openChromeIOS} className="w-full gap-2">
-              <ExternalLink className="w-4 h-4" />
-              Abrir no Chrome
+            <Button asChild className="w-full gap-2">
+              <a href={browserState.chromeIntentUrl} rel="noreferrer">
+                <ExternalLink className="w-4 h-4" />
+                Abrir no Chrome
+              </a>
+            </Button>
+            <Button onClick={copyLink} variant="outline" className="w-full gap-2">
+              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copied ? "Link copiado!" : "Copiar link"}
+            </Button>
+            <p className="text-xs text-muted-foreground pt-2">
+              Se o botão não abrir automaticamente, toque nos três pontos (⋮) e escolha
+              <strong> "Abrir no Chrome"</strong> ou <strong>"Abrir no navegador externo"</strong>.
+            </p>
+          </div>
+        ) : browserState.isIOS ? (
+          <div className="space-y-3">
+            <Button asChild className="w-full gap-2">
+              <a href={browserState.chromeIOSUrl} rel="noreferrer">
+                <ExternalLink className="w-4 h-4" />
+                Abrir no Chrome
+              </a>
             </Button>
             <Button onClick={copyLink} variant="outline" className="w-full gap-2">
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
