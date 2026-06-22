@@ -16,22 +16,31 @@ const IN_APP_REGEX =
 
 interface InAppBrowserState {
   isInAppBrowser: boolean;
+  detectedBy: string;
   isIOS: boolean;
   isAndroid: boolean;
+  isWebView: boolean;
   currentUrl: string;
   chromeIntentUrl: string;
   chromeIOSUrl: string;
+  userAgent: string;
 }
+
+const IN_APP_REGEX =
+  /Instagram|FBAN|FBAV|FB_IAB|FBIOS|Line\/|MicroMessenger|TikTok|Twitter|Snapchat|WhatsApp|Pinterest/i;
 
 const getInAppBrowserState = (): InAppBrowserState => {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
     return {
       isInAppBrowser: false,
+      detectedBy: "n/a",
       isIOS: false,
       isAndroid: false,
+      isWebView: false,
       currentUrl: "",
       chromeIntentUrl: "",
       chromeIOSUrl: "",
+      userAgent: "",
     };
   }
 
@@ -39,14 +48,32 @@ const getInAppBrowserState = (): InAppBrowserState => {
   const ua = navigator.userAgent || "";
   const currentUrl = window.location.href;
   const urlWithoutScheme = currentUrl.replace(/^https?:\/\//, "");
+  const stayInApp = params.get("stayInApp") === "1";
+
+  const isAndroid = /Android/i.test(ua);
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
+  const isWebView = /(wv|WebView)/i.test(ua) || /; wv\)/i.test(ua);
+
+  let detectedBy = "none";
+  if (stayInApp) {
+    detectedBy = "stayInApp=1";
+  } else if (IN_APP_REGEX.test(ua)) {
+    const match = ua.match(IN_APP_REGEX);
+    detectedBy = match ? match[0] : "in-app regex";
+  } else if (isWebView) {
+    detectedBy = "generic WebView";
+  }
 
   return {
-    isInAppBrowser: params.get("stayInApp") !== "1" && IN_APP_REGEX.test(ua),
-    isIOS: /iPhone|iPad|iPod/i.test(ua),
-    isAndroid: /Android/i.test(ua),
+    isInAppBrowser: !stayInApp && (IN_APP_REGEX.test(ua) || isWebView),
+    detectedBy,
+    isIOS,
+    isAndroid,
+    isWebView,
     currentUrl,
     chromeIntentUrl: `intent://${urlWithoutScheme}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(currentUrl)};end`,
     chromeIOSUrl: `googlechrome://${urlWithoutScheme}`,
+    userAgent: ua,
   };
 };
 
