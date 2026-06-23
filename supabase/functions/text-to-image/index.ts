@@ -162,14 +162,20 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[TEXT-TO-IMAGE] AI gateway error:', response.status, errorText);
-      
+
       if (response.status === 429) {
-        throw new Error('Rate limit exceeded. Please try again later.');
+        return new Response(
+          JSON.stringify({ error: 'Limite de requisições excedido. Tente novamente em instantes.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
       if (response.status === 402) {
-        throw new Error('Payment required. Please add credits to your workspace.');
+        return new Response(
+          JSON.stringify({ error: 'Créditos de IA esgotados. Adicione créditos ao workspace Lovable para continuar gerando imagens.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
-      
+
       throw new Error(`AI gateway error: ${response.status}`);
     }
 
