@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -175,6 +176,7 @@ Seja profundo, fiel ao conteúdo do livro e didático. Use português brasileiro
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
+    captureEdgeError(error, { function: "summarize-book" });
     console.error("Erro:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -146,6 +147,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
+    captureEdgeError(error, { function: "reset-password" });
     console.error("Error in reset-password function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),

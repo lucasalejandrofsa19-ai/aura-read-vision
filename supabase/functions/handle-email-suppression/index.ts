@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { WebhookError, verifyWebhookRequest } from 'npm:@lovable.dev/webhooks-js'
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 // Suppression event payload sent by the Go API when Mailgun reports
 // a bounce, complaint, or unsubscribe.
@@ -55,6 +56,7 @@ Deno.serve(async (req) => {
     })
     payload = verified.payload
   } catch (error) {
+    captureEdgeError(error, { function: "handle-email-suppression" });
     if (error instanceof WebhookError) {
       switch (error.code) {
         case 'invalid_signature':

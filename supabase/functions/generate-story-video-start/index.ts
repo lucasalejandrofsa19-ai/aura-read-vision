@@ -4,6 +4,7 @@
 // to read status/result.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 declare const EdgeRuntime: { waitUntil: (p: Promise<unknown>) => void };
 
@@ -150,6 +151,7 @@ serve(async (req) => {
       message: "Vídeo enfileirado. Acompanhe pelo job_id.",
     }), { status: 202, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
+    captureEdgeError(error, { function: "generate-story-video-start" });
     console.error("generate-story-video-start error", error);
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });

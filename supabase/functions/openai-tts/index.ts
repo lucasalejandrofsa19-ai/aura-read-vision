@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.81.0";
 import { encode as hexEncode } from "https://deno.land/std@0.168.0/encoding/hex.ts";
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 declare const EdgeRuntime: { waitUntil: (promise: Promise<unknown>) => void };
 
@@ -166,6 +167,7 @@ serve(async (req) => {
       },
     });
   } catch (error) {
+    captureEdgeError(error, { function: "openai-tts" });
     console.error('Error in openai-tts:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
