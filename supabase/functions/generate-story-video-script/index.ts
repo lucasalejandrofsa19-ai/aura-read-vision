@@ -3,6 +3,7 @@
 // No images, no audio — fast.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -168,6 +169,7 @@ Responda APENAS JSON: {"chapters":[{"chapterTitle":"...","narration":"...","imag
     return new Response(JSON.stringify({ title, author, mode, scenes }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
+    captureEdgeError(error, { function: "generate-story-video-script" });
     console.error("generate-story-video-script error", error);
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "https://esm.sh/unpdf@0.12.1";
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -132,6 +133,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    captureEdgeError(error, { function: "process-premium-pdf" });
     console.error('[PROCESS-PREMIUM-PDF] Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const isUnauthorized = errorMessage.includes('Unauthorized') || errorMessage.includes('admin');

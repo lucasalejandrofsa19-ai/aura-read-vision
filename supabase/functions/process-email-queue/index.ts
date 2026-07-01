@@ -1,5 +1,6 @@
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
@@ -288,6 +289,7 @@ Deno.serve(async (req) => {
         }
         totalProcessed++
       } catch (error) {
+        captureEdgeError(error, { function: "process-email-queue" });
         const errorMsg = error instanceof Error ? error.message : String(error)
         console.error('Email send failed', {
           queue,

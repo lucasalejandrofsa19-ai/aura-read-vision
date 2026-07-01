@@ -9,6 +9,7 @@ import { MagicLinkEmail } from '../_shared/email-templates/magic-link.tsx'
 import { RecoveryEmail } from '../_shared/email-templates/recovery.tsx'
 import { EmailChangeEmail } from '../_shared/email-templates/email-change.tsx'
 import { ReauthenticationEmail } from '../_shared/email-templates/reauthentication.tsx'
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -106,6 +107,7 @@ async function handlePreview(req: Request): Promise<Response> {
     const body = await req.json()
     type = body.type
   } catch (error) {
+    captureEdgeError(error, { function: "auth-email-hook" });
     return new Response(JSON.stringify({ error: 'Invalid JSON in request body' }), {
       status: 400,
       headers: { ...previewCorsHeaders, 'Content-Type': 'application/json' },
@@ -154,6 +156,7 @@ async function handleWebhook(req: Request): Promise<Response> {
     payload = verified.payload
     run_id = payload.run_id
   } catch (error) {
+    captureEdgeError(error, { function: "auth-email-hook" });
     if (error instanceof WebhookError) {
       switch (error.code) {
         case 'invalid_signature':
@@ -309,6 +312,7 @@ Deno.serve(async (req) => {
   try {
     return await handleWebhook(req)
   } catch (error) {
+    captureEdgeError(error, { function: "auth-email-hook" });
     console.error('Webhook handler error:', error)
     const message = error instanceof Error ? error.message : 'Unknown error'
     return new Response(JSON.stringify({ error: message }), {

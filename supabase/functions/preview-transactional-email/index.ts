@@ -2,6 +2,7 @@ import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 // Renders all registered templates with their previewData.
 // Gated by LOVABLE_API_KEY — only the Go API calls this.
@@ -74,6 +75,7 @@ Deno.serve(async (req) => {
         status: 'ready',
       })
     } catch (err) {
+      captureEdgeError(err, { function: "preview-transactional-email" });
       console.error('Failed to render template for preview', {
         template: name,
         error: err,

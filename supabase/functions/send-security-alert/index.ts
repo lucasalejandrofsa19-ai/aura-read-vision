@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -98,6 +99,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    captureEdgeError(error, { function: "send-security-alert" });
     console.error('[SECURITY-ALERT] Error:', error);
     return new Response(
       JSON.stringify({ 
@@ -186,6 +188,7 @@ async function sendEmailAlert(
     
     console.log(`[SECURITY-ALERT] Email sent to ${emails.length} admin(s)`);
   } catch (error) {
+    captureEdgeError(error, { function: "send-security-alert" });
     console.error('[SECURITY-ALERT] Email error:', error);
   }
 }
@@ -236,6 +239,7 @@ async function sendSlackAlert(
     
     console.log('[SECURITY-ALERT] Slack notification sent');
   } catch (error) {
+    captureEdgeError(error, { function: "send-security-alert" });
     console.error('[SECURITY-ALERT] Slack error:', error);
   }
 }

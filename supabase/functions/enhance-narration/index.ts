@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.81.0";
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -125,6 +126,7 @@ Regras:
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    captureEdgeError(error, { function: "enhance-narration" });
     console.error('Error in enhance-narration:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(

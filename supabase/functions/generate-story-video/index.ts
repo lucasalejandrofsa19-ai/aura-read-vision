@@ -5,6 +5,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -442,6 +443,7 @@ Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (error) {
+    captureEdgeError(error, { function: "generate-story-video" });
     const msg = error instanceof Error ? error.message : String(error);
     console.error("generate-story-video worker error", msg);
     await markFailed(msg).catch(() => {});

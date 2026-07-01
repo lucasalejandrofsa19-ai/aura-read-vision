@@ -2,6 +2,7 @@
 // Anyone with a valid (non-expired) token can read.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { captureEdgeError } from "../_shared/sentry.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -84,6 +85,7 @@ Deno.serve(async (req) => {
       }
     );
   } catch (e) {
+    captureEdgeError(e, { function: "public-shared-book" });
     console.error("[public-shared-book] error", e);
     return new Response(JSON.stringify({ error: "Erro interno" }), {
       status: 500,
