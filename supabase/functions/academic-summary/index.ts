@@ -153,18 +153,14 @@ ${lengthInstruction}
 
 Gere o JSON conforme a estrutura definida, com citações no formato ${style}.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const response = chatCompletion({
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
         response_format: { type: "json_object" },
-      }),
-    });
+      });
 
     if (!response.ok) {
       if (response.status === 429) {

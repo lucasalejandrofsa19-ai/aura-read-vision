@@ -127,17 +127,13 @@ Analise o livro e divida em EXATAMENTE ${n} mini-histórias coesas. Para CADA mi
 Responda APENAS JSON: {"chapters":[{"chapterTitle":"...","narration":"...","imagePrompt":"..."}]}`;
     const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nSeed: ${seed}\n\nConteúdo:\n${truncated}`;
 
-    const scriptRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const scriptRes = chatCompletion({
         model: "google/gemini-2.5-flash",
         messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userPrompt }],
         response_format: { type: "json_object" },
         max_tokens: 6000,
         temperature: 0.9,
-      }),
-    });
+      });
     if (!scriptRes.ok) {
       const t = await scriptRes.text();
       console.error("script error", scriptRes.status, t);
