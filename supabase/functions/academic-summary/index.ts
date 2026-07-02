@@ -91,8 +91,7 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
+    if (!Deno.env.get("GEMINI_API_KEY") && !Deno.env.get("LOVABLE_API_KEY")) throw new Error("Nenhum provedor de IA configurado");
 
     const truncated = text.length > 60000 ? text.slice(0, 60000) : text;
 
