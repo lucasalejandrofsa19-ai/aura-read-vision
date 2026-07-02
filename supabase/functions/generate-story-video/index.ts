@@ -6,6 +6,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 import { captureEdgeError } from "../_shared/sentry.ts";
+import { chatCompletion, generateImage } from "../_shared/ai-providers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -229,40 +230,25 @@ serve(async (req) => {
       } catch (e) { console.error("loadHighlightImage ex", e); return ""; }
     }
 
-    // Geração de imagem via Lovable AI (Gemini image) com fallback OpenAI
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    // Geração de imagem: Gemini (Nano Banana) direto via GEMINI_API_KEY (helper), com fallback OpenAI direto
     async function genImage(prompt: string): Promise<string> {
       const full = `${prompt}. Vertical 9:16 portrait, cinematic painterly book illustration, consistent art style, no text, no letters, no UI`;
-      if (LOVABLE_API_KEY) {
+      try {
+        const { base64, mimeType } = await generateImage(full);
+        if (base64) return `data:${mimeType};base64,${base64}`;
+      } catch (e) { console.error("gemini image ex", e); }
+      if (OPENAI_API_KEY) {
         try {
-          const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          const r = await fetch("https://api.openai.com/v1/images/generations", {
             method: "POST",
-            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: "google/gemini-2.5-flash-image",
-              messages: [{ role: "user", content: full }],
-              modalities: ["image", "text"],
-            }),
-          });
-          if (r.ok) {
-            const j = await r.json();
-            const url = j?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-            if (url) return url;
-          } else { console.error("gemini image", r.status); }
-        } catch (e) { console.error("gemini image ex", e); }
-      }
-      if (OPENAI_API_KEY && LOVABLE_API_KEY) {
-        try {
-          const r = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ model: "openai/gpt-image-2", prompt: full, size: "1024x1536", quality: "low", n: 1 }),
+            headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ model: "gpt-image-1", prompt: full, size: "1024x1536", quality: "low", n: 1 }),
           });
           if (r.ok) {
             const j = await r.json();
             const b64 = j?.data?.[0]?.b64_json;
             if (b64) return `data:image/png;base64,${b64}`;
-          }
+          } else { console.error("openai image", r.status, await r.text()); }
         } catch (e) { console.error("openai image ex", e); }
       }
       return "";
@@ -348,7 +334,7 @@ serve(async (req) => {
       n = chapters.length;
       await updateProgress({ current: 0, total: n, stage: "starting", etaSeconds: (n + 1) * SECONDS_PER_STEP, sceneTitle: "Usando roteiro editado" });
     } else {
-      if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
+      if (!Deno.env.get("GEMINI_API_KEY") && !Deno.env.get("LOVABLE_API_KEY")) throw new Error("Nenhum provedor de IA configurado (GEMINI_API_KEY ou LOVABLE_API_KEY)");
       let extractedText: string | null = null;
       const { data: bk2 } = await sb.from("books").select("extracted_text, user_id").eq("id", book_id).maybeSingle();
       if (bk2 && bk2.user_id === userId) extractedText = bk2.extracted_text;
@@ -380,17 +366,13 @@ Para CADA mini-história produza:
 Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"chapterTitle":"...","narration":"...","imagePrompt":"..."}]}`;
       const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nSeed: ${seed}\n\nConteúdo:\n${truncated}`;
 
-      const scriptRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const scriptRes = await chatCompletion({
           model: "google/gemini-2.5-flash",
           messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userPrompt }],
           response_format: { type: "json_object" },
           max_tokens: 8000,
           temperature: 0.9,
-        }),
-      });
+        });
       if (!scriptRes.ok) {
         const t = await scriptRes.text();
         console.error("script error", scriptRes.status, t);

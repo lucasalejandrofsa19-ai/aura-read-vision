@@ -4,6 +4,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { captureEdgeError } from "../_shared/sentry.ts";
+import { chatCompletion, generateImage } from "../_shared/ai-providers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -96,9 +97,8 @@ serve(async (req) => {
     }
 
     // ---- Mode: summary (IA) → ask Gemini for chapters
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY não configurada" }),
+    if (!Deno.env.get("GEMINI_API_KEY") && !Deno.env.get("LOVABLE_API_KEY")) {
+      return new Response(JSON.stringify({ error: "Nenhum provedor de IA configurado" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     // Prefer user-provided excerpt (e.g. selected chapter/section) when present.
@@ -126,17 +126,13 @@ Analise o livro e divida em EXATAMENTE ${n} mini-histórias coesas. Para CADA mi
 Responda APENAS JSON: {"chapters":[{"chapterTitle":"...","narration":"...","imagePrompt":"..."}]}`;
     const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nSeed: ${seed}\n\nConteúdo:\n${truncated}`;
 
-    const scriptRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const scriptRes = await chatCompletion({
         model: "google/gemini-2.5-flash",
         messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userPrompt }],
         response_format: { type: "json_object" },
         max_tokens: 6000,
         temperature: 0.9,
-      }),
-    });
+      });
     if (!scriptRes.ok) {
       const t = await scriptRes.text();
       console.error("script error", scriptRes.status, t);

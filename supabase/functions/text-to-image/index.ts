@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { captureEdgeError } from "../_shared/sentry.ts";
+import { generateImage } from "../_shared/ai-providers.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -132,67 +133,39 @@ serve(async (req) => {
       console.log('[TEXT-TO-IMAGE] Premium user, proceeding with generation');
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
-    }
-
-    // Create a visual prompt based on the highlighted text and chosen style
+    // Cria prompt visual com base no destaque e estilo escolhido
     const styleDescription = stylePrompts[style] || stylePrompts.photorealistic;
     const imagePrompt = `Create a beautiful, artistic illustration that represents this concept: "${text}". 
     Style: ${styleDescription}. Make it visually appealing, creative and easy to understand.`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image-preview',
-        messages: [
-          {
-            role: 'user',
-            content: imagePrompt,
-          }
-        ],
-        modalities: ['image', 'text']
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[TEXT-TO-IMAGE] AI gateway error:', response.status, errorText);
-
-      if (response.status === 429) {
+    let base64Data = "";
+    try {
+      const img = await generateImage(imagePrompt);
+      base64Data = img.base64;
+    } catch (err) {
+      console.error('[TEXT-TO-IMAGE] Image gen error:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (/429/.test(msg)) {
         return new Response(
           JSON.stringify({ error: 'Limite de requisições excedido. Tente novamente em instantes.' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      if (response.status === 402) {
+      if (/402/.test(msg)) {
         return new Response(
-          JSON.stringify({ error: 'Créditos de IA esgotados. Adicione créditos ao workspace Lovable para continuar gerando imagens.' }),
+          JSON.stringify({ error: 'Créditos de IA esgotados.' }),
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-
-      throw new Error(`AI gateway error: ${response.status}`);
+      throw new Error(`Image generation error: ${msg}`);
     }
 
-    const data = await response.json();
-    console.log('[TEXT-TO-IMAGE] Response received');
-
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-
-    if (!imageUrl) {
+    if (!base64Data) {
       throw new Error('No image generated');
     }
 
     console.log('[TEXT-TO-IMAGE] Image generated, uploading to storage...');
 
-    // Convert base64 to blob
-    const base64Data = imageUrl.split(',')[1];
     const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
 
     // Upload to Supabase Storage
