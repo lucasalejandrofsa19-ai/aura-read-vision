@@ -137,7 +137,7 @@ Seja profundo, fiel ao conteúdo do livro e didático. Use português brasileiro
 
     const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\n\nConteúdo do livro:\n\n${truncated}\n\n${isPreview ? "Crie um resumo muito breve (máx 80 palavras)." : "Crie um resumo completo e estruturado destacando as partes mais importantes."}`;
 
-    const response = chatCompletion({
+    const response = await chatCompletion({
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },

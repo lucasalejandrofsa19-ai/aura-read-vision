@@ -236,7 +236,7 @@ serve(async (req) => {
       const full = `${prompt}. Vertical 9:16 portrait, cinematic painterly book illustration, consistent art style, no text, no letters, no UI`;
       if (LOVABLE_API_KEY) {
         try {
-          const r = chatCompletion({
+          const r = await chatCompletion({
               model: "google/gemini-2.5-flash-image",
               messages: [{ role: "user", content: full }],
               modalities: ["image", "text"],
@@ -377,7 +377,7 @@ Para CADA mini-história produza:
 Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"chapterTitle":"...","narration":"...","imagePrompt":"..."}]}`;
       const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nSeed: ${seed}\n\nConteúdo:\n${truncated}`;
 
-      const scriptRes = chatCompletion({
+      const scriptRes = await chatCompletion({
           model: "google/gemini-2.5-flash",
           messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userPrompt }],
           response_format: { type: "json_object" },

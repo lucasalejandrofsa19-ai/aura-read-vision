@@ -127,7 +127,7 @@ Analise o livro e divida em EXATAMENTE ${n} mini-histórias coesas. Para CADA mi
 Responda APENAS JSON: {"chapters":[{"chapterTitle":"...","narration":"...","imagePrompt":"..."}]}`;
     const userPrompt = `Livro: "${title}"${author ? ` por ${author}` : ""}\nSeed: ${seed}\n\nConteúdo:\n${truncated}`;
 
-    const scriptRes = chatCompletion({
+    const scriptRes = await chatCompletion({
         model: "google/gemini-2.5-flash",
         messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userPrompt }],
         response_format: { type: "json_object" },

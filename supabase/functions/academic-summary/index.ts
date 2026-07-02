@@ -153,7 +153,7 @@ ${lengthInstruction}
 
 Gere o JSON conforme a estrutura definida, com citações no formato ${style}.`;
 
-    const response = chatCompletion({
+    const response = await chatCompletion({
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
