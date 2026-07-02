@@ -334,7 +334,7 @@ serve(async (req) => {
       n = chapters.length;
       await updateProgress({ current: 0, total: n, stage: "starting", etaSeconds: (n + 1) * SECONDS_PER_STEP, sceneTitle: "Usando roteiro editado" });
     } else {
-      if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
+      if (!Deno.env.get("GEMINI_API_KEY") && !Deno.env.get("LOVABLE_API_KEY")) throw new Error("Nenhum provedor de IA configurado (GEMINI_API_KEY ou LOVABLE_API_KEY)");
       let extractedText: string | null = null;
       const { data: bk2 } = await sb.from("books").select("extracted_text, user_id").eq("id", book_id).maybeSingle();
       if (bk2 && bk2.user_id === userId) extractedText = bk2.extracted_text;
