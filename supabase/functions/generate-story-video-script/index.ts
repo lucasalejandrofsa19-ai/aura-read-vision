@@ -97,8 +97,8 @@ serve(async (req) => {
     }
 
     // ---- Mode: summary (IA) → ask Gemini for chapters
-    if (!Deno.env.get("GEMINI_API_KEY") && !Deno.env.get("LOVABLE_API_KEY")) throw new Error("Nenhum provedor de IA configurado");
-      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY não configurada" }),
+    if (!Deno.env.get("GEMINI_API_KEY") && !Deno.env.get("LOVABLE_API_KEY")) {
+      return new Response(JSON.stringify({ error: "Nenhum provedor de IA configurado" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     // Prefer user-provided excerpt (e.g. selected chapter/section) when present.
