@@ -412,11 +412,13 @@ Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"
       const sceneTitle = c.chapterTitle || `Cena ${idx + 1}`;
       const remainingAfter = (total - idx - 1) * SECONDS_PER_STEP;
       await updateProgress({ current: idx + 1, total, stage: "image", sceneTitle, etaSeconds: remainingAfter + SECONDS_PER_STEP });
-      const imageDataUrl = await genImage(c.imagePrompt);
-      await updateProgress({ current: idx + 1, total, stage: "narration", sceneTitle, etaSeconds: remainingAfter + Math.ceil(SECONDS_PER_STEP / 2) });
+      const { url: imageDataUrl, provider: imageProvider } = await genImage(c.imagePrompt);
+      bumpProvider(imageProvider);
+      await updateProgress({ current: idx + 1, total, stage: "narration", sceneTitle, etaSeconds: remainingAfter + Math.ceil(SECONDS_PER_STEP / 2), imageProvider });
       const audioDataUrl = await genTTS(c.narration, voice);
-      built.push({ chapterTitle: sceneTitle, narration: c.narration, segments: [{ text: c.narration, imageDataUrl }], audioDataUrl });
-      await updateProgress({ current: idx + 1, total, stage: "scene_done", sceneTitle, etaSeconds: remainingAfter });
+      built.push({ chapterTitle: sceneTitle, narration: c.narration, segments: [{ text: c.narration, imageDataUrl, imageProvider }], audioDataUrl });
+      await updateProgress({ current: idx + 1, total, stage: "scene_done", sceneTitle, etaSeconds: remainingAfter, imageProvider });
+
     }
 
     await updateProgress({ current: total, total, stage: "finalizing", sceneTitle: null, etaSeconds: 0 });
