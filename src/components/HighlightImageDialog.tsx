@@ -267,7 +267,9 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
       setShowLimitWarning(count >= FREE_IMAGE_LIMIT);
     } else {
       setImageUrl(null);
+      setProvider(null);
     }
+
   };
 
   useEffect(() => {
