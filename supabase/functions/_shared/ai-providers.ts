@@ -69,7 +69,7 @@ export async function chatCompletion(body: Record<string, unknown>): Promise<Res
 export async function generateImage(prompt: string): Promise<{ base64: string; mimeType: string }> {
   if (GEMINI_API_KEY) {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
