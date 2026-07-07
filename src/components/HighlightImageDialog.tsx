@@ -115,7 +115,8 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
   const generateImage = async () => {
     setLoading(true);
     setImageUrl(null);
-    toast.loading("Gerando imagem...", { id: "generate-image" });
+    setProvider(null);
+    toast.loading("Gerando imagem com IA...", { id: "generate-image" });
 
     try {
       const { data, error } = await supabase.functions.invoke('text-to-image', {
@@ -145,8 +146,19 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
       }
 
       setImageUrl(data.imageUrl);
-      toast.success(`Imagem gerada com sucesso em estilo ${styleLabels[style]}!`, { id: "generate-image" });
-      
+      const usedProvider: "gemini" | "lovable" | null = data.provider ?? null;
+      setProvider(usedProvider);
+      const providerLabel =
+        usedProvider === "gemini"
+          ? "via Gemini"
+          : usedProvider === "lovable"
+            ? "via Lovable (fallback)"
+            : "";
+      toast.success(
+        `Imagem gerada em estilo ${styleLabels[style]}${providerLabel ? ` — ${providerLabel}` : ""}!`,
+        { id: "generate-image" },
+      );
+
       loadGallery();
     } catch (error) {
       console.error('Error generating image:', error);
@@ -155,6 +167,7 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
       setLoading(false);
     }
   };
+
 
   const deleteImage = async (imageId: string, storagePath: string) => {
     try {
