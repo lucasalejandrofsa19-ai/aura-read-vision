@@ -4,6 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 import { captureEdgeError } from "../_shared/sentry.ts";
+import { generateImage } from "../_shared/ai-providers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -119,24 +120,10 @@ serve(async (req) => {
 
     async function genImage(prompt: string): Promise<string> {
       const full = `${prompt}. Vertical 9:16 portrait, cinematic painterly book illustration, consistent art style, no text, no letters, no UI`;
-      if (LOVABLE_API_KEY) {
-        try {
-          const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: "google/gemini-2.5-flash-image",
-              messages: [{ role: "user", content: full }],
-              modalities: ["image", "text"],
-            }),
-          });
-          if (r.ok) {
-            const j = await r.json();
-            const url = j?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-            if (url) return url;
-          } else { console.error("gemini image", r.status); }
-        } catch (e) { console.error("gemini image ex", e); }
-      }
+      try {
+        const { base64, mimeType } = await generateImage(full);
+        if (base64) return `data:${mimeType};base64,${base64}`;
+      } catch (e) { console.error("gemini image ex", e); }
       if (OPENAI_API_KEY && LOVABLE_API_KEY) {
         try {
           const r = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
