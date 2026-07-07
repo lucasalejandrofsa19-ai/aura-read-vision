@@ -400,6 +400,23 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
                   </>
                 )}
               </Button>
+
+              {loading && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5 text-sm"
+                >
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground">Gerando imagem…</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      Rota primária: Gemini · fallback automático: Lovable
+                    </p>
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
 
