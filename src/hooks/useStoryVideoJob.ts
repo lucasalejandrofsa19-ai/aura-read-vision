@@ -2,11 +2,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export type ImageProvider = "gemini" | "lovable" | "openai" | "cached" | "";
+
 export type Scene = {
   chapterTitle: string;
   narration: string;
   audioDataUrl: string;
-  segments: { text: string; imageDataUrl: string }[];
+  segments: { text: string; imageDataUrl: string; imageProvider?: ImageProvider }[];
 };
 
 export type StoryVideoResult = {
@@ -14,6 +16,7 @@ export type StoryVideoResult = {
   author?: string;
   scenes: Scene[];
   targetDurationSeconds?: number;
+  imageProviders?: Partial<Record<Exclude<ImageProvider, "">, number>>;
 };
 
 export type JobStatus = "idle" | "pending" | "processing" | "completed" | "failed";
@@ -24,7 +27,9 @@ export type JobProgress = {
   stage: "starting" | "image" | "narration" | "scene_done" | "finalizing" | "completed" | string;
   sceneTitle: string | null;
   etaSeconds: number;
+  imageProvider?: ImageProvider;
 };
+
 
 export type NarrationTone = "neutro" | "alegre" | "serio" | "empolgado" | "dramatico" | "calmo";
 
