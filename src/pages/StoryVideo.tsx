@@ -405,6 +405,7 @@ export default function StoryVideo() {
                   <span>{stageLabel[progress.stage] ?? progress.stage}</span>
                   {progress.sceneTitle && <span className="truncate pl-2">{progress.sceneTitle}</span>}
                 </div>
+                <ProviderChip provider={progress.imageProvider} stage={progress.stage} />
               </div>
             )}
 
@@ -416,7 +417,13 @@ export default function StoryVideo() {
           </Card>
         )}
 
-        {result && <ScenePlayer scenes={result.scenes} title={result.title} draft={draft} mode={prefs.mode === "excerpt" ? "summary" : prefs.mode} voice={prefs.voice} tone={prefs.tone} />}
+        {result && (
+          <>
+            <ProvidersSummary providers={result.imageProviders} />
+            <ScenePlayer scenes={result.scenes} title={result.title} draft={draft} mode={prefs.mode === "excerpt" ? "summary" : prefs.mode} voice={prefs.voice} tone={prefs.tone} />
+          </>
+        )}
+
 
         {bookId && (
           <div className="mt-6">
