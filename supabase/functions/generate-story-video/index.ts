@@ -231,11 +231,11 @@ serve(async (req) => {
     }
 
     // Geração de imagem: Gemini (Nano Banana) direto via GEMINI_API_KEY (helper), com fallback OpenAI direto
-    async function genImage(prompt: string): Promise<string> {
+    async function genImage(prompt: string): Promise<{ url: string; provider: "gemini" | "lovable" | "openai" | "" }> {
       const full = `${prompt}. Vertical 9:16 portrait, cinematic painterly book illustration, consistent art style, no text, no letters, no UI`;
       try {
-        const { base64, mimeType } = await generateImage(full);
-        if (base64) return `data:${mimeType};base64,${base64}`;
+        const { base64, mimeType, provider } = await generateImage(full);
+        if (base64) return { url: `data:${mimeType};base64,${base64}`, provider };
       } catch (e) { console.error("gemini image ex", e); }
       if (OPENAI_API_KEY) {
         try {
@@ -247,12 +247,19 @@ serve(async (req) => {
           if (r.ok) {
             const j = await r.json();
             const b64 = j?.data?.[0]?.b64_json;
-            if (b64) return `data:image/png;base64,${b64}`;
+            if (b64) return { url: `data:image/png;base64,${b64}`, provider: "openai" };
           } else { console.error("openai image", r.status, await r.text()); }
         } catch (e) { console.error("openai image ex", e); }
       }
-      return "";
+      return { url: "", provider: "" };
     }
+
+    // Aggregate provider usage across the run.
+    const providersCount: Record<string, number> = { gemini: 0, lovable: 0, openai: 0, cached: 0 };
+    const bumpProvider = (p: string) => {
+      if (p) providersCount[p] = (providersCount[p] ?? 0) + 1;
+    };
+
 
     const TARGET_TOTAL_SECONDS = 63;
     const SECONDS_PER_SCENE = 5;
