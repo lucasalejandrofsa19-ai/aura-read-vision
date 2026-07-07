@@ -68,7 +68,9 @@ export async function chatCompletion(body: Record<string, unknown>): Promise<Res
  * Geração de imagem via Gemini (Nano Banana).
  * Retorna base64 puro (sem prefixo data:).
  */
-export async function generateImage(prompt: string): Promise<{ base64: string; mimeType: string }> {
+export async function generateImage(
+  prompt: string,
+): Promise<{ base64: string; mimeType: string; provider: "gemini" | "lovable" }> {
   if (GEMINI_API_KEY) {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_API_KEY}`,
@@ -89,7 +91,6 @@ export async function generateImage(prompt: string): Promise<{ base64: string; m
         throw new Error(`Gemini image ${res.status}: ${err}`);
       }
       console.warn(`[ai-providers] Gemini image ${res.status}; fallback Lovable`);
-
     } else {
       const data = await res.json();
       const part = data?.candidates?.[0]?.content?.parts?.find(
@@ -100,6 +101,7 @@ export async function generateImage(prompt: string): Promise<{ base64: string; m
       return {
         base64: inline.data,
         mimeType: inline.mimeType || inline.mime_type || "image/png",
+        provider: "gemini",
       };
     }
   }
@@ -122,5 +124,6 @@ export async function generateImage(prompt: string): Promise<{ base64: string; m
   const url: string | undefined = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
   if (!url) throw new Error("Lovable não retornou imagem");
   const base64 = url.split(",")[1] || "";
-  return { base64, mimeType: "image/png" };
+  return { base64, mimeType: "image/png", provider: "lovable" };
 }
+
