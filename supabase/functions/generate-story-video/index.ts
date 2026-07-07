@@ -307,12 +307,14 @@ serve(async (req) => {
         const h = selected[idx];
         const sceneTitle = h.title || `Destaque ${idx + 1} · pág. ${h.page_number}`;
         const remainingAfter = (total - idx - 1) * SECONDS_PER_STEP;
-        await updateProgress({ current: idx + 1, total, stage: "image", sceneTitle, etaSeconds: remainingAfter + SECONDS_PER_STEP });
+        await updateProgress({ current: idx + 1, total, stage: "image", sceneTitle, etaSeconds: remainingAfter + SECONDS_PER_STEP, imageProvider: "cached" });
         const imageDataUrl = await loadHighlightImage(h.img!.storage_path);
+        bumpProvider("cached");
         await updateProgress({ current: idx + 1, total, stage: "narration", sceneTitle, etaSeconds: remainingAfter + Math.ceil(SECONDS_PER_STEP / 2) });
         const audioDataUrl = await genTTS(h.text, voice);
-        built.push({ chapterTitle: sceneTitle, narration: h.text, segments: [{ text: h.text, imageDataUrl }], audioDataUrl });
+        built.push({ chapterTitle: sceneTitle, narration: h.text, segments: [{ text: h.text, imageDataUrl, imageProvider: "cached" }], audioDataUrl });
         await updateProgress({ current: idx + 1, total, stage: "scene_done", sceneTitle, etaSeconds: remainingAfter });
+
       }
       await updateProgress({ current: total, total, stage: "finalizing", sceneTitle: null, etaSeconds: 0 });
       if (!(await shouldContinue())) return new Response(JSON.stringify({ ok: false, cancelled: true, job_id: jobId }),
