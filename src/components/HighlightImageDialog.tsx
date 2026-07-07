@@ -57,7 +57,9 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [provider, setProvider] = useState<"gemini" | "lovable" | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+
   const [style, setStyle] = useState<ImageStyle>("photorealistic");
   const [gallery, setGallery] = useState<any[]>([]);
   const [loadingGallery, setLoadingGallery] = useState(false);
