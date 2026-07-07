@@ -83,11 +83,13 @@ export async function generateImage(prompt: string): Promise<{ base64: string; m
     );
     if (!res.ok) {
       const err = await res.text();
-      // 401/403 → tenta Lovable; outros → propaga
-      if (res.status !== 401 && res.status !== 403) {
+      // Fallback Lovable em auth (401/403) e quota (402/429); demais → propaga
+      const FALLBACK_STATUSES = new Set([401, 402, 403, 429]);
+      if (!FALLBACK_STATUSES.has(res.status)) {
         throw new Error(`Gemini image ${res.status}: ${err}`);
       }
       console.warn(`[ai-providers] Gemini image ${res.status}; fallback Lovable`);
+
     } else {
       const data = await res.json();
       const part = data?.candidates?.[0]?.content?.parts?.find(
