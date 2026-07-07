@@ -424,7 +424,7 @@ Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"
     await updateProgress({ current: total, total, stage: "finalizing", sceneTitle: null, etaSeconds: 0 });
     if (!(await shouldContinue())) return new Response(JSON.stringify({ ok: false, cancelled: true, job_id: jobId }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    const result = { title, author, scenes: built, targetDurationSeconds: TARGET_TOTAL_SECONDS };
+    const result = { title, author, scenes: built, targetDurationSeconds: TARGET_TOTAL_SECONDS, imageProviders: providersCount };
     await sb.from("story_video_jobs").update({
       status: "completed",
       result,
