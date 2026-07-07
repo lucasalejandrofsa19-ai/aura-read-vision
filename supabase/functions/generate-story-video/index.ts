@@ -231,11 +231,11 @@ serve(async (req) => {
     }
 
     // Geração de imagem: Gemini (Nano Banana) direto via GEMINI_API_KEY (helper), com fallback OpenAI direto
-    async function genImage(prompt: string): Promise<string> {
+    async function genImage(prompt: string): Promise<{ url: string; provider: "gemini" | "lovable" | "openai" | "" }> {
       const full = `${prompt}. Vertical 9:16 portrait, cinematic painterly book illustration, consistent art style, no text, no letters, no UI`;
       try {
-        const { base64, mimeType } = await generateImage(full);
-        if (base64) return `data:${mimeType};base64,${base64}`;
+        const { base64, mimeType, provider } = await generateImage(full);
+        if (base64) return { url: `data:${mimeType};base64,${base64}`, provider };
       } catch (e) { console.error("gemini image ex", e); }
       if (OPENAI_API_KEY) {
         try {
@@ -247,12 +247,19 @@ serve(async (req) => {
           if (r.ok) {
             const j = await r.json();
             const b64 = j?.data?.[0]?.b64_json;
-            if (b64) return `data:image/png;base64,${b64}`;
+            if (b64) return { url: `data:image/png;base64,${b64}`, provider: "openai" };
           } else { console.error("openai image", r.status, await r.text()); }
         } catch (e) { console.error("openai image ex", e); }
       }
-      return "";
+      return { url: "", provider: "" };
     }
+
+    // Aggregate provider usage across the run.
+    const providersCount: Record<string, number> = { gemini: 0, lovable: 0, openai: 0, cached: 0 };
+    const bumpProvider = (p: string) => {
+      if (p) providersCount[p] = (providersCount[p] ?? 0) + 1;
+    };
+
 
     const TARGET_TOTAL_SECONDS = 63;
     const SECONDS_PER_SCENE = 5;
@@ -300,17 +307,20 @@ serve(async (req) => {
         const h = selected[idx];
         const sceneTitle = h.title || `Destaque ${idx + 1} · pág. ${h.page_number}`;
         const remainingAfter = (total - idx - 1) * SECONDS_PER_STEP;
-        await updateProgress({ current: idx + 1, total, stage: "image", sceneTitle, etaSeconds: remainingAfter + SECONDS_PER_STEP });
+        await updateProgress({ current: idx + 1, total, stage: "image", sceneTitle, etaSeconds: remainingAfter + SECONDS_PER_STEP, imageProvider: "cached" });
         const imageDataUrl = await loadHighlightImage(h.img!.storage_path);
+        bumpProvider("cached");
         await updateProgress({ current: idx + 1, total, stage: "narration", sceneTitle, etaSeconds: remainingAfter + Math.ceil(SECONDS_PER_STEP / 2) });
         const audioDataUrl = await genTTS(h.text, voice);
-        built.push({ chapterTitle: sceneTitle, narration: h.text, segments: [{ text: h.text, imageDataUrl }], audioDataUrl });
+        built.push({ chapterTitle: sceneTitle, narration: h.text, segments: [{ text: h.text, imageDataUrl, imageProvider: "cached" }], audioDataUrl });
         await updateProgress({ current: idx + 1, total, stage: "scene_done", sceneTitle, etaSeconds: remainingAfter });
+
       }
       await updateProgress({ current: total, total, stage: "finalizing", sceneTitle: null, etaSeconds: 0 });
       if (!(await shouldContinue())) return new Response(JSON.stringify({ ok: false, cancelled: true, job_id: jobId }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      const result = { title, author, scenes: built, targetDurationSeconds: TARGET_TOTAL_SECONDS };
+      const result = { title, author, scenes: built, targetDurationSeconds: TARGET_TOTAL_SECONDS, imageProviders: providersCount };
+
       await sb.from("story_video_jobs").update({ status: "completed", result, processed_at: new Date().toISOString(),
         progress: { current: total, total, stage: "completed", sceneTitle: null, etaSeconds: 0 } }).eq("id", jobId);
       await persistVideo(result, "highlights");
@@ -402,17 +412,19 @@ Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"
       const sceneTitle = c.chapterTitle || `Cena ${idx + 1}`;
       const remainingAfter = (total - idx - 1) * SECONDS_PER_STEP;
       await updateProgress({ current: idx + 1, total, stage: "image", sceneTitle, etaSeconds: remainingAfter + SECONDS_PER_STEP });
-      const imageDataUrl = await genImage(c.imagePrompt);
-      await updateProgress({ current: idx + 1, total, stage: "narration", sceneTitle, etaSeconds: remainingAfter + Math.ceil(SECONDS_PER_STEP / 2) });
+      const { url: imageDataUrl, provider: imageProvider } = await genImage(c.imagePrompt);
+      bumpProvider(imageProvider);
+      await updateProgress({ current: idx + 1, total, stage: "narration", sceneTitle, etaSeconds: remainingAfter + Math.ceil(SECONDS_PER_STEP / 2), imageProvider });
       const audioDataUrl = await genTTS(c.narration, voice);
-      built.push({ chapterTitle: sceneTitle, narration: c.narration, segments: [{ text: c.narration, imageDataUrl }], audioDataUrl });
-      await updateProgress({ current: idx + 1, total, stage: "scene_done", sceneTitle, etaSeconds: remainingAfter });
+      built.push({ chapterTitle: sceneTitle, narration: c.narration, segments: [{ text: c.narration, imageDataUrl, imageProvider }], audioDataUrl });
+      await updateProgress({ current: idx + 1, total, stage: "scene_done", sceneTitle, etaSeconds: remainingAfter, imageProvider });
+
     }
 
     await updateProgress({ current: total, total, stage: "finalizing", sceneTitle: null, etaSeconds: 0 });
     if (!(await shouldContinue())) return new Response(JSON.stringify({ ok: false, cancelled: true, job_id: jobId }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    const result = { title, author, scenes: built, targetDurationSeconds: TARGET_TOTAL_SECONDS };
+    const result = { title, author, scenes: built, targetDurationSeconds: TARGET_TOTAL_SECONDS, imageProviders: providersCount };
     await sb.from("story_video_jobs").update({
       status: "completed",
       result,

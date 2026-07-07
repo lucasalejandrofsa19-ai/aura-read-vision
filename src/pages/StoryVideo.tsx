@@ -3,7 +3,9 @@ import { useParams, Link } from "react-router-dom";
 import { useStoryVideoJob, fetchStoryVideoScript, type Scene, type NarrationTone, type DraftScene } from "@/hooks/useStoryVideoJob";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Sparkles, Pencil, Volume2, Copy, XCircle, RotateCcw, Download, ExternalLink } from "lucide-react";
+import { Loader2, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Sparkles, Pencil, Volume2, Copy, XCircle, RotateCcw, Download, ExternalLink, Zap, ImageIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -403,6 +405,7 @@ export default function StoryVideo() {
                   <span>{stageLabel[progress.stage] ?? progress.stage}</span>
                   {progress.sceneTitle && <span className="truncate pl-2">{progress.sceneTitle}</span>}
                 </div>
+                <ProviderChip provider={progress.imageProvider} stage={progress.stage} />
               </div>
             )}
 
@@ -414,7 +417,13 @@ export default function StoryVideo() {
           </Card>
         )}
 
-        {result && <ScenePlayer scenes={result.scenes} title={result.title} draft={draft} mode={prefs.mode === "excerpt" ? "summary" : prefs.mode} voice={prefs.voice} tone={prefs.tone} />}
+        {result && (
+          <>
+            <ProvidersSummary providers={result.imageProviders} />
+            <ScenePlayer scenes={result.scenes} title={result.title} draft={draft} mode={prefs.mode === "excerpt" ? "summary" : prefs.mode} voice={prefs.voice} tone={prefs.tone} />
+          </>
+        )}
+
 
         {bookId && (
           <div className="mt-6">
@@ -860,3 +869,56 @@ function ScenePlayer({ scenes: initialScenes, title, draft, mode, voice, tone }:
     </div>
   );
 }
+
+const providerMeta: Record<string, { label: string; icon: typeof Sparkles; className: string }> = {
+  gemini:  { label: "Google Gemini",         icon: Sparkles,  className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+  lovable: { label: "Lovable AI (fallback)", icon: Zap,       className: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300" },
+  openai:  { label: "OpenAI (fallback)",     icon: Zap,       className: "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300" },
+  cached:  { label: "Imagem do usuário",     icon: ImageIcon, className: "border-muted bg-muted/60 text-muted-foreground" },
+};
+
+function ProviderChip({ provider, stage }: { provider?: string; stage?: string }) {
+  if (stage !== "image" && stage !== "narration" && stage !== "scene_done") return null;
+  if (!provider) {
+    return (
+      <p className="text-[11px] text-muted-foreground">
+        Provedor de imagem: <span className="italic">detectando…</span> · fallback Lovable ativo se Gemini falhar
+      </p>
+    );
+  }
+  const meta = providerMeta[provider];
+  if (!meta) return null;
+  const Icon = meta.icon;
+  return (
+    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+      <span>Provedor de imagem:</span>
+      <Badge variant="secondary" className={`gap-1 ${meta.className}`}>
+        <Icon className="h-3 w-3" />
+        {meta.label}
+      </Badge>
+    </div>
+  );
+}
+
+function ProvidersSummary({ providers }: { providers?: Partial<Record<string, number>> }) {
+  if (!providers) return null;
+  const entries = Object.entries(providers).filter(([, n]) => (n ?? 0) > 0);
+  if (entries.length === 0) return null;
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs">
+      <span className="text-muted-foreground">Imagens geradas por:</span>
+      {entries.map(([key, count]) => {
+        const meta = providerMeta[key];
+        if (!meta) return null;
+        const Icon = meta.icon;
+        return (
+          <Badge key={key} variant="secondary" className={`gap-1 ${meta.className}`}>
+            <Icon className="h-3 w-3" />
+            {meta.label} · {count}
+          </Badge>
+        );
+      })}
+    </div>
+  );
+}
+
