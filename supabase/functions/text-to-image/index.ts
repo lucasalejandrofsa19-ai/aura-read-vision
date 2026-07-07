@@ -139,9 +139,12 @@ serve(async (req) => {
     Style: ${styleDescription}. Make it visually appealing, creative and easy to understand.`;
 
     let base64Data = "";
+    let provider: "gemini" | "lovable" = "gemini";
     try {
       const img = await generateImage(imagePrompt);
       base64Data = img.base64;
+      provider = img.provider;
+
     } catch (err) {
       console.error('[TEXT-TO-IMAGE] Image gen error:', err);
       const msg = err instanceof Error ? err.message : String(err);
