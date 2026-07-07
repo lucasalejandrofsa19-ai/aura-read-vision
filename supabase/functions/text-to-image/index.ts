@@ -223,6 +223,8 @@ serve(async (req) => {
         imageUrl: displayUrl,
         prompt: imagePrompt,
         style: style,
+        provider,
+
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
