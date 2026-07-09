@@ -216,6 +216,7 @@ export function BookVideoHistory({ bookId, refreshKey }: Props) {
                     </Button>
                   </div>
                 </div>
+                <ProviderBadges providers={row.image_providers} />
                 {row.status === "error" && row.error_message && (
                   <p className="text-[11px] text-destructive break-words">{row.error_message}</p>
                 )}
