@@ -3,8 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Play, Download, Share2, RefreshCw, Video } from "lucide-react";
+import { Loader2, Play, Download, Share2, RefreshCw, Video, Sparkles, Zap } from "lucide-react";
 import { toast } from "sonner";
+
+type ProvidersCount = Partial<Record<"gemini" | "lovable" | "openai" | "cached", number>>;
 
 type Row = {
   id: string;
@@ -16,6 +18,7 @@ type Row = {
   scenes_count: number | null;
   mode: string | null;
   error_message: string | null;
+  image_providers: ProvidersCount | null;
 };
 
 type Props = { bookId: string; refreshKey?: number };
