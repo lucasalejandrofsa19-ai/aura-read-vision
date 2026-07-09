@@ -832,6 +832,7 @@ export type Database = {
           file_path: string | null
           file_size: number | null
           id: string
+          image_providers: Json | null
           mode: string | null
           scenes_count: number | null
           status: string
@@ -846,6 +847,7 @@ export type Database = {
           file_path?: string | null
           file_size?: number | null
           id?: string
+          image_providers?: Json | null
           mode?: string | null
           scenes_count?: number | null
           status?: string
@@ -860,6 +862,7 @@ export type Database = {
           file_path?: string | null
           file_size?: number | null
           id?: string
+          image_providers?: Json | null
           mode?: string | null
           scenes_count?: number | null
           status?: string

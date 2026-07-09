@@ -1,0 +1,1 @@
+ALTER TABLE public.story_videos ADD COLUMN IF NOT EXISTS image_providers jsonb;
