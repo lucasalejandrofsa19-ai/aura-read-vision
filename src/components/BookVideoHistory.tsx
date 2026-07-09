@@ -42,6 +42,32 @@ function formatSize(bytes: number | null) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+const PROVIDER_META: Record<string, { label: string; className: string; icon: typeof Sparkles }> = {
+  gemini: { label: "Gemini", className: "border-emerald-500/40 text-emerald-600 dark:text-emerald-400", icon: Sparkles },
+  lovable: { label: "Lovable (fallback)", className: "border-amber-500/40 text-amber-600 dark:text-amber-400", icon: Zap },
+  openai: { label: "OpenAI", className: "border-sky-500/40 text-sky-600 dark:text-sky-400", icon: Sparkles },
+  cached: { label: "Cache", className: "border-muted-foreground/30 text-muted-foreground", icon: Sparkles },
+};
+
+function ProviderBadges({ providers }: { providers: ProvidersCount | null }) {
+  if (!providers) return null;
+  const entries = Object.entries(providers).filter(([, n]) => (n ?? 0) > 0);
+  if (entries.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {entries.map(([key, count]) => {
+        const meta = PROVIDER_META[key] ?? { label: key, className: "", icon: Sparkles };
+        const Icon = meta.icon;
+        return (
+          <Badge key={key} variant="outline" className={`gap-1 text-[10px] ${meta.className}`}>
+            <Icon className="h-2.5 w-2.5" />
+            {meta.label} · {count}
+          </Badge>
+        );
+      })}
+    </div>
+  );
+
 export function BookVideoHistory({ bookId, refreshKey }: Props) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
