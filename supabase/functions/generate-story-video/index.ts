@@ -94,6 +94,7 @@ serve(async (req) => {
   const persistVideo = async (
     result: { title: string; author: string; scenes: Array<{ chapterTitle: string; narration: string; segments?: Array<{ imageDataUrl?: string }>; audioDataUrl?: string }> },
     runMode: string,
+    providersCount: Record<string, number>,
   ) => {
     try {
       let cursor = 0;
