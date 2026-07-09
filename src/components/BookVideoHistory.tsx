@@ -67,6 +67,9 @@ function ProviderBadges({ providers }: { providers: ProvidersCount | null }) {
       })}
     </div>
   );
+}
+
+
 
 export function BookVideoHistory({ bookId, refreshKey }: Props) {
   const [rows, setRows] = useState<Row[]>([]);
