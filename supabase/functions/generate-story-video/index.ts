@@ -433,7 +433,7 @@ Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"
       processed_at: new Date().toISOString(),
       progress: { current: total, total, stage: "completed", sceneTitle: null, etaSeconds: 0 },
     }).eq("id", jobId);
-    await persistVideo(result, mode);
+    await persistVideo(result, mode, providersCount);
 
     return new Response(JSON.stringify({ ok: true, job_id: jobId }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
