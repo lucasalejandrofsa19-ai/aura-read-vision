@@ -139,6 +139,7 @@ serve(async (req) => {
         file_size: body.byteLength,
         file_mime: "application/json",
         status: "ok",
+        image_providers: providersCount,
       });
     } catch (e) { console.error("persistVideo failed", e); }
   };
