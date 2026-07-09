@@ -3,8 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Play, Download, Share2, RefreshCw, Video } from "lucide-react";
+import { Loader2, Play, Download, Share2, RefreshCw, Video, Sparkles, Zap } from "lucide-react";
 import { toast } from "sonner";
+
+type ProvidersCount = Partial<Record<"gemini" | "lovable" | "openai" | "cached", number>>;
 
 type Row = {
   id: string;
@@ -16,6 +18,7 @@ type Row = {
   scenes_count: number | null;
   mode: string | null;
   error_message: string | null;
+  image_providers: ProvidersCount | null;
 };
 
 type Props = { bookId: string; refreshKey?: number };
@@ -39,6 +42,35 @@ function formatSize(bytes: number | null) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+const PROVIDER_META: Record<string, { label: string; className: string; icon: typeof Sparkles }> = {
+  gemini: { label: "Gemini", className: "border-emerald-500/40 text-emerald-600 dark:text-emerald-400", icon: Sparkles },
+  lovable: { label: "Lovable (fallback)", className: "border-amber-500/40 text-amber-600 dark:text-amber-400", icon: Zap },
+  openai: { label: "OpenAI", className: "border-sky-500/40 text-sky-600 dark:text-sky-400", icon: Sparkles },
+  cached: { label: "Cache", className: "border-muted-foreground/30 text-muted-foreground", icon: Sparkles },
+};
+
+function ProviderBadges({ providers }: { providers: ProvidersCount | null }) {
+  if (!providers) return null;
+  const entries = Object.entries(providers).filter(([, n]) => (n ?? 0) > 0);
+  if (entries.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {entries.map(([key, count]) => {
+        const meta = PROVIDER_META[key] ?? { label: key, className: "", icon: Sparkles };
+        const Icon = meta.icon;
+        return (
+          <Badge key={key} variant="outline" className={`gap-1 text-[10px] ${meta.className}`}>
+            <Icon className="h-2.5 w-2.5" />
+            {meta.label} · {count}
+          </Badge>
+        );
+      })}
+    </div>
+  );
+}
+
+
+
 export function BookVideoHistory({ bookId, refreshKey }: Props) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,12 +83,12 @@ export function BookVideoHistory({ bookId, refreshKey }: Props) {
     setLoading(true);
     const { data, error } = await supabase
       .from("story_videos")
-      .select("id, status, created_at, file_path, file_size, file_mime, scenes_count, mode, error_message")
+      .select("id, status, created_at, file_path, file_size, file_mime, scenes_count, mode, error_message, image_providers")
       .eq("book_id", bookId)
       .order("created_at", { ascending: false })
       .limit(20);
     if (error) toast.error("Não foi possível carregar o histórico.");
-    setRows((data ?? []) as Row[]);
+    setRows(((data ?? []) as unknown) as Row[]);
     setLoading(false);
   }, [bookId]);
 
@@ -184,6 +216,7 @@ export function BookVideoHistory({ bookId, refreshKey }: Props) {
                     </Button>
                   </div>
                 </div>
+                <ProviderBadges providers={row.image_providers} />
                 {row.status === "error" && row.error_message && (
                   <p className="text-[11px] text-destructive break-words">{row.error_message}</p>
                 )}

@@ -94,6 +94,7 @@ serve(async (req) => {
   const persistVideo = async (
     result: { title: string; author: string; scenes: Array<{ chapterTitle: string; narration: string; segments?: Array<{ imageDataUrl?: string }>; audioDataUrl?: string }> },
     runMode: string,
+    providersCount: Record<string, number>,
   ) => {
     try {
       let cursor = 0;
@@ -139,6 +140,7 @@ serve(async (req) => {
         file_size: body.byteLength,
         file_mime: "application/json",
         status: "ok",
+        image_providers: providersCount,
       });
     } catch (e) { console.error("persistVideo failed", e); }
   };
@@ -323,7 +325,7 @@ serve(async (req) => {
 
       await sb.from("story_video_jobs").update({ status: "completed", result, processed_at: new Date().toISOString(),
         progress: { current: total, total, stage: "completed", sceneTitle: null, etaSeconds: 0 } }).eq("id", jobId);
-      await persistVideo(result, "highlights");
+      await persistVideo(result, "highlights", providersCount);
       return new Response(JSON.stringify({ ok: true, job_id: jobId }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -431,7 +433,7 @@ Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"
       processed_at: new Date().toISOString(),
       progress: { current: total, total, stage: "completed", sceneTitle: null, etaSeconds: 0 },
     }).eq("id", jobId);
-    await persistVideo(result, mode);
+    await persistVideo(result, mode, providersCount);
 
     return new Response(JSON.stringify({ ok: true, job_id: jobId }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
