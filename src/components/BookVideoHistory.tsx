@@ -88,7 +88,7 @@ export function BookVideoHistory({ bookId, refreshKey }: Props) {
       .order("created_at", { ascending: false })
       .limit(20);
     if (error) toast.error("Não foi possível carregar o histórico.");
-    setRows((data ?? []) as Row[]);
+    setRows(((data ?? []) as unknown) as Row[]);
     setLoading(false);
   }, [bookId]);
 
