@@ -89,6 +89,15 @@ serve(async (req) => {
     return data?.status === "processing";
   };
 
+  // Aggregate provider usage across the run (hoisted so catch{} can persist it).
+  const providersCount: Record<string, number> = { gemini: 0, lovable: 0, openai: 0, cached: 0 };
+  const bumpProvider = (p: string) => {
+    if (p) providersCount[p] = (providersCount[p] ?? 0) + 1;
+  };
+  let runMode: string = mode;
+  let bookTitleForPersist = "";
+  let scenesBuiltCount = 0;
+
   // Persist the finished result so BookVideoHistory can list/download it.
   const estimateSec = (txt: string) => Math.max(2, Math.round(((txt || "").split(/\s+/).filter(Boolean).length / 150) * 60));
   const persistVideo = async (
@@ -145,6 +154,28 @@ serve(async (req) => {
     } catch (e) { console.error("persistVideo failed", e); }
   };
 
+  // Persist a failed run so the history still shows the badge for scenes generated
+  // before the crash. No file is uploaded — just the metadata row.
+  const persistFailure = async (errorMessage: string) => {
+    try {
+      const hasAny = Object.values(providersCount).some(v => v > 0);
+      if (!hasAny && scenesBuiltCount === 0) return;
+      await sb.from("story_videos").insert({
+        user_id: userId,
+        book_id,
+        book_title: bookTitleForPersist || null,
+        mode: runMode,
+        scenes_count: scenesBuiltCount || null,
+        file_path: null,
+        file_size: null,
+        file_mime: null,
+        status: "error",
+        error_message: errorMessage.slice(0, 1000),
+        image_providers: providersCount,
+      });
+    } catch (e) { console.error("persistFailure failed", e); }
+  };
+
 
   try {
     // Título/autor do livro (apenas para metadados do resultado)
@@ -158,6 +189,7 @@ serve(async (req) => {
         .select("title, author").eq("id", book_id).maybeSingle();
       if (pb) { title = pb.title; author = pb.author || ""; }
     }
+    bookTitleForPersist = title;
 
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
@@ -256,11 +288,10 @@ serve(async (req) => {
       return { url: "", provider: "" };
     }
 
-    // Aggregate provider usage across the run.
-    const providersCount: Record<string, number> = { gemini: 0, lovable: 0, openai: 0, cached: 0 };
-    const bumpProvider = (p: string) => {
-      if (p) providersCount[p] = (providersCount[p] ?? 0) + 1;
-    };
+    // providersCount / bumpProvider are hoisted above the try{} so the catch block
+    // can persist a partial-failure row with the badges collected so far.
+
+
 
 
     const TARGET_TOTAL_SECONDS = 63;
@@ -269,6 +300,7 @@ serve(async (req) => {
 
     // === Modo HIGHLIGHTS: usa destaques+imagens do usuário ===
     if (mode === "highlights") {
+      runMode = "highlights";
       const { data: hls, error: hlErr } = await sb
         .from("highlights")
         .select("id, text, page_number, created_at, highlight_images(storage_path, image_url)")
@@ -315,6 +347,7 @@ serve(async (req) => {
         await updateProgress({ current: idx + 1, total, stage: "narration", sceneTitle, etaSeconds: remainingAfter + Math.ceil(SECONDS_PER_STEP / 2) });
         const audioDataUrl = await genTTS(h.text, voice);
         built.push({ chapterTitle: sceneTitle, narration: h.text, segments: [{ text: h.text, imageDataUrl, imageProvider: "cached" }], audioDataUrl });
+        scenesBuiltCount = built.length;
         await updateProgress({ current: idx + 1, total, stage: "scene_done", sceneTitle, etaSeconds: remainingAfter });
 
       }
@@ -419,6 +452,7 @@ Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"
       await updateProgress({ current: idx + 1, total, stage: "narration", sceneTitle, etaSeconds: remainingAfter + Math.ceil(SECONDS_PER_STEP / 2), imageProvider });
       const audioDataUrl = await genTTS(c.narration, voice);
       built.push({ chapterTitle: sceneTitle, narration: c.narration, segments: [{ text: c.narration, imageDataUrl, imageProvider }], audioDataUrl });
+      scenesBuiltCount = built.length;
       await updateProgress({ current: idx + 1, total, stage: "scene_done", sceneTitle, etaSeconds: remainingAfter, imageProvider });
 
     }
@@ -443,6 +477,7 @@ Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"
     const msg = error instanceof Error ? error.message : String(error);
     console.error("generate-story-video worker error", msg);
     await markFailed(msg).catch(() => {});
+    await persistFailure(msg).catch(() => {});
     return new Response(JSON.stringify({ ok: false, error: msg, job_id: jobId }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
