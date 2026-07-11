@@ -347,6 +347,7 @@ serve(async (req) => {
         await updateProgress({ current: idx + 1, total, stage: "narration", sceneTitle, etaSeconds: remainingAfter + Math.ceil(SECONDS_PER_STEP / 2) });
         const audioDataUrl = await genTTS(h.text, voice);
         built.push({ chapterTitle: sceneTitle, narration: h.text, segments: [{ text: h.text, imageDataUrl, imageProvider: "cached" }], audioDataUrl });
+        scenesBuiltCount = built.length;
         await updateProgress({ current: idx + 1, total, stage: "scene_done", sceneTitle, etaSeconds: remainingAfter });
 
       }
