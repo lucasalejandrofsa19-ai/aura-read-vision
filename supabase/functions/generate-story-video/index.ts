@@ -89,6 +89,15 @@ serve(async (req) => {
     return data?.status === "processing";
   };
 
+  // Aggregate provider usage across the run (hoisted so catch{} can persist it).
+  const providersCount: Record<string, number> = { gemini: 0, lovable: 0, openai: 0, cached: 0 };
+  const bumpProvider = (p: string) => {
+    if (p) providersCount[p] = (providersCount[p] ?? 0) + 1;
+  };
+  let runMode: string = mode;
+  let bookTitleForPersist = "";
+  let scenesBuiltCount = 0;
+
   // Persist the finished result so BookVideoHistory can list/download it.
   const estimateSec = (txt: string) => Math.max(2, Math.round(((txt || "").split(/\s+/).filter(Boolean).length / 150) * 60));
   const persistVideo = async (
@@ -143,6 +152,28 @@ serve(async (req) => {
         image_providers: providersCount,
       });
     } catch (e) { console.error("persistVideo failed", e); }
+  };
+
+  // Persist a failed run so the history still shows the badge for scenes generated
+  // before the crash. No file is uploaded — just the metadata row.
+  const persistFailure = async (errorMessage: string) => {
+    try {
+      const hasAny = Object.values(providersCount).some(v => v > 0);
+      if (!hasAny && scenesBuiltCount === 0) return;
+      await sb.from("story_videos").insert({
+        user_id: userId,
+        book_id,
+        book_title: bookTitleForPersist || null,
+        mode: runMode,
+        scenes_count: scenesBuiltCount || null,
+        file_path: null,
+        file_size: null,
+        file_mime: null,
+        status: "error",
+        error_message: errorMessage.slice(0, 1000),
+        image_providers: providersCount,
+      });
+    } catch (e) { console.error("persistFailure failed", e); }
   };
 
 
