@@ -452,6 +452,7 @@ Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"
       await updateProgress({ current: idx + 1, total, stage: "narration", sceneTitle, etaSeconds: remainingAfter + Math.ceil(SECONDS_PER_STEP / 2), imageProvider });
       const audioDataUrl = await genTTS(c.narration, voice);
       built.push({ chapterTitle: sceneTitle, narration: c.narration, segments: [{ text: c.narration, imageDataUrl, imageProvider }], audioDataUrl });
+      scenesBuiltCount = built.length;
       await updateProgress({ current: idx + 1, total, stage: "scene_done", sceneTitle, etaSeconds: remainingAfter, imageProvider });
 
     }
