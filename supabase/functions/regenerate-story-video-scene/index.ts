@@ -62,6 +62,31 @@ serve(async (req) => {
     const highlightId = body.highlightId ? String(body.highlightId).slice(0, 64) : "";
     const mode = (body.mode as string) || "summary";
     const audioOnly = body.audioOnly === true;
+    const storyVideoId = body.storyVideoId ? String(body.storyVideoId).slice(0, 64) : "";
+
+    type ProviderKey = "gemini" | "lovable" | "openai" | "cached";
+    const providersCount: Partial<Record<ProviderKey, number>> = {};
+    const bumpProvider = (k: ProviderKey) => { providersCount[k] = (providersCount[k] ?? 0) + 1; };
+
+    async function persistProviders(extraError?: string) {
+      if (!storyVideoId) return;
+      if (Object.keys(providersCount).length === 0 && !extraError) return;
+      try {
+        const { data: cur } = await sb.from("story_videos")
+          .select("image_providers, user_id")
+          .eq("id", storyVideoId)
+          .maybeSingle();
+        if (!cur || (cur as { user_id?: string }).user_id !== user.id) return;
+        const existing = ((cur as { image_providers?: Record<string, number> }).image_providers) || {};
+        const merged: Record<string, number> = { ...existing };
+        for (const [k, v] of Object.entries(providersCount)) {
+          merged[k] = (merged[k] ?? 0) + (v ?? 0);
+        }
+        const patch: Record<string, unknown> = { image_providers: merged };
+        if (extraError) patch.error_message = extraError.slice(0, 500);
+        await sb.from("story_videos").update(patch).eq("id", storyVideoId);
+      } catch (e) { console.error("persistProviders err", e); }
+    }
 
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
