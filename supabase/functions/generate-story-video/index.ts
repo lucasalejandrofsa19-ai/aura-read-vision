@@ -300,6 +300,7 @@ serve(async (req) => {
 
     // === Modo HIGHLIGHTS: usa destaques+imagens do usuário ===
     if (mode === "highlights") {
+      runMode = "highlights";
       const { data: hls, error: hlErr } = await sb
         .from("highlights")
         .select("id, text, page_number, created_at, highlight_images(storage_path, image_url)")
