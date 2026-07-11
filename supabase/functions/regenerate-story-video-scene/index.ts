@@ -62,6 +62,31 @@ serve(async (req) => {
     const highlightId = body.highlightId ? String(body.highlightId).slice(0, 64) : "";
     const mode = (body.mode as string) || "summary";
     const audioOnly = body.audioOnly === true;
+    const storyVideoId = body.storyVideoId ? String(body.storyVideoId).slice(0, 64) : "";
+
+    type ProviderKey = "gemini" | "lovable" | "openai" | "cached";
+    const providersCount: Partial<Record<ProviderKey, number>> = {};
+    const bumpProvider = (k: ProviderKey) => { providersCount[k] = (providersCount[k] ?? 0) + 1; };
+
+    async function persistProviders(extraError?: string) {
+      if (!storyVideoId) return;
+      if (Object.keys(providersCount).length === 0 && !extraError) return;
+      try {
+        const { data: cur } = await sb.from("story_videos")
+          .select("image_providers, user_id")
+          .eq("id", storyVideoId)
+          .maybeSingle();
+        if (!cur || (cur as { user_id?: string }).user_id !== user.id) return;
+        const existing = ((cur as { image_providers?: Record<string, number> }).image_providers) || {};
+        const merged: Record<string, number> = { ...existing };
+        for (const [k, v] of Object.entries(providersCount)) {
+          merged[k] = (merged[k] ?? 0) + (v ?? 0);
+        }
+        const patch: Record<string, unknown> = { image_providers: merged };
+        if (extraError) patch.error_message = extraError.slice(0, 500);
+        await sb.from("story_videos").update(patch).eq("id", storyVideoId);
+      } catch (e) { console.error("persistProviders err", e); }
+    }
 
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
@@ -109,20 +134,24 @@ serve(async (req) => {
         .select("storage_path, highlights!inner(user_id)")
         .eq("highlight_id", highlightId)
         .maybeSingle();
-      const path = (hi as any)?.storage_path;
-      const owner = (hi as any)?.highlights?.user_id;
+      const path = (hi as { storage_path?: string; highlights?: { user_id?: string } } | null)?.storage_path;
+      const owner = (hi as { highlights?: { user_id?: string } } | null)?.highlights?.user_id;
       if (!path || owner !== user.id) return "";
       const { data, error } = await sb.storage.from("highlight-images").download(path);
       if (error || !data) return "";
       const buf = await data.arrayBuffer();
+      bumpProvider("cached");
       return `data:${data.type || "image/png"};base64,${base64Encode(new Uint8Array(buf))}`;
     }
 
     async function genImage(prompt: string): Promise<string> {
       const full = `${prompt}. Vertical 9:16 portrait, cinematic painterly book illustration, consistent art style, no text, no letters, no UI`;
       try {
-        const { base64, mimeType } = await generateImage(full);
-        if (base64) return `data:${mimeType};base64,${base64}`;
+        const { base64, mimeType, provider } = await generateImage(full);
+        if (base64) {
+          bumpProvider(provider === "lovable" ? "lovable" : "gemini");
+          return `data:${mimeType};base64,${base64}`;
+        }
       } catch (e) { console.error("gemini image ex", e); }
       if (OPENAI_API_KEY && LOVABLE_API_KEY) {
         try {
@@ -134,7 +163,10 @@ serve(async (req) => {
           if (r.ok) {
             const j = await r.json();
             const b64 = j?.data?.[0]?.b64_json;
-            if (b64) return `data:image/png;base64,${b64}`;
+            if (b64) {
+              bumpProvider("openai");
+              return `data:image/png;base64,${b64}`;
+            }
           }
         } catch (e) { console.error("openai image ex", e); }
       }
@@ -150,15 +182,21 @@ serve(async (req) => {
 
     const [audioDataUrl, imageDataUrl] = await Promise.all([genTTS(), imagePromise]);
     if (!audioDataUrl && (audioOnly || !imageDataUrl)) {
-      return new Response(JSON.stringify({ error: audioOnly ? "Falha ao regenerar áudio" : "Falha ao regenerar áudio e imagem" }),
+      // Persiste providers parciais mesmo em falha total, para não abrir gap no histórico.
+      await persistProviders(audioOnly ? "Falha ao regenerar áudio" : "Falha ao regenerar áudio e imagem").catch(() => {});
+      return new Response(JSON.stringify({ error: audioOnly ? "Falha ao regenerar áudio" : "Falha ao regenerar áudio e imagem", providers: providersCount }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
+    // Persiste providers em sucesso (ou sucesso parcial: só áudio, sem imagem)
+    await persistProviders(!audioOnly && !imageDataUrl ? "Imagem não gerada nesta cena" : undefined).catch(() => {});
 
     return new Response(JSON.stringify({
       chapterTitle: chapterTitle || `Cena`,
       narration,
       audioDataUrl,
       audioOnly,
+      providers: providersCount,
       segments: audioOnly ? [] : [{ text: narration, imageDataUrl }],
     }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
