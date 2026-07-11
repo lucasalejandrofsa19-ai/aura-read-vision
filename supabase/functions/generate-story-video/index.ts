@@ -189,6 +189,7 @@ serve(async (req) => {
         .select("title, author").eq("id", book_id).maybeSingle();
       if (pb) { title = pb.title; author = pb.author || ""; }
     }
+    bookTitleForPersist = title;
 
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
