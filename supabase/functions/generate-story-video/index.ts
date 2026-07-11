@@ -477,6 +477,7 @@ Total do vídeo ~${TARGET_TOTAL_SECONDS}s. Responda APENAS JSON: {"chapters":[{"
     const msg = error instanceof Error ? error.message : String(error);
     console.error("generate-story-video worker error", msg);
     await markFailed(msg).catch(() => {});
+    await persistFailure(msg).catch(() => {});
     return new Response(JSON.stringify({ ok: false, error: msg, job_id: jobId }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
