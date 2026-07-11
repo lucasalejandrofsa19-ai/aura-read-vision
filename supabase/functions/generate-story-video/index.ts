@@ -287,11 +287,10 @@ serve(async (req) => {
       return { url: "", provider: "" };
     }
 
-    // Aggregate provider usage across the run.
-    const providersCount: Record<string, number> = { gemini: 0, lovable: 0, openai: 0, cached: 0 };
-    const bumpProvider = (p: string) => {
-      if (p) providersCount[p] = (providersCount[p] ?? 0) + 1;
-    };
+    // providersCount / bumpProvider are hoisted above the try{} so the catch block
+    // can persist a partial-failure row with the badges collected so far.
+
+
 
 
     const TARGET_TOTAL_SECONDS = 63;
