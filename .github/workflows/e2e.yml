@@ -68,6 +68,34 @@ jobs:
         if: env.TEST_USER_A_EMAIL != '' && env.TEST_USER_A_PASSWORD != '' && env.VITE_SUPABASE_URL != ''
         run: node scripts/seed-story-video-fixture.mjs >> "$GITHUB_ENV"
 
+      - name: Verify seed outputs (TEST_BOOK_ID / TEST_STORY_VIDEO_ID)
+        id: verify-seed
+        if: steps.seed-story-video.outcome == 'success'
+        run: |
+          UUID_RE='^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+          missing=0
+          if [ -z "${TEST_BOOK_ID:-}" ]; then
+            echo "::error::TEST_BOOK_ID não foi exportado pelo seed."
+            missing=1
+          elif ! [[ "$TEST_BOOK_ID" =~ $UUID_RE ]]; then
+            echo "::error::TEST_BOOK_ID='$TEST_BOOK_ID' não é um UUID válido."
+            missing=1
+          fi
+          if [ -z "${TEST_STORY_VIDEO_ID:-}" ]; then
+            echo "::error::TEST_STORY_VIDEO_ID não foi exportado pelo seed."
+            missing=1
+          elif ! [[ "$TEST_STORY_VIDEO_ID" =~ $UUID_RE ]]; then
+            echo "::error::TEST_STORY_VIDEO_ID='$TEST_STORY_VIDEO_ID' não é um UUID válido."
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then
+            echo "Seed inválido — abortando antes de Deno/Playwright."
+            exit 1
+          fi
+          echo "✓ Seed OK — TEST_BOOK_ID=$TEST_BOOK_ID TEST_STORY_VIDEO_ID=$TEST_STORY_VIDEO_ID"
+
+
+
       - name: Setup Deno
         if: steps.seed-story-video.outcome == 'success'
         uses: denoland/setup-deno@v1
