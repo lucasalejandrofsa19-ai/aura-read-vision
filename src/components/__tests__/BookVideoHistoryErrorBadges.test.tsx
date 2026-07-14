@@ -6,34 +6,33 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import BookVideoHistory from "@/components/BookVideoHistory";
 
-const errorRows = [
-  {
-    id: "err-1",
-    status: "error",
-    created_at: new Date().toISOString(),
-    file_path: null,
-    file_size: null,
-    file_mime: null,
-    scenes_count: 3,
-    mode: "summary",
-    error_message: "Falha ao regenerar áudio",
-    image_providers: { gemini: 2, lovable: 1, cached: 1 },
-  },
-  {
-    id: "err-2",
-    status: "error",
-    created_at: new Date().toISOString(),
-    file_path: null,
-    file_size: null,
-    file_mime: null,
-    scenes_count: 2,
-    mode: "highlights",
-    error_message: "Timeout",
-    image_providers: { openai: 2 },
-  },
-];
-
 vi.mock("@/integrations/supabase/client", () => {
+  const errorRows = [
+    {
+      id: "err-1",
+      status: "error",
+      created_at: new Date().toISOString(),
+      file_path: null,
+      file_size: null,
+      file_mime: null,
+      scenes_count: 3,
+      mode: "summary",
+      error_message: "Falha ao regenerar áudio",
+      image_providers: { gemini: 2, lovable: 1, cached: 1 },
+    },
+    {
+      id: "err-2",
+      status: "error",
+      created_at: new Date().toISOString(),
+      file_path: null,
+      file_size: null,
+      file_mime: null,
+      scenes_count: 2,
+      mode: "highlights",
+      error_message: "Timeout",
+      image_providers: { openai: 2 },
+    },
+  ];
   const builder = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
