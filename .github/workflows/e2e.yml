@@ -22,6 +22,12 @@ jobs:
       BASE_URL: ${{ github.event.inputs.base_url || 'https://aura-read.lovable.app' }}
       E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
       E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      TEST_USER_A_EMAIL: ${{ secrets.TEST_USER_A_EMAIL }}
+      TEST_USER_A_PASSWORD: ${{ secrets.TEST_USER_A_PASSWORD }}
+      TEST_USER_B_EMAIL: ${{ secrets.TEST_USER_B_EMAIL }}
+      TEST_USER_B_PASSWORD: ${{ secrets.TEST_USER_B_PASSWORD }}
 
     steps:
       - name: Checkout
@@ -57,8 +63,26 @@ jobs:
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
 
+      - name: Seed story_videos fixture (image_providers badges)
+        id: seed-story-video
+        if: env.TEST_USER_A_EMAIL != '' && env.TEST_USER_A_PASSWORD != '' && env.VITE_SUPABASE_URL != ''
+        run: node scripts/seed-story-video-fixture.mjs >> "$GITHUB_ENV"
+
+      - name: Setup Deno
+        if: steps.seed-story-video.outcome == 'success'
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Deno integration test — regenerate-story-video-scene
+        if: steps.seed-story-video.outcome == 'success'
+        run: |
+          deno test supabase/functions/regenerate-story-video-scene/index.test.ts \
+            --allow-net --allow-env --allow-read
+
       - name: Run E2E
         run: npm run test:e2e
+
 
       - name: Upload Playwright report
         if: always()
