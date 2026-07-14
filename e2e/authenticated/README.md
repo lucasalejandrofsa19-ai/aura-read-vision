@@ -29,6 +29,21 @@ O script é idempotente: reutiliza o mesmo book "RLS Test Book" do
 `seed-rls-test-data.mjs` e cria (ou reaproveita) um `story_videos` com
 `image_providers = { gemini: 3, lovable: 1 }`.
 
+## Seed do book + highlight para a conta E2E_EMAIL
+
+Specs como `highlightImagePremiumCounter.spec.ts` e
+`focusedHighlightZoom.spec.ts` dependem de pelo menos um livro com um
+destaque textual pertencente à conta usada em `E2E_EMAIL`. O CI garante
+isso automaticamente rodando:
+
+```bash
+node scripts/seed-e2e-highlight-fixture.mjs >> "$GITHUB_ENV"
+```
+
+Idempotente: reutiliza um `books` "E2E Highlight Fixture" do próprio
+usuário e cria/normaliza um `highlights` textual na página 1. Exporta
+`E2E_BOOK_ID` e `E2E_HIGHLIGHT_ID` para o `$GITHUB_ENV`.
+
 ## Rodar localmente
 
 ```bash
