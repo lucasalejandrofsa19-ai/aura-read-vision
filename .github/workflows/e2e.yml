@@ -97,16 +97,17 @@ jobs:
 
 
       - name: Setup Deno
-        if: steps.seed-story-video.outcome == 'success'
+        if: steps.verify-seed.outcome == 'success'
         uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
 
       - name: Deno integration test — regenerate-story-video-scene
-        if: steps.seed-story-video.outcome == 'success'
+        if: steps.verify-seed.outcome == 'success'
         run: |
           deno test supabase/functions/regenerate-story-video-scene/index.test.ts \
             --allow-net --allow-env --allow-read
+
 
       - name: Run E2E
         run: npm run test:e2e
