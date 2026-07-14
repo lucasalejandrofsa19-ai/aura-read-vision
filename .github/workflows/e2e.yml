@@ -129,6 +129,19 @@ jobs:
           if [ "$missing" -ne 0 ]; then exit 1; fi
           echo "✓ E2E highlight seed OK — Book=$E2E_BOOK_ID Highlight=$E2E_HIGHLIGHT_ID"
 
+      - name: Guard — E2E_BOOK_ID must be set before running Playwright
+        run: |
+          UUID_RE='^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+          if [ -z "${E2E_BOOK_ID:-}" ]; then
+            echo "::error::E2E_BOOK_ID não está definido. O seed (scripts/seed-e2e-highlight-fixture.mjs) provavelmente falhou ou foi pulado. Verifique se E2E_EMAIL, E2E_PASSWORD e VITE_SUPABASE_URL estão configurados nos secrets."
+            exit 1
+          fi
+          if ! [[ "$E2E_BOOK_ID" =~ $UUID_RE ]]; then
+            echo "::error::E2E_BOOK_ID='$E2E_BOOK_ID' não é um UUID válido."
+            exit 1
+          fi
+          echo "✓ E2E_BOOK_ID presente e válido: $E2E_BOOK_ID"
+
       - name: Run E2E
         run: npm run test:e2e
 
