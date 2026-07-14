@@ -521,50 +521,80 @@ export const PDFViewer = ({
       }
       const page = await pdfDoc.getPage(pageNumber);
       const textContent = await page.getTextContent();
-      // Use scale 1 viewport para coordenadas normalizadas
+      // Use scale 1 viewport (PDF units)
       const viewport = page.getViewport({ scale: 1 });
-      
-      console.log("[extractText] Coords recebidas:", coords);
-      console.log("[extractText] Viewport height:", viewport.height);
-      
-      const extractedTexts: string[] = [];
-      
+
+      // Coords chegam em pixels do canvas (PDF units × scale de zoom).
+      // Normalizamos para PDF units para casar com as coordenadas dos text items.
+      const zoom = scale || 1;
+      const normCoords = {
+        x: coords.x / zoom,
+        y: coords.y / zoom,
+        width: coords.width / zoom,
+        height: coords.height / zoom,
+      };
+
+      console.log("[extractText] Coords recebidas (px):", coords, "→ normalizadas (PDF units):", normCoords, "zoom:", zoom);
+
+      // Coleta itens que interceptam a área, preservando ordem de leitura.
+      type Hit = { str: string; hasEOL: boolean; x: number; y: number };
+      const hits: Hit[] = [];
+
       textContent.items.forEach((item: any) => {
-        if ('str' in item && 'transform' in item) {
-          const [scaleX, , , scaleY, itemX, itemY] = item.transform;
-          const itemHeight = Math.abs(scaleY) || 12;
-          const itemWidth = item.width * Math.abs(scaleX) || 0;
-          
-          // Converter coordenadas PDF (origem bottom-left) para canvas (origem top-left)
-          const canvasItemY = viewport.height - itemY;
-          
-          // Verificar overlap com área destacada (tolerância aumentada)
-          const tolerance = 20;
-          const itemRight = itemX + itemWidth;
-          const itemTop = canvasItemY - itemHeight;
-          const itemBottom = canvasItemY;
-          
-          const highlightRight = coords.x + coords.width;
-          const highlightBottom = coords.y + coords.height;
-          
-          // Checar se há interseção
-          const xOverlap = itemX < highlightRight + tolerance && itemRight > coords.x - tolerance;
-          const yOverlap = itemTop < highlightBottom + tolerance && itemBottom > coords.y - tolerance;
-          
-          if (xOverlap && yOverlap) {
-            console.log("[extractText] Texto encontrado:", item.str, {
-              itemX,
-              itemY: canvasItemY,
-              itemWidth,
-              itemHeight,
-              highlightCoords: coords
-            });
-            extractedTexts.push(item.str);
-          }
+        if (!('str' in item) || !('transform' in item)) return;
+        const [scaleX, , , scaleY, itemX, itemY] = item.transform;
+        const itemHeight = Math.abs(scaleY) || 12;
+        const itemWidth = (item.width ?? 0) * Math.abs(scaleX || 1) || (item.width ?? 0);
+
+        // PDF origin = bottom-left; converter para top-left.
+        const canvasItemY = viewport.height - itemY;
+        const itemTop = canvasItemY - itemHeight;
+        const itemBottom = canvasItemY;
+        const itemLeft = itemX;
+        const itemRight = itemX + itemWidth;
+
+        const hlLeft = normCoords.x;
+        const hlRight = normCoords.x + normCoords.width;
+        const hlTop = normCoords.y;
+        const hlBottom = normCoords.y + normCoords.height;
+
+        // Tolerância pequena em PDF units (~2pt); antes usava 20px de tela, o que capturava linhas vizinhas.
+        const tol = 2;
+        const xOverlap = itemLeft < hlRight + tol && itemRight > hlLeft - tol;
+        const yOverlap = itemTop < hlBottom + tol && itemBottom > hlTop - tol;
+
+        if (xOverlap && yOverlap) {
+          hits.push({
+            str: item.str,
+            hasEOL: !!item.hasEOL,
+            x: itemLeft,
+            y: itemTop,
+          });
         }
       });
-      
-      const result = extractedTexts.join(' ').trim();
+
+      // Ordenar por linha (y) e depois por x, para reconstruir a leitura corretamente.
+      hits.sort((a, b) => {
+        if (Math.abs(a.y - b.y) > 4) return a.y - b.y;
+        return a.x - b.x;
+      });
+
+      let result = "";
+      for (let i = 0; i < hits.length; i++) {
+        const cur = hits[i];
+        result += cur.str;
+        const next = hits[i + 1];
+        if (!next) break;
+        const sameLine = Math.abs(next.y - cur.y) <= 4;
+        if (!sameLine || cur.hasEOL) {
+          // Junta quebras de linha com espaço simples (evita hifenização estranha).
+          if (!result.endsWith(" ")) result += " ";
+        } else if (!cur.str.endsWith(" ") && !next.str.startsWith(" ")) {
+          result += " ";
+        }
+      }
+
+      result = result.replace(/\s+/g, " ").trim();
       console.log("[extractText] Resultado final:", result);
       return result;
     } catch (error) {
