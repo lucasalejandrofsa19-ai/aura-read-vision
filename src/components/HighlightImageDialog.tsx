@@ -327,17 +327,17 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
 
           {!imageUrl && (
             <div className="space-y-4">
-              {/* Usage Warning */}
-              {showLimitWarning && (
+              {/* Usage Warning - apenas para contas não-premium */}
+              {showLimitWarning && !hasPremiumAccess && (
                 <Alert className="border-amber-500/50 bg-amber-500/10">
                   <AlertCircle className="h-4 w-4 text-amber-500" />
                   <AlertDescription className="text-sm">
                     Você já usou {imageCount} de {FREE_IMAGE_LIMIT} imagens gratuitas.
-                    {imageCount >= FREE_IMAGE_LIMIT && !hasPremiumAccess ? (
+                    {imageCount >= FREE_IMAGE_LIMIT ? (
                       <>
-                        {" "}Para gerar mais imagens, 
-                        <Button 
-                          variant="link" 
+                        {" "}Para gerar mais imagens,
+                        <Button
+                          variant="link"
                           className="h-auto p-0 ml-1 text-amber-500 hover:text-amber-600 inline-flex items-center gap-1"
                           onClick={() => navigate('/pricing')}
                         >
@@ -352,11 +352,11 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
                 </Alert>
               )}
 
-              {/* Usage Counter for all users */}
-              {!showLimitWarning && (
+              {/* Contador de uso - apenas para contas não-premium */}
+              {!showLimitWarning && !hasPremiumAccess && (
                 <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
                   <span>Imagens geradas: {imageCount}</span>
-                  <span>{imageCount < FREE_IMAGE_LIMIT ? `${FREE_IMAGE_LIMIT - imageCount} gratuitas restantes` : 'Premium ilimitado'}</span>
+                  <span>{imageCount < FREE_IMAGE_LIMIT ? `${FREE_IMAGE_LIMIT - imageCount} gratuitas restantes` : ''}</span>
                 </div>
               )}
 
