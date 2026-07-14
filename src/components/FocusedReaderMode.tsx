@@ -78,6 +78,7 @@ export const FocusedReaderMode = ({
   const [showControls, setShowControls] = useState(true);
   const [scale, setScale] = useState(1.2);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
+  const pdfDocRef = useRef<any>(null);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
