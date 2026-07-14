@@ -48,3 +48,19 @@ deno test supabase/functions/regenerate-story-video-scene/index.test.ts \
 
 Valida a invariante crítica: mesmo em falha, `image_providers` do row
 original NUNCA é zerado (evita regressão dos badges).
+
+## `focusedHighlightZoom.spec.ts`
+
+Valida que a marcação no `FocusedReaderMode` copia o mesmo texto em
+100%, 150% e 200% de zoom (equivalência visual × texto extraído).
+
+Requer permissão de clipboard (concedida pelo próprio spec via
+`context.grantPermissions`). Usa o primeiro livro visível da Library —
+qualquer PDF com texto na primeira página serve.
+
+```bash
+npx playwright test \
+  e2e/authenticated/focusedHighlightZoom.spec.ts \
+  --project=chromium-auth
+```
+
