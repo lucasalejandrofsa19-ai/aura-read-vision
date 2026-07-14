@@ -179,6 +179,9 @@ export const FocusedReaderMode = ({
         <div className="max-w-4xl mx-auto">
           <Document
             file={fileUrl}
+            onLoadSuccess={(pdfDoc: any) => {
+              pdfDocRef.current = pdfDoc;
+            }}
             loading={
               <div className="flex items-center justify-center p-12">
                 <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -223,15 +226,37 @@ export const FocusedReaderMode = ({
                     height: h.height * scale,
                   }))}
                   onHighlightAdded={async (coords) => {
-                    const realScale = pageSize.width / 595;
+                    // Coords chegam em pixels do canvas (PDF units × scale).
+                    // Normalizamos para PDF units para persistência.
+                    const zoom = scale || 1;
                     const originalCoords = {
-                      x: coords.x / realScale,
-                      y: coords.y / realScale,
-                      width: coords.width / realScale,
-                      height: coords.height / realScale,
+                      x: coords.x / zoom,
+                      y: coords.y / zoom,
+                      width: coords.width / zoom,
+                      height: coords.height / zoom,
                     };
-                    // For FocusedReaderMode, we pass empty text since we don't have text extraction here yet
-                    onHighlightDrawn?.({ ...originalCoords, text: "", color: highlightColor });
+
+                    // Extração de texto via helper compartilhado — mesmo comportamento do PDFViewer,
+                    // garantindo que texto copiado == área marcada em qualquer zoom.
+                    let text = "";
+                    try {
+                      const pdfDoc = pdfDocRef.current;
+                      if (pdfDoc) {
+                        const page = await pdfDoc.getPage(pageNumber);
+                        const textContent = await page.getTextContent();
+                        const viewport = page.getViewport({ scale: 1 });
+                        text = extractHighlightText({
+                          items: textContent.items as any,
+                          viewportHeight: viewport.height,
+                          scale: zoom,
+                          rect: coords,
+                        });
+                      }
+                    } catch (err) {
+                      console.error("[FocusedReaderMode] extract text failed:", err);
+                    }
+
+                    onHighlightDrawn?.({ ...originalCoords, text, color: highlightColor });
                   }}
                   isDrawing={isDrawingMode}
                   drawColor={highlightColor}
