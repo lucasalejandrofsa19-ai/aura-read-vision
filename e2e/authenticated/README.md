@@ -64,3 +64,24 @@ npx playwright test \
   --project=chromium-auth
 ```
 
+## `highlightImagePremiumCounter.spec.ts`
+
+Valida que:
+
+- Contas **Premium** não exibem o aviso/contador de imagens no
+  `HighlightImageDialog`.
+- Contas **grátis** continuam vendo o contador ("X gratuitas restantes") e,
+  ao atingirem o limite, o alerta com CTA "assine o plano Premium/Pro".
+
+Usa `page.route()` para mockar `/rest/v1/user_roles` (força tier) e
+`/rest/v1/highlight_images` com `Prefer: count=exact` (força `imageCount`),
+sem depender do papel real do usuário no banco. Requer um livro com pelo
+menos um destaque com texto visível em `/summary/:id`; caso contrário o
+spec faz `test.skip`.
+
+```bash
+npx playwright test \
+  e2e/authenticated/highlightImagePremiumCounter.spec.ts \
+  --project=chromium-auth
+```
+
