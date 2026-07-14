@@ -108,6 +108,26 @@ jobs:
           deno test supabase/functions/regenerate-story-video-scene/index.test.ts \
             --allow-net --allow-env --allow-read
 
+      - name: Seed E2E highlight fixture (book + textual highlight for E2E_EMAIL)
+        id: seed-e2e-highlight
+        if: env.E2E_EMAIL != '' && env.E2E_PASSWORD != '' && env.VITE_SUPABASE_URL != ''
+        run: node scripts/seed-e2e-highlight-fixture.mjs >> "$GITHUB_ENV"
+
+      - name: Verify E2E highlight seed (E2E_BOOK_ID / E2E_HIGHLIGHT_ID)
+        if: steps.seed-e2e-highlight.outcome == 'success'
+        run: |
+          UUID_RE='^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+          missing=0
+          if [ -z "${E2E_BOOK_ID:-}" ] || ! [[ "$E2E_BOOK_ID" =~ $UUID_RE ]]; then
+            echo "::error::E2E_BOOK_ID inválido ou ausente ('${E2E_BOOK_ID:-}')."
+            missing=1
+          fi
+          if [ -z "${E2E_HIGHLIGHT_ID:-}" ] || ! [[ "$E2E_HIGHLIGHT_ID" =~ $UUID_RE ]]; then
+            echo "::error::E2E_HIGHLIGHT_ID inválido ou ausente ('${E2E_HIGHLIGHT_ID:-}')."
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then exit 1; fi
+          echo "✓ E2E highlight seed OK — Book=$E2E_BOOK_ID Highlight=$E2E_HIGHLIGHT_ID"
 
       - name: Run E2E
         run: npm run test:e2e
