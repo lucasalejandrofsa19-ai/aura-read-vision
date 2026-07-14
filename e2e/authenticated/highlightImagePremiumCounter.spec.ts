@@ -68,16 +68,18 @@ const mockSupabase = async (page: import("@playwright/test").Page, opts: {
 const openSummaryOfFirstBookWithHighlight = async (
   page: import("@playwright/test").Page,
 ) => {
-  await page.goto(`${BASE_URL}/library`, { waitUntil: "networkidle" });
+  // Prefere o E2E_BOOK_ID vindo do seed do CI (livro garantido com destaque textual).
+  const seededBookId = process.env.E2E_BOOK_ID?.trim();
+  let bookId: string | undefined = seededBookId;
 
-  // Pega o primeiro card de livro visível.
-  const firstBook = page.locator('[data-testid="book-card"], a[href*="/reader/"]').first();
-  if (!(await firstBook.count())) test.skip(true, "Nenhum livro na Library.");
-
-  // Extrai o bookId a partir do href, se disponível.
-  const href = await firstBook.getAttribute("href");
-  const bookId = href?.match(/\/reader\/([0-9a-f-]+)/i)?.[1];
-  if (!bookId) test.skip(true, "Não foi possível determinar o bookId do primeiro livro.");
+  if (!bookId) {
+    await page.goto(`${BASE_URL}/library`, { waitUntil: "networkidle" });
+    const firstBook = page.locator('[data-testid="book-card"], a[href*="/reader/"]').first();
+    if (!(await firstBook.count())) test.skip(true, "Nenhum livro na Library.");
+    const href = await firstBook.getAttribute("href");
+    bookId = href?.match(/\/reader\/([0-9a-f-]+)/i)?.[1];
+    if (!bookId) test.skip(true, "Não foi possível determinar o bookId do primeiro livro.");
+  }
 
   await page.goto(`${BASE_URL}/summary/${bookId}`, { waitUntil: "networkidle" });
 
