@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Eye, Moon, Sun, Contrast, Highlighter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Document, Page } from "react-pdf";
 import { HighlightCanvas } from "@/components/HighlightCanvas";
+import { extractHighlightText } from "@/lib/extractHighlightText";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -77,6 +78,7 @@ export const FocusedReaderMode = ({
   const [showControls, setShowControls] = useState(true);
   const [scale, setScale] = useState(1.2);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
+  const pdfDocRef = useRef<any>(null);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -177,6 +179,9 @@ export const FocusedReaderMode = ({
         <div className="max-w-4xl mx-auto">
           <Document
             file={fileUrl}
+            onLoadSuccess={(pdfDoc: any) => {
+              pdfDocRef.current = pdfDoc;
+            }}
             loading={
               <div className="flex items-center justify-center p-12">
                 <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -221,15 +226,37 @@ export const FocusedReaderMode = ({
                     height: h.height * scale,
                   }))}
                   onHighlightAdded={async (coords) => {
-                    const realScale = pageSize.width / 595;
+                    // Coords chegam em pixels do canvas (PDF units × scale).
+                    // Normalizamos para PDF units para persistência.
+                    const zoom = scale || 1;
                     const originalCoords = {
-                      x: coords.x / realScale,
-                      y: coords.y / realScale,
-                      width: coords.width / realScale,
-                      height: coords.height / realScale,
+                      x: coords.x / zoom,
+                      y: coords.y / zoom,
+                      width: coords.width / zoom,
+                      height: coords.height / zoom,
                     };
-                    // For FocusedReaderMode, we pass empty text since we don't have text extraction here yet
-                    onHighlightDrawn?.({ ...originalCoords, text: "", color: highlightColor });
+
+                    // Extração de texto via helper compartilhado — mesmo comportamento do PDFViewer,
+                    // garantindo que texto copiado == área marcada em qualquer zoom.
+                    let text = "";
+                    try {
+                      const pdfDoc = pdfDocRef.current;
+                      if (pdfDoc) {
+                        const page = await pdfDoc.getPage(pageNumber);
+                        const textContent = await page.getTextContent();
+                        const viewport = page.getViewport({ scale: 1 });
+                        text = extractHighlightText({
+                          items: textContent.items as any,
+                          viewportHeight: viewport.height,
+                          scale: zoom,
+                          rect: coords,
+                        });
+                      }
+                    } catch (err) {
+                      console.error("[FocusedReaderMode] extract text failed:", err);
+                    }
+
+                    onHighlightDrawn?.({ ...originalCoords, text, color: highlightColor });
                   }}
                   isDrawing={isDrawingMode}
                   drawColor={highlightColor}
