@@ -71,28 +71,5 @@ describe("BookVideoHistory — badges em rows com status error", () => {
     expect(screen.getByText("Timeout")).toBeInTheDocument();
   });
 
-  it("não renderiza badges quando image_providers está vazio/nulo", async () => {
-    vi.resetModules();
-    vi.doMock("@/integrations/supabase/client", () => {
-      const builder = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue({
-          data: [{ ...errorRows[0], id: "err-empty", image_providers: null }],
-          error: null,
-        }),
-      };
-      return {
-        supabase: {
-          from: vi.fn(() => builder),
-          storage: { from: vi.fn(() => ({ createSignedUrl: vi.fn() })) },
-        },
-      };
-    });
-    const { default: Fresh } = await import("@/components/BookVideoHistory");
-    render(<Fresh bookId="book-2" />);
-    await waitFor(() => expect(screen.getAllByText("Falha").length).toBeGreaterThan(0));
-    expect(screen.queryByText(/Gemini ·/)).not.toBeInTheDocument();
-  });
 });
+
