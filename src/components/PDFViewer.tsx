@@ -21,6 +21,7 @@ import "react-pdf/dist/Page/TextLayer.css";
 // Bootstrap centralizado: garante worker LOCAL e expõe ensurePdfWorkerReady()
 // dedicado a mobile/PWA (aguarda Service Worker + pré-fetch + fallback CDN).
 import { ensurePdfWorkerReady } from "@/lib/pdfjsWorker";
+import { extractHighlightText } from "@/lib/extractHighlightText";
 
 if (!pdfjs.GlobalWorkerOptions.workerSrc || pdfjs.GlobalWorkerOptions.workerSrc === "pdf.worker.mjs") {
   pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
