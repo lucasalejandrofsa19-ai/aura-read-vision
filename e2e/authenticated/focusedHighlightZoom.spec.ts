@@ -82,10 +82,16 @@ test.describe("FocusedReaderMode — marcação equivalente em múltiplos zooms"
     // Clipboard read/write são necessários — useHighlights copia texto extraído.
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-    await page.goto("/library", { waitUntil: "networkidle" });
-    const firstBookLink = page.locator('a[href^="/reader/"]').first();
-    await expect(firstBookLink).toBeVisible({ timeout: 15_000 });
-    await firstBookLink.click();
+    // Prefere o E2E_BOOK_ID vindo do seed do CI; senão, cai para o primeiro livro visível.
+    const seededBookId = process.env.E2E_BOOK_ID?.trim();
+    if (seededBookId) {
+      await page.goto(`/reader/${seededBookId}`, { waitUntil: "networkidle" });
+    } else {
+      await page.goto("/library", { waitUntil: "networkidle" });
+      const firstBookLink = page.locator('a[href^="/reader/"]').first();
+      await expect(firstBookLink).toBeVisible({ timeout: 15_000 });
+      await firstBookLink.click();
+    }
 
     // Aguarda o PDF carregar.
     await expect(page.locator(".react-pdf__Page canvas").first()).toBeVisible({
