@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Eye, Moon, Sun, Contrast, Highlighter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Document, Page } from "react-pdf";
 import { HighlightCanvas } from "@/components/HighlightCanvas";
+import { extractHighlightText } from "@/lib/extractHighlightText";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
