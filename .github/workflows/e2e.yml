@@ -129,6 +129,20 @@ jobs:
           if [ "$missing" -ne 0 ]; then exit 1; fi
           echo "✓ E2E highlight seed OK — Book=$E2E_BOOK_ID Highlight=$E2E_HIGHLIGHT_ID"
 
+      - name: Guard — E2E_EMAIL and E2E_PASSWORD must be set before running Playwright
+        run: |
+          missing=0
+          if [ -z "${E2E_EMAIL:-}" ]; then
+            echo "::error::E2E_EMAIL não está definido ou está vazio. Configure o secret E2E_EMAIL no repositório antes de rodar os testes E2E."
+            missing=1
+          fi
+          if [ -z "${E2E_PASSWORD:-}" ]; then
+            echo "::error::E2E_PASSWORD não está definido ou está vazio. Configure o secret E2E_PASSWORD no repositório antes de rodar os testes E2E."
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then exit 1; fi
+          echo "✓ E2E_EMAIL e E2E_PASSWORD presentes."
+
       - name: Guard — E2E_BOOK_ID and E2E_HIGHLIGHT_ID must be set before running Playwright
         run: |
           UUID_RE='^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
