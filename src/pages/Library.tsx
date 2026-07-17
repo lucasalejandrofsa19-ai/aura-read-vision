@@ -364,7 +364,7 @@ const LibraryInner = () => {
                 </div>
               </motion.button>
 
-              <div className="flex items-end justify-between gap-3 mb-6">
+              <div className="reveal-on-scroll flex items-end justify-between gap-3 mb-6">
                 <div>
                   <h2 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Meus Livros</h2>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -382,6 +382,7 @@ const LibraryInner = () => {
                   <div
                     key={book.id}
                     ref={index === 0 ? bookCardRef : undefined}
+                    className={`reveal-on-scroll reveal-zoom reveal-delay-${(index % 4) + 1}`}
                   >
                     <LazyLoadWrapper
                       minHeight="320px"
