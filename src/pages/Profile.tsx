@@ -255,7 +255,7 @@ const Profile = () => {
         </motion.div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 rounded-2xl border border-border/60 bg-card/80 backdrop-blur-xl p-1">
+          <TabsList className="reveal-on-scroll grid w-full grid-cols-4 rounded-2xl border border-border/60 bg-card/80 backdrop-blur-xl p-1">
             <TabsTrigger value="profile" className="rounded-xl">Perfil</TabsTrigger>
             <TabsTrigger value="stats" className="rounded-xl">Estatísticas</TabsTrigger>
             <TabsTrigger value="subscription" className="rounded-xl">Assinatura</TabsTrigger>
@@ -265,7 +265,7 @@ const Profile = () => {
 
           <TabsContent value="profile" className="space-y-6">
             {/* Profile Info Card */}
-            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
+            <Card className="reveal-on-scroll rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
                 <CardTitle className="font-display">Informações do Perfil</CardTitle>
                 <CardDescription>
@@ -353,7 +353,7 @@ const Profile = () => {
             </Card>
 
             {/* Theme Settings Card */}
-            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
+            <Card className="reveal-on-scroll reveal-delay-1 rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
                 <CardTitle className="font-display">Preferências de Tema</CardTitle>
                 <CardDescription>
@@ -369,7 +369,7 @@ const Profile = () => {
             </Card>
 
             {/* Ultra Performance Mode Card */}
-            <Card className="rounded-2xl border-primary/30 bg-card/80 backdrop-blur-xl shadow-sm">
+            <Card className="reveal-on-scroll reveal-delay-2 rounded-2xl border-primary/30 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
                 <CardTitle className="font-display flex items-center gap-2">
                   <Zap className="w-5 h-5 text-primary" />
@@ -411,7 +411,7 @@ const Profile = () => {
             </Card>
 
             {/* Smooth Transitions Card */}
-            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
+            <Card className="reveal-on-scroll reveal-delay-3 rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
                 <CardTitle className="font-display flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-primary" />
@@ -456,12 +456,12 @@ const Profile = () => {
                 </Card>
               }
             >
-              <ReadingStatsCard />
+              <div className="reveal-on-scroll reveal-zoom"><ReadingStatsCard /></div>
             </LazyLoadWrapper>
           </TabsContent>
 
           <TabsContent value="subscription" className="space-y-6">
-            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
+            <Card className="reveal-on-scroll rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
                 <CardTitle className="font-display flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
@@ -509,7 +509,7 @@ const Profile = () => {
           </TabsContent>
 
           <TabsContent value="highlights">
-            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
+            <Card className="reveal-on-scroll reveal-zoom rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
                 <CardTitle className="font-display">Seus Destaques</CardTitle>
                 <CardDescription>
