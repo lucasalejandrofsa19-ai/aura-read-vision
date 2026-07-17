@@ -115,6 +115,62 @@ const useForceStatic = () => {
   return forced;
 };
 
+/**
+ * Decisão compartilhada entre Library e Reader (e outras telas que usam
+ * o mesmo fundo). Persistida em sessionStorage para que a navegação
+ * entre rotas mantenha o mesmo modo (static|3d) sem "piscar" 3D antes
+ * do perfil de dispositivo ser recomputado. Também sincroniza entre
+ * abas via evento `storage`.
+ */
+const SHARED_MODE_KEY = "hero3d:mode"; // "static" | "3d"
+
+const readSharedMode = (): "static" | "3d" | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = sessionStorage.getItem(SHARED_MODE_KEY);
+    return v === "static" || v === "3d" ? v : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeSharedMode = (mode: "static" | "3d") => {
+  if (typeof window === "undefined") return;
+  try {
+    if (sessionStorage.getItem(SHARED_MODE_KEY) === mode) return;
+    sessionStorage.setItem(SHARED_MODE_KEY, mode);
+    // Notifica outras instâncias no mesmo documento (sessionStorage não
+    // dispara `storage` na mesma aba).
+    window.dispatchEvent(new CustomEvent("hero3d:mode-change", { detail: mode }));
+  } catch {
+    /* ignore */
+  }
+};
+
+const useSharedHeroMode = () => {
+  const [shared, setShared] = useState<"static" | "3d" | null>(() => readSharedMode());
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onCustom = (e: Event) => {
+      const v = (e as CustomEvent).detail;
+      if (v === "static" || v === "3d") setShared(v);
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === SHARED_MODE_KEY && (e.newValue === "static" || e.newValue === "3d")) {
+        setShared(e.newValue);
+      }
+    };
+    window.addEventListener("hero3d:mode-change", onCustom as EventListener);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("hero3d:mode-change", onCustom as EventListener);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+  return shared;
+};
+
+
 
 /** Pausa o Canvas quando a aba está oculta. Retorna se está visível. */
 const usePageVisible = () => {
