@@ -284,4 +284,14 @@ export const FloatingBook3D = forwardRef<FloatingBookHandle, FloatingBookProps>(
 
 FloatingBook3D.displayName = "FloatingBook3D";
 
-export default FloatingBook3D;
+export { FloatingBook3D };
+
+// Default export wrapped as a plain function component so React.lazy() can
+// consume it reliably (lazy() with a forwardRef default caused
+// "Component is not a function" in some HMR/bundle scenarios).
+const FloatingBook3DDefault = (props: FloatingBookProps) => (
+  <FloatingBook3D {...props} />
+);
+FloatingBook3DDefault.displayName = "FloatingBook3DDefault";
+
+export default FloatingBook3DDefault;
