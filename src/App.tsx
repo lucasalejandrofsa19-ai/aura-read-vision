@@ -11,6 +11,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { SentryUserContext } from "./components/SentryUserContext";
 import { usePWAInstallPrompt } from "@/hooks/usePWAInstallPrompt";
 import { useAdMobBanner } from "@/hooks/useAdMobBanner";
+import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 import { UpdateNotification } from "@/components/UpdateNotification";
 import { AppHealthMonitor } from "@/components/AppHealthMonitor";
 import { OpenInBrowserGate } from "@/components/OpenInBrowserGate";
