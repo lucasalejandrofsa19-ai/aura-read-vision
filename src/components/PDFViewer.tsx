@@ -1151,6 +1151,21 @@ export const PDFViewer = ({
                 return text;
               }}
               />
+
+            {isPageRendering && pageSize.width > 0 && pageSize.height > 0 && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 overflow-hidden rounded-sm animate-in fade-in duration-150"
+                style={{
+                  background:
+                    'linear-gradient(90deg, hsl(var(--muted) / 0.35) 0%, hsl(var(--muted) / 0.6) 50%, hsl(var(--muted) / 0.35) 100%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'pdf-page-shimmer 1.2s ease-in-out infinite',
+                  backdropFilter: 'blur(2px)',
+                }}
+              />
+            )}
+
             
             {pageSize.width > 0 && pageSize.height > 0 && (
               <HighlightCanvas
