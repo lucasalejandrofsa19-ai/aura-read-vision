@@ -200,7 +200,7 @@ export default function Pricing() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ y: -4 }}
-                className="relative group"
+                className={`reveal-on-scroll reveal-delay-${Math.min(index + 1, 4)} relative group`}
               >
                 {/* Glow on hover */}
                 <div className={`absolute -inset-px rounded-2xl bg-gradient-to-br ${plan.color} opacity-0 group-hover:opacity-40 blur-md transition-opacity duration-300 pointer-events-none ${plan.popular ? "opacity-30" : ""}`} />
