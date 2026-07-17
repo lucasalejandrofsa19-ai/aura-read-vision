@@ -179,7 +179,7 @@ export default function Pricing() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          className="reveal-on-scroll text-center mb-12"
         >
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tight mb-4 bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent">
             Um plano para cada leitor
