@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback, useId, useRef } from "react";
+import { useState, useEffect, useCallback, useId, useRef, lazy, Suspense } from "react";
+const FloatingBook3D = lazy(() => import("@/components/FloatingBook3D"));
+
 import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
 import { useUserData } from "@/hooks/useUserData";
 import { motion } from "framer-motion";
@@ -537,7 +539,13 @@ const Reader = () => {
     : { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { delay: 0.2 } };
 
   return (
-    <div className="min-h-screen bg-background transition-colors duration-500">
+    <>
+    <Suspense fallback={null}><FloatingBook3D /></Suspense>
+    <div
+      className="min-h-screen relative"
+      style={{ transition: "background-color 900ms cubic-bezier(0.22, 1, 0.36, 1)" }}
+    >
+
       <MotionHeader
         {...headerProps}
         className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-xl shadow-sm shadow-background/40"
@@ -1109,7 +1117,9 @@ const Reader = () => {
       />
 
     </div>
+    </>
   );
+
 };
 
 const ReaderWithTour = () => (
