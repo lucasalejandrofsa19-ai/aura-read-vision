@@ -353,7 +353,7 @@ const Profile = () => {
             </Card>
 
             {/* Theme Settings Card */}
-            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
+            <Card className="reveal-on-scroll reveal-delay-1 rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
                 <CardTitle className="font-display">Preferências de Tema</CardTitle>
                 <CardDescription>
