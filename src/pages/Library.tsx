@@ -400,7 +400,7 @@ const LibraryInner = () => {
                     </LazyLoadWrapper>
                   </div>
                 ))}
-              </motion.div>
+              </div>
             </>
           )}
 
