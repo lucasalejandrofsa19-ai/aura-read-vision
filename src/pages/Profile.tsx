@@ -255,7 +255,7 @@ const Profile = () => {
         </motion.div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 rounded-2xl border border-border/60 bg-card/80 backdrop-blur-xl p-1">
+          <TabsList className="reveal-on-scroll grid w-full grid-cols-4 rounded-2xl border border-border/60 bg-card/80 backdrop-blur-xl p-1">
             <TabsTrigger value="profile" className="rounded-xl">Perfil</TabsTrigger>
             <TabsTrigger value="stats" className="rounded-xl">Estatísticas</TabsTrigger>
             <TabsTrigger value="subscription" className="rounded-xl">Assinatura</TabsTrigger>
