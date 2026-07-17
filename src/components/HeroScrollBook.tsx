@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import bookHero from "@/assets/book-hero.png";
 
 gsap.registerPlugin(ScrollTrigger);
+
 
 /**
  * Hero com scroll-driven animation do livro (GSAP + ScrollTrigger).
@@ -53,7 +55,7 @@ const HeroScrollBook = () => {
     >
       <img
         ref={bookRef}
-        src="/icon-512.png"
+        src={bookHero}
         alt="Livro AURA READ com brilho neon"
         className="book w-48 h-48 md:w-72 md:h-72 lg:w-96 lg:h-96 object-contain will-change-transform"
         draggable={false}
