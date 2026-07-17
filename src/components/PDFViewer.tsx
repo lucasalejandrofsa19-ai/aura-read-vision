@@ -924,7 +924,7 @@ export const PDFViewer = ({
             onClick={goToNextPage}
             disabled={pageNumber >= numPages}
             className="aura-soft shrink-0"
-            title={isPageCached(pageNumber + 1) ? "Próxima página (pré-carregada)" : "Próxima página"}
+            title="Próxima página"
           >
             <ChevronRight className="w-5 h-5" />
           </Button>
