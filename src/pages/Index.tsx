@@ -188,31 +188,6 @@ const Index = () => {
             </motion.div>
           </div>
 
-          {/* Visual à direita (desktop) — preview decorativo */}
-          <div className="hidden lg:flex lg:col-span-5 justify-center">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, rotate: -4 }}
-              animate={{ opacity: 1, scale: 1, rotate: 0 }}
-              transition={{ delay: 0.4, duration: 0.8 }}
-              className="relative w-full max-w-md aspect-[3/4] glass rounded-3xl overflow-hidden border border-primary/20 aura-safira"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 p-10">
-                <Book className="w-28 h-28 text-primary" />
-                <div className="space-y-3 w-full">
-                  <div className="h-3 bg-primary/30 rounded-full w-full" />
-                  <div className="h-3 bg-primary/20 rounded-full w-5/6" />
-                  <div className="h-3 bg-accent/30 rounded-full w-2/3" />
-                  <div className="h-3 bg-primary/20 rounded-full w-4/5" />
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <Highlighter className="w-6 h-6 text-accent" />
-                  <BookmarkCheck className="w-6 h-6 text-primary" />
-                  <Wand2 className="w-6 h-6 text-accent" />
-                </div>
-              </div>
-            </motion.div>
-          </div>
         </motion.div>
 
 
