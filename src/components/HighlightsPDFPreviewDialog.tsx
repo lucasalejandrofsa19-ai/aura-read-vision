@@ -245,7 +245,7 @@ export const HighlightsPDFPreviewDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
-        <DialogHeader>
+        <DialogHeader className="reveal-on-scroll">
           <DialogTitle className="flex items-center justify-between">
             <span>Pré-visualização do PDF</span>
             <Button
@@ -260,7 +260,7 @@ export const HighlightsPDFPreviewDialog = ({
 
         <div className="flex gap-4 flex-1 overflow-hidden">
           {/* Options and Edit Panel */}
-          <div className="w-80 flex-shrink-0 space-y-4 flex flex-col overflow-hidden">
+          <div className="w-80 flex-shrink-0 space-y-4 flex flex-col overflow-hidden reveal-on-scroll reveal-left reveal-delay-1">
             {/* Options Section */}
             <div className="space-y-3">
               <h3 className="font-semibold text-sm">Opções de Exportação</h3>
