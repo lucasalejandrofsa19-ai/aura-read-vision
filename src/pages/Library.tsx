@@ -1,6 +1,7 @@
 import { SEO } from "@/components/SEO";
 import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
-import { useState, useEffect, useMemo, memo, useRef, useId } from "react";
+import { useState, useEffect, useMemo, memo, useRef, useId, lazy, Suspense } from "react";
+const FloatingBook3D = lazy(() => import("@/components/FloatingBook3D"));
 import { motion, useReducedMotion } from "framer-motion";
 import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle, BookOpen, RotateCcw, FileText, ExternalLink } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -115,11 +116,9 @@ const LibraryInner = () => {
       description="Acesse, organize e leia seus PDFs em um só lugar. Faça upload de novos livros e continue de onde parou."
       path="/library"
     />
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20"
-         style={{
-           backgroundImage: `radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.05), transparent 50%)`
-         }}
-    >
+    <Suspense fallback={null}><FloatingBook3D /></Suspense>
+    <div className="min-h-screen relative">
+
     <div className="mx-auto w-full max-w-screen-2xl p-3 sm:p-6 lg:p-8 xl:p-10">
 
       {/* Header */}
