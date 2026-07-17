@@ -106,6 +106,7 @@ const Index = () => {
       }}
     />
     <div className="min-h-screen relative overflow-hidden">
+      <HeroScrollBook />
       {/* Animated background */}
       <div className="absolute inset-0">
         <motion.div
