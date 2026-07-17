@@ -81,14 +81,14 @@ export const ThemeSelector = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="glass w-72">
-        <div className="p-2">
+        <div className="p-2 reveal-on-scroll">
           <p className="text-sm font-semibold mb-3 px-2">Escolha seu tema</p>
           <div className="space-y-2">
-            {THEMES.map((themeOption) => (
+            {THEMES.map((themeOption, idx) => (
               <DropdownMenuItem
                 key={themeOption.id}
                 onClick={() => setTheme(themeOption.id)}
-                className="cursor-pointer p-3 rounded-lg"
+                className={`cursor-pointer p-3 rounded-lg reveal-on-scroll reveal-left reveal-delay-${(idx % 4) + 1}`}
               >
                 <div className="flex items-center gap-3 w-full">
                   {/* Theme Preview */}

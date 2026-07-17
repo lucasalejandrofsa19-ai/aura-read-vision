@@ -70,17 +70,17 @@ const SubscriptionDialog = ({ open, onOpenChange }: SubscriptionDialogProps) => 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glass max-w-4xl">
-        <DialogHeader>
+        <DialogHeader className="reveal-on-scroll">
           <DialogTitle className="text-2xl text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Escolha seu Plano
           </DialogTitle>
         </DialogHeader>
 
         <div className="grid md:grid-cols-3 gap-6 mt-6">
-          {Object.entries(SUBSCRIPTION_PLANS).map(([key, plan]) => (
+          {Object.entries(SUBSCRIPTION_PLANS).map(([key, plan], idx) => (
             <div
               key={key}
-              className="glass rounded-xl p-6 border border-primary/20 hover:border-primary/40 transition-all aura-soft"
+              className={`glass rounded-xl p-6 border border-primary/20 hover:border-primary/40 transition-all aura-soft reveal-on-scroll reveal-zoom reveal-delay-${(idx % 4) + 1}`}
             >
               <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
               <div className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">

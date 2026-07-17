@@ -313,14 +313,14 @@ export const HighlightImageDialog = ({ text, highlightId, trigger }: HighlightIm
       )}
 
       <DialogContent className="max-w-2xl">
-        <DialogHeader>
+        <DialogHeader className="reveal-on-scroll">
           <DialogTitle>Gerar Imagem do Destaque</DialogTitle>
           <DialogDescription>
             Transforme seu destaque em uma ilustração visual usando IA
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 reveal-on-scroll reveal-delay-1">
           <div className="p-4 rounded-lg bg-muted/50 border border-border">
             <p className="text-sm line-clamp-3">{text}</p>
           </div>
