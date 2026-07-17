@@ -890,6 +890,7 @@ export const PDFViewer = ({
         <Document
           key={loadAttempt}
           file={fileUrl}
+          options={pdfDocumentOptions}
           onLoadSuccess={onDocumentLoadSuccess}
           onLoadError={(error: Error) => {
             const cause = classifyPdfError(error, fileUrl);
