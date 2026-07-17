@@ -64,7 +64,7 @@ export const EditHighlightDialog = ({
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 reveal-on-scroll reveal-delay-2">
           <Button variant="outline" onClick={handleCancel}>
             Cancelar
           </Button>
