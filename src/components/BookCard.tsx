@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BookOpen, Trash2, RefreshCw, Images, ImagePlus, FileImage, Clapperboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,7 @@ interface BookCardProps {
 
 const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = false, onReprocess }: BookCardProps) => {
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { data: storyVideoQuota, isLoading: storyVideoQuotaLoading } = useStoryVideoQuota();
@@ -301,17 +302,17 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
       />
       
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05 }}
+        initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+        animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+        transition={prefersReducedMotion ? undefined : { delay: index * 0.05 }}
         className="cursor-pointer group relative"
         onClick={() => navigate(`/reader/${book.id}`)}
       >
       {/* Premium book card */}
       <div className="relative">
         <motion.div
-          whileHover={{ y: -4 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
+          whileHover={prefersReducedMotion ? undefined : { y: -4 }}
+          transition={prefersReducedMotion ? undefined : { duration: 0.25, ease: "easeOut" }}
           className="relative"
         >
           {/* Glow on hover */}
@@ -490,9 +491,9 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-1 rounded-full bg-foreground/10 overflow-hidden">
                     <motion.div
-                      initial={{ width: 0 }}
+                      initial={prefersReducedMotion ? false : { width: 0 }}
                       animate={{ width: `${book.progress ?? 0}%` }}
-                      transition={{ delay: index * 0.05 + 0.2, duration: 0.6 }}
+                      transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.05 + 0.2, duration: 0.6 }}
                       className="h-full bg-gradient-to-r from-primary to-accent"
                     />
                   </div>

@@ -1,7 +1,7 @@
 import { SEO } from "@/components/SEO";
 import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
 import { useState, useEffect, useMemo, memo, useRef, useId } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle, BookOpen, RotateCcw, FileText, ExternalLink } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +42,7 @@ const LibraryInner = () => {
   const bookCardRef = useTourTarget("book-card");
   const uploadButtonRef = useTourTarget("upload-button");
   const publicPdfsDescId = useId();
+  const prefersReducedMotion = useReducedMotion();
   const [searchQuery, setSearchQuery] = useState("");
   const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
   const { user, signOut } = useAuth();
@@ -123,8 +124,8 @@ const LibraryInner = () => {
 
       {/* Header */}
       <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={prefersReducedMotion ? false : { opacity: 0, y: -20 }}
+        animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
         className="relative rounded-2xl border border-border/60 bg-card/80 backdrop-blur-xl shadow-lg shadow-background/40 p-5 sm:p-6 mb-6 sm:mb-8 overflow-hidden"
       >
         <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
@@ -340,8 +341,8 @@ const LibraryInner = () => {
             <>
               {/* Card destacado: PDFs Públicos */}
               <motion.button
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+                animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
                 onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}
                 aria-label={PUBLIC_PDFS_TOOLTIP}
                 aria-describedby={publicPdfsDescId}
@@ -411,9 +412,9 @@ const LibraryInner = () => {
 
       {/* Upload button */}
       <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.4, type: "spring" }}
+        initial={prefersReducedMotion ? false : { scale: 0 }}
+        animate={prefersReducedMotion ? undefined : { scale: 1 }}
+        transition={prefersReducedMotion ? undefined : { delay: 0.4, type: "spring" }}
         className="fixed bottom-8 right-8"
         ref={uploadButtonRef}
       >
