@@ -122,6 +122,9 @@ const AppContent = () => {
 
   return (
     <OpenInBrowserGate>
+      <Suspense fallback={null}>
+        <FloatingBook3D />
+      </Suspense>
       <Sentry.ErrorBoundary
         fallback={({ error, resetError }) => (
           <AppErrorFallback error={error} resetError={resetError} />
