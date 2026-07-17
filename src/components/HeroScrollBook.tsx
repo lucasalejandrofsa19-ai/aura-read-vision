@@ -39,6 +39,15 @@ const HeroScrollBook = () => {
           return;
         }
 
+        // Ativar markers via ?markers=1 ou localStorage `hero:markers` = "1"
+        const showMarkers =
+          new URLSearchParams(window.location.search).get("markers") === "1" ||
+          localStorage.getItem("hero:markers") === "1";
+        if (showMarkers) {
+          // eslint-disable-next-line no-console
+          console.info("[HeroScrollBook] ScrollTrigger markers habilitados");
+        }
+
         const ctx = gsap.context(() => {
           // `.hero` é position:fixed → não serve como trigger.
           // Usamos o body como referência para o scroll global da página.
@@ -51,6 +60,7 @@ const HeroScrollBook = () => {
                 start: "top top",
                 end: "+=1200",
                 scrub: 1.5,
+                markers: showMarkers && { startColor: "#00e5ff", endColor: "#b100ff", indent: 20 },
               },
             })
             .from(".book", { scale: 0.4, opacity: 0, rotate: -40 })
@@ -76,6 +86,7 @@ const HeroScrollBook = () => {
                   start: "top top",
                   end: "+=1500",
                   scrub: true,
+                  markers: showMarkers && { startColor: "#22c55e", endColor: "#ef4444", indent: 60 },
                 },
               },
             },
@@ -89,6 +100,7 @@ const HeroScrollBook = () => {
                   start: "top top",
                   end: "+=1500",
                   scrub: true,
+                  markers: showMarkers && { startColor: "#22c55e", endColor: "#ef4444", indent: 100 },
                 },
               },
             },
@@ -102,6 +114,7 @@ const HeroScrollBook = () => {
                   start: "top top",
                   end: "+=1500",
                   scrub: true,
+                  markers: showMarkers && { startColor: "#22c55e", endColor: "#ef4444", indent: 140 },
                 },
               },
             },
@@ -115,6 +128,7 @@ const HeroScrollBook = () => {
                   start: "top top",
                   end: "+=1500",
                   scrub: true,
+                  markers: showMarkers && { startColor: "#22c55e", endColor: "#ef4444", indent: 180 },
                 },
               },
             },
