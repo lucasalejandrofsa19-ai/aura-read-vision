@@ -1051,6 +1051,7 @@ export const PDFViewer = ({
             <Page
                 pageNumber={pageNumber}
                 scale={scale}
+                devicePixelRatio={pageDevicePixelRatio}
                 renderTextLayer={true}
                 renderAnnotationLayer={false}
                 onLoadSuccess={(page) => {
