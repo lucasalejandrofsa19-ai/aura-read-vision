@@ -108,7 +108,7 @@ const Index = () => {
       }}
     />
     <div className="min-h-screen relative overflow-hidden">
-      <HeroScrollBook />
+      <Suspense fallback={null}><FloatingBook3D /></Suspense>
 
 
 
