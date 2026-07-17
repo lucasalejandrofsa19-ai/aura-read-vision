@@ -257,6 +257,7 @@ const Guide = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
+                  className={`reveal-on-scroll reveal-delay-${Math.min(i + 1, 4)}`}
                 >
                   <Card className="h-full glass border-primary/20 aura-soft">
                     <CardHeader>
