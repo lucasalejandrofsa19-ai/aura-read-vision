@@ -341,8 +341,8 @@ const LibraryInner = () => {
             <>
               {/* Card destacado: PDFs Públicos */}
               <motion.button
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+                animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
                 onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}
                 aria-label={PUBLIC_PDFS_TOOLTIP}
                 aria-describedby={publicPdfsDescId}
