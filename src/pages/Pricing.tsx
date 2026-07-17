@@ -280,7 +280,7 @@ export default function Pricing() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mt-12"
+            className="reveal-on-scroll text-center mt-12"
           >
             <Button
               onClick={openCustomerPortal}
