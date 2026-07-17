@@ -892,7 +892,7 @@ const Reader = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-6">
           {/* Left rail (desktop) */}
           <aside className="hidden lg:flex lg:col-span-3 xl:col-span-3 flex-col gap-4 lg:sticky lg:top-32 lg:self-start lg:max-h-[calc(100vh-9rem)] overflow-y-auto scrollbar-hide">
-            <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-4 shadow-sm shadow-background/40">
+            <div className="reveal-on-scroll reveal-left rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-4 shadow-sm shadow-background/40">
               <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Progresso</p>
               <div className="text-3xl font-display font-bold tabular-nums">{currentPage}</div>
               <p className="text-xs text-muted-foreground">de {book.total_pages || "—"} páginas</p>
@@ -904,7 +904,7 @@ const Reader = () => {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-4 shadow-sm shadow-background/40">
+            <div className="reveal-on-scroll reveal-left reveal-delay-2 rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-4 shadow-sm shadow-background/40">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Anotações</p>
                 <span className="text-xs font-display font-bold tabular-nums">{notes.length}</span>
@@ -924,7 +924,7 @@ const Reader = () => {
           {/* Center: PDF */}
           <div className="lg:col-span-6 xl:col-span-6 space-y-4">
             
-            <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl shadow-lg shadow-background/40 overflow-hidden">
+            <div className="reveal-on-scroll reveal-zoom rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl shadow-lg shadow-background/40 overflow-hidden">
               {pdfUrl ? (
                 <PDFViewer
                   fileUrl={pdfUrl}
