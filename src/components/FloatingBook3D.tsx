@@ -2,6 +2,21 @@ import { Suspense, useEffect, useRef, useMemo, useState } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 import neonBookAsset from "@/assets/neon-book-hero.png.asset.json";
+import { useTheme, type ThemeType } from "@/contexts/ThemeContext";
+
+// Paleta de glow + tint do livro por tema (sincronizado com o leitor).
+// safira = Safira translúcido | sepia = Papel velho digital
+// noturno = Grafite escuro     | contraste = Âmbar quente
+const THEME_ATMOSPHERE: Record<
+  ThemeType,
+  { glowA: string; glowB: string; tint: [number, number, number]; intensity: number }
+> = {
+  safira:    { glowA: "#00e5ff", glowB: "#b100ff", tint: [1.0, 1.0, 1.0], intensity: 1.0 },
+  sepia:     { glowA: "#d4a373", glowB: "#f2c98a", tint: [1.15, 0.95, 0.72], intensity: 0.9 },
+  noturno:   { glowA: "#4a5cff", glowB: "#2a2f4a", tint: [0.75, 0.8, 1.05], intensity: 0.85 },
+  contraste: { glowA: "#ffb347", glowB: "#ff7a00", tint: [1.2, 0.9, 0.55], intensity: 1.1 },
+};
+
 
 /**
  * Plano de fundo 3D com a imagem neon do livro como textura.
