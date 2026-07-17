@@ -145,6 +145,12 @@ export const PDFViewer = ({
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
   const [scale, setScale] = useState<number>(externalScale || 1.0);
+  const [isPageRendering, setIsPageRendering] = useState<boolean>(false);
+
+  // Ativa o skeleton de transição sempre que a página muda; será desligado no onRenderSuccess.
+  useEffect(() => {
+    setIsPageRendering(true);
+  }, [pageNumber, scale]);
 
   // Opções do Document memoizadas — evita reinicializar o loader e habilita
   // streaming/auto-fetch para renderizar as páginas assim que os bytes chegam.
@@ -1096,6 +1102,8 @@ export const PDFViewer = ({
                     height: page.height,
                   });
                 }}
+                onRenderSuccess={() => setIsPageRendering(false)}
+                onRenderError={() => setIsPageRendering(false)}
               loading={
                 <div className="flex items-center justify-center p-12">
                   <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -1143,6 +1151,21 @@ export const PDFViewer = ({
                 return text;
               }}
               />
+
+            {isPageRendering && pageSize.width > 0 && pageSize.height > 0 && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 overflow-hidden rounded-sm animate-in fade-in duration-150"
+                style={{
+                  background:
+                    'linear-gradient(90deg, hsl(var(--muted) / 0.35) 0%, hsl(var(--muted) / 0.6) 50%, hsl(var(--muted) / 0.35) 100%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'pdf-page-shimmer 1.2s ease-in-out infinite',
+                  backdropFilter: 'blur(2px)',
+                }}
+              />
+            )}
+
             
             {pageSize.width > 0 && pageSize.height > 0 && (
               <HighlightCanvas
