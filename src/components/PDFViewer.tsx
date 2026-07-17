@@ -471,13 +471,49 @@ export const PDFViewer = ({
   // on every highlight or search (major OOM cause on Android Chrome).
   const pdfDocRef = useRef<any>(null);
 
-  // Prefetch hook para carregar próximas páginas
-  const { isPageCached, cache } = usePDFPrefetch({
-    fileUrl,
-    currentPage: pageNumber,
-    numPages,
-    prefetchCount: 3,
-  });
+  // Prewarm da(s) próxima(s) página(s) no MESMO PDFDocumentProxy que o
+  // react-pdf utiliza. Isso alimenta o cache interno do pdf.js (parse +
+  // textContent + fontes) para que o render da próxima página seja quase
+  // instantâneo quando o usuário avança. Usa requestIdleCallback para não
+  // competir com o render da página atual.
+  useEffect(() => {
+    const pdfDoc = pdfDocRef.current;
+    if (!pdfDoc || !numPages) return;
+
+    const targets: number[] = [];
+    if (pageNumber + 1 <= numPages) targets.push(pageNumber + 1);
+    if (pageNumber + 2 <= numPages) targets.push(pageNumber + 2);
+    if (pageNumber - 1 >= 1) targets.push(pageNumber - 1);
+    if (targets.length === 0) return;
+
+    let cancelled = false;
+    const prewarm = async () => {
+      for (const n of targets) {
+        if (cancelled) return;
+        try {
+          const page = await pdfDoc.getPage(n);
+          // Força carregamento do textContent (usado pela textLayer + busca).
+          await page.getTextContent();
+        } catch {
+          /* silencioso — prefetch é best-effort */
+        }
+      }
+    };
+
+    const idle: number = (window as any).requestIdleCallback
+      ? (window as any).requestIdleCallback(() => prewarm(), { timeout: 1500 })
+      : (window.setTimeout(prewarm, 200) as unknown as number);
+
+    return () => {
+      cancelled = true;
+      if ((window as any).cancelIdleCallback) {
+        (window as any).cancelIdleCallback(idle);
+      } else {
+        window.clearTimeout(idle);
+      }
+    };
+  }, [pageNumber, numPages]);
+
 
   useEffect(() => {
     if (externalScale !== undefined) {
