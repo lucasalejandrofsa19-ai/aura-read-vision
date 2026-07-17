@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BookOpen, Trash2, RefreshCw, Images, ImagePlus, FileImage, Clapperboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
