@@ -145,6 +145,12 @@ export const PDFViewer = ({
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
   const [scale, setScale] = useState<number>(externalScale || 1.0);
+  const [isPageRendering, setIsPageRendering] = useState<boolean>(false);
+
+  // Ativa o skeleton de transição sempre que a página muda; será desligado no onRenderSuccess.
+  useEffect(() => {
+    setIsPageRendering(true);
+  }, [pageNumber, scale]);
 
   // Opções do Document memoizadas — evita reinicializar o loader e habilita
   // streaming/auto-fetch para renderizar as páginas assim que os bytes chegam.
