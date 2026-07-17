@@ -1,6 +1,7 @@
 import { SEO } from "@/components/SEO";
 import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
-import { useState, useEffect, useMemo, memo, useRef, useId } from "react";
+import { useState, useEffect, useMemo, memo, useRef, useId, lazy, Suspense } from "react";
+const FloatingBook3D = lazy(() => import("@/components/FloatingBook3D"));
 import { motion, useReducedMotion } from "framer-motion";
 import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle, BookOpen, RotateCcw, FileText, ExternalLink } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
