@@ -308,12 +308,12 @@ const Demo = () => {
               </div>
 
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {books.map((book) => (
+                {books.map((book, idx) => (
                   <motion.button
                     key={book.id}
                     onClick={() => setActiveBook(book)}
                     whileHover={{ y: -4 }}
-                    className="group text-left"
+                    className={`reveal-on-scroll reveal-delay-${Math.min((idx % 4) + 1, 4)} group text-left`}
                   >
                     <Card className="overflow-hidden transition-shadow hover:shadow-lg">
                       <div
