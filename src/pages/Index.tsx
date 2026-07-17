@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { SEO } from "@/components/SEO";
-import HeroScrollBook from "@/components/HeroScrollBook";
+import { lazy, Suspense } from "react";
+const FloatingBook3D = lazy(() => import("@/components/FloatingBook3D"));
 
 import { motion } from "framer-motion";
 import { Book, Sparkles, ArrowRight, Highlighter, BookmarkCheck, Share2, Wand2, FileDown, Image, Infinity as InfinityIcon, Library, Star, Quote, ExternalLink } from "lucide-react";
@@ -107,7 +108,7 @@ const Index = () => {
       }}
     />
     <div className="min-h-screen relative overflow-hidden">
-      <HeroScrollBook />
+      <Suspense fallback={null}><FloatingBook3D /></Suspense>
 
 
 
