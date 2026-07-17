@@ -345,7 +345,7 @@ const LibraryInner = () => {
                 onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}
                 aria-label={PUBLIC_PDFS_TOOLTIP}
                 aria-describedby={publicPdfsDescId}
-                className="w-full mb-6 group relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent p-5 text-left transition-all hover:border-primary/60 hover:shadow-lg hover:shadow-primary/20"
+                className="reveal-on-scroll reveal-zoom w-full mb-6 group relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent p-5 text-left transition-all hover:border-primary/60 hover:shadow-lg hover:shadow-primary/20"
               >
                 <span id={publicPdfsDescId} className="sr-only">{PUBLIC_PDFS_DESCRIPTION}</span>
                 <div className="flex items-center gap-4">
