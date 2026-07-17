@@ -1,101 +1,81 @@
-import { Suspense, useMemo, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Float, Environment } from "@react-three/drei";
+import { Float, Environment, useGLTF } from "@react-three/drei";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import type { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import * as THREE from "three";
+import bookAsset from "@/assets/book.glb.asset.json";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
-/**
- * Procedural floating book mesh — no external GLTF needed.
- * Cover + spine + pages built from BoxGeometry with subtle
- * PBR materials tuned for the app's primary/accent palette.
- */
-const Book = () => {
+// Configure Draco decoder once. Google's gstatic mirror is CDN-cached and
+// versioned to match three's decoder ABI — no bundle bloat.
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/");
+dracoLoader.setDecoderConfig({ type: "js" });
+
+const configureLoader = (loader: GLTFLoader) => {
+  loader.setDRACOLoader(dracoLoader);
+};
+
+// Preload asynchronously so the first frame isn't blocked.
+useGLTF.preload(bookAsset.url, undefined, undefined, configureLoader);
+
+type BookGLTF = GLTF & { nodes: Record<string, THREE.Object3D>; scene: THREE.Group };
+
+const BookModel = () => {
   const group = useRef<THREE.Group>(null);
+  const gltf = useGLTF(bookAsset.url, undefined, undefined, configureLoader) as BookGLTF;
+
+  // Instance-safe clone so multiple mounts don't share matrices.
+  const scene = gltf.scene;
+
+  useEffect(() => {
+    scene.traverse((obj) => {
+      if ((obj as THREE.Mesh).isMesh) {
+        const mesh = obj as THREE.Mesh;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        // Boost emissive slightly for the dark scene.
+        const mat = mesh.material as THREE.MeshStandardMaterial;
+        if (mat && "emissive" in mat) {
+          mat.emissiveIntensity = mat.emissiveIntensity ?? 0.2;
+        }
+      }
+    });
+  }, [scene]);
 
   useFrame(({ clock }) => {
     if (!group.current) return;
     const t = clock.getElapsedTime();
-    // gentle yaw + slight roll on top of Float's translation
     group.current.rotation.y = Math.sin(t * 0.35) * 0.35;
     group.current.rotation.z = Math.sin(t * 0.25) * 0.05;
   });
 
-  const coverMat = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: new THREE.Color("#2b1e5c"),
-        roughness: 0.45,
-        metalness: 0.35,
-        emissive: new THREE.Color("#5b4bd6"),
-        emissiveIntensity: 0.12,
-      }),
-    []
-  );
-  const pagesMat = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: new THREE.Color("#f4efe6"),
-        roughness: 0.9,
-        metalness: 0,
-      }),
-    []
-  );
-  const spineMat = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: new THREE.Color("#c9a24b"),
-        roughness: 0.35,
-        metalness: 0.8,
-        emissive: new THREE.Color("#d4a94a"),
-        emissiveIntensity: 0.15,
-      }),
-    []
-  );
-
   return (
     <group ref={group} rotation={[0.15, -0.4, 0]}>
-      {/* Cover (top + bottom sandwich the pages) */}
-      <mesh castShadow receiveShadow position={[0, 0.28, 0]} material={coverMat}>
-        <boxGeometry args={[2.2, 0.08, 3]} />
-      </mesh>
-      <mesh castShadow receiveShadow position={[0, -0.28, 0]} material={coverMat}>
-        <boxGeometry args={[2.2, 0.08, 3]} />
-      </mesh>
-      {/* Pages block */}
-      <mesh position={[0.03, 0, 0]} material={pagesMat}>
-        <boxGeometry args={[2.1, 0.48, 2.92]} />
-      </mesh>
-      {/* Spine */}
-      <mesh position={[-1.05, 0, 0]} material={spineMat}>
-        <boxGeometry args={[0.12, 0.6, 3]} />
-      </mesh>
-      {/* Decorative gold band on cover */}
-      <mesh position={[0.4, 0.33, 0]} material={spineMat}>
-        <boxGeometry args={[0.6, 0.01, 2.4]} />
-      </mesh>
+      <primitive object={scene} />
     </group>
   );
 };
 
-const Scene = () => {
-  return (
-    <>
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[4, 6, 5]} intensity={1.1} castShadow />
-      <directionalLight position={[-6, -2, -4]} intensity={0.3} color="#7b6bff" />
-      <Suspense fallback={null}>
-        <Float speed={1.2} rotationIntensity={0.35} floatIntensity={0.9} floatingRange={[-0.25, 0.25]}>
-          <Book />
-        </Float>
-        <Environment preset="city" />
-      </Suspense>
-    </>
-  );
-};
+const Scene = () => (
+  <>
+    <ambientLight intensity={0.55} />
+    <directionalLight position={[4, 6, 5]} intensity={1.1} castShadow />
+    <directionalLight position={[-6, -2, -4]} intensity={0.3} color="#7b6bff" />
+    <Suspense fallback={null}>
+      <Float speed={1.2} rotationIntensity={0.35} floatIntensity={0.9} floatingRange={[-0.25, 0.25]}>
+        <BookModel />
+      </Float>
+      <Environment preset="city" />
+    </Suspense>
+  </>
+);
 
 /**
- * Fixed, full-viewport 3D background. Sits behind all content (z-index: -1),
- * ignores pointer events, and yields to prefers-reduced-motion.
+ * Fixed, full-viewport 3D background. Loads an optimized Draco-compressed
+ * glTF book model (~4 KB) asynchronously; nothing blocks the main thread.
  */
 export const FloatingBook3D = () => {
   const prefersReducedMotion = usePrefersReducedMotion();
