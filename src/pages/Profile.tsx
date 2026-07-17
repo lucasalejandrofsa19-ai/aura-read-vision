@@ -265,7 +265,7 @@ const Profile = () => {
 
           <TabsContent value="profile" className="space-y-6">
             {/* Profile Info Card */}
-            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
+            <Card className="reveal-on-scroll rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
                 <CardTitle className="font-display">Informações do Perfil</CardTitle>
                 <CardDescription>
