@@ -491,9 +491,9 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-1 rounded-full bg-foreground/10 overflow-hidden">
                     <motion.div
-                      initial={{ width: 0 }}
+                      initial={prefersReducedMotion ? false : { width: 0 }}
                       animate={{ width: `${book.progress ?? 0}%` }}
-                      transition={{ delay: index * 0.05 + 0.2, duration: 0.6 }}
+                      transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.05 + 0.2, duration: 0.6 }}
                       className="h-full bg-gradient-to-r from-primary to-accent"
                     />
                   </div>
