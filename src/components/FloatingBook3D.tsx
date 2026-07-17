@@ -1,42 +1,86 @@
-import { Suspense, useRef, useMemo } from "react";
+import { Suspense, useEffect, useRef, useMemo, useState } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 import neonBookAsset from "@/assets/neon-book-hero.png.asset.json";
 
 /**
- * Plano de fundo 3D com a imagem neon do livro como textura sobre um plano,
- * animado com rotação sutil, flutuação e parallax por mouse.
- * Respeita prefers-reduced-motion e usa DPR limitado para performance.
+ * Plano de fundo 3D com a imagem neon do livro como textura.
+ * - Respeita prefers-reduced-motion (com listener dinâmico).
+ * - Ajusta DPR, tamanho do plano, parallax e blur em mobile / dispositivos fracos.
  */
-const FloatingBookMesh = ({ reduced }: { reduced: boolean }) => {
+
+type PerfProfile = {
+  reduced: boolean;
+  isMobile: boolean;
+  lowEnd: boolean;
+};
+
+const useReducedMotion = () => {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(mq.matches);
+    update();
+    mq.addEventListener?.("change", update);
+    return () => mq.removeEventListener?.("change", update);
+  }, []);
+  return reduced;
+};
+
+const useDeviceProfile = (): { isMobile: boolean; lowEnd: boolean } => {
+  const [profile, setProfile] = useState({ isMobile: false, lowEnd: false });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const compute = () => {
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;
+      const cores = navigator.hardwareConcurrency ?? 8;
+      // @ts-expect-error deviceMemory não é padrão em todos os TS libs
+      const mem: number | undefined = navigator.deviceMemory;
+      const lowEnd = cores <= 4 || (typeof mem === "number" && mem <= 4);
+      setProfile({ isMobile, lowEnd });
+    };
+    compute();
+    const mq = window.matchMedia("(max-width: 768px)");
+    mq.addEventListener?.("change", compute);
+    return () => mq.removeEventListener?.("change", compute);
+  }, []);
+  return profile;
+};
+
+const FloatingBookMesh = ({ reduced, isMobile }: { reduced: boolean; isMobile: boolean }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const groupRef = useRef<THREE.Group>(null);
   const texture = useLoader(THREE.TextureLoader, neonBookAsset.url);
 
   useMemo(() => {
     texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = 4;
-  }, [texture]);
+    texture.anisotropy = isMobile ? 2 : 4;
+  }, [texture, isMobile]);
 
   useFrame((state, delta) => {
     if (reduced) return;
     if (meshRef.current) {
-      meshRef.current.rotation.y += delta * 0.15;
-      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.4) * 0.12;
-      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.8) * 0.15;
+      meshRef.current.rotation.y += delta * (isMobile ? 0.1 : 0.15);
+      meshRef.current.rotation.x =
+        Math.sin(state.clock.elapsedTime * 0.4) * (isMobile ? 0.08 : 0.12);
+      meshRef.current.position.y =
+        Math.sin(state.clock.elapsedTime * 0.8) * (isMobile ? 0.1 : 0.15);
     }
-    if (groupRef.current) {
-      // parallax sutil com o mouse
+    // parallax só no desktop — em mobile não há mouse e economiza cálculos
+    if (!isMobile && groupRef.current) {
       const { x, y } = state.pointer;
       groupRef.current.rotation.y += (x * 0.3 - groupRef.current.rotation.y) * 0.05;
       groupRef.current.rotation.x += (-y * 0.2 - groupRef.current.rotation.x) * 0.05;
     }
   });
 
+  const size = isMobile ? 3.2 : 4.2;
+
   return (
     <group ref={groupRef}>
       <mesh ref={meshRef}>
-        <planeGeometry args={[4.2, 4.2]} />
+        <planeGeometry args={[size, size]} />
         <meshBasicMaterial
           map={texture}
           transparent
@@ -49,33 +93,46 @@ const FloatingBookMesh = ({ reduced }: { reduced: boolean }) => {
 };
 
 const FloatingBook3D = () => {
-  const reduced =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduced = useReducedMotion();
+  const { isMobile, lowEnd } = useDeviceProfile();
+
+  // DPR mais conservador em mobile/low-end
+  const dpr: [number, number] = isMobile || lowEnd ? [1, 1.25] : [1, 1.75];
+  // frameloop "demand" quando animação está desligada → economiza bateria/CPU
+  const frameloop: "always" | "demand" = reduced ? "demand" : "always";
+
+  // Reduz o glow em mobile/low-end para menos blur (blur-3xl é caro em GPU baixa)
+  const glowClass = isMobile || lowEnd ? "blur-2xl opacity-30" : "blur-3xl opacity-40";
+  const glowSize1 = isMobile ? "w-[260px] h-[260px]" : "w-[420px] h-[420px]";
+  const glowSize2 = isMobile ? "w-[320px] h-[320px]" : "w-[520px] h-[520px]";
 
   return (
     <div
       aria-hidden
       className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-background"
     >
-      {/* glows extras para reforçar o clima neon */}
       <div
-        className="absolute top-[10%] left-[12%] w-[420px] h-[420px] rounded-full opacity-40 blur-3xl"
+        className={`absolute top-[10%] left-[12%] rounded-full ${glowSize1} ${glowClass}`}
         style={{ background: "radial-gradient(circle, #00e5ff 0%, transparent 70%)" }}
       />
       <div
-        className="absolute bottom-[8%] right-[10%] w-[520px] h-[520px] rounded-full opacity-40 blur-3xl"
+        className={`absolute bottom-[8%] right-[10%] rounded-full ${glowSize2} ${glowClass}`}
         style={{ background: "radial-gradient(circle, #b100ff 0%, transparent 70%)" }}
       />
 
       <Canvas
-        camera={{ position: [0, 0, 5], fov: 45 }}
-        dpr={[1, 1.5]}
-        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+        camera={{ position: [0, 0, 5], fov: isMobile ? 55 : 45 }}
+        dpr={dpr}
+        frameloop={frameloop}
+        gl={{
+          antialias: !isMobile,
+          alpha: true,
+          powerPreference: lowEnd ? "low-power" : "high-performance",
+        }}
       >
         <ambientLight intensity={0.8} />
         <Suspense fallback={null}>
-          <FloatingBookMesh reduced={reduced} />
+          <FloatingBookMesh reduced={reduced} isMobile={isMobile} />
         </Suspense>
       </Canvas>
     </div>
