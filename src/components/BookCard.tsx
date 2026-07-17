@@ -302,17 +302,17 @@ const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = fals
       />
       
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05 }}
+        initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+        animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+        transition={prefersReducedMotion ? undefined : { delay: index * 0.05 }}
         className="cursor-pointer group relative"
         onClick={() => navigate(`/reader/${book.id}`)}
       >
       {/* Premium book card */}
       <div className="relative">
         <motion.div
-          whileHover={{ y: -4 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
+          whileHover={prefersReducedMotion ? undefined : { y: -4 }}
+          transition={prefersReducedMotion ? undefined : { duration: 0.25, ease: "easeOut" }}
           className="relative"
         >
           {/* Glow on hover */}
