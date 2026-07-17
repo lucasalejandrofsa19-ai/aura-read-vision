@@ -107,18 +107,18 @@ const Achievements = () => {
         </div>
 
         {/* Achievements grid */}
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 reveal-on-scroll">
           <Trophy className="w-5 h-5 text-primary" />
           Conquistas ({unlockedSet.size}/{achievements.length})
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {achievements.map((ach) => {
+          {achievements.map((ach, idx) => {
             const Icon = ICONS[ach.icon] || Trophy;
             const unlocked = unlockedSet.has(ach.code);
             return (
               <div
                 key={ach.code}
-                className={`rounded-2xl p-4 border-2 transition-all ${
+                className={`reveal-on-scroll reveal-zoom reveal-delay-${(idx % 4) + 1} rounded-2xl p-4 border-2 transition-all ${
                   unlocked
                     ? "glass border-primary/40 aura-soft"
                     : "bg-muted/20 border-border/50 opacity-60"
