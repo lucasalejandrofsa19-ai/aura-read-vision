@@ -266,16 +266,11 @@ const LibraryInner = () => {
             {false && !isAdmin && (
               <FeedbackDialog />
             )}
-            <PWAInstallDialog>
-              <button className="hover-scale transition-all duration-300 hover:shadow-lg active:scale-95">
-                <img 
-                  src="/icon-512.png" 
-                  alt="AURA READ - Clique para ver opções de instalação" 
-                  className="w-10 h-10 rounded-lg shadow-md cursor-pointer"
-                  title="Instalar AURA READ"
-                />
-              </button>
-            </PWAInstallDialog>
+            <img 
+              src="/icon-512.png" 
+              alt="AURA READ" 
+              className="w-10 h-10 rounded-lg shadow-md"
+            />
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground ml-auto">
             {books.length} livros na sua coleção

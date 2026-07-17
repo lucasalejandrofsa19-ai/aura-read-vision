@@ -136,8 +136,6 @@ const AnimatedRoutes = () => {
 };
 
 const AppContent = () => {
-  // Hook para detectar e gerenciar instalação PWA
-  usePWAInstallPrompt();
   // Banner AdMob (apenas em build nativo iOS/Android e para usuários free)
   useAdMobBanner();
   // Animações reveal-on-scroll globais (IntersectionObserver + CSS)

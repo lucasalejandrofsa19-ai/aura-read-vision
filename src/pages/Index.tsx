@@ -215,8 +215,6 @@ const Index = () => {
           </div>
         </motion.div>
 
-        {/* PWA Promo Banner */}
-        <PWAPromoBanner />
 
         {/* Premium Features Section */}
         <motion.div
