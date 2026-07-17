@@ -1,7 +1,8 @@
 import { Suspense, useEffect, useRef, useMemo, useState } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
-import neonBookAsset from "@/assets/neon-book-hero.png.asset.json";
+import neonBookDesktop from "@/assets/neon-book-hero.webp.asset.json";
+import neonBookMobile from "@/assets/neon-book-hero-mobile.webp.asset.json";
 import { useTheme, type ThemeType } from "@/contexts/ThemeContext";
 
 // Paleta de glow + tint do livro por tema (sincronizado com o leitor).
@@ -17,18 +18,18 @@ const THEME_ATMOSPHERE: Record<
   contraste: { glowA: "#ffb347", glowB: "#ff7a00", tint: [1.2, 0.9, 0.55], intensity: 1.1 },
 };
 
+// Curva de easing consistente para transições CSS de glow entre temas.
+const THEME_EASING = "cubic-bezier(0.22, 1, 0.36, 1)"; // ease-out-quint
+const THEME_DURATION_MS = 900;
 
 /**
- * Plano de fundo 3D com a imagem neon do livro como textura.
- * - Respeita prefers-reduced-motion (com listener dinâmico).
- * - Ajusta DPR, tamanho do plano, parallax e blur em mobile / dispositivos fracos.
+ * Plano de fundo 3D otimizado para mobile:
+ * - `prefers-reduced-motion` -> frameloop `demand` (praticamente parado)
+ * - Aba/visibilidade oculta -> pausa completa (frameloop `demand`)
+ * - FPS cap adaptativo (30 em mobile/low-end, 60 em desktop)
+ * - Save-Data / bateria fraca -> asset mobile + FPS ainda menor
+ * - Asset WebP (28 KB mobile / 87 KB desktop), lazy via Suspense
  */
-
-type PerfProfile = {
-  reduced: boolean;
-  isMobile: boolean;
-  lowEnd: boolean;
-};
 
 const useReducedMotion = () => {
   const [reduced, setReduced] = useState(false);
@@ -43,8 +44,8 @@ const useReducedMotion = () => {
   return reduced;
 };
 
-const useDeviceProfile = (): { isMobile: boolean; lowEnd: boolean } => {
-  const [profile, setProfile] = useState({ isMobile: false, lowEnd: false });
+const useDeviceProfile = () => {
+  const [profile, setProfile] = useState({ isMobile: false, lowEnd: false, saveData: false });
   useEffect(() => {
     if (typeof window === "undefined") return;
     const compute = () => {
@@ -53,14 +54,65 @@ const useDeviceProfile = (): { isMobile: boolean; lowEnd: boolean } => {
       // @ts-expect-error deviceMemory não é padrão em todos os TS libs
       const mem: number | undefined = navigator.deviceMemory;
       const lowEnd = cores <= 4 || (typeof mem === "number" && mem <= 4);
-      setProfile({ isMobile, lowEnd });
+      // @ts-expect-error connection não tipado em todos os libs
+      const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      const saveData = !!conn?.saveData || ["slow-2g", "2g", "3g"].includes(conn?.effectiveType);
+      setProfile({ isMobile, lowEnd, saveData });
     };
     compute();
     const mq = window.matchMedia("(max-width: 768px)");
     mq.addEventListener?.("change", compute);
-    return () => mq.removeEventListener?.("change", compute);
+    // @ts-expect-error connection.change
+    const conn = navigator.connection;
+    conn?.addEventListener?.("change", compute);
+    return () => {
+      mq.removeEventListener?.("change", compute);
+      conn?.removeEventListener?.("change", compute);
+    };
   }, []);
   return profile;
+};
+
+/** Pausa o Canvas quando a aba está oculta. Retorna se está visível. */
+const usePageVisible = () => {
+  const [visible, setVisible] = useState(
+    typeof document === "undefined" ? true : !document.hidden
+  );
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const update = () => setVisible(!document.hidden);
+    document.addEventListener("visibilitychange", update);
+    return () => document.removeEventListener("visibilitychange", update);
+  }, []);
+  return visible;
+};
+
+/** Detecta bateria fraca (< 20% descarregando) para reduzir custo ainda mais. */
+const useLowBattery = () => {
+  const [low, setLow] = useState(false);
+  useEffect(() => {
+    // @ts-expect-error getBattery é experimental
+    if (typeof navigator === "undefined" || !navigator.getBattery) return;
+    let battery: any;
+    let mounted = true;
+    const update = () => {
+      if (!mounted || !battery) return;
+      setLow(battery.charging === false && battery.level < 0.2);
+    };
+    // @ts-expect-error getBattery
+    navigator.getBattery().then((b: any) => {
+      battery = b;
+      update();
+      b.addEventListener("levelchange", update);
+      b.addEventListener("chargingchange", update);
+    }).catch(() => {});
+    return () => {
+      mounted = false;
+      battery?.removeEventListener?.("levelchange", update);
+      battery?.removeEventListener?.("chargingchange", update);
+    };
+  }, []);
+  return low;
 };
 
 const FloatingBookMesh = ({
@@ -68,33 +120,48 @@ const FloatingBookMesh = ({
   isMobile,
   tint,
   intensity,
+  fpsCap,
+  assetUrl,
 }: {
   reduced: boolean;
   isMobile: boolean;
   tint: [number, number, number];
   intensity: number;
+  fpsCap: number;
+  assetUrl: string;
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const groupRef = useRef<THREE.Group>(null);
   const lightRef = useRef<THREE.AmbientLight>(null);
-  const texture = useLoader(THREE.TextureLoader, neonBookAsset.url);
+  const texture = useLoader(THREE.TextureLoader, assetUrl);
 
   useMemo(() => {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = isMobile ? 2 : 4;
+    texture.generateMipmaps = true;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
   }, [texture, isMobile]);
 
-  // Alvo de tint atualizado a cada mudança de tema; interpolação acontece no frame loop.
+  // Libera a textura da GPU ao desmontar.
+  useEffect(() => {
+    return () => {
+      texture.dispose();
+    };
+  }, [texture]);
+
   const targetTint = useMemo(
     () => new THREE.Color(tint[0], tint[1], tint[2]),
     [tint[0], tint[1], tint[2]]
   );
   const currentTintRef = useRef(new THREE.Color(tint[0], tint[1], tint[2]));
 
+  // Acumulador de tempo para FPS cap (mobile/low-end -> 30fps).
+  const frameAccum = useRef(0);
+  const minFrameTime = 1 / fpsCap;
+
   useFrame((state, delta) => {
-    // Easing consistente do tint e da intensidade de luz mesmo com prefers-reduced-motion.
-    // Fator ~1 - exp(-k*dt) => easing exponencial estável independente de FPS.
-    const k = 3.2; // ~ease-out ~600ms
+    // Easing consistente do tint independente de FPS.
+    const k = 3.2;
     const t = 1 - Math.exp(-k * delta);
     currentTintRef.current.lerp(targetTint, t);
     if (meshRef.current) {
@@ -106,8 +173,15 @@ const FloatingBookMesh = ({
     }
 
     if (reduced) return;
+
+    // FPS cap: só executa a animação de flutuação a cada minFrameTime.
+    frameAccum.current += delta;
+    if (frameAccum.current < minFrameTime) return;
+    const step = frameAccum.current;
+    frameAccum.current = 0;
+
     if (meshRef.current) {
-      meshRef.current.rotation.y += delta * (isMobile ? 0.1 : 0.15);
+      meshRef.current.rotation.y += step * (isMobile ? 0.1 : 0.15);
       meshRef.current.rotation.x =
         Math.sin(state.clock.elapsedTime * 0.4) * (isMobile ? 0.08 : 0.12);
       meshRef.current.position.y =
@@ -140,16 +214,12 @@ const FloatingBookMesh = ({
   );
 };
 
-
-// Curva de easing consistente para transições CSS de glow entre temas.
-const THEME_EASING = "cubic-bezier(0.22, 1, 0.36, 1)"; // ease-out-quint
-const THEME_DURATION_MS = 900;
-
 const FloatingBook3D = () => {
   const reduced = useReducedMotion();
-  const { isMobile, lowEnd } = useDeviceProfile();
+  const { isMobile, lowEnd, saveData } = useDeviceProfile();
+  const visible = usePageVisible();
+  const lowBattery = useLowBattery();
 
-  // Tema atual (sincronizado com o leitor). Se o Provider não estiver disponível, usa safira.
   let theme: ThemeType = "safira";
   try {
     theme = useTheme().theme;
@@ -158,12 +228,23 @@ const FloatingBook3D = () => {
   }
   const atmosphere = THEME_ATMOSPHERE[theme] ?? THEME_ATMOSPHERE.safira;
 
-  const dpr: [number, number] = isMobile || lowEnd ? [1, 1.25] : [1, 1.75];
-  // Em reduced-motion mantemos 'always' por um breve período para animar o tint.
-  // Como o lerp converge rápido, deixamos 'always' — custo baixo, transição suave.
-  const frameloop: "always" | "demand" = "always";
+  // Perfil consolidado.
+  const constrained = isMobile || lowEnd || saveData || lowBattery;
 
-  const glowClass = isMobile || lowEnd ? "blur-2xl opacity-30" : "blur-3xl opacity-40";
+  // Asset: WebP mobile (28KB) para telas pequenas ou modo economia.
+  const assetUrl = (constrained ? neonBookMobile.url : neonBookDesktop.url);
+
+  // DPR mais baixo em dispositivos constrangidos.
+  const dpr: [number, number] = constrained ? [1, 1.25] : [1, 1.75];
+
+  // FPS cap: 20 se bateria fraca/save-data, 30 em mobile/low-end, 60 desktop.
+  const fpsCap = lowBattery || saveData ? 20 : constrained ? 30 : 60;
+
+  // Frameloop 'demand' quando aba oculta ou reduced-motion -> zera custo.
+  const frameloop: "always" | "demand" =
+    !visible || reduced ? "demand" : "always";
+
+  const glowClass = constrained ? "blur-2xl opacity-30" : "blur-3xl opacity-40";
   const glowSize1 = isMobile ? "w-[260px] h-[260px]" : "w-[420px] h-[420px]";
   const glowSize2 = isMobile ? "w-[320px] h-[320px]" : "w-[520px] h-[520px]";
 
@@ -197,9 +278,9 @@ const FloatingBook3D = () => {
         dpr={dpr}
         frameloop={frameloop}
         gl={{
-          antialias: !isMobile,
+          antialias: !constrained,
           alpha: true,
-          powerPreference: lowEnd ? "low-power" : "high-performance",
+          powerPreference: constrained ? "low-power" : "high-performance",
         }}
       >
         <Suspense fallback={null}>
@@ -208,13 +289,13 @@ const FloatingBook3D = () => {
             isMobile={isMobile}
             tint={atmosphere.tint}
             intensity={atmosphere.intensity}
+            fpsCap={fpsCap}
+            assetUrl={assetUrl}
           />
         </Suspense>
       </Canvas>
     </div>
   );
 };
-
-
 
 export default FloatingBook3D;
