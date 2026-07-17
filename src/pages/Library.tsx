@@ -298,8 +298,8 @@ const LibraryInner = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
         {/* Sidebar */}
         <aside className="lg:col-span-4 xl:col-span-3 space-y-4 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto scrollbar-hide">
-          <DailyGoalCard />
-          <ReadingInsightsCard />
+          <div className="reveal-on-scroll reveal-left"><DailyGoalCard /></div>
+          <div className="reveal-on-scroll reveal-left reveal-delay-2"><ReadingInsightsCard /></div>
           
         </aside>
 
@@ -345,7 +345,7 @@ const LibraryInner = () => {
                 onClick={() => window.open("/pdfs-publicos", "_blank", "noopener,noreferrer")}
                 aria-label={PUBLIC_PDFS_TOOLTIP}
                 aria-describedby={publicPdfsDescId}
-                className="w-full mb-6 group relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent p-5 text-left transition-all hover:border-primary/60 hover:shadow-lg hover:shadow-primary/20"
+                className="reveal-on-scroll reveal-zoom w-full mb-6 group relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent p-5 text-left transition-all hover:border-primary/60 hover:shadow-lg hover:shadow-primary/20"
               >
                 <span id={publicPdfsDescId} className="sr-only">{PUBLIC_PDFS_DESCRIPTION}</span>
                 <div className="flex items-center gap-4">
@@ -364,7 +364,7 @@ const LibraryInner = () => {
                 </div>
               </motion.button>
 
-              <div className="flex items-end justify-between gap-3 mb-6">
+              <div className="reveal-on-scroll flex items-end justify-between gap-3 mb-6">
                 <div>
                   <h2 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Meus Livros</h2>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -382,6 +382,7 @@ const LibraryInner = () => {
                   <div
                     key={book.id}
                     ref={index === 0 ? bookCardRef : undefined}
+                    className={`reveal-on-scroll reveal-zoom reveal-delay-${(index % 4) + 1}`}
                   >
                     <LazyLoadWrapper
                       minHeight="320px"
