@@ -117,7 +117,7 @@ const Index = () => {
           initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0 }}
-          className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center min-h-[70vh]"
+          className="reveal-on-scroll grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center min-h-[70vh]"
         >
           {/* Texto à esquerda */}
           <div className="lg:col-span-7 text-center lg:text-left">
