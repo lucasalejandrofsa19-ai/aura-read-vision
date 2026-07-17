@@ -11,7 +11,24 @@ const HeroScrollBook = () => {
   useEffect(() => {
     if (!rootRef.current) return;
 
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (reduceMotion) {
+      // Estado estático suave: sem ScrollTrigger, sem loops.
+      gsap.set(".book", {
+        scale: 1,
+        rotate: 0,
+        y: 0,
+        opacity: 1,
+        filter: "drop-shadow(0 0 20px #00e5ff)",
+      });
+      return;
+    }
+
     const ctx = gsap.context(() => {
+
       // Timeline principal do livro (.book)
       gsap
         .timeline({
