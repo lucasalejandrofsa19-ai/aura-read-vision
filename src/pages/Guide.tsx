@@ -322,7 +322,7 @@ const Guide = () => {
           </section>
 
           {/* CTA */}
-          <section>
+          <section className="reveal-on-scroll">
             <LibraryCTA />
           </section>
         </div>
