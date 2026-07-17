@@ -53,7 +53,7 @@ const Achievements = () => {
     />
     <div className="min-h-screen p-6 bg-gradient-to-b from-background via-background to-muted/20">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6 reveal-on-scroll reveal-left">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Voltar">
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -63,7 +63,7 @@ const Achievements = () => {
         </div>
 
         {stats && (
-          <div className="glass rounded-2xl p-6 mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="glass rounded-2xl p-6 mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 reveal-on-scroll reveal-delay-1">
             <Stat label="Nível" value={stats.level} icon={<Star className="w-5 h-5 text-yellow-500" />} />
             <Stat label="XP total" value={stats.xp_total} icon={<Sparkles className="w-5 h-5 text-primary" />} />
             <Stat
@@ -80,7 +80,7 @@ const Achievements = () => {
         )}
 
         {/* Weekly chart */}
-        <div className="glass rounded-2xl p-6 mb-6">
+        <div className="glass rounded-2xl p-6 mb-6 reveal-on-scroll reveal-delay-2">
           <h2 className="text-lg font-bold mb-4">Últimos 7 dias</h2>
           <div className="flex items-end justify-between gap-2 h-40">
             {last7.map((d, i) => {
@@ -107,18 +107,18 @@ const Achievements = () => {
         </div>
 
         {/* Achievements grid */}
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 reveal-on-scroll">
           <Trophy className="w-5 h-5 text-primary" />
           Conquistas ({unlockedSet.size}/{achievements.length})
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {achievements.map((ach) => {
+          {achievements.map((ach, idx) => {
             const Icon = ICONS[ach.icon] || Trophy;
             const unlocked = unlockedSet.has(ach.code);
             return (
               <div
                 key={ach.code}
-                className={`rounded-2xl p-4 border-2 transition-all ${
+                className={`reveal-on-scroll reveal-zoom reveal-delay-${(idx % 4) + 1} rounded-2xl p-4 border-2 transition-all ${
                   unlocked
                     ? "glass border-primary/40 aura-soft"
                     : "bg-muted/20 border-border/50 opacity-60"
