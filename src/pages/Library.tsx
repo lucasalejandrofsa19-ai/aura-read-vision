@@ -1,7 +1,7 @@
 import { SEO } from "@/components/SEO";
 import { useInvalidateUserProfile } from "@/hooks/useInvalidateUserProfile";
 import { useState, useEffect, useMemo, memo, useRef, useId } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Search, User, CreditCard, Shield, ChevronLeft, ChevronRight, GraduationCap, HelpCircle, BookOpen, RotateCcw, FileText, ExternalLink } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
