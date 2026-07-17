@@ -49,6 +49,7 @@ interface BookCardProps {
 
 const BookCard = ({ book, index, onDelete, isPremiumBook = false, isAdmin = false, onReprocess }: BookCardProps) => {
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { data: storyVideoQuota, isLoading: storyVideoQuotaLoading } = useStoryVideoQuota();
