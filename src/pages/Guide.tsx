@@ -276,7 +276,7 @@ const Guide = () => {
           </section>
 
           {/* Tools */}
-          <section className="mb-14">
+          <section className="reveal-on-scroll mb-14">
             <h2 className="text-2xl font-semibold mb-2">Ferramentas em detalhe</h2>
             <p className="text-muted-foreground mb-6">
               Clique em cada ferramenta para ver o passo a passo completo.
