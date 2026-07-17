@@ -248,7 +248,7 @@ const Guide = () => {
           </motion.header>
 
           {/* Quick start */}
-          <section className="mb-14">
+          <section className="reveal-on-scroll mb-14">
             <h2 className="text-2xl font-semibold mb-6">Comece em 4 passos</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {quickStart.map((step, i) => (
