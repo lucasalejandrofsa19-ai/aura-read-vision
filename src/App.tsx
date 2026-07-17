@@ -2,7 +2,9 @@ import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
@@ -68,6 +70,20 @@ const queryClient = new QueryClient({
     mutations: { retry: 0 },
   },
 });
+
+
+// Persistência do cache do React Query no localStorage.
+// Mantém navegação instantânea entre reloads e permite operação parcial offline.
+const persister = typeof window !== "undefined"
+  ? createSyncStoragePersister({
+      storage: window.localStorage,
+      key: "auraread:rq-cache:v1",
+      throttleTime: 1000,
+    })
+  : undefined;
+
+// Buster invalida o cache persistido quando o build muda.
+const CACHE_BUSTER = (import.meta as any).env?.VITE_APP_VERSION || "1";
 
 const SentryRoutes = Sentry.withSentryRouting(Routes);
 
@@ -146,7 +162,24 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <PersistQueryClientProvider
+    client={queryClient}
+    persistOptions={{
+      persister: persister!,
+      maxAge: 24 * 60 * 60 * 1000, // 24h
+      buster: CACHE_BUSTER,
+      dehydrateOptions: {
+        // Não persistir queries com erro ou que dependem de URLs assinadas de curta duração
+        shouldDehydrateQuery: (query) => {
+          if (query.state.status !== "success") return false;
+          const key = String(query.queryKey?.[0] ?? "");
+          // signed URLs (books/premium-books) expiram em 1h — pular para evitar 403 no reload
+          if (key === "books" || key === "premium-books") return false;
+          return true;
+        },
+      },
+    }}
+  >
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -162,7 +195,7 @@ const App = () => (
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
+  </PersistQueryClientProvider>
 );
 
 export default App;
