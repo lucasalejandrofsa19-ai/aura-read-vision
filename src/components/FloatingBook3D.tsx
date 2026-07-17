@@ -67,13 +67,16 @@ const FloatingBookMesh = ({
   reduced,
   isMobile,
   tint,
+  intensity,
 }: {
   reduced: boolean;
   isMobile: boolean;
   tint: [number, number, number];
+  intensity: number;
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const groupRef = useRef<THREE.Group>(null);
+  const lightRef = useRef<THREE.AmbientLight>(null);
   const texture = useLoader(THREE.TextureLoader, neonBookAsset.url);
 
   useMemo(() => {
@@ -81,12 +84,27 @@ const FloatingBookMesh = ({
     texture.anisotropy = isMobile ? 2 : 4;
   }, [texture, isMobile]);
 
-  const tintColor = useMemo(
+  // Alvo de tint atualizado a cada mudança de tema; interpolação acontece no frame loop.
+  const targetTint = useMemo(
     () => new THREE.Color(tint[0], tint[1], tint[2]),
     [tint[0], tint[1], tint[2]]
   );
+  const currentTintRef = useRef(new THREE.Color(tint[0], tint[1], tint[2]));
 
   useFrame((state, delta) => {
+    // Easing consistente do tint e da intensidade de luz mesmo com prefers-reduced-motion.
+    // Fator ~1 - exp(-k*dt) => easing exponencial estável independente de FPS.
+    const k = 3.2; // ~ease-out ~600ms
+    const t = 1 - Math.exp(-k * delta);
+    currentTintRef.current.lerp(targetTint, t);
+    if (meshRef.current) {
+      const mat = meshRef.current.material as THREE.MeshBasicMaterial;
+      mat.color.copy(currentTintRef.current);
+    }
+    if (lightRef.current) {
+      lightRef.current.intensity += (intensity - lightRef.current.intensity) * t;
+    }
+
     if (reduced) return;
     if (meshRef.current) {
       meshRef.current.rotation.y += delta * (isMobile ? 0.1 : 0.15);
@@ -105,21 +123,27 @@ const FloatingBookMesh = ({
   const size = isMobile ? 3.2 : 4.2;
 
   return (
-    <group ref={groupRef}>
-      <mesh ref={meshRef}>
-        <planeGeometry args={[size, size]} />
-        <meshBasicMaterial
-          map={texture}
-          color={tintColor}
-          transparent
-          toneMapped={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-    </group>
+    <>
+      <ambientLight ref={lightRef} intensity={intensity} />
+      <group ref={groupRef}>
+        <mesh ref={meshRef}>
+          <planeGeometry args={[size, size]} />
+          <meshBasicMaterial
+            map={texture}
+            transparent
+            toneMapped={false}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      </group>
+    </>
   );
 };
 
+
+// Curva de easing consistente para transições CSS de glow entre temas.
+const THEME_EASING = "cubic-bezier(0.22, 1, 0.36, 1)"; // ease-out-quint
+const THEME_DURATION_MS = 900;
 
 const FloatingBook3D = () => {
   const reduced = useReducedMotion();
@@ -135,24 +159,37 @@ const FloatingBook3D = () => {
   const atmosphere = THEME_ATMOSPHERE[theme] ?? THEME_ATMOSPHERE.safira;
 
   const dpr: [number, number] = isMobile || lowEnd ? [1, 1.25] : [1, 1.75];
-  const frameloop: "always" | "demand" = reduced ? "demand" : "always";
+  // Em reduced-motion mantemos 'always' por um breve período para animar o tint.
+  // Como o lerp converge rápido, deixamos 'always' — custo baixo, transição suave.
+  const frameloop: "always" | "demand" = "always";
 
   const glowClass = isMobile || lowEnd ? "blur-2xl opacity-30" : "blur-3xl opacity-40";
   const glowSize1 = isMobile ? "w-[260px] h-[260px]" : "w-[420px] h-[420px]";
   const glowSize2 = isMobile ? "w-[320px] h-[320px]" : "w-[520px] h-[520px]";
 
+  const glowTransition = `background ${THEME_DURATION_MS}ms ${THEME_EASING}, opacity ${THEME_DURATION_MS}ms ${THEME_EASING}, filter ${THEME_DURATION_MS}ms ${THEME_EASING}`;
+
   return (
     <div
       aria-hidden
-      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-background transition-colors duration-700"
+      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-background"
+      style={{ transition: `background-color ${THEME_DURATION_MS}ms ${THEME_EASING}` }}
     >
       <div
-        className={`absolute top-[10%] left-[12%] rounded-full ${glowSize1} ${glowClass} transition-all duration-700`}
-        style={{ background: `radial-gradient(circle, ${atmosphere.glowA} 0%, transparent 70%)` }}
+        className={`absolute top-[10%] left-[12%] rounded-full ${glowSize1} ${glowClass}`}
+        style={{
+          background: `radial-gradient(circle, ${atmosphere.glowA} 0%, transparent 70%)`,
+          transition: glowTransition,
+          willChange: "background, opacity",
+        }}
       />
       <div
-        className={`absolute bottom-[8%] right-[10%] rounded-full ${glowSize2} ${glowClass} transition-all duration-700`}
-        style={{ background: `radial-gradient(circle, ${atmosphere.glowB} 0%, transparent 70%)` }}
+        className={`absolute bottom-[8%] right-[10%] rounded-full ${glowSize2} ${glowClass}`}
+        style={{
+          background: `radial-gradient(circle, ${atmosphere.glowB} 0%, transparent 70%)`,
+          transition: glowTransition,
+          willChange: "background, opacity",
+        }}
       />
 
       <Canvas
@@ -165,14 +202,19 @@ const FloatingBook3D = () => {
           powerPreference: lowEnd ? "low-power" : "high-performance",
         }}
       >
-        <ambientLight intensity={atmosphere.intensity} />
         <Suspense fallback={null}>
-          <FloatingBookMesh reduced={reduced} isMobile={isMobile} tint={atmosphere.tint} />
+          <FloatingBookMesh
+            reduced={reduced}
+            isMobile={isMobile}
+            tint={atmosphere.tint}
+            intensity={atmosphere.intensity}
+          />
         </Suspense>
       </Canvas>
     </div>
   );
 };
+
 
 
 export default FloatingBook3D;
