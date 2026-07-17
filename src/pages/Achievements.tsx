@@ -63,7 +63,7 @@ const Achievements = () => {
         </div>
 
         {stats && (
-          <div className="glass rounded-2xl p-6 mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="glass rounded-2xl p-6 mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 reveal-on-scroll reveal-delay-1">
             <Stat label="Nível" value={stats.level} icon={<Star className="w-5 h-5 text-yellow-500" />} />
             <Stat label="XP total" value={stats.xp_total} icon={<Sparkles className="w-5 h-5 text-primary" />} />
             <Stat
@@ -80,7 +80,7 @@ const Achievements = () => {
         )}
 
         {/* Weekly chart */}
-        <div className="glass rounded-2xl p-6 mb-6">
+        <div className="glass rounded-2xl p-6 mb-6 reveal-on-scroll reveal-delay-2">
           <h2 className="text-lg font-bold mb-4">Últimos 7 dias</h2>
           <div className="flex items-end justify-between gap-2 h-40">
             {last7.map((d, i) => {
