@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import bookHero from "@/assets/book-hero.png";
 
 gsap.registerPlugin(ScrollTrigger);
+
 
 /**
  * Hero com scroll-driven animation do livro (GSAP + ScrollTrigger).
