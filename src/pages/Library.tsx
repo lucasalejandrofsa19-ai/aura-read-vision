@@ -116,11 +116,9 @@ const LibraryInner = () => {
       description="Acesse, organize e leia seus PDFs em um só lugar. Faça upload de novos livros e continue de onde parou."
       path="/library"
     />
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20"
-         style={{
-           backgroundImage: `radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.05), transparent 50%)`
-         }}
-    >
+    <Suspense fallback={null}><FloatingBook3D /></Suspense>
+    <div className="min-h-screen relative">
+
     <div className="mx-auto w-full max-w-screen-2xl p-3 sm:p-6 lg:p-8 xl:p-10">
 
       {/* Header */}
