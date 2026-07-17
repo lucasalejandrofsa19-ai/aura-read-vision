@@ -124,8 +124,8 @@ const LibraryInner = () => {
 
       {/* Header */}
       <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={prefersReducedMotion ? false : { opacity: 0, y: -20 }}
+        animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
         className="relative rounded-2xl border border-border/60 bg-card/80 backdrop-blur-xl shadow-lg shadow-background/40 p-5 sm:p-6 mb-6 sm:mb-8 overflow-hidden"
       >
         <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
