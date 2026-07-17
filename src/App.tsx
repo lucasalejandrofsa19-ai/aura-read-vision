@@ -11,6 +11,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { SentryUserContext } from "./components/SentryUserContext";
 import { usePWAInstallPrompt } from "@/hooks/usePWAInstallPrompt";
 import { useAdMobBanner } from "@/hooks/useAdMobBanner";
+import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 import { UpdateNotification } from "@/components/UpdateNotification";
 import { AppHealthMonitor } from "@/components/AppHealthMonitor";
 import { OpenInBrowserGate } from "@/components/OpenInBrowserGate";
@@ -119,6 +120,9 @@ const AppContent = () => {
   usePWAInstallPrompt();
   // Banner AdMob (apenas em build nativo iOS/Android e para usuários free)
   useAdMobBanner();
+  // Animações reveal-on-scroll globais (IntersectionObserver + CSS)
+  useRevealOnScroll();
+
 
   return (
     <OpenInBrowserGate>

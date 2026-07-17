@@ -117,7 +117,7 @@ const Index = () => {
           initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0 }}
-          className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center min-h-[70vh]"
+          className="reveal-on-scroll grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center min-h-[70vh]"
         >
           {/* Texto à esquerda */}
           <div className="lg:col-span-7 text-center lg:text-left">
@@ -222,7 +222,7 @@ const Index = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.6 }}
-          className="mt-24 w-full"
+          className="reveal-on-scroll mt-24 w-full"
         >
           <div className="text-center mb-12">
             <motion.div
@@ -299,7 +299,7 @@ const Index = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 2.8, duration: 0.6 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-24 w-full"
+          className="reveal-on-scroll grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-24 w-full"
         >
           {features.map((feature, index) => (
             <motion.div
