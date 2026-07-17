@@ -367,7 +367,7 @@ export const HighlightsPDFPreviewDialog = ({
           </div>
 
           {/* PDF Preview */}
-          <div className="flex-1 border rounded-lg overflow-hidden">
+          <div className="flex-1 border rounded-lg overflow-hidden reveal-on-scroll reveal-zoom reveal-delay-2">
             <PDFViewer width="100%" height="100%" showToolbar={false}>
               <HighlightsPDFDocument
                 bookTitle={bookTitle}
