@@ -412,9 +412,9 @@ const LibraryInner = () => {
 
       {/* Upload button */}
       <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.4, type: "spring" }}
+        initial={prefersReducedMotion ? false : { scale: 0 }}
+        animate={prefersReducedMotion ? undefined : { scale: 1 }}
+        transition={prefersReducedMotion ? undefined : { delay: 0.4, type: "spring" }}
         className="fixed bottom-8 right-8"
         ref={uploadButtonRef}
       >
