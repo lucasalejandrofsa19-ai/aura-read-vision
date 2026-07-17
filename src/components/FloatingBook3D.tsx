@@ -63,7 +63,15 @@ const useDeviceProfile = (): { isMobile: boolean; lowEnd: boolean } => {
   return profile;
 };
 
-const FloatingBookMesh = ({ reduced, isMobile }: { reduced: boolean; isMobile: boolean }) => {
+const FloatingBookMesh = ({
+  reduced,
+  isMobile,
+  tint,
+}: {
+  reduced: boolean;
+  isMobile: boolean;
+  tint: [number, number, number];
+}) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const groupRef = useRef<THREE.Group>(null);
   const texture = useLoader(THREE.TextureLoader, neonBookAsset.url);
@@ -72,6 +80,11 @@ const FloatingBookMesh = ({ reduced, isMobile }: { reduced: boolean; isMobile: b
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = isMobile ? 2 : 4;
   }, [texture, isMobile]);
+
+  const tintColor = useMemo(
+    () => new THREE.Color(tint[0], tint[1], tint[2]),
+    [tint[0], tint[1], tint[2]]
+  );
 
   useFrame((state, delta) => {
     if (reduced) return;
@@ -82,7 +95,6 @@ const FloatingBookMesh = ({ reduced, isMobile }: { reduced: boolean; isMobile: b
       meshRef.current.position.y =
         Math.sin(state.clock.elapsedTime * 0.8) * (isMobile ? 0.1 : 0.15);
     }
-    // parallax só no desktop — em mobile não há mouse e economiza cálculos
     if (!isMobile && groupRef.current) {
       const { x, y } = state.pointer;
       groupRef.current.rotation.y += (x * 0.3 - groupRef.current.rotation.y) * 0.05;
@@ -98,6 +110,7 @@ const FloatingBookMesh = ({ reduced, isMobile }: { reduced: boolean; isMobile: b
         <planeGeometry args={[size, size]} />
         <meshBasicMaterial
           map={texture}
+          color={tintColor}
           transparent
           toneMapped={false}
           side={THREE.DoubleSide}
@@ -106,6 +119,7 @@ const FloatingBookMesh = ({ reduced, isMobile }: { reduced: boolean; isMobile: b
     </group>
   );
 };
+
 
 const FloatingBook3D = () => {
   const reduced = useReducedMotion();
