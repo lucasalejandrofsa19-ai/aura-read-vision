@@ -1057,7 +1057,7 @@ const Reader = () => {
 
           {/* Right rail (desktop) — HighlightsList inline */}
           <aside className="hidden lg:flex lg:col-span-3 xl:col-span-3 flex-col gap-4 lg:sticky lg:top-32 lg:self-start lg:max-h-[calc(100vh-9rem)]">
-            <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-4 shadow-sm shadow-background/40 flex-1 flex flex-col min-h-0">
+            <div className="reveal-on-scroll reveal-delay-1 rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-4 shadow-sm shadow-background/40 flex-1 flex flex-col min-h-0" style={{ animationFillMode: 'forwards' }}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Destaques</p>
                 <span className="text-xs font-display font-bold tabular-nums">{allHighlights.length}</span>
