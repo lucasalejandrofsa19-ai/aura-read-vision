@@ -461,7 +461,7 @@ const Profile = () => {
           </TabsContent>
 
           <TabsContent value="subscription" className="space-y-6">
-            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
+            <Card className="reveal-on-scroll rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
                 <CardTitle className="font-display flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
