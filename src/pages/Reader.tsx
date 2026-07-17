@@ -1117,7 +1117,9 @@ const Reader = () => {
       />
 
     </div>
+    </>
   );
+
 };
 
 const ReaderWithTour = () => (
