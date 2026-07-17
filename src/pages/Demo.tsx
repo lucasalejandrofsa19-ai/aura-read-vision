@@ -344,7 +344,7 @@ const Demo = () => {
                 <motion.button
                   onClick={handleAddBook}
                   whileHover={{ y: -4 }}
-                  className="group"
+                  className="reveal-on-scroll reveal-zoom group"
                 >
                   <Card className="flex aspect-[3/4] flex-col items-center justify-center border-dashed bg-card/40 text-muted-foreground transition-colors hover:border-primary hover:text-primary">
                     <Upload className="mb-3 h-8 w-8" />
