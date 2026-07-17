@@ -11,7 +11,7 @@ import PageTransition from "@/components/PageTransition";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SentryUserContext } from "./components/SentryUserContext";
-import { usePWAInstallPrompt } from "@/hooks/usePWAInstallPrompt";
+
 import { useAdMobBanner } from "@/hooks/useAdMobBanner";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 import { UpdateNotification } from "@/components/UpdateNotification";

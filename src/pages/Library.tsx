@@ -18,7 +18,7 @@ import BookCard from "@/components/BookCard";
 import UploadPDF, { type UploadPDFHandle } from "@/components/UploadPDF";
 import { UploadPremiumBook } from "@/components/UploadPremiumBook";
 import SubscriptionDialog from "@/components/SubscriptionDialog";
-import { PWAInstallDialog } from "@/components/PWAInstallDialog";
+
 import { LibraryTour } from "@/components/LibraryTour";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { LazyLoadWrapper } from "@/components/LazyLoadWrapper";
