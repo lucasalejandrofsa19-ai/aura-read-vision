@@ -41,14 +41,14 @@ export const EditHighlightDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
+        <DialogHeader className="reveal-on-scroll">
           <DialogTitle>Editar Texto Extraído</DialogTitle>
           <DialogDescription>
             Revise e edite o texto extraído do destaque antes de salvá-lo.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 reveal-on-scroll reveal-delay-1">
           <div className="space-y-2">
             <Label htmlFor="highlight-text">Texto do Destaque</Label>
             <Textarea
