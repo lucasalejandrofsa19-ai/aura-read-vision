@@ -44,20 +44,42 @@ const useReducedMotion = () => {
   return reduced;
 };
 
+const detectWebGL = (): boolean => {
+  if (typeof document === "undefined") return true;
+  try {
+    const canvas = document.createElement("canvas");
+    const gl =
+      canvas.getContext("webgl2") ||
+      canvas.getContext("webgl") ||
+      canvas.getContext("experimental-webgl");
+    return !!gl;
+  } catch {
+    return false;
+  }
+};
+
 const useDeviceProfile = () => {
-  const [profile, setProfile] = useState({ isMobile: false, lowEnd: false, saveData: false });
+  const [profile, setProfile] = useState({
+    isMobile: false,
+    lowEnd: false,
+    veryLowEnd: false,
+    saveData: false,
+    hasWebGL: true,
+  });
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const hasWebGL = detectWebGL();
     const compute = () => {
       const isMobile = window.matchMedia("(max-width: 768px)").matches;
       const cores = navigator.hardwareConcurrency ?? 8;
       // @ts-expect-error deviceMemory não é padrão em todos os TS libs
       const mem: number | undefined = navigator.deviceMemory;
       const lowEnd = cores <= 4 || (typeof mem === "number" && mem <= 4);
+      const veryLowEnd = cores <= 2 || (typeof mem === "number" && mem <= 2);
       // @ts-expect-error connection não tipado em todos os libs
       const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
       const saveData = !!conn?.saveData || ["slow-2g", "2g", "3g"].includes(conn?.effectiveType);
-      setProfile({ isMobile, lowEnd, saveData });
+      setProfile({ isMobile, lowEnd, veryLowEnd, saveData, hasWebGL });
     };
     compute();
     const mq = window.matchMedia("(max-width: 768px)");
@@ -72,6 +94,27 @@ const useDeviceProfile = () => {
   }, []);
   return profile;
 };
+
+/** Preferência manual (URL/localStorage) para forçar o modo estático. */
+const useForceStatic = () => {
+  const [forced, setForced] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("static") === "1") {
+        localStorage.setItem("hero3d:static", "1");
+      } else if (params.get("static") === "0") {
+        localStorage.removeItem("hero3d:static");
+      }
+      setForced(localStorage.getItem("hero3d:static") === "1");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  return forced;
+};
+
 
 /** Pausa o Canvas quando a aba está oculta. Retorna se está visível. */
 const usePageVisible = () => {
@@ -216,9 +259,10 @@ const FloatingBookMesh = ({
 
 const FloatingBook3D = () => {
   const reduced = useReducedMotion();
-  const { isMobile, lowEnd, saveData } = useDeviceProfile();
+  const { isMobile, lowEnd, veryLowEnd, saveData, hasWebGL } = useDeviceProfile();
   const visible = usePageVisible();
   const lowBattery = useLowBattery();
+  const forceStatic = useForceStatic();
 
   let theme: ThemeType = "safira";
   try {
@@ -228,34 +272,49 @@ const FloatingBook3D = () => {
   }
   const atmosphere = THEME_ATMOSPHERE[theme] ?? THEME_ATMOSPHERE.safira;
 
-  // Perfil consolidado.
+  // Modo estático: sem WebGL, hardware muito fraco, save-data + bateria fraca, ou override manual.
+  const staticMode =
+    forceStatic || !hasWebGL || veryLowEnd || (saveData && lowBattery);
+
+  // Perfil consolidado (afeta 3D quando ativo).
   const constrained = isMobile || lowEnd || saveData || lowBattery;
 
-  // Asset: WebP mobile (28KB) para telas pequenas ou modo economia.
-  const assetUrl = (constrained ? neonBookMobile.url : neonBookDesktop.url);
-
-  // DPR mais baixo em dispositivos constrangidos.
+  const assetUrl = constrained ? neonBookMobile.url : neonBookDesktop.url;
   const dpr: [number, number] = constrained ? [1, 1.25] : [1, 1.75];
-
-  // FPS cap: 20 se bateria fraca/save-data, 30 em mobile/low-end, 60 desktop.
   const fpsCap = lowBattery || saveData ? 20 : constrained ? 30 : 60;
-
-  // Frameloop 'demand' quando aba oculta ou reduced-motion -> zera custo.
   const frameloop: "always" | "demand" =
     !visible || reduced ? "demand" : "always";
 
-  const glowClass = constrained ? "blur-2xl opacity-30" : "blur-3xl opacity-40";
+  const glowClass = constrained || staticMode ? "blur-2xl opacity-30" : "blur-3xl opacity-40";
   const glowSize1 = isMobile ? "w-[260px] h-[260px]" : "w-[420px] h-[420px]";
   const glowSize2 = isMobile ? "w-[320px] h-[320px]" : "w-[520px] h-[520px]";
 
   const glowTransition = `background ${THEME_DURATION_MS}ms ${THEME_EASING}, opacity ${THEME_DURATION_MS}ms ${THEME_EASING}, filter ${THEME_DURATION_MS}ms ${THEME_EASING}`;
 
+  // Filtro CSS que aplica o mesmo tint do modo 3D à imagem estática.
+  const [tr, tg, tb] = atmosphere.tint;
+  const brightness = (tr + tg + tb) / 3;
+  // hue-rotate aproximada por tema: safira 0, sepia 20, noturno -20, contraste 30.
+  const hueByTheme: Record<ThemeType, number> = {
+    safira: 0, sepia: 20, noturno: -20, contraste: 30,
+  };
+  const staticImgFilter = `brightness(${brightness.toFixed(2)}) hue-rotate(${hueByTheme[theme]}deg) saturate(1.05)`;
+
   return (
     <div
       aria-hidden
+      data-hero3d-mode={staticMode ? "static" : "3d"}
       className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-background"
       style={{ transition: `background-color ${THEME_DURATION_MS}ms ${THEME_EASING}` }}
     >
+      {/* Camada de gradiente sutil por trás — reforça o tema em ambos os modos. */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse at 30% 30%, ${atmosphere.glowA}22 0%, transparent 55%), radial-gradient(ellipse at 70% 70%, ${atmosphere.glowB}22 0%, transparent 55%)`,
+          transition: glowTransition,
+        }}
+      />
       <div
         className={`absolute top-[10%] left-[12%] rounded-full ${glowSize1} ${glowClass}`}
         style={{
@@ -273,29 +332,45 @@ const FloatingBook3D = () => {
         }}
       />
 
-      <Canvas
-        camera={{ position: [0, 0, 5], fov: isMobile ? 55 : 45 }}
-        dpr={dpr}
-        frameloop={frameloop}
-        gl={{
-          antialias: !constrained,
-          alpha: true,
-          powerPreference: constrained ? "low-power" : "high-performance",
-        }}
-      >
-        <Suspense fallback={null}>
-          <FloatingBookMesh
-            reduced={reduced}
-            isMobile={isMobile}
-            tint={atmosphere.tint}
-            intensity={atmosphere.intensity}
-            fpsCap={fpsCap}
-            assetUrl={assetUrl}
-          />
-        </Suspense>
-      </Canvas>
+      {staticMode ? (
+        // Fallback estático: imagem WebP centralizada com o mesmo tint do 3D.
+        <img
+          src={neonBookMobile.url}
+          alt=""
+          decoding="async"
+          loading="lazy"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vmin] h-[70vmin] max-w-[520px] max-h-[520px] object-contain opacity-70"
+          style={{
+            filter: staticImgFilter,
+            transition: `filter ${THEME_DURATION_MS}ms ${THEME_EASING}, opacity ${THEME_DURATION_MS}ms ${THEME_EASING}`,
+          }}
+        />
+      ) : (
+        <Canvas
+          camera={{ position: [0, 0, 5], fov: isMobile ? 55 : 45 }}
+          dpr={dpr}
+          frameloop={frameloop}
+          gl={{
+            antialias: !constrained,
+            alpha: true,
+            powerPreference: constrained ? "low-power" : "high-performance",
+          }}
+        >
+          <Suspense fallback={null}>
+            <FloatingBookMesh
+              reduced={reduced}
+              isMobile={isMobile}
+              tint={atmosphere.tint}
+              intensity={atmosphere.intensity}
+              fpsCap={fpsCap}
+              assetUrl={assetUrl}
+            />
+          </Suspense>
+        </Canvas>
+      )}
     </div>
   );
 };
+
 
 export default FloatingBook3D;
