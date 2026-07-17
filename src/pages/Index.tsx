@@ -107,33 +107,6 @@ const Index = () => {
     />
     <div className="min-h-screen relative overflow-hidden">
       <HeroScrollBook />
-      {/* Animated background */}
-      <div className="absolute inset-0">
-        <motion.div
-          className="absolute top-0 left-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-        <motion.div
-          className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-accent/10 rounded-full blur-3xl"
-          animate={{
-            scale: [1.3, 1, 1.3],
-            opacity: [0.5, 0.3, 0.5],
-          }}
-          transition={{
-            duration: 12,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      </div>
 
       {/* Hero section — desktop-first: 2 colunas em lg+ */}
       <div className="relative z-10 mx-auto w-full max-w-screen-2xl px-6 lg:px-12 xl:px-20 pt-20 lg:pt-28 pb-16">
