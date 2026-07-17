@@ -176,14 +176,15 @@ const App = () => (
       },
     }}
     onSuccess={() => {
-      // Cache hidratado do localStorage. Dispara refetch em background das
-      // queries com URLs assinadas de curta duração para renovar links
-      // expirados sem bloquear a UI (dados antigos continuam visíveis).
-      queryClient.invalidateQueries({ queryKey: ["books"], refetchType: "active" });
-      queryClient.invalidateQueries({ queryKey: ["premium-books"], refetchType: "active" });
+      // Cache hidratado do localStorage. Renova imediatamente as signed URLs
+      // (books/premium-books) mesmo para queries inativas — evita 403 nos
+      // primeiros segundos após reload quando o usuário navega para rotas
+      // que dependem desses dados (Library, Reader, Share).
+      queryClient.invalidateQueries({ queryKey: ["books"], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: ["premium-books"], refetchType: "all" });
       if (import.meta.env.DEV) {
         // eslint-disable-next-line no-console
-        console.info("[rq-persist] cache hidratado; refetch em background disparado");
+        console.info("[rq-persist] cache hidratado; signed URLs renovadas (refetchType=all)");
       }
     }}
   >
