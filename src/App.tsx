@@ -11,7 +11,7 @@ import PageTransition from "@/components/PageTransition";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SentryUserContext } from "./components/SentryUserContext";
-import { usePWAInstallPrompt } from "@/hooks/usePWAInstallPrompt";
+
 import { useAdMobBanner } from "@/hooks/useAdMobBanner";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 import { UpdateNotification } from "@/components/UpdateNotification";
@@ -136,8 +136,6 @@ const AnimatedRoutes = () => {
 };
 
 const AppContent = () => {
-  // Hook para detectar e gerenciar instalação PWA
-  usePWAInstallPrompt();
   // Banner AdMob (apenas em build nativo iOS/Android e para usuários free)
   useAdMobBanner();
   // Animações reveal-on-scroll globais (IntersectionObserver + CSS)

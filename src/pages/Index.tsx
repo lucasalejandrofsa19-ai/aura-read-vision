@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { Book, Sparkles, ArrowRight, Highlighter, BookmarkCheck, Share2, Wand2, FileDown, Image, Infinity as InfinityIcon, Library, Star, Quote, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import PWAPromoBanner from "@/components/PWAPromoBanner";
+
 import { PremiumBadge } from "@/components/PremiumBadge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -215,8 +215,6 @@ const Index = () => {
           </div>
         </motion.div>
 
-        {/* PWA Promo Banner */}
-        <PWAPromoBanner />
 
         {/* Premium Features Section */}
         <motion.div
