@@ -57,11 +57,15 @@ const StoryVideo = lazy(() => import("./pages/StoryVideo"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60_000,
-      gcTime: 5 * 60_000,
+      // Longer staleTime = fewer refetches on route change = snappier SPA feel.
+      staleTime: 2 * 60_000,
+      gcTime: 10 * 60_000,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: "always",
       retry: 1,
+      networkMode: "online",
     },
+    mutations: { retry: 0 },
   },
 });
 
