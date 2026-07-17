@@ -15,11 +15,15 @@ export const useAppUpdate = () => {
       navigator.serviceWorker.ready.then((reg) => {
         setRegistration(reg);
         
-        // Check for updates every 30 minutes
+        // Check for updates every 60 seconds (silent background)
         setInterval(() => {
-          console.log('Checking for updates...');
-          reg.update();
-        }, 30 * 60 * 1000);
+          reg.update().catch(() => {});
+        }, 60 * 1000);
+
+        // Also re-check whenever the tab becomes visible
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) reg.update().catch(() => {});
+        });
 
         // Initial update check
         reg.update();
