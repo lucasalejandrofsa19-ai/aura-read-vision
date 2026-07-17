@@ -456,7 +456,7 @@ const Profile = () => {
                 </Card>
               }
             >
-              <ReadingStatsCard />
+              <div className="reveal-on-scroll reveal-zoom"><ReadingStatsCard /></div>
             </LazyLoadWrapper>
           </TabsContent>
 
