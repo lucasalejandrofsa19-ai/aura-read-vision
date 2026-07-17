@@ -15,11 +15,15 @@ export const useAppUpdate = () => {
       navigator.serviceWorker.ready.then((reg) => {
         setRegistration(reg);
         
-        // Check for updates every 30 minutes
+        // Check for updates every 60 seconds (silent background)
         setInterval(() => {
-          console.log('Checking for updates...');
-          reg.update();
-        }, 30 * 60 * 1000);
+          reg.update().catch(() => {});
+        }, 60 * 1000);
+
+        // Also re-check whenever the tab becomes visible
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) reg.update().catch(() => {});
+        });
 
         // Initial update check
         reg.update();
@@ -31,30 +35,14 @@ export const useAppUpdate = () => {
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New service worker available
-                console.log('New service worker available');
+                // With skipWaiting + clientsClaim, apply the update
+                // silently and immediately — no user prompt.
+                console.log('New SW installed, applying silently');
                 updatePendingRef.current = true;
-                setUpdateAvailable(true);
                 setUpdateReady(true);
-                
-                // Check if page is hidden (app in background)
-                if (document.hidden) {
-                  console.log('App in background, updating silently...');
-                  // Update silently in background
-                  setTimeout(() => {
-                    handleUpdate();
-                  }, 2000);
-                } else {
-                  // Show notification if app is active
-                  toastIdRef.current = toast.info('Nova versão disponível!', {
-                    description: 'Clique para atualizar o app',
-                    action: {
-                      label: 'Atualizar',
-                      onClick: () => handleUpdate(),
-                    },
-                    duration: Infinity,
-                  });
-                }
+                // Trigger reload as soon as the new SW takes control
+                // (controllerchange handler below handles the actual reload).
+                setTimeout(() => handleUpdate(), 500);
               }
             });
           }
