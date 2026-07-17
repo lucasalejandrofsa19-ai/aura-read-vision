@@ -526,3 +526,7 @@ All colors MUST be HSL.
 
 @keyframes pdf-page-shimmer {
   0
+@keyframes pdf-page-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
