@@ -319,6 +319,7 @@ const FloatingBook3D = () => {
   const visible = usePageVisible();
   const lowBattery = useLowBattery();
   const forceStatic = useForceStatic();
+  const sharedMode = useSharedHeroMode();
 
   let theme: ThemeType = "safira";
   try {
@@ -329,8 +330,18 @@ const FloatingBook3D = () => {
   const atmosphere = THEME_ATMOSPHERE[theme] ?? THEME_ATMOSPHERE.safira;
 
   // Modo estático: sem WebGL, hardware muito fraco, save-data + bateria fraca, ou override manual.
-  const staticMode =
+  const computedStatic =
     forceStatic || !hasWebGL || veryLowEnd || (saveData && lowBattery);
+
+  // Decisão final: se já há uma escolha compartilhada nesta sessão, honramos
+  // (garante consistência entre Library e Reader). Caso contrário usamos a
+  // computação local e a publicamos para as próximas telas.
+  const staticMode = sharedMode ? sharedMode === "static" : computedStatic;
+
+  useEffect(() => {
+    writeSharedMode(computedStatic ? "static" : "3d");
+  }, [computedStatic]);
+
 
   // Perfil consolidado (afeta 3D quando ativo).
   const constrained = isMobile || lowEnd || saveData || lowBattery;
