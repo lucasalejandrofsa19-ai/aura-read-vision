@@ -509,7 +509,7 @@ const Profile = () => {
           </TabsContent>
 
           <TabsContent value="highlights">
-            <Card className="rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
+            <Card className="reveal-on-scroll reveal-zoom rounded-2xl border-border/60 bg-card/80 backdrop-blur-xl shadow-sm">
               <CardHeader>
                 <CardTitle className="font-display">Seus Destaques</CardTitle>
                 <CardDescription>
