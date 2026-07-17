@@ -71,6 +71,20 @@ const queryClient = new QueryClient({
   },
 });
 
+
+// Persistência do cache do React Query no localStorage.
+// Mantém navegação instantânea entre reloads e permite operação parcial offline.
+const persister = typeof window !== "undefined"
+  ? createSyncStoragePersister({
+      storage: window.localStorage,
+      key: "auraread:rq-cache:v1",
+      throttleTime: 1000,
+    })
+  : undefined;
+
+// Buster invalida o cache persistido quando o build muda.
+const CACHE_BUSTER = (import.meta as any).env?.VITE_APP_VERSION || "1";
+
 const SentryRoutes = Sentry.withSentryRouting(Routes);
 
 const RouteFallback = () => (
