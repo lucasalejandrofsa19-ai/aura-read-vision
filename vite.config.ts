@@ -186,4 +186,45 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    target: "es2020",
+    cssMinify: "lightningcss" as unknown as true,
+    cssCodeSplit: true,
+    sourcemap: false,
+    reportCompressedSize: false,
+    chunkSizeWarningLimit: 1200,
+    modulePreload: { polyfill: false },
+    rollupOptions: {
+      output: {
+        // Split heavy vendor libs into dedicated chunks so the initial route
+        // download stays small. Each chunk is cache-friendly (long-lived hash)
+        // and loaded on-demand only by pages that need it.
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("/three/") || id.includes("@react-three")) return "three";
+          if (id.includes("@react-pdf")) return "react-pdf";
+          if (id.includes("@ffmpeg")) return "ffmpeg";
+          if (id.includes("pdfjs-dist")) return "pdfjs";
+          if (id.includes("framer-motion")) return "framer";
+          if (id.includes("gsap")) return "gsap";
+          if (id.includes("html2canvas") || id.includes("jspdf") || id.includes("docx") || id.includes("file-saver")) return "export";
+          if (id.includes("@radix-ui")) return "radix";
+          if (id.includes("@sentry")) return "sentry";
+          if (id.includes("@supabase")) return "supabase";
+          if (id.includes("@tanstack")) return "tanstack";
+          if (id.includes("react-dom") || id.includes("/react/") || id.includes("scheduler")) return "react";
+          if (id.includes("recharts") || id.includes("d3-")) return "charts";
+          if (id.includes("fabric")) return "fabric";
+        },
+      },
+    },
+  },
+  esbuild: {
+    // Drop console/debugger in production for smaller, faster bundles.
+    drop: mode === "production" ? ["console", "debugger"] : [],
+    legalComments: "none",
+  },
+  optimizeDeps: {
+    exclude: ["@ffmpeg/ffmpeg", "@ffmpeg/util"],
+  },
 }));
