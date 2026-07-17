@@ -361,7 +361,7 @@ const Demo = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.25 }}
-              className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]"
+              className="reveal-on-scroll grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]"
             >
               <Card className="overflow-hidden">
                 <CardHeader className="border-b">
