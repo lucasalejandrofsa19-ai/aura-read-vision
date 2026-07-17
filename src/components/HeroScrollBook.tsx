@@ -40,10 +40,14 @@ const HeroScrollBook = () => {
         }
 
         const ctx = gsap.context(() => {
+          // `.hero` é position:fixed → não serve como trigger.
+          // Usamos o body como referência para o scroll global da página.
+          const bodyTrigger = document.body;
+
           const tl = gsap
             .timeline({
               scrollTrigger: {
-                trigger: ".hero",
+                trigger: bodyTrigger,
                 start: "top top",
                 end: "+=1200",
                 scrub: 1.5,
@@ -68,9 +72,9 @@ const HeroScrollBook = () => {
                 rotate: 40,
                 scale: 1.4,
                 scrollTrigger: {
-                  trigger: ".hero",
+                  trigger: bodyTrigger,
                   start: "top top",
-                  end: "bottom top",
+                  end: "+=1500",
                   scrub: true,
                 },
               },
@@ -80,7 +84,12 @@ const HeroScrollBook = () => {
               vars: {
                 y: -200,
                 x: -100,
-                scrollTrigger: { trigger: ".hero", scrub: true },
+                scrollTrigger: {
+                  trigger: bodyTrigger,
+                  start: "top top",
+                  end: "+=1500",
+                  scrub: true,
+                },
               },
             },
             {
@@ -88,7 +97,12 @@ const HeroScrollBook = () => {
               vars: {
                 y: 150,
                 x: 120,
-                scrollTrigger: { trigger: ".hero", scrub: true },
+                scrollTrigger: {
+                  trigger: bodyTrigger,
+                  start: "top top",
+                  end: "+=1500",
+                  scrub: true,
+                },
               },
             },
             {
@@ -96,10 +110,17 @@ const HeroScrollBook = () => {
               vars: {
                 rotate: -30,
                 scale: 1.5,
-                scrollTrigger: { trigger: ".hero", scrub: true },
+                scrollTrigger: {
+                  trigger: bodyTrigger,
+                  start: "top top",
+                  end: "+=1500",
+                  scrub: true,
+                },
               },
             },
           ];
+
+
 
           parallax.forEach(({ sel, vars }) => {
             const tween = gsap.to(sel, vars);
