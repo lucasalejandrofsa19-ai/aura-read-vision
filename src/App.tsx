@@ -169,15 +169,22 @@ const App = () => (
       maxAge: 24 * 60 * 60 * 1000, // 24h
       buster: CACHE_BUSTER,
       dehydrateOptions: {
-        // Não persistir queries com erro ou que dependem de URLs assinadas de curta duração
-        shouldDehydrateQuery: (query) => {
-          if (query.state.status !== "success") return false;
-          const key = String(query.queryKey?.[0] ?? "");
-          // signed URLs (books/premium-books) expiram em 1h — pular para evitar 403 no reload
-          if (key === "books" || key === "premium-books") return false;
-          return true;
-        },
+        // Persistir apenas queries bem-sucedidas. Mantemos books/premium-books
+        // no cache para que Library hidrate instantaneamente no reload; as URLs
+        // assinadas são renovadas em background via onSuccess abaixo.
+        shouldDehydrateQuery: (query) => query.state.status === "success",
       },
+    }}
+    onSuccess={() => {
+      // Cache hidratado do localStorage. Dispara refetch em background das
+      // queries com URLs assinadas de curta duração para renovar links
+      // expirados sem bloquear a UI (dados antigos continuam visíveis).
+      queryClient.invalidateQueries({ queryKey: ["books"], refetchType: "active" });
+      queryClient.invalidateQueries({ queryKey: ["premium-books"], refetchType: "active" });
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.info("[rq-persist] cache hidratado; refetch em background disparado");
+      }
     }}
   >
     <TooltipProvider>
@@ -197,5 +204,6 @@ const App = () => (
     </TooltipProvider>
   </PersistQueryClientProvider>
 );
+
 
 export default App;
