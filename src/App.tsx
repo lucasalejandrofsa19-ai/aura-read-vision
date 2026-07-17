@@ -162,7 +162,24 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <PersistQueryClientProvider
+    client={queryClient}
+    persistOptions={{
+      persister: persister!,
+      maxAge: 24 * 60 * 60 * 1000, // 24h
+      buster: CACHE_BUSTER,
+      dehydrateOptions: {
+        // Não persistir queries com erro ou que dependem de URLs assinadas de curta duração
+        shouldDehydrateQuery: (query) => {
+          if (query.state.status !== "success") return false;
+          const key = String(query.queryKey?.[0] ?? "");
+          // signed URLs (books/premium-books) expiram em 1h — pular para evitar 403 no reload
+          if (key === "books" || key === "premium-books") return false;
+          return true;
+        },
+      },
+    }}
+  >
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -178,7 +195,7 @@ const App = () => (
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
+  </PersistQueryClientProvider>
 );
 
 export default App;
