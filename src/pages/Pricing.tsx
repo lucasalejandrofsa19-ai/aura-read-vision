@@ -309,7 +309,7 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="mt-10 text-center text-muted-foreground"
+          className="reveal-on-scroll mt-10 text-center text-muted-foreground"
         >
           <p>Pagamentos processados de forma segura pelo Stripe</p>
         </motion.div>
