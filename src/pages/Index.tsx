@@ -222,7 +222,7 @@ const Index = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.6 }}
-          className="mt-24 w-full"
+          className="reveal-on-scroll mt-24 w-full"
         >
           <div className="text-center mb-12">
             <motion.div
