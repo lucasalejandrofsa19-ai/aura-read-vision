@@ -1,94 +1,142 @@
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import bookHero from "@/assets/book-hero.png";
-
-gsap.registerPlugin(ScrollTrigger);
 
 const HeroScrollBook = () => {
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     if (!rootRef.current) return;
 
-    const reduceMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
 
-    if (reduceMotion) {
-      // Estado estático suave: sem ScrollTrigger, sem loops.
-      gsap.set(".book", {
-        scale: 1,
-        rotate: 0,
-        y: 0,
-        opacity: 1,
-        filter: "drop-shadow(0 0 20px #00e5ff)",
+    let cancelled = false;
+    // Guarda os ScrollTriggers criados por este componente para cleanup dirigido.
+    const createdTriggers: Array<{ kill: () => void }> = [];
+    let ctxCleanup: (() => void) | null = null;
+
+    (async () => {
+      try {
+        const [{ default: gsap }, { ScrollTrigger }] = await Promise.all([
+          import("gsap"),
+          import("gsap/ScrollTrigger"),
+        ]);
+        if (cancelled || !rootRef.current) return;
+
+        // Registro idempotente
+        gsap.registerPlugin(ScrollTrigger);
+
+        if (reduceMotion) {
+          gsap.set(".book", {
+            scale: 1,
+            rotate: 0,
+            y: 0,
+            opacity: 1,
+            filter: "drop-shadow(0 0 20px #00e5ff)",
+          });
+          return;
+        }
+
+        const ctx = gsap.context(() => {
+          const tl = gsap
+            .timeline({
+              scrollTrigger: {
+                trigger: ".hero",
+                start: "top top",
+                end: "+=1200",
+                scrub: 1.5,
+              },
+            })
+            .from(".book", { scale: 0.4, opacity: 0, rotate: -40 })
+            .to(".book", {
+              scale: 1.3,
+              rotate: 360,
+              y: -40,
+              filter:
+                "drop-shadow(0 0 30px #00e5ff) drop-shadow(0 0 80px #b100ff)",
+            })
+            .to(".book", { scale: 0.9, y: 20, rotate: 390 });
+          if (tl.scrollTrigger) createdTriggers.push(tl.scrollTrigger);
+
+          const parallax = [
+            {
+              sel: ".bg-logo",
+              vars: {
+                y: -300,
+                rotate: 40,
+                scale: 1.4,
+                scrollTrigger: {
+                  trigger: ".hero",
+                  start: "top top",
+                  end: "bottom top",
+                  scrub: true,
+                },
+              },
+            },
+            {
+              sel: ".glow1",
+              vars: {
+                y: -200,
+                x: -100,
+                scrollTrigger: { trigger: ".hero", scrub: true },
+              },
+            },
+            {
+              sel: ".glow2",
+              vars: {
+                y: 150,
+                x: 120,
+                scrollTrigger: { trigger: ".hero", scrub: true },
+              },
+            },
+            {
+              sel: ".glow3",
+              vars: {
+                rotate: -30,
+                scale: 1.5,
+                scrollTrigger: { trigger: ".hero", scrub: true },
+              },
+            },
+          ];
+
+          parallax.forEach(({ sel, vars }) => {
+            const tween = gsap.to(sel, vars);
+            const st = (tween as unknown as { scrollTrigger?: { kill: () => void } })
+              .scrollTrigger;
+            if (st) createdTriggers.push(st);
+          });
+
+          // Flutuação contínua (não usa ScrollTrigger)
+          gsap.to(".bg-logo", {
+            y: "+=25",
+            duration: 4,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut",
+          });
+        }, rootRef);
+
+        ctxCleanup = () => ctx.revert();
+      } catch (err) {
+        console.warn("[HeroScrollBook] Falha ao carregar GSAP:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      // Mata ScrollTriggers criados aqui.
+      createdTriggers.forEach((st) => {
+        try {
+          st.kill();
+        } catch {
+          /* noop */
+        }
       });
-      return;
-    }
-
-    const ctx = gsap.context(() => {
-
-      // Timeline principal do livro (.book)
-      gsap
-        .timeline({
-          scrollTrigger: {
-            trigger: ".hero",
-            start: "top top",
-            end: "+=1200",
-            scrub: 1.5,
-          },
-        })
-        .from(".book", { scale: 0.4, opacity: 0, rotate: -40 })
-        .to(".book", {
-          scale: 1.3,
-          rotate: 360,
-          y: -40,
-          filter: "drop-shadow(0 0 30px #00e5ff) drop-shadow(0 0 80px #b100ff)",
-        })
-        .to(".book", { scale: 0.9, y: 20, rotate: 390 });
-
-      // Parallax do logo de fundo
-      gsap.to(".bg-logo", {
-        y: -300,
-        rotate: 40,
-        scale: 1.4,
-        scrollTrigger: {
-          trigger: ".hero",
-          start: "top top",
-          end: "bottom top",
-          scrub: true,
-        },
-      });
-
-      // Glows
-      gsap.to(".glow1", {
-        y: -200,
-        x: -100,
-        scrollTrigger: { trigger: ".hero", scrub: true },
-      });
-      gsap.to(".glow2", {
-        y: 150,
-        x: 120,
-        scrollTrigger: { trigger: ".hero", scrub: true },
-      });
-      gsap.to(".glow3", {
-        rotate: -30,
-        scale: 1.5,
-        scrollTrigger: { trigger: ".hero", scrub: true },
-      });
-
-      // Flutuação contínua do bg-logo
-      gsap.to(".bg-logo", {
-        y: "+=25",
-        duration: 4,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
-    }, rootRef);
-
-    return () => ctx.revert();
+      // Reverte tweens/estilos aplicados pelo contexto do GSAP.
+      if (ctxCleanup) ctxCleanup();
+    };
   }, []);
 
   return (
@@ -97,7 +145,6 @@ const HeroScrollBook = () => {
       aria-hidden
       className="hero fixed inset-0 -z-10 pointer-events-none overflow-hidden"
     >
-      {/* Glows neon */}
       <div
         className="glow1 absolute top-[10%] left-[15%] w-[420px] h-[420px] rounded-full opacity-40 blur-3xl"
         style={{ background: "radial-gradient(circle, #00e5ff 0%, transparent 70%)" }}
@@ -111,14 +158,12 @@ const HeroScrollBook = () => {
         style={{ background: "radial-gradient(circle, #ff2ea6 0%, transparent 70%)" }}
       />
 
-      {/* Logo/livro parallax de fundo */}
       <img
         src={bookHero}
         alt=""
         className="bg-logo absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] max-w-[80vw] opacity-20 will-change-transform"
       />
 
-      {/* Livro em destaque (timeline principal) */}
       <div className="absolute inset-0 flex items-center justify-center">
         <img
           src={bookHero}
