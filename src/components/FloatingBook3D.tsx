@@ -125,12 +125,18 @@ const FloatingBook3D = () => {
   const reduced = useReducedMotion();
   const { isMobile, lowEnd } = useDeviceProfile();
 
-  // DPR mais conservador em mobile/low-end
+  // Tema atual (sincronizado com o leitor). Se o Provider não estiver disponível, usa safira.
+  let theme: ThemeType = "safira";
+  try {
+    theme = useTheme().theme;
+  } catch {
+    theme = "safira";
+  }
+  const atmosphere = THEME_ATMOSPHERE[theme] ?? THEME_ATMOSPHERE.safira;
+
   const dpr: [number, number] = isMobile || lowEnd ? [1, 1.25] : [1, 1.75];
-  // frameloop "demand" quando animação está desligada → economiza bateria/CPU
   const frameloop: "always" | "demand" = reduced ? "demand" : "always";
 
-  // Reduz o glow em mobile/low-end para menos blur (blur-3xl é caro em GPU baixa)
   const glowClass = isMobile || lowEnd ? "blur-2xl opacity-30" : "blur-3xl opacity-40";
   const glowSize1 = isMobile ? "w-[260px] h-[260px]" : "w-[420px] h-[420px]";
   const glowSize2 = isMobile ? "w-[320px] h-[320px]" : "w-[520px] h-[520px]";
@@ -138,15 +144,15 @@ const FloatingBook3D = () => {
   return (
     <div
       aria-hidden
-      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-background"
+      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-background transition-colors duration-700"
     >
       <div
-        className={`absolute top-[10%] left-[12%] rounded-full ${glowSize1} ${glowClass}`}
-        style={{ background: "radial-gradient(circle, #00e5ff 0%, transparent 70%)" }}
+        className={`absolute top-[10%] left-[12%] rounded-full ${glowSize1} ${glowClass} transition-all duration-700`}
+        style={{ background: `radial-gradient(circle, ${atmosphere.glowA} 0%, transparent 70%)` }}
       />
       <div
-        className={`absolute bottom-[8%] right-[10%] rounded-full ${glowSize2} ${glowClass}`}
-        style={{ background: "radial-gradient(circle, #b100ff 0%, transparent 70%)" }}
+        className={`absolute bottom-[8%] right-[10%] rounded-full ${glowSize2} ${glowClass} transition-all duration-700`}
+        style={{ background: `radial-gradient(circle, ${atmosphere.glowB} 0%, transparent 70%)` }}
       />
 
       <Canvas
@@ -159,13 +165,14 @@ const FloatingBook3D = () => {
           powerPreference: lowEnd ? "low-power" : "high-performance",
         }}
       >
-        <ambientLight intensity={0.8} />
+        <ambientLight intensity={atmosphere.intensity} />
         <Suspense fallback={null}>
-          <FloatingBookMesh reduced={reduced} isMobile={isMobile} />
+          <FloatingBookMesh reduced={reduced} isMobile={isMobile} tint={atmosphere.tint} />
         </Suspense>
       </Canvas>
     </div>
   );
 };
+
 
 export default FloatingBook3D;
