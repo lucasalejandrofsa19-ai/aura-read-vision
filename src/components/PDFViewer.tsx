@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, RefreshCw, ArrowLeft, AlertTriangle, BookOpen, Monitor } from "lucide-react";
@@ -145,6 +145,27 @@ export const PDFViewer = ({
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(initialPage);
   const [scale, setScale] = useState<number>(externalScale || 1.0);
+
+  // Opções do Document memoizadas — evita reinicializar o loader e habilita
+  // streaming/auto-fetch para renderizar as páginas assim que os bytes chegam.
+  const pdfDocumentOptions = useMemo(
+    () => ({
+      cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/cmaps/`,
+      cMapPacked: true,
+      standardFontDataUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+      disableStream: false,
+      disableAutoFetch: false,
+    }),
+    [],
+  );
+
+  // Limita o devicePixelRatio do render do canvas do PDF. Em telas de alta
+  // densidade (mobile 3x) isso reduz o custo do render em ~2-3x sem perda
+  // visual perceptível na escala típica de leitura.
+  const pageDevicePixelRatio = useMemo(() => {
+    if (typeof window === "undefined") return 1;
+    return Math.min(window.devicePixelRatio || 1, 1.5);
+  }, []);
   const [autoFit, setAutoFit] = useState<boolean>(true);
   const pageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -890,6 +911,7 @@ export const PDFViewer = ({
         <Document
           key={loadAttempt}
           file={fileUrl}
+          options={pdfDocumentOptions}
           onLoadSuccess={onDocumentLoadSuccess}
           onLoadError={(error: Error) => {
             const cause = classifyPdfError(error, fileUrl);
@@ -1029,6 +1051,7 @@ export const PDFViewer = ({
             <Page
                 pageNumber={pageNumber}
                 scale={scale}
+                devicePixelRatio={pageDevicePixelRatio}
                 renderTextLayer={true}
                 renderAnnotationLayer={false}
                 onLoadSuccess={(page) => {
