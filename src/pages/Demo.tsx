@@ -292,7 +292,7 @@ const Demo = () => {
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.25 }}
             >
-              <div className="mb-8 flex items-end justify-between">
+              <div className="reveal-on-scroll mb-8 flex items-end justify-between">
                 <div>
                   <h2 className="text-2xl font-semibold">
                     {books.length} {books.length === 1 ? "livro" : "livros"}
