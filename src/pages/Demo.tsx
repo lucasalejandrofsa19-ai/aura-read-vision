@@ -292,7 +292,7 @@ const Demo = () => {
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.25 }}
             >
-              <div className="mb-8 flex items-end justify-between">
+              <div className="reveal-on-scroll mb-8 flex items-end justify-between">
                 <div>
                   <h2 className="text-2xl font-semibold">
                     {books.length} {books.length === 1 ? "livro" : "livros"}
@@ -308,12 +308,12 @@ const Demo = () => {
               </div>
 
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {books.map((book) => (
+                {books.map((book, idx) => (
                   <motion.button
                     key={book.id}
                     onClick={() => setActiveBook(book)}
                     whileHover={{ y: -4 }}
-                    className="group text-left"
+                    className={`reveal-on-scroll reveal-delay-${Math.min((idx % 4) + 1, 4)} group text-left`}
                   >
                     <Card className="overflow-hidden transition-shadow hover:shadow-lg">
                       <div
@@ -344,7 +344,7 @@ const Demo = () => {
                 <motion.button
                   onClick={handleAddBook}
                   whileHover={{ y: -4 }}
-                  className="group"
+                  className="reveal-on-scroll reveal-zoom group"
                 >
                   <Card className="flex aspect-[3/4] flex-col items-center justify-center border-dashed bg-card/40 text-muted-foreground transition-colors hover:border-primary hover:text-primary">
                     <Upload className="mb-3 h-8 w-8" />
@@ -361,7 +361,7 @@ const Demo = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.25 }}
-              className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]"
+              className="reveal-on-scroll grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]"
             >
               <Card className="overflow-hidden">
                 <CardHeader className="border-b">

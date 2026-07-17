@@ -179,7 +179,7 @@ export default function Pricing() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          className="reveal-on-scroll text-center mb-12"
         >
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tight mb-4 bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent">
             Um plano para cada leitor
@@ -200,7 +200,7 @@ export default function Pricing() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ y: -4 }}
-                className="relative group"
+                className={`reveal-on-scroll reveal-delay-${Math.min(index + 1, 4)} relative group`}
               >
                 {/* Glow on hover */}
                 <div className={`absolute -inset-px rounded-2xl bg-gradient-to-br ${plan.color} opacity-0 group-hover:opacity-40 blur-md transition-opacity duration-300 pointer-events-none ${plan.popular ? "opacity-30" : ""}`} />
@@ -280,7 +280,7 @@ export default function Pricing() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mt-12"
+            className="reveal-on-scroll text-center mt-12"
           >
             <Button
               onClick={openCustomerPortal}
@@ -300,7 +300,7 @@ export default function Pricing() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mt-16"
+          className="reveal-on-scroll mt-16"
         >
           <LibraryCTA />
         </motion.div>
@@ -309,7 +309,7 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="mt-10 text-center text-muted-foreground"
+          className="reveal-on-scroll mt-10 text-center text-muted-foreground"
         >
           <p>Pagamentos processados de forma segura pelo Stripe</p>
         </motion.div>

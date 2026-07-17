@@ -237,7 +237,7 @@ const Guide = () => {
           <motion.header
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+            className="reveal-on-scroll text-center mb-12"
           >
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-4">
               Guia de uso da AURA READ
@@ -248,7 +248,7 @@ const Guide = () => {
           </motion.header>
 
           {/* Quick start */}
-          <section className="mb-14">
+          <section className="reveal-on-scroll mb-14">
             <h2 className="text-2xl font-semibold mb-6">Comece em 4 passos</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {quickStart.map((step, i) => (
@@ -257,6 +257,7 @@ const Guide = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
+                  className={`reveal-on-scroll reveal-delay-${Math.min(i + 1, 4)}`}
                 >
                   <Card className="h-full glass border-primary/20 aura-soft">
                     <CardHeader>
@@ -275,7 +276,7 @@ const Guide = () => {
           </section>
 
           {/* Tools */}
-          <section className="mb-14">
+          <section className="reveal-on-scroll mb-14">
             <h2 className="text-2xl font-semibold mb-2">Ferramentas em detalhe</h2>
             <p className="text-muted-foreground mb-6">
               Clique em cada ferramenta para ver o passo a passo completo.
@@ -321,7 +322,7 @@ const Guide = () => {
           </section>
 
           {/* CTA */}
-          <section>
+          <section className="reveal-on-scroll">
             <LibraryCTA />
           </section>
         </div>
