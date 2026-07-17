@@ -237,7 +237,7 @@ const Guide = () => {
           <motion.header
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+            className="reveal-on-scroll text-center mb-12"
           >
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-4">
               Guia de uso da AURA READ
