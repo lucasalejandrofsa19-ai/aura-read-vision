@@ -44,20 +44,42 @@ const useReducedMotion = () => {
   return reduced;
 };
 
+const detectWebGL = (): boolean => {
+  if (typeof document === "undefined") return true;
+  try {
+    const canvas = document.createElement("canvas");
+    const gl =
+      canvas.getContext("webgl2") ||
+      canvas.getContext("webgl") ||
+      canvas.getContext("experimental-webgl");
+    return !!gl;
+  } catch {
+    return false;
+  }
+};
+
 const useDeviceProfile = () => {
-  const [profile, setProfile] = useState({ isMobile: false, lowEnd: false, saveData: false });
+  const [profile, setProfile] = useState({
+    isMobile: false,
+    lowEnd: false,
+    veryLowEnd: false,
+    saveData: false,
+    hasWebGL: true,
+  });
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const hasWebGL = detectWebGL();
     const compute = () => {
       const isMobile = window.matchMedia("(max-width: 768px)").matches;
       const cores = navigator.hardwareConcurrency ?? 8;
       // @ts-expect-error deviceMemory não é padrão em todos os TS libs
       const mem: number | undefined = navigator.deviceMemory;
       const lowEnd = cores <= 4 || (typeof mem === "number" && mem <= 4);
+      const veryLowEnd = cores <= 2 || (typeof mem === "number" && mem <= 2);
       // @ts-expect-error connection não tipado em todos os libs
       const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
       const saveData = !!conn?.saveData || ["slow-2g", "2g", "3g"].includes(conn?.effectiveType);
-      setProfile({ isMobile, lowEnd, saveData });
+      setProfile({ isMobile, lowEnd, veryLowEnd, saveData, hasWebGL });
     };
     compute();
     const mq = window.matchMedia("(max-width: 768px)");
@@ -72,6 +94,27 @@ const useDeviceProfile = () => {
   }, []);
   return profile;
 };
+
+/** Preferência manual (URL/localStorage) para forçar o modo estático. */
+const useForceStatic = () => {
+  const [forced, setForced] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("static") === "1") {
+        localStorage.setItem("hero3d:static", "1");
+      } else if (params.get("static") === "0") {
+        localStorage.removeItem("hero3d:static");
+      }
+      setForced(localStorage.getItem("hero3d:static") === "1");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  return forced;
+};
+
 
 /** Pausa o Canvas quando a aba está oculta. Retorna se está visível. */
 const usePageVisible = () => {
