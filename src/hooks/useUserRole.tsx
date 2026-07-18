@@ -49,16 +49,18 @@ export const useUserRole = () => {
 
     fetchUserRoles();
 
-    // Subscribe to changes in user_roles
+    // Só assina Realtime quando há usuário — evita filter `user_id=eq.undefined`.
+    if (!user?.id) return;
+
     const channel = supabase
-      .channel("user_roles_changes")
+      .channel(`user_roles_changes:${user.id}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "user_roles",
-          filter: `user_id=eq.${user?.id}`,
+          filter: `user_id=eq.${user.id}`,
         },
         () => {
           fetchUserRoles();
@@ -67,7 +69,7 @@ export const useUserRole = () => {
       .subscribe();
 
     return () => {
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [user]);
 
