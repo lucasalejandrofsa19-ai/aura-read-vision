@@ -45,8 +45,18 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user) {
-      if (!user) toast.error("Faça login para começar sua biblioteca.");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (!file) return;
+    await startUpload(file);
+  };
+
+  // Erros de rede/latência que valem uma retentativa automática.
+  const isRetriableUploadError = (msg: string) =>
+    /Tempo esgotado no upload|Conexão instável|Conexão perdida/i.test(msg);
+
+  const startUpload = async (file: File) => {
+    if (!user) {
+      toast.error("Faça login para começar sua biblioteca.");
       return;
     }
 
@@ -133,8 +143,8 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
           const uploadUrl = `${supabaseUrl}/storage/v1/object/pdfs/${fileName}`;
 
-          const startTime = Date.now();
-          await new Promise<void>((resolve, reject) => {
+          const performXhrUpload = () => new Promise<void>((resolve, reject) => {
+            const startTime = Date.now();
             const xhr = new XMLHttpRequest();
             uploadXhrRef.current = xhr;
             xhr.open("POST", uploadUrl);
@@ -196,6 +206,35 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
             xhr.onabort = () => { clearWatchdog(); reject(new Error("__UPLOAD_CANCELLED__")); };
             xhr.send(file);
           });
+
+          // Retry automático com backoff exponencial para falhas transitórias
+          // (timeout, stall e conexão perdida). Erros de sessão/HTTP 4xx e
+          // cancelamento pelo usuário não são retentados.
+          const MAX_ATTEMPTS = 3;
+          const BACKOFF_MS = [2000, 5000];
+          for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            try {
+              if (attempt > 1) {
+                const delay = BACKOFF_MS[attempt - 2] ?? 5000;
+                toast.loading(`Reconectando (tentativa ${attempt}/${MAX_ATTEMPTS})…`, {
+                  id: toastId,
+                  description: `Aguardando ${Math.round(delay / 1000)}s antes de tentar novamente`,
+                  ...toastActions,
+                });
+                await new Promise((r) => setTimeout(r, delay));
+                if (cancelledRef.current) throw new Error("__UPLOAD_CANCELLED__");
+                setProgress(0);
+              }
+              await performXhrUpload();
+              break;
+            } catch (err: any) {
+              const msg = err?.message ?? "";
+              if (cancelledRef.current || msg === "__UPLOAD_CANCELLED__") throw err;
+              if (!isRetriableUploadError(msg) || attempt >= MAX_ATTEMPTS) throw err;
+              // continua para próxima tentativa
+            }
+          }
+
 
 
           uploadedPath = fileName;
@@ -337,7 +376,23 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
           } else {
             captureError(error, { context: "pdf_upload" });
             const msg = error?.message || "Não conseguimos enviar seu PDF. Tente novamente.";
-            toast.error("Falha no upload", { id: toastId, description: msg });
+            const retriable = isRetriableUploadError(msg);
+            toast.error(retriable ? "Falha no upload após várias tentativas" : "Falha no upload", {
+              id: toastId,
+              description: retriable
+                ? `${msg} Toque em "Tentar novamente" para reenviar ${file.name}.`
+                : msg,
+              duration: retriable ? 15000 : 6000,
+              action: retriable
+                ? {
+                    label: "Tentar novamente",
+                    onClick: () => {
+                      trackClick("pdf_upload_manual_retry", { fileName: file.name });
+                      void startUpload(file);
+                    },
+                  }
+                : undefined,
+            });
           }
         } finally {
           uploadXhrRef.current = null;
