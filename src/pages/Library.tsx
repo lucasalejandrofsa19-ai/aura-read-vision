@@ -250,7 +250,7 @@ const LibraryInner = () => {
                 <FeedbackDialog />
               </>
             )}
-            {true && (
+            {!hasPremiumAccess && !isAdmin && (
               <div className="flex flex-col gap-2">
                 <Button
                   variant="premium"
@@ -262,9 +262,6 @@ const LibraryInner = () => {
                 </Button>
                 <FeedbackDialog />
               </div>
-            )}
-            {false && !isAdmin && (
-              <FeedbackDialog />
             )}
             <img 
               src="/icon-512.png" 
