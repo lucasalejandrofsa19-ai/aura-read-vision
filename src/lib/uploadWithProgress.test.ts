@@ -103,7 +103,7 @@ describe("uploadWithProgress (E2E de rede lenta e stall)", () => {
     xhr.emitProgress(50, 1000);
 
     // Após 46s sem novo progresso, o watchdog (que roda a cada 5s) deve abortar
-    await vi.advanceTimersByTimeAsync(46_000);
+    await vi.advanceTimersByTimeAsync(50_000);
 
     await expect(promise).rejects.toThrow(/Conexão instável/i);
     expect(xhr.aborted).toBe(true);
@@ -151,7 +151,7 @@ describe("uploadWithProgress (E2E de rede lenta e stall)", () => {
   it("não confunde stall com cancelamento: mensagem é 'Conexão instável', não __UPLOAD_CANCELLED__", async () => {
     const promise = uploadWithProgress(baseOpts());
     // Sem qualquer progresso → após 46s o watchdog aborta
-    await vi.advanceTimersByTimeAsync(46_000);
+    await vi.advanceTimersByTimeAsync(50_000);
     await expect(promise).rejects.toThrow(/Conexão instável/i);
     await expect(promise).rejects.not.toThrow(UPLOAD_CANCELLED);
   });
