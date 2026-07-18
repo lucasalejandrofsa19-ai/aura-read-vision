@@ -96,18 +96,22 @@ describe("uploadWithProgress (E2E de rede lenta e stall)", () => {
 
   it("dispara stall watchdog quando não há progresso por >45s (mensagem de conexão instável)", async () => {
     const promise = uploadWithProgress(baseOpts());
+    // Anexa handler imediatamente para não emitir "unhandled rejection"
+    // enquanto avançamos timers de forma assíncrona.
+    const settled = promise.catch((e: Error) => e);
     const xhr = MockXHR.instances[0];
 
-    // Progresso inicial (5%) e depois silêncio total
     await vi.advanceTimersByTimeAsync(1_000);
     xhr.emitProgress(50, 1000);
 
-    // Após 46s sem novo progresso, o watchdog (que roda a cada 5s) deve abortar
     await vi.advanceTimersByTimeAsync(50_000);
 
-    await expect(promise).rejects.toThrow(/Conexão instável/i);
+    const err = await settled;
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).message).toMatch(/Conexão instável/i);
     expect(xhr.aborted).toBe(true);
   });
+
 
   it("dispara timeout duro (xhr.ontimeout) com mensagem apropriada", async () => {
     const promise = uploadWithProgress(baseOpts());
