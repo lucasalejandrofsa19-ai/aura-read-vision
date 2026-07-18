@@ -68,6 +68,12 @@ export const AppErrorFallback = ({ error, resetError }: AppErrorFallbackProps) =
             Ir para o início
           </Button>
         </div>
+        <a
+          href="/status"
+          className="inline-block mt-4 text-xs text-muted-foreground underline hover:text-foreground"
+        >
+          Ver status do link (diagnóstico)
+        </a>
       </div>
     </div>
   );

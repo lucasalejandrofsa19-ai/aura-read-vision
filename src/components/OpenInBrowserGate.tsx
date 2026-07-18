@@ -269,6 +269,13 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
           </div>
         )}
 
+        <a
+          href="/status"
+          className="block text-center text-xs text-muted-foreground underline mt-3 hover:text-foreground"
+        >
+          Ver status do link (diagnóstico)
+        </a>
+
         {showDebug && <DebugPanel />}
       </div>
     </div>

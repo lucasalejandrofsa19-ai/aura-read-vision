@@ -54,6 +54,7 @@ const Trust = lazy(() => import("./pages/Trust"));
 const DevExportTest = lazy(() => import("./pages/DevExportTest"));
 const PublicPdfs = lazy(() => import("./pages/PublicPdfs"));
 const StoryVideo = lazy(() => import("./pages/StoryVideo"));
+const LinkStatus = lazy(() => import("./pages/LinkStatus"));
 
 
 const queryClient = new QueryClient({
@@ -126,6 +127,7 @@ const AnimatedRoutes = () => {
           <Route path="/dev/export-test" element={<DevExportTest />} />
           <Route path="/pdfs-publicos" element={<PublicPdfs />} />
           <Route path="/story-video/:bookId" element={<StoryVideo />} />
+          <Route path="/status" element={<LinkStatus />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
