@@ -143,8 +143,8 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
           const uploadUrl = `${supabaseUrl}/storage/v1/object/pdfs/${fileName}`;
 
-          const startTime = Date.now();
-          await new Promise<void>((resolve, reject) => {
+          const performXhrUpload = () => new Promise<void>((resolve, reject) => {
+            const startTime = Date.now();
             const xhr = new XMLHttpRequest();
             uploadXhrRef.current = xhr;
             xhr.open("POST", uploadUrl);
@@ -206,6 +206,35 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
             xhr.onabort = () => { clearWatchdog(); reject(new Error("__UPLOAD_CANCELLED__")); };
             xhr.send(file);
           });
+
+          // Retry automático com backoff exponencial para falhas transitórias
+          // (timeout, stall e conexão perdida). Erros de sessão/HTTP 4xx e
+          // cancelamento pelo usuário não são retentados.
+          const MAX_ATTEMPTS = 3;
+          const BACKOFF_MS = [2000, 5000];
+          for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            try {
+              if (attempt > 1) {
+                const delay = BACKOFF_MS[attempt - 2] ?? 5000;
+                toast.loading(`Reconectando (tentativa ${attempt}/${MAX_ATTEMPTS})…`, {
+                  id: toastId,
+                  description: `Aguardando ${Math.round(delay / 1000)}s antes de tentar novamente`,
+                  ...toastActions,
+                });
+                await new Promise((r) => setTimeout(r, delay));
+                if (cancelledRef.current) throw new Error("__UPLOAD_CANCELLED__");
+                setProgress(0);
+              }
+              await performXhrUpload();
+              break;
+            } catch (err: any) {
+              const msg = err?.message ?? "";
+              if (cancelledRef.current || msg === "__UPLOAD_CANCELLED__") throw err;
+              if (!isRetriableUploadError(msg) || attempt >= MAX_ATTEMPTS) throw err;
+              // continua para próxima tentativa
+            }
+          }
+
 
 
           uploadedPath = fileName;
