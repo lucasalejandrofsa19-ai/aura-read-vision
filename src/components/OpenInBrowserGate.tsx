@@ -1,15 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ExternalLink, Copy, Check, Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /**
- * Detecta navegadores in-app (Instagram, Facebook, TikTok, etc.) e força
- * a abertura do link no navegador externo (Chrome no Android, Safari/Chrome no iOS).
+ * Detecta navegadores in-app (Instagram, Facebook, TikTok, Threads, LinkedIn,
+ * WhatsApp, Discord, KakaoTalk, WeChat, Line, Twitter/X, Snapchat, Pinterest,
+ * Slack, Teams, Naver, etc.) e força a abertura do link no navegador externo.
  *
- * - Android: usa `intent://` para abrir direto no Chrome.
- * - iOS: tenta `googlechrome://` e mostra fallback com botão "Copiar link".
+ * - Android: dispara `intent://...;package=com.android.chrome` automaticamente
+ *   e oferece fallback manual.
+ * - iOS: tenta abrir via `x-safari-https://` (força Safari sem depender do Chrome
+ *   estar instalado) e oferece fallback `googlechrome://` + instruções manuais.
  *
- * Aceita ?stayInApp=1 para desativar (caso o usuário queira ficar no webview).
+ * Bypass: `?stayInApp=1` desativa o gate (para debug).
+ * Debug: `?debug=1` mostra painel com estado detectado + URL de fallback.
  */
 
 interface InAppBrowserState {
@@ -21,11 +25,13 @@ interface InAppBrowserState {
   currentUrl: string;
   chromeIntentUrl: string;
   chromeIOSUrl: string;
+  safariIOSUrl: string;
   userAgent: string;
 }
 
+// Padrões de User-Agent de navegadores in-app conhecidos.
 const IN_APP_REGEX =
-  /Instagram|FBAN|FBAV|FB_IAB|FBIOS|Line\/|MicroMessenger|TikTok|Twitter|Snapchat|WhatsApp|Pinterest/i;
+  /Instagram|FBAN|FBAV|FB_IAB|FBIOS|Threads|Line\/|MicroMessenger|WeChat|TikTok|musical_ly|BytedanceWebview|Twitter|TwitterAndroid|X-App|Snapchat|WhatsApp|Pinterest|LinkedInApp|Discord|KAKAOTALK|NAVER\(inapp|Slack|Teams|GSA\/|EdgiOS|MiuiBrowser|SamsungBrowser\/[0-9]+\.[0-9]+ .*wv/i;
 
 const getInAppBrowserState = (): InAppBrowserState => {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
@@ -38,6 +44,7 @@ const getInAppBrowserState = (): InAppBrowserState => {
       currentUrl: "",
       chromeIntentUrl: "",
       chromeIOSUrl: "",
+      safariIOSUrl: "",
       userAgent: "",
     };
   }
@@ -49,21 +56,30 @@ const getInAppBrowserState = (): InAppBrowserState => {
   const stayInApp = params.get("stayInApp") === "1";
 
   const isAndroid = /Android/i.test(ua);
-  const isIOS = /iPhone|iPad|iPod/i.test(ua);
-  const isWebView = /(wv|WebView)/i.test(ua) || /; wv\)/i.test(ua);
+  const isIOS =
+    /iPhone|iPad|iPod/i.test(ua) ||
+    // iPadOS 13+ reporta como Mac; usa maxTouchPoints para detectar.
+    (/Macintosh/i.test(ua) && typeof navigator !== "undefined" && (navigator as Navigator).maxTouchPoints > 1);
+
+  // WebView Android tradicional (; wv) e WKWebView iOS sem "Safari/" no UA.
+  const isAndroidWebView = isAndroid && (/; wv\)/i.test(ua) || /Version\/[\d.]+ Chrome\/[\d.]+ Mobile/.test(ua) && !/Safari\//.test(ua));
+  const isIOSWebView = isIOS && !/Safari\//.test(ua) && /AppleWebKit/i.test(ua);
+  const isWebView = isAndroidWebView || isIOSWebView || /(^|\W)wv(\W|$)/i.test(ua);
+
+  const inAppMatch = ua.match(IN_APP_REGEX);
+  const isInAppByRegex = Boolean(inAppMatch);
 
   let detectedBy = "none";
   if (stayInApp) {
     detectedBy = "stayInApp=1";
-  } else if (IN_APP_REGEX.test(ua)) {
-    const match = ua.match(IN_APP_REGEX);
-    detectedBy = match ? match[0] : "in-app regex";
+  } else if (isInAppByRegex) {
+    detectedBy = inAppMatch ? inAppMatch[0] : "in-app regex";
   } else if (isWebView) {
-    detectedBy = "generic WebView";
+    detectedBy = isIOSWebView ? "iOS WKWebView" : "Android WebView";
   }
 
   return {
-    isInAppBrowser: !stayInApp && (IN_APP_REGEX.test(ua) || isWebView),
+    isInAppBrowser: !stayInApp && (isInAppByRegex || isWebView),
     detectedBy,
     isIOS,
     isAndroid,
@@ -71,6 +87,8 @@ const getInAppBrowserState = (): InAppBrowserState => {
     currentUrl,
     chromeIntentUrl: `intent://${urlWithoutScheme}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(currentUrl)};end`,
     chromeIOSUrl: `googlechrome://${urlWithoutScheme}`,
+    // x-safari-https:// força o Safari, mesmo que o link tenha vindo de outro app.
+    safariIOSUrl: `x-safari-${currentUrl}`,
     userAgent: ua,
   };
 };
@@ -79,6 +97,7 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
   const initialState = useMemo(getInAppBrowserState, []);
   const [blocked, setBlocked] = useState(initialState.isInAppBrowser);
   const [copied, setCopied] = useState(false);
+  const attemptedRef = useRef(false);
   const showDebug = useMemo(() => {
     if (typeof window === "undefined") return false;
     return new URLSearchParams(window.location.search).get("debug") === "1";
@@ -88,6 +107,9 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (attemptedRef.current) return;
+    attemptedRef.current = true;
+
     try {
       const state = getInAppBrowserState();
       if (!state.isInAppBrowser) return;
@@ -95,9 +117,17 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
       setBlocked(true);
 
       if (state.isAndroid) {
-        // Tenta automaticamente, mas mantém a tela bloqueada porque o Instagram
-        // frequentemente exige um toque do usuário para permitir intents.
+        // Instagram/Facebook frequentemente exigem toque do usuário para
+        // liberar intents; mesmo assim tentamos: quando aceita, o WebView
+        // já entrega ao Chrome sem tela intermediária.
         window.location.replace(state.chromeIntentUrl);
+        return;
+      }
+
+      if (state.isIOS) {
+        // x-safari-https:// funciona no Instagram/Threads/LinkedIn em iOS 14+.
+        // Se o app bloquear, o botão manual continua disponível.
+        window.location.href = state.safariIOSUrl;
         return;
       }
     } catch {
@@ -111,18 +141,14 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* ignora */
+      /* ignora — usuário pode copiar manualmente da barra */
     }
-  };
-
-  const stayInApp = () => {
-    setBlocked(false);
   };
 
   const fallbackUrl = browserState.isAndroid
     ? browserState.chromeIntentUrl
     : browserState.isIOS
-      ? browserState.chromeIOSUrl
+      ? browserState.safariIOSUrl
       : browserState.currentUrl;
 
   const DebugPanel = () => (
@@ -137,28 +163,24 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
           <strong className="text-primary">{browserState.detectedBy}</strong>
         </li>
         <li>
-          <span className="text-muted-foreground">Bloqueado:</span>{" "}
-          {blocked ? "sim" : "não"}
+          <span className="text-muted-foreground">Bloqueado:</span> {blocked ? "sim" : "não"}
         </li>
         <li>
           <span className="text-muted-foreground">Plataforma:</span>{" "}
           {browserState.isAndroid ? "Android" : browserState.isIOS ? "iOS" : "outro"}
         </li>
         <li>
-          <span className="text-muted-foreground">WebView genérico:</span>{" "}
-          {browserState.isWebView ? "sim" : "não"}
+          <span className="text-muted-foreground">WebView:</span> {browserState.isWebView ? "sim" : "não"}
         </li>
         <li>
-          <span className="text-muted-foreground">URL atual:</span>{" "}
-          {browserState.currentUrl}
+          <span className="text-muted-foreground">URL atual:</span> {browserState.currentUrl}
         </li>
         <li>
-          <span className="text-muted-foreground">Link de fallback:</span>{" "}
+          <span className="text-muted-foreground">Fallback:</span>{" "}
           <span className="text-primary">{fallbackUrl}</span>
         </li>
         <li>
-          <span className="text-muted-foreground">User-Agent:</span>{" "}
-          {browserState.userAgent}
+          <span className="text-muted-foreground">User-Agent:</span> {browserState.userAgent}
         </li>
       </ul>
     </div>
@@ -172,12 +194,9 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
         <div className="max-w-md mx-auto rounded-lg border border-border/60 bg-card p-6 shadow-xl">
           <h1 className="text-lg font-bold mb-2">Debug do navegador</h1>
           <p className="text-sm text-muted-foreground mb-4">
-            Modo de depuração ativado via <code className="text-primary">?debug=1</code>.
+            Modo depuração via <code className="text-primary">?debug=1</code>. O gate não bloqueou este UA.
           </p>
           <DebugPanel />
-          <Button onClick={stayInApp} variant="outline" className="w-full mt-5">
-            Continuar para o app
-          </Button>
         </div>
       </div>
     );
@@ -191,8 +210,11 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
         </div>
         <h1 className="text-lg font-bold mb-2">Abra no navegador</h1>
         <p className="text-sm text-muted-foreground mb-5">
-          Para ler o PDF corretamente, abra este link no Chrome ou Safari — o
-          navegador interno do Instagram bloqueia recursos necessários.
+          Detectamos que você está no navegador interno de um app
+          {browserState.detectedBy !== "none" && browserState.detectedBy !== "generic WebView" ? (
+            <> (<strong className="text-foreground">{browserState.detectedBy}</strong>)</>
+          ) : null}
+          . Para a AURA READ funcionar corretamente, abra no Chrome ou Safari.
         </p>
 
         {browserState.isAndroid ? (
@@ -208,24 +230,30 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
               {copied ? "Link copiado!" : "Copiar link"}
             </Button>
             <p className="text-xs text-muted-foreground pt-2">
-              Se o botão não abrir automaticamente, toque nos três pontos (⋮) e escolha
+              Se nada abrir, toque nos três pontos (⋮) no canto superior direito e escolha
               <strong> "Abrir no Chrome"</strong> ou <strong>"Abrir no navegador externo"</strong>.
             </p>
           </div>
         ) : browserState.isIOS ? (
           <div className="space-y-3">
             <Button asChild className="w-full gap-2">
+              <a href={browserState.safariIOSUrl} rel="noreferrer">
+                <ExternalLink className="w-4 h-4" />
+                Abrir no Safari
+              </a>
+            </Button>
+            <Button asChild variant="outline" className="w-full gap-2">
               <a href={browserState.chromeIOSUrl} rel="noreferrer">
                 <ExternalLink className="w-4 h-4" />
                 Abrir no Chrome
               </a>
             </Button>
-            <Button onClick={copyLink} variant="outline" className="w-full gap-2">
+            <Button onClick={copyLink} variant="ghost" className="w-full gap-2">
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               {copied ? "Link copiado!" : "Copiar link"}
             </Button>
             <p className="text-xs text-muted-foreground pt-2">
-              Toque nos três pontos (•••) no canto superior direito e selecione
+              Se nada abrir, toque nos três pontos (•••) no canto superior direito e selecione
               <strong> "Abrir no navegador"</strong>.
             </p>
           </div>
@@ -236,18 +264,10 @@ export const OpenInBrowserGate = ({ children }: { children: React.ReactNode }) =
               {copied ? "Link copiado!" : "Copiar link"}
             </Button>
             <p className="text-xs text-muted-foreground pt-2">
-              Toque nos três pontos (⋮) no canto superior direito e selecione
-              <strong> "Abrir no navegador externo"</strong>.
+              Abra o menu do app e escolha <strong>"Abrir no navegador externo"</strong>.
             </p>
           </div>
         )}
-
-        <button
-          onClick={stayInApp}
-          className="mt-5 text-xs text-muted-foreground underline hover:text-foreground"
-        >
-          Continuar mesmo assim
-        </button>
 
         {showDebug && <DebugPanel />}
       </div>
