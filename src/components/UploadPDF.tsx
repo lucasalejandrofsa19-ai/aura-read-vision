@@ -67,7 +67,7 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
 
     // Validações unificadas (extensão + 50MB + magic bytes %PDF-)
     const validation = await validatePdfFile(file);
-    if (!validation.ok) {
+    if (validation.ok === false) {
       toast.error(validation.title, {
         description: validation.description,
       });
