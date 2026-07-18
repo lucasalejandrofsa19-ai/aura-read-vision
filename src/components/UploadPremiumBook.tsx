@@ -47,7 +47,7 @@ export const UploadPremiumBook = () => {
         return;
       }
       const magic = await validatePdfMagicBytes(selectedFile);
-      if (!magic.ok) {
+      if (magic.ok === false) {
         toast.error("Arquivo PDF inválido", { description: magic.message });
         return;
       }

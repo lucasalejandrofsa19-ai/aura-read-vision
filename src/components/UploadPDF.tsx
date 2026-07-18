@@ -70,7 +70,7 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
 
     // Confirma que é um PDF real (magic bytes %PDF-) antes de enviar
     const magic = await validatePdfMagicBytes(file);
-    if (!magic.ok) {
+    if (magic.ok === false) {
       toast.error("Arquivo PDF inválido", { description: magic.message });
       trackClick("pdf_upload_invalid_magic_bytes", { reason: magic.reason });
       return;
