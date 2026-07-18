@@ -11,18 +11,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useGenerateCover } from "@/hooks/useGenerateCover";
 import { markCoverFailed, clearCoverFailed } from "@/lib/coverFallback";
 
-// Remove acentos e caracteres não suportados pelo Supabase Storage
-const sanitizeFileName = (name: string) => {
-  const base = name.replace(/\.pdf$/i, "");
-  const clean = base
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9._-]+/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_|_$/g, "")
-    .slice(0, 80) || "documento";
-  return `${clean}.pdf`;
-};
+import { sanitizeFileName } from "@/lib/sanitizeFileName";
+
 
 export interface UploadPDFHandle {
   openPicker: () => void;

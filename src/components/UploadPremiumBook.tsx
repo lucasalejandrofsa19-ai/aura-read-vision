@@ -15,9 +15,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Upload, BookOpen } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useQueryClient } from "@tanstack/react-query";
+import { sanitizeFileName } from "@/lib/sanitizeFileName";
+
 
 export const UploadPremiumBook = () => {
   const { isAdmin } = useUserRole();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -30,8 +34,14 @@ export const UploadPremiumBook = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      if (selectedFile.type !== "application/pdf") {
+      const isPdf =
+        selectedFile.type === "application/pdf" || /\.pdf$/i.test(selectedFile.name);
+      if (!isPdf) {
         toast.error("Por favor, selecione um arquivo PDF");
+        return;
+      }
+      if (selectedFile.size > 52428800) {
+        toast.error("Esse PDF passa de 50MB. Tente um arquivo menor.");
         return;
       }
       setFile(selectedFile);
@@ -39,51 +49,66 @@ export const UploadPremiumBook = () => {
   };
 
   const handleUpload = async () => {
-    if (!file || !title) {
+    if (!file || !title.trim()) {
       toast.error("Por favor, preencha todos os campos obrigatórios");
       return;
     }
 
     setUploading(true);
+    let uploadedPath: string | null = null;
 
     try {
-      // Upload PDF to storage
-      const fileName = `${Date.now()}-${file.name}`;
+      // Sanitiza o nome do arquivo (mesma regra do upload comum)
+      const safeName = sanitizeFileName(file.name);
+      const fileName = `${Date.now()}-${safeName}`;
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("premium-pdfs")
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          contentType: "application/pdf",
+          upsert: false,
+        });
 
       if (uploadError) throw uploadError;
+      uploadedPath = uploadData.path;
 
-      // Create premium book record
       const { data: bookData, error: insertError } = await supabase
         .from("premium_books")
         .insert({
-          title,
-          author,
-          summary,
+          title: title.trim(),
+          author: author.trim() || null,
+          summary: summary.trim() || null,
           file_path: uploadData.path,
           file_size: file.size,
         })
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        // Rollback do storage se o insert falhar (mesmo comportamento do UploadPDF)
+        if (uploadedPath) {
+          await supabase.storage.from("premium-pdfs").remove([uploadedPath]).catch(() => {});
+        }
+        throw insertError;
+      }
 
       toast.success("Livro premium adicionado! Processando PDF...");
 
+      // Invalida cache imediatamente em vez de recarregar a página
+      queryClient.invalidateQueries({ queryKey: ["premium-books"] });
+
       // Processar PDF em background
       supabase.functions
-        .invoke('process-premium-pdf', {
+        .invoke("process-premium-pdf", {
           body: { bookId: bookData.id },
         })
         .then(({ data, error }) => {
           if (error) {
-            console.error('Error processing PDF:', error);
+            console.error("Error processing PDF:", error);
             toast.error("PDF adicionado, mas houve erro no processamento");
           } else {
-            console.log('PDF processed successfully:', data);
-            toast.success(`PDF processado: ${data.totalPages} páginas extraídas`);
+            toast.success(`PDF processado: ${data?.totalPages ?? "?"} páginas extraídas`);
+            queryClient.invalidateQueries({ queryKey: ["premium-books"] });
           }
         });
 
@@ -92,16 +117,14 @@ export const UploadPremiumBook = () => {
       setTitle("");
       setAuthor("");
       setSummary("");
-      
-      // Reload page to show new book
-      setTimeout(() => window.location.reload(), 1000);
     } catch (error: any) {
       console.error("Error uploading premium book:", error);
-      toast.error(`Erro ao fazer upload: ${error.message}`);
+      toast.error(`Erro ao fazer upload: ${error?.message ?? "tente novamente"}`);
     } finally {
       setUploading(false);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
