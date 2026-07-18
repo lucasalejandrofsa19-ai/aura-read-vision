@@ -54,7 +54,7 @@ export async function validatePdfFile(file: File): Promise<PdfValidationResult> 
       ok: false,
       title: "Arquivo PDF inválido",
       description: magic.message,
-      reason: `invalid_magic_bytes_${magic.reason}` as PdfValidationFailure["reason"],
+      reason: `invalid_magic_bytes_${magic.reason}`,
     };
   }
 
