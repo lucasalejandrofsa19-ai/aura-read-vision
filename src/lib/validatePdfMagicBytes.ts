@@ -26,10 +26,9 @@ export async function validatePdfMagicBytes(file: Blob): Promise<PdfMagicBytesRe
 
   try {
     const slice = file.slice(0, Math.min(SCAN_WINDOW_BYTES, file.size));
-    // `Response(...).arrayBuffer()` é o caminho mais compatível entre
-    // navegadores, ambientes móveis e jsdom (onde Blob.arrayBuffer pode falhar).
-    const buffer = await new Response(slice).arrayBuffer();
+    const buffer = await readBlobAsArrayBuffer(slice);
     const bytes = new Uint8Array(buffer);
+
 
 
     // Busca "%PDF-" dentro dos primeiros bytes
@@ -53,7 +52,29 @@ export async function validatePdfMagicBytes(file: Blob): Promise<PdfMagicBytesRe
       reason: "read_error",
       message: "Não foi possível ler o arquivo para validação. Tente novamente.",
     };
+}
+
+/**
+ * Lê um Blob como ArrayBuffer com compatibilidade máxima:
+ * tenta o método nativo (browsers modernos) e faz fallback para FileReader
+ * (necessário em WebViews antigas e em ambientes de teste como jsdom).
+ */
+function readBlobAsArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
+  const anyBlob = blob as Blob & { arrayBuffer?: () => Promise<ArrayBuffer> };
+  if (typeof anyBlob.arrayBuffer === "function") {
+    return anyBlob.arrayBuffer();
   }
+  return new Promise<ArrayBuffer>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (result instanceof ArrayBuffer) resolve(result);
+      else reject(new Error("FileReader retornou tipo inesperado."));
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("Falha ao ler arquivo."));
+    reader.readAsArrayBuffer(blob);
+  });
+}
 }
 
 function indexOfSignature(bytes: Uint8Array): number {
