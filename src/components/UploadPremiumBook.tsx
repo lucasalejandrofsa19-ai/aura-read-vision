@@ -54,25 +54,15 @@ export const UploadPremiumBook = () => {
   if (!isAdmin) return null;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      const isPdf =
-        selectedFile.type === "application/pdf" || /\.pdf$/i.test(selectedFile.name);
-      if (!isPdf) {
-        toast.error("Por favor, selecione um arquivo PDF");
-        return;
-      }
-      if (selectedFile.size > 52428800) {
-        toast.error("Esse PDF passa de 50MB. Tente um arquivo menor.");
-        return;
-      }
-      const magic = await validatePdfMagicBytes(selectedFile);
-      if (magic.ok === false) {
-        toast.error("Arquivo PDF inválido", { description: magic.message });
-        return;
-      }
-      setFile(selectedFile);
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+    // Validações unificadas com UploadPDF (extensão + 50MB + magic bytes)
+    const validation = await validatePdfFile(selectedFile);
+    if (!validation.ok) {
+      toast.error(validation.title, { description: validation.description });
+      return;
     }
+    setFile(selectedFile);
   };
 
   const runUpload = async (
