@@ -15,13 +15,7 @@ export type PdfValidationFailure = {
   /** Descrição opcional (aparece no toast como subtítulo). */
   description?: string;
   /** Motivo estruturado para telemetria. */
-  reason:
-    | "not_pdf"
-    | "too_large"
-    | "invalid_magic_bytes_empty"
-    | "invalid_magic_bytes_missing"
-    | "invalid_magic_bytes_read_error"
-    | "invalid_magic_bytes_unknown";
+  reason: "not_pdf" | "too_large" | `invalid_magic_bytes_${string}`;
 };
 
 export type PdfValidationSuccess = { ok: true };
