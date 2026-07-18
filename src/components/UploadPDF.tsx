@@ -45,8 +45,18 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user) {
-      if (!user) toast.error("Faça login para começar sua biblioteca.");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (!file) return;
+    await startUpload(file);
+  };
+
+  // Erros de rede/latência que valem uma retentativa automática.
+  const isRetriableUploadError = (msg: string) =>
+    /Tempo esgotado no upload|Conexão instável|Conexão perdida/i.test(msg);
+
+  const startUpload = async (file: File) => {
+    if (!user) {
+      toast.error("Faça login para começar sua biblioteca.");
       return;
     }
 
