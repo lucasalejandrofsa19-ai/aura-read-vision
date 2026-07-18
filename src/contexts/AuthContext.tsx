@@ -90,16 +90,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      // Reuse the same query as useUserData — populates cache, no duplicate fetch
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      const profile = authUser
-        ? await queryClient.fetchQuery({
+      toast.success("Login realizado com sucesso!");
+
+      // Prefetch profile to decide landing, but never fail the login if
+      // the profile fetch itself errors (network/RLS hiccup) — auth already
+      // succeeded and the onAuthStateChange listener is authoritative.
+      let profile: Awaited<ReturnType<typeof fetchUserProfile>> | null = null;
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (authUser) {
+          profile = await queryClient.fetchQuery({
             queryKey: userProfileQueryKey(authUser.id),
             queryFn: () => fetchUserProfile(authUser.id),
-          })
-        : null;
-
-      toast.success("Login realizado com sucesso!");
+          });
+        }
+      } catch (profileError) {
+        captureError(profileError as Error, { context: "signIn.profilePrefetch" });
+      }
 
       if (profile && !profile.has_seen_welcome) {
         navigate("/welcome");
