@@ -12,6 +12,8 @@ import { useGenerateCover } from "@/hooks/useGenerateCover";
 import { markCoverFailed, clearCoverFailed } from "@/lib/coverFallback";
 
 import { sanitizeFileName } from "@/lib/sanitizeFileName";
+import { validatePdfMagicBytes } from "@/lib/validatePdfMagicBytes";
+
 
 
 export interface UploadPDFHandle {
