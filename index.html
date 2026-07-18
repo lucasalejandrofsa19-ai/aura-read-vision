@@ -51,6 +51,49 @@
 
   <body>
     <div id="root"></div>
+    <script>
+      // Self-healing boot watchdog.
+      // Se o React não montar em 8s, provavelmente o Service Worker está servindo
+      // HTML/JS obsoleto (ex.: link aberto pelo Instagram/Facebook WebView com
+      // cache travado apontando pra chunks antigos). Nesse caso: limpamos caches,
+      // desregistramos SWs e recarregamos com bust — sem intervenção do usuário.
+      (function () {
+        var HEAL_KEY = 'auraread:self-heal-attempt';
+        var mounted = false;
+        window.addEventListener('load', function () {
+          setTimeout(function () {
+            var root = document.getElementById('root');
+            mounted = !!(root && root.childElementCount > 0);
+            if (mounted) {
+              try { sessionStorage.removeItem(HEAL_KEY); } catch (e) {}
+              return;
+            }
+            var attempt = 0;
+            try { attempt = parseInt(sessionStorage.getItem(HEAL_KEY) || '0', 10) || 0; } catch (e) {}
+            if (attempt >= 2) return; // evita loop
+            try { sessionStorage.setItem(HEAL_KEY, String(attempt + 1)); } catch (e) {}
+            console.warn('[self-heal] app não montou em 8s — limpando caches e SWs');
+            var done = function () {
+              var url = new URL(window.location.href);
+              url.searchParams.set('_r', Date.now().toString(36));
+              window.location.replace(url.toString());
+            };
+            var tasks = [];
+            if ('serviceWorker' in navigator) {
+              tasks.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+                return Promise.all(regs.map(function (r) { return r.unregister().catch(function () {}); }));
+              }).catch(function () {}));
+            }
+            if (window.caches && caches.keys) {
+              tasks.push(caches.keys().then(function (keys) {
+                return Promise.all(keys.map(function (k) { return caches.delete(k).catch(function () {}); }));
+              }).catch(function () {}));
+            }
+            Promise.all(tasks).then(done, done);
+          }, 8000);
+        });
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
