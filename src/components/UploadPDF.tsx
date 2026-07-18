@@ -140,7 +140,26 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
             xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
             xhr.setRequestHeader("Content-Type", "application/pdf");
             xhr.setRequestHeader("x-upsert", "false");
+            // 5min timeout evita loading eterno em redes travadas
+            xhr.timeout = 5 * 60 * 1000;
+            let lastProgressAt = Date.now();
+            let stallWatchdog: number | undefined;
+            const clearWatchdog = () => {
+              if (stallWatchdog !== undefined) {
+                window.clearInterval(stallWatchdog);
+                stallWatchdog = undefined;
+              }
+            };
+            // Detecta stall (sem progresso por 45s) e aborta com mensagem clara
+            stallWatchdog = window.setInterval(() => {
+              if (Date.now() - lastProgressAt > 45_000) {
+                clearWatchdog();
+                try { xhr.abort(); } catch {}
+                reject(new Error("Conexão instável — upload pausou por muito tempo."));
+              }
+            }, 5000);
             xhr.upload.onprogress = (e) => {
+              lastProgressAt = Date.now();
               if (e.lengthComputable) {
                 const pct = Math.round((e.loaded / e.total) * 100);
                 setProgress(pct);
@@ -158,6 +177,7 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
               }
             };
             xhr.onload = () => {
+              clearWatchdog();
               if (xhr.status >= 200 && xhr.status < 300) resolve();
               else {
                 let msg = `Falha no upload (HTTP ${xhr.status})`;
@@ -165,13 +185,17 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
                   const body = JSON.parse(xhr.responseText);
                   if (body?.message) msg = body.message;
                 } catch {}
+                if (xhr.status === 409) msg = "Já existe um arquivo com esse nome — tente novamente.";
+                if (xhr.status === 401 || xhr.status === 403) msg = "Sessão expirada. Faça login novamente.";
                 reject(new Error(msg));
               }
             };
-            xhr.onerror = () => reject(new Error("Conexão perdida durante o upload."));
-            xhr.onabort = () => reject(new Error("__UPLOAD_CANCELLED__"));
+            xhr.onerror = () => { clearWatchdog(); reject(new Error("Conexão perdida durante o upload.")); };
+            xhr.ontimeout = () => { clearWatchdog(); reject(new Error("Tempo esgotado no upload. Verifique sua conexão.")); };
+            xhr.onabort = () => { clearWatchdog(); reject(new Error("__UPLOAD_CANCELLED__")); };
             xhr.send(file);
           });
+
 
           uploadedPath = fileName;
           setProgress(100);
