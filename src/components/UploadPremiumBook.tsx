@@ -17,7 +17,7 @@ import { Upload, BookOpen } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQueryClient } from "@tanstack/react-query";
 import { sanitizeFileName } from "@/lib/sanitizeFileName";
-import { validatePdfMagicBytes } from "@/lib/validatePdfMagicBytes";
+import { validatePdfFile } from "@/lib/validatePdfFile";
 import { uploadWithProgress, UPLOAD_CANCELLED } from "@/lib/uploadWithProgress";
 
 // Mesmos padrões do UploadPDF: retry automático com backoff em falhas de rede.
