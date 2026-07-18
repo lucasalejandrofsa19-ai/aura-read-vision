@@ -376,7 +376,23 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
           } else {
             captureError(error, { context: "pdf_upload" });
             const msg = error?.message || "Não conseguimos enviar seu PDF. Tente novamente.";
-            toast.error("Falha no upload", { id: toastId, description: msg });
+            const retriable = isRetriableUploadError(msg);
+            toast.error(retriable ? "Falha no upload após várias tentativas" : "Falha no upload", {
+              id: toastId,
+              description: retriable
+                ? `${msg} Toque em "Tentar novamente" para reenviar ${file.name}.`
+                : msg,
+              duration: retriable ? 15000 : 6000,
+              action: retriable
+                ? {
+                    label: "Tentar novamente",
+                    onClick: () => {
+                      trackClick("pdf_upload_manual_retry", { fileName: file.name });
+                      void startUpload(file);
+                    },
+                  }
+                : undefined,
+            });
           }
         } finally {
           uploadXhrRef.current = null;
