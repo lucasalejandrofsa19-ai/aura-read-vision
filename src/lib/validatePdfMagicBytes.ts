@@ -26,8 +26,11 @@ export async function validatePdfMagicBytes(file: Blob): Promise<PdfMagicBytesRe
 
   try {
     const slice = file.slice(0, Math.min(SCAN_WINDOW_BYTES, file.size));
-    const buffer = await slice.arrayBuffer();
+    // `Response(...).arrayBuffer()` é o caminho mais compatível entre
+    // navegadores, ambientes móveis e jsdom (onde Blob.arrayBuffer pode falhar).
+    const buffer = await new Response(slice).arrayBuffer();
     const bytes = new Uint8Array(buffer);
+
 
     // Busca "%PDF-" dentro dos primeiros bytes
     const idx = indexOfSignature(bytes);
