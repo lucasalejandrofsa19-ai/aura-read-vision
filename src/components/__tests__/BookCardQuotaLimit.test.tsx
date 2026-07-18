@@ -100,6 +100,7 @@ describe("BookCard — limite diário de vídeos IA (free)", () => {
     renderCard();
 
     const btn = await screen.findByTitle(/gerar v[ií]deo ia/i);
+    await waitFor(() => expect(btn).not.toBeDisabled());
     fireEvent.click(btn);
 
     expect(navigateMock).toHaveBeenCalledWith("/story-video/book-1");
