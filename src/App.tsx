@@ -54,6 +54,7 @@ const Trust = lazy(() => import("./pages/Trust"));
 const DevExportTest = lazy(() => import("./pages/DevExportTest"));
 const PublicPdfs = lazy(() => import("./pages/PublicPdfs"));
 const StoryVideo = lazy(() => import("./pages/StoryVideo"));
+const LinkStatus = lazy(() => import("./pages/LinkStatus"));
 
 
 const queryClient = new QueryClient({
