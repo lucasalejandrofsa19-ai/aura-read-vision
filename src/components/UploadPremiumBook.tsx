@@ -17,6 +17,8 @@ import { Upload, BookOpen } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQueryClient } from "@tanstack/react-query";
 import { sanitizeFileName } from "@/lib/sanitizeFileName";
+import { validatePdfMagicBytes } from "@/lib/validatePdfMagicBytes";
+
 
 
 export const UploadPremiumBook = () => {
@@ -31,7 +33,7 @@ export const UploadPremiumBook = () => {
 
   if (!isAdmin) return null;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       const isPdf =
@@ -44,9 +46,15 @@ export const UploadPremiumBook = () => {
         toast.error("Esse PDF passa de 50MB. Tente um arquivo menor.");
         return;
       }
+      const magic = await validatePdfMagicBytes(selectedFile);
+      if (magic.ok === false) {
+        toast.error("Arquivo PDF inválido", { description: magic.message });
+        return;
+      }
       setFile(selectedFile);
     }
   };
+
 
   const handleUpload = async () => {
     if (!file || !title.trim()) {

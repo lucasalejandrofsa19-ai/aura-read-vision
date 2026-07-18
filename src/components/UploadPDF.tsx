@@ -12,6 +12,8 @@ import { useGenerateCover } from "@/hooks/useGenerateCover";
 import { markCoverFailed, clearCoverFailed } from "@/lib/coverFallback";
 
 import { sanitizeFileName } from "@/lib/sanitizeFileName";
+import { validatePdfMagicBytes } from "@/lib/validatePdfMagicBytes";
+
 
 
 export interface UploadPDFHandle {
@@ -65,6 +67,15 @@ const UploadPDF = forwardRef<UploadPDFHandle, UploadPDFProps>(({ onUploadComplet
       toast.error("Esse PDF passa de 50MB. Tente um arquivo menor.");
       return;
     }
+
+    // Confirma que é um PDF real (magic bytes %PDF-) antes de enviar
+    const magic = await validatePdfMagicBytes(file);
+    if (magic.ok === false) {
+      toast.error("Arquivo PDF inválido", { description: magic.message });
+      trackClick("pdf_upload_invalid_magic_bytes", { reason: magic.reason });
+      return;
+    }
+
 
     // Sem limite de ebooks — uploads liberados para todos os planos.
 
