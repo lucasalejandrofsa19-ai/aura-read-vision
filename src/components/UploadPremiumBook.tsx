@@ -58,7 +58,7 @@ export const UploadPremiumBook = () => {
     if (!selectedFile) return;
     // Validações unificadas com UploadPDF (extensão + 50MB + magic bytes)
     const validation = await validatePdfFile(selectedFile);
-    if (!validation.ok) {
+    if (validation.ok === false) {
       toast.error(validation.title, { description: validation.description });
       return;
     }
