@@ -1,9 +1,31 @@
-import { Suspense, useEffect, useRef, useMemo, useState } from "react";
+import { Suspense, useEffect, useRef, useMemo, useState, Component, type ReactNode } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 import neonBookDesktop from "@/assets/neon-book-hero.webp.asset.json";
 import neonBookMobile from "@/assets/neon-book-hero-mobile.webp.asset.json";
 import { useTheme, type ThemeType } from "@/contexts/ThemeContext";
+
+/**
+ * Captura falhas de carregamento de textura / WebGL para que o Canvas
+ * não derrube a árvore React. Ao falhar, renderiza o fallback (imagem estática).
+ */
+class Canvas3DErrorBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(err: unknown) {
+    if (typeof console !== "undefined") {
+      console.warn("[FloatingBook3D] Canvas fallback ativado:", err);
+    }
+  }
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
+}
 
 // Paleta de glow + tint do livro por tema (sincronizado com o leitor).
 // safira = Safira translúcido | sepia = Papel velho digital
