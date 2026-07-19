@@ -1,9 +1,31 @@
-import { Suspense, useEffect, useRef, useMemo, useState } from "react";
+import { Suspense, useEffect, useRef, useMemo, useState, Component, type ReactNode } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 import neonBookDesktop from "@/assets/neon-book-hero.webp.asset.json";
 import neonBookMobile from "@/assets/neon-book-hero-mobile.webp.asset.json";
 import { useTheme, type ThemeType } from "@/contexts/ThemeContext";
+
+/**
+ * Captura falhas de carregamento de textura / WebGL para que o Canvas
+ * não derrube a árvore React. Ao falhar, renderiza o fallback (imagem estática).
+ */
+class Canvas3DErrorBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(err: unknown) {
+    if (typeof console !== "undefined") {
+      console.warn("[FloatingBook3D] Canvas fallback ativado:", err);
+    }
+  }
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
+}
 
 // Paleta de glow + tint do livro por tema (sincronizado com o leitor).
 // safira = Safira translúcido | sepia = Papel velho digital
@@ -411,29 +433,44 @@ const FloatingBook3D = () => {
             filter: staticImgFilter,
             transition: `filter ${THEME_DURATION_MS}ms ${THEME_EASING}, opacity ${THEME_DURATION_MS}ms ${THEME_EASING}`,
           }}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
         />
       ) : (
-        <Canvas
-          camera={{ position: [0, 0, 5], fov: isMobile ? 55 : 45 }}
-          dpr={dpr}
-          frameloop={frameloop}
-          gl={{
-            antialias: !constrained,
-            alpha: true,
-            powerPreference: constrained ? "low-power" : "high-performance",
-          }}
-        >
-          <Suspense fallback={null}>
-            <FloatingBookMesh
-              reduced={reduced}
-              isMobile={isMobile}
-              tint={atmosphere.tint}
-              intensity={atmosphere.intensity}
-              fpsCap={fpsCap}
-              assetUrl={assetUrl}
+        <Canvas3DErrorBoundary
+          fallback={
+            <img
+              src={neonBookMobile.url}
+              alt=""
+              decoding="async"
+              loading="lazy"
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vmin] h-[70vmin] max-w-[520px] max-h-[520px] object-contain opacity-70"
+              style={{ filter: staticImgFilter }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
             />
-          </Suspense>
-        </Canvas>
+          }
+        >
+          <Canvas
+            camera={{ position: [0, 0, 5], fov: isMobile ? 55 : 45 }}
+            dpr={dpr}
+            frameloop={frameloop}
+            gl={{
+              antialias: !constrained,
+              alpha: true,
+              powerPreference: constrained ? "low-power" : "high-performance",
+            }}
+          >
+            <Suspense fallback={null}>
+              <FloatingBookMesh
+                reduced={reduced}
+                isMobile={isMobile}
+                tint={atmosphere.tint}
+                intensity={atmosphere.intensity}
+                fpsCap={fpsCap}
+                assetUrl={assetUrl}
+              />
+            </Suspense>
+          </Canvas>
+        </Canvas3DErrorBoundary>
       )}
     </div>
   );
