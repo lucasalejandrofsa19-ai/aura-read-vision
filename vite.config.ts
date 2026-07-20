@@ -200,6 +200,10 @@ export default defineConfig(({ mode }) => ({
         // and loaded on-demand only by pages that need it.
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
+          // Keep Rollup/Vite helper modules out of feature chunks. If a helper
+          // is emitted inside a lazy vendor chunk, other core chunks may import
+          // from it and accidentally execute that lazy library during app boot.
+          if (id.includes("commonjsHelpers") || id.includes("vite/preload-helper")) return "vendor";
           if (id.includes("/three/") || id.includes("@react-three")) return "three";
           if (id.includes("@react-pdf")) return "react-pdf";
           if (id.includes("@ffmpeg")) return "ffmpeg";
