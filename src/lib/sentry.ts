@@ -18,7 +18,7 @@ export const initSentry = () => {
   // Valida formato esperado: https://<key>@<host>/<project>
   const isValidDsn = typeof dsn === "string" && /^https?:\/\/[^@]+@[^/]+\/\d+/.test(dsn);
   if (!isValidDsn) {
-    console.error(
+    console.warn(
       "[Sentry] VITE_SENTRY_DSN está em formato inválido — Sentry desabilitado. " +
         "Confira em Settings > Cloud > Secrets se o valor é mesmo uma DSN do Sentry " +
         "(deve começar com https:// e conter @sentry.io/<id>)."
