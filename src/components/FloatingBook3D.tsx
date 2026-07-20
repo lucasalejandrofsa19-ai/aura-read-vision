@@ -236,6 +236,36 @@ const useLowBattery = () => {
   return low;
 };
 
+const useImageAssetReady = (assetUrl: string) => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!assetUrl) {
+      setReady(false);
+      return;
+    }
+
+    let cancelled = false;
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = () => {
+      if (!cancelled) setReady(true);
+    };
+    img.onerror = () => {
+      if (!cancelled) setReady(false);
+    };
+    img.src = assetUrl;
+
+    return () => {
+      cancelled = true;
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, [assetUrl]);
+
+  return ready;
+};
+
 const FloatingBookMesh = ({
   reduced,
   isMobile,
@@ -369,6 +399,7 @@ const FloatingBook3D = () => {
   const constrained = isMobile || lowEnd || saveData || lowBattery;
 
   const assetUrl = constrained ? neonBookMobile.url : neonBookDesktop.url;
+  const assetReady = useImageAssetReady(assetUrl);
   const dpr: [number, number] = constrained ? [1, 1.25] : [1, 1.75];
   const fpsCap = lowBattery || saveData ? 20 : constrained ? 30 : 60;
   const frameloop: "always" | "demand" =
@@ -421,7 +452,7 @@ const FloatingBook3D = () => {
         }}
       />
 
-      {staticMode ? (
+      {staticMode || !assetReady ? (
         // Fallback estático: imagem WebP centralizada com o mesmo tint do 3D.
         <img
           src={neonBookMobile.url}

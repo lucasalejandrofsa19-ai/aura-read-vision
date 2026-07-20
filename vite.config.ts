@@ -200,6 +200,10 @@ export default defineConfig(({ mode }) => ({
         // and loaded on-demand only by pages that need it.
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
+          // Keep Rollup/Vite helper modules out of feature chunks. If a helper
+          // is emitted inside a lazy vendor chunk, other core chunks may import
+          // from it and accidentally execute that lazy library during app boot.
+          if (id.includes("commonjsHelpers") || id.includes("vite/preload-helper")) return "vendor";
           if (id.includes("/three/") || id.includes("@react-three")) return "three";
           if (id.includes("@react-pdf")) return "react-pdf";
           if (id.includes("@ffmpeg")) return "ffmpeg";
@@ -212,7 +216,11 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("@supabase")) return "supabase";
           if (id.includes("@tanstack")) return "tanstack";
           if (id.includes("react-dom") || id.includes("/react/") || id.includes("scheduler")) return "react";
-          if (id.includes("recharts") || id.includes("d3-")) return "charts";
+          // Recharts/d3 must not be forced into a shared manual chunk here.
+          // In production, Rollup can hoist shared CJS helpers into that chunk,
+          // making the React chunk import from "charts" while "charts" imports
+          // React. That circular initialization caused the published site to
+          // crash before mounting with: Cannot access 'S' before initialization.
           if (id.includes("fabric")) return "fabric";
         },
       },
